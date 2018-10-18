@@ -167,7 +167,7 @@ class LogDispatcher (Observable):
 
                 try:
                     files = {'file': (xmlreportfile, open(xmlreportfile, 'rb'))}
-                    r = requests.post('http://' + localize.REPORTSERVER + '/stonix/results' + xmlreportfile, files=files)
+                    r = requests.post('https://' + localize.REPORTSERVER + '/stonix/results.php', files=files)
                 except Exception as uploaderr:
                     self.log(LogPriority.DEBUG, "Failed to upload STONIX report to log server" + "\n" + str(uploaderr))
 
