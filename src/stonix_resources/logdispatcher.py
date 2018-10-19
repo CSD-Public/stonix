@@ -54,7 +54,7 @@ import inspect
 import traceback
 import smtplib
 import xml.etree.ElementTree as ET
-import requests
+import subprocess
 
 from shutil import move
 
@@ -128,8 +128,6 @@ class LogDispatcher (Observable):
         responsible for gathering and processing them.
 
         @author: dkennel
-        @change: Breen Malmberg - 10/17/2018 - replaced curl method of uploading xmlreport log file
-                with requests python std lib method
         """
 
         constsmissing = False
@@ -149,7 +147,7 @@ class LogDispatcher (Observable):
 
         uploadstatus = True
         self.xmlreport.closeReport()
-        xmlreportfile = self.xmllog
+        xmlreport = self.xmllog
         resolvable = True
 
         # check socket establish
@@ -165,18 +163,28 @@ class LogDispatcher (Observable):
         try:
             if resolvable:
 
-                try:
-                    files = {'file': (xmlreportfile, open(xmlreportfile, 'rb'))}
-                    r = requests.post('https://' + localize.REPORTSERVER + '/stonix/results.php', files=files)
-                except Exception as uploaderr:
-                    self.log(LogPriority.DEBUG, "Failed to upload STONIX report to log server" + "\n" + str(uploaderr))
-
-            else:
-                self.log(LogPriority.DEBUG, "Could not reach log server")
-
-            # clean up file after done
-            if os.path.exists(xmlreportfile):
-                os.remove(xmlreportfile)
+                curlcommand = 'curl -k -s -G -F "file=@' + xmlreport + \
+                              ';type=text/xml" https://' + localize.REPORTSERVER + \
+                              '/stonix/results.php'
+                if self.debug:
+                    self.log(LogPriority.DEBUG,
+                             ['LogDispatcher.postreport',
+                              'Upload command: ' + curlcommand])
+                cmd = subprocess.Popen(curlcommand, shell=True, close_fds=True,
+                                       stdout=subprocess.PIPE,
+                                       stderr=subprocess.PIPE)
+                uploadstatus = cmd.stdout.read()
+                uploadstatus = uploadstatus + cmd.stderr.read()
+                if self.debug:
+                    self.log(LogPriority.DEBUG,
+                             ['LogDispatcher.postreport',
+                              'Upload status: ' + uploadstatus])
+            if self.debug and not resolvable:
+                self.log(LogPriority.DEBUG,
+                         ['LogDispatcher.postreport',
+                          'Could not resolve upload host'])
+            if not self.debug and os.path.exists(xmlreport):
+                os.remove(xmlreport)
 
         except (KeyboardInterrupt, SystemExit):
             raise
