@@ -505,37 +505,35 @@ Subject: STONIX Error Report: ''' + prefix + '''
                       'SYSLOG not accepting connections!'])
 
         self.metadataopen = True
-        self.log(LogPriority.INFO,
+        self.log(LogPriority.WARNING,
                  ["Hostname", self.environment.hostname])
-        self.log(LogPriority.INFO,
+        self.log(LogPriority.WARNING,
                  ["IPAddress", self.environment.ipaddress])
-        self.log(LogPriority.INFO,
+        self.log(LogPriority.WARNING,
                  ["MACAddress", self.environment.macaddress])
-        self.log(LogPriority.INFO,
+        self.log(LogPriority.WARNING,
                  ["OS", str(self.environment.getosreportstring())])
-        self.log(LogPriority.INFO,
+        self.log(LogPriority.WARNING,
                  ["STONIXversion", self.environment.getstonixversion()])
-        self.log(LogPriority.INFO,
+        self.log(LogPriority.WARNING,
                  ['RunTime', self.environment.getruntime()])
-        self.log(LogPriority.INFO,
+        self.log(LogPriority.WARNING,
                  ['PropertyNumber',
                   str(self.environment.get_property_number())])
-        self.log(LogPriority.INFO,
+        self.log(LogPriority.WARNING,
                  ['SystemSerialNo',
                   self.environment.get_system_serial_number()])
-        self.log(LogPriority.INFO,
+        self.log(LogPriority.WARNING,
                  ['ChassisSerialNo',
                   self.environment.get_chassis_serial_number()])
-        self.log(LogPriority.INFO,
+        self.log(LogPriority.WARNING,
                  ['SystemManufacturer',
                   self.environment.get_system_manufacturer()])
-        self.log(LogPriority.INFO,
+        self.log(LogPriority.WARNING,
                  ['ChassisManufacturer',
                   self.environment.get_chassis_manfacturer()])
-        self.log(LogPriority.INFO,
+        self.log(LogPriority.WARNING,
                  ['UUID', self.environment.get_sys_uuid()])
-        self.log(LogPriority.INFO,
-                 ['PropertyNumber', self.environment.get_property_number()])
         self.log(LogPriority.DEBUG,
                  ['ScriptPath', self.environment.get_script_path()])
         self.log(LogPriority.DEBUG,
