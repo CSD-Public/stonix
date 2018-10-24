@@ -342,6 +342,9 @@ class Environment:
         self.collectpaths()
         self.determinefismacat()
         self.setsystemtype()
+        self.sethostname()
+        self.setipaddress()
+        self.setmacaddress()
 
     def discoveros(self):
         """
@@ -516,7 +519,7 @@ class Environment:
         elif uname == 'freebsd9':
             self.osfamily = 'freebsd'
 
-    def getmacaddress(self):
+    def setmacaddress(self):
         '''
         return the current system's mac address
         set the class variable self.macaddress
@@ -600,7 +603,7 @@ class Environment:
 
         return netutil
 
-    def getipaddress(self):
+    def setipaddress(self):
         '''
         return the current system's ip address
         set the class variable self.ipaddress
@@ -637,7 +640,7 @@ class Environment:
         self.ipaddress = ipaddr
         return ipaddr
 
-    def gethostname(self):
+    def sethostname(self):
         '''
         get the current system's host name
         (fully qualified domain name)
