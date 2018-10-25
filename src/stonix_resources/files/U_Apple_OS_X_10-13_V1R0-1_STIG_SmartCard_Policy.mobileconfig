@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1">
+  <dict>
+    <key>PayloadUUID</key>
+    <string>E23C6B4A-F8FB-41E5-8B2D-2E9B254BC04B</string>
+    <key>PayloadType</key>
+    <string>Configuration</string>
+    <key>PayloadOrganization</key>
+    <string>DISA</string>
+    <key>PayloadIdentifier</key>
+    <string>E23C6B4A-F8FB-41E5-8B2D-2E9B254BC04B</string>
+    <key>PayloadDisplayName</key>
+    <string>Apple macOS 10.13 STIG Settings - SmartCard_Policy</string>
+    <key>PayloadDescription</key>
+    <string/>
+    <key>PayloadVersion</key>
+    <integer>1</integer>
+    <key>PayloadEnabled</key>
+    <true/>
+    <key>PayloadRemovalDisallowed</key>
+    <true/>
+    <key>PayloadScope</key>
+    <string>System</string>
+    <key>PayloadContent</key>
+    <array>
+      <dict>
+        <key>PayloadUUID</key>
+        <string>C43C46B8-964D-41F1-B014-623DDE9C98B2</string>
+        <key>PayloadType</key>
+        <string>com.apple.security.smartcard</string>
+        <key>PayloadOrganization</key>
+        <string>DISA</string>
+        <key>PayloadIdentifier</key>
+        <string>C43C46B8-964D-41F1-B014-623DDE9C98B2</string>
+        <key>PayloadDisplayName</key>
+        <string>SmartCard</string>
+        <key>PayloadDescription</key>
+        <string/>
+        <key>PayloadVersion</key>
+        <integer>1</integer>
+        <key>PayloadEnabled</key>
+        <true/>
+        <key>UserPairing</key>
+        <true/>
+        <key>allowSmartCard</key>
+        <true/>
+        <key>checkCertificateTrust</key>
+        <true/>
+        <key>oneCardPerUser</key>
+        <false/>
+      </dict>
+    </array>
+  </dict>
+</plist>
