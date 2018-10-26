@@ -43,6 +43,9 @@ This class is responsible for securing the Apache webserver configuration.
                 to include the new functionality
 @change: 2018/10/12 Brandon R. Gonzales - Change subprocess command calls to
                 instead use CommandHelper.
+@change: 2018/10/26 Brandon R. Gonzales - Add condition to confirm that apache
+                webserver is installed before attempting to restart and
+                check that the configurations of the service are valid
 '''
 from __future__ import absolute_import
 
@@ -645,16 +648,19 @@ development but some existing applications may use insecure side effects.'''
                         self.phpcompliant = False
                         self.detailedresults += "\n"+ self.phpfile + \
                                                 ' should contain ' + entry
-            for path in self.binpaths:
-                if os.path.exists(path):
-                    configtest = [path, '-t',]
-                    self.ch.executeCommand(configtest)
-
-                    if self.ch.getReturnCode() != 0:
-                        # Check if httpd configurations are valid
-                        compliant = False
-                        self.detailedresults = "\nInvalid httpd configurations. This may require a manual fix: \n" + \
-                                                "\n".join(self.ch.getErrorOutput()) + "\n\n" + self.detailedresults
+            # Restarting apache webserver in order to confirm that the current
+            # configurations are valid
+            if self.ph.check("httpd") or self.ph.check("apache2"):
+                for path in self.binpaths:
+                    if os.path.exists(path):
+                        configtest = [path, '-t',]
+                        self.ch.executeCommand(configtest)
+                        if self.ch.getReturnCode() != 0:
+                            # Check if httpd configurations are valid
+                            compliant = False
+                            self.detailedresults = "\nInvalid apache webserver configurations. These " + \
+                                                   "configurations may require a manual fix: \n" + \
+                                                   "\n".join(self.ch.getErrorOutput()) + "\n\n" + self.detailedresults
             self.compliant = compliant
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
