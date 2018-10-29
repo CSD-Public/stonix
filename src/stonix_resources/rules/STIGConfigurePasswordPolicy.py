@@ -252,6 +252,18 @@ class STIGConfigurePasswordPolicy(Rule):
         self.rulesuccess = True
         self.detailedresults = ""
         profiles = "/usr/bin/profiles"
+        pinstall = ""
+        premove = ""
+
+        # if macOS X is Sierra or previous, then use old
+        # profiles command structure
+        if int(self.os_minor_ver) <= 12:
+            pinstall = profiles + " -I -F "
+            premove = profiles + " -R -F "
+        # else use newer profiles commands
+        else:
+            pinstall = profiles + " install -path="
+            premove = profiles + " remove -path="
 
         try:
 
@@ -259,7 +271,7 @@ class STIGConfigurePasswordPolicy(Rule):
             if self.pwci.getcurrvalue():
                 # install password policy profile
                 if not self.pwcompliant:
-                    installpwp = profiles + " install -path=" + self.pwprofile
+                    installpwp = pinstall + self.pwprofile
                     self.ch.executeCommand(installpwp)
                     retcode = self.ch.getReturnCode()
                     # if successfull
@@ -267,7 +279,7 @@ class STIGConfigurePasswordPolicy(Rule):
                         # configure undo action
                         self.iditerator += 1
                         myid = iterate(self.iditerator, self.rulenumber)
-                        undopwp = profiles + " remove -path=" + self.pwprofile
+                        undopwp = premove + self.pwprofile
                         event = {"eventtype": "comm",
                                  "command": undopwp}
                         self.statechglogger.recordchgevent(myid, event)
@@ -278,8 +290,6 @@ class STIGConfigurePasswordPolicy(Rule):
                         self.detailedresults += "\nFailed to install Password policy profile!"
                         errmsg = self.ch.getErrorString()
                         self.logger.log(LogPriority.DEBUG, errmsg)
-                    # sync new profile with users
-                    self.ch.executeCommand(profiles + " sync")
                 else:
                     self.detailedresults += "\nPassword policy profile was already installed. Nothing to do."
 
@@ -306,10 +316,11 @@ class STIGConfigurePasswordPolicy(Rule):
                         self.detailedresults += "\nFailed to install Privacy and Security policy profile!"
                         errmsg = self.ch.getErrorString()
                         self.logger.log(LogPriority.DEBUG, errmsg)
-                    # sync new profile with users
-                    self.ch.executeCommand(profiles + " sync")
                 else:
                     self.detailedresults += "\nPrivacy and Security policy profile was already installed. Nothing to do."
+
+                # sync new profiles with users
+                self.ch.executeCommand(profiles + " sync")
 
         except (KeyboardInterrupt, SystemExit):
             raise
