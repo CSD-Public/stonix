@@ -297,7 +297,7 @@ class STIGConfigurePasswordPolicy(Rule):
             if self.sci.getcurrvalue():
                 # install privacy and security profile
                 if not self.secompliant:
-                    installsecp = profiles + " install -path=" + self.secprofile
+                    installsecp = pinstall + self.secprofile
                     self.ch.executeCommand(installsecp)
                     retcode = self.ch.getReturnCode()
                     # if successfull
@@ -305,7 +305,7 @@ class STIGConfigurePasswordPolicy(Rule):
                         # configure undo action
                         self.iditerator += 1
                         myid = iterate(self.iditerator, self.rulenumber)
-                        undosecp = profiles + " remove -path=" + self.secprofile
+                        undosecp = premove + self.secprofile
                         event = {"eventtype": "comm",
                                  "command": undosecp}
                         self.statechglogger.recordchgevent(myid, event)
