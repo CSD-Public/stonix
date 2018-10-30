@@ -574,99 +574,109 @@ development but some existing applications may use insecure side effects.'''
         '''
         compliant = True
         self.detailedresults = ""
+
+        self.apacheinstalled = False
+        self.configsvalid = True
         try:
             self.apacheinstalled = self.ph.check("httpd") or self.ph.check("apache2")
 
             if self.apacheinstalled:
-                for filename in self.conffiles:
-                    if os.path.exists(filename):
-                        rhandle = open(filename, 'r')
-                    else:
-                        continue
-                    conf = rhandle.readlines()
-                    rhandle.close()
-                    self.logdispatch.log(LogPriority.DEBUG,
-                                         ['SecureApacheWebserver.report',
-                                          'Checking aglobals'])
-                    founddict1 = self.__checkvalues(self.aglobals, conf)
-                    for entry in self.aglobals:
-                        if founddict1[entry] == False:
-                            compliant = False
-                            self.httpcompliant = False
-                            self.detailedresults = self.detailedresults + \
-                                                   'Required directive ' + entry + \
-                                                   ' not found in Apache configuration. \n'
-
-                if self.securewebdirs.getcurrvalue():
-                    self.logdispatch.log(LogPriority.DEBUG,
-                                         'Checking web directory configurations')
-                    for conf in self.conffiles:
-                        if os.path.exists(conf):
-                            webdircompliant, webdirresults = self.__reportwebdirs(conf)
-                            if not webdircompliant:
-                                self.webdircompliant = False
-                                compliant = False
-                                self.detailedresults += "\n" + webdirresults
-
-                self.logdispatch.log(LogPriority.DEBUG, \
-                                     'Checking file/directory permissions')
-                permscompliant, permsresults = self.__reportpermissions()
-                if not permscompliant:
-                    self.permissionscompliant = False
-                    compliant = False
-                    self.detailedresults += "\n" + permsresults
-
-                if self.environ.getosfamily() == "linux":
-                    self.logdispatch.log(LogPriority.DEBUG, 'Checking installed security modules')
-                    secmodcompliant, results = self.__reportsecuritymod()
-                    if not secmodcompliant:
-                        self.secmodulescompliant = False
-                        compliant = False
-                        self.detailedresults += "\n" + results
-
-                self.logdispatch.log(LogPriority.DEBUG, 'Checking for non-essential modules')
-                modcompliant, results = self.__reportminimizemod()
-                if not modcompliant:
-                    self.modulescompliant = False
-                    compliant = False
-                    self.detailedresults += "\n" + results
-
-                self.logdispatch.log(LogPriority.DEBUG, 'Checking sslfiles')
-                for filename in self.sslfiles:
-                    rhandle3 = open(filename, 'r')
-                    conf3 = rhandle3.readlines()
-                    rhandle3.close()
-                    founddict3 = self.__checkvalues(self.sslitems, conf3)
-                    for entry in self.sslitems:
-                        if founddict3[entry] == False:
-                            compliant = False
-                            self.sslcompliant = False
-                            self.detailedresults += "\n" + filename + \
-                                                    ' should contain ' + entry
-                if os.path.exists(self.phpfile):
-                    self.logdispatch.log(LogPriority.DEBUG, 'Checking phpfile')
-                    rhandle4 = open(self.phpfile, 'r')
-                    conf = rhandle4.readlines()
-                    rhandle4.close()
-                    founddict4 = self.__checkvalues(self.phpitems, conf)
-                    for entry in self.phpitems:
-                        if founddict4[entry] == False:
-                            compliant = False
-                            self.phpcompliant = False
-                            self.detailedresults += "\n"+ self.phpfile + \
-                                                ' should contain ' + entry
                 # Restarting apache webserver to confirm that the current
                 # configurations are valid
                 for path in self.binpaths:
                     if os.path.exists(path):
-                        configtest = [path, '-t',]
+                        configtest = [path, '-t', ]
                         self.ch.executeCommand(configtest)
                         if self.ch.getReturnCode() != 0:
                             # Check if httpd configurations are valid
                             compliant = False
-                            self.detailedresults += "\nInvalid apache webserver configurations. These " + \
-                                                   "configurations may require a manual fix: \n" + \
-                                                   "\n".join(self.ch.getErrorOutput()) + "\n\n" + self.detailedresults
+                            self.configsvalid = False
+                            self.detailedresults += "\nApache web server is installed, " + \
+                                                    "however the configurations are " + \
+                                                    "invalid. This rule will not run " + \
+                                                    "until these configurations are " + \
+                                                    "fixed manually: \n" + \
+                                                    "\n".join(self.ch.getErrorOutput()) + \
+                                                    "\n\n" + self.detailedresults
+
+                if self.configsvalid:
+                    for filename in self.conffiles:
+                        if os.path.exists(filename):
+                            rhandle = open(filename, 'r')
+                        else:
+                            continue
+                        conf = rhandle.readlines()
+                        rhandle.close()
+                        self.logdispatch.log(LogPriority.DEBUG,
+                                             ['SecureApacheWebserver.report',
+                                              'Checking aglobals'])
+                        founddict1 = self.__checkvalues(self.aglobals, conf)
+                        for entry in self.aglobals:
+                            if founddict1[entry] == False:
+                                compliant = False
+                                self.httpcompliant = False
+                                self.detailedresults = self.detailedresults + \
+                                                       'Required directive ' + entry + \
+                                                       ' not found in Apache configuration. \n'
+
+                    if self.securewebdirs.getcurrvalue():
+                        self.logdispatch.log(LogPriority.DEBUG,
+                                             'Checking web directory configurations')
+                        for conf in self.conffiles:
+                            if os.path.exists(conf):
+                                webdircompliant, webdirresults = self.__reportwebdirs(conf)
+                                if not webdircompliant:
+                                    self.webdircompliant = False
+                                    compliant = False
+                                    self.detailedresults += "\n" + webdirresults
+
+                    self.logdispatch.log(LogPriority.DEBUG, \
+                                         'Checking file/directory permissions')
+                    permscompliant, permsresults = self.__reportpermissions()
+                    if not permscompliant:
+                        self.permissionscompliant = False
+                        compliant = False
+                        self.detailedresults += "\n" + permsresults
+
+                    if self.environ.getosfamily() == "linux":
+                        self.logdispatch.log(LogPriority.DEBUG, 'Checking installed security modules')
+                        secmodcompliant, results = self.__reportsecuritymod()
+                        if not secmodcompliant:
+                            self.secmodulescompliant = False
+                            compliant = False
+                            self.detailedresults += "\n" + results
+
+                    self.logdispatch.log(LogPriority.DEBUG, 'Checking for non-essential modules')
+                    modcompliant, results = self.__reportminimizemod()
+                    if not modcompliant:
+                        self.modulescompliant = False
+                        compliant = False
+                        self.detailedresults += "\n" + results
+
+                    self.logdispatch.log(LogPriority.DEBUG, 'Checking sslfiles')
+                    for filename in self.sslfiles:
+                        rhandle3 = open(filename, 'r')
+                        conf3 = rhandle3.readlines()
+                        rhandle3.close()
+                        founddict3 = self.__checkvalues(self.sslitems, conf3)
+                        for entry in self.sslitems:
+                            if founddict3[entry] == False:
+                                compliant = False
+                                self.sslcompliant = False
+                                self.detailedresults += "\n" + filename + \
+                                                        ' should contain ' + entry
+                    if os.path.exists(self.phpfile):
+                        self.logdispatch.log(LogPriority.DEBUG, 'Checking phpfile')
+                        rhandle4 = open(self.phpfile, 'r')
+                        conf = rhandle4.readlines()
+                        rhandle4.close()
+                        founddict4 = self.__checkvalues(self.phpitems, conf)
+                        for entry in self.phpitems:
+                            if founddict4[entry] == False:
+                                compliant = False
+                                self.phpcompliant = False
+                                self.detailedresults += "\n"+ self.phpfile + \
+                                                    ' should contain ' + entry
             else:
                 self.logdispatch.log(LogPriority.DEBUG,
                                      'Apache web server is not installed. Nothing to do.')
