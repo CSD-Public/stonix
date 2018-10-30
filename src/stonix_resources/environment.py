@@ -541,7 +541,7 @@ class Environment:
             print "environment::getmacaddr():WARNING: Could not detect any net utility type/location"
             return macaddr
         elif "nmcli" in netutil:
-            netcmd = netutil +  " -t device show"
+            netcmd = netutil +  " -t dev list"
         elif "ifconfig" in netutil:
             netcmd = netutil + " -a"
         elif "ip" in netutil:

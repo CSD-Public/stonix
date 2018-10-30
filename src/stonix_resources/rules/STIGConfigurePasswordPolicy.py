@@ -23,15 +23,19 @@
 '''
 Created on Aug 23, 2016
 
-@author: dwalker
-@change: 2017/03/30 dkennel Marked as FISMA High
+@author: Derek Walker
+@change: 2017/03/30 Dave Kennel Marked as FISMA High
 @change: 2017/07/17 ekkehard - make eligible for macOS High Sierra 10.13
 @change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
+@change: 2018/10/25 Breen Malmberg - added support for high sierra and mojave;
+        refactored rule
 '''
+
 from __future__ import absolute_import
+
 import traceback
-import os
-from re import search
+import re
+
 from ..rule import Rule
 from ..logdispatcher import LogPriority
 from ..stonixutilityfunctions import iterate
@@ -40,12 +44,14 @@ from ..CommandHelper import CommandHelper
 
 class STIGConfigurePasswordPolicy(Rule):
     '''
-    Deploy Passcode Policy configuration profiles for OS X Yosemite 10.10
+    Deploy Passcode Policy configuration profiles for macOS X
     '''
+
     def __init__(self, config, environ, logdispatch, statechglogger):
         '''
         Constructor
         '''
+
         Rule.__init__(self, config, environ, logdispatch, statechglogger)
 
         self.logger = logdispatch
@@ -71,157 +77,257 @@ class STIGConfigurePasswordPolicy(Rule):
         default = True
         self.sci = self.initCi(datatype, key, instructions, default)
         self.iditerator = 0
+        self.setvars()
+
+    def setvars(self):
+        '''
+        set class variables based on os version
+
+        @return:
+        '''
+
+        self.pwprofile = ""
+        self.secprofile = ""
         self.passidentifier = "mil.disa.STIG.passwordpolicy.alacarte"
         self.secidentifier = "mil.disa.STIG.Security_Privacy.alacarte"
-        if search("10\.10.*", self.environ.getosver()):
-#             self.pwprofile = "/Users/username/stonix/src/" + \
-#                 "stonix_resources/files/" + \
-#                 "U_Apple_OS_X_10-10_Workstation_V1R2_STIG_Passcode_Policy.mobileconfig"
-#             self.secprofile = "/Users/username/stonix/src/" + \
-#                 "stonix_resources/files/" + \
-#                 "U_Apple_OS_X_10-10_Workstation_V1R2_STIG_Security_privacy_Policy.mobileconfig"
-            self.pwprofile = "/Applications/stonix4mac.app/Contents/" + \
-                             "Resources/stonix.app/Contents/MacOS/" + \
-                             "stonix_resources/files/" + \
-                             "U_Apple_OS_X_10-10_Workstation_V1R2_STIG_Passcode_Policy.mobileconfig"
-            self.secprofile = "/Applications/stonix4mac.app/Contents/" + \
-                              "Resources/stonix.app/Contents/MacOS/" + \
-                              "stonix_resources/files/" + \
-                              "U_Apple_OS_X_10-10_Workstation_V1R2_STIG_Security_Privacy_Policy.mobileconfig"
-        elif search("10\.11\.*", self.environ.getosver()):
-#             self.pwprofile = "/Users/username/stonix/src/" + \
-#                 "stonix_resources/files/" + \
-#                 "U_Apple_OS_X_10-11_V1R1_STIG_Passcode_Policy.mobileconfig"
-#             self.secprofile = "/Users/username/stonix/src/" + \
-#                 "stonix_resources/files/" + \
-#                 "U_Apple_OS_X_10-11_V1R1_STIG_Security_and_Privacy_Policy.mobileconfig"
-            self.pwprofile = "/Applications/stonix4mac.app/Contents/" + \
-                         "Resources/stonix.app/Contents/MacOS/" + \
-                         "stonix_resources/files/" + \
-                         "U_Apple_OS_X_10-11_V1R1_STIG_Passcode_Policy.mobileconfig"
-            self.secprofile = "/Applications/stonix4mac.app/Contents/" + \
-                          "Resources/stonix.app/Contents/MacOS/" + \
-                          "stonix_resources/files/" + \
-                          "U_Apple_OS_X_10-11_V1R1_STIG_Security_and_Privacy_Policy.mobileconfig"
-        else:
-#             self.pwprofile = "/Users/username/stonix/src/" + \
-#                 "stonix_resources/files/" + \
-#                 "U_Apple_macOS_10-12_V1R1_STIG_Passcode_Policy.mobileconfig"
-#             self.secprofile = "/Users/username/stonix/src/" + \
-#                 "stonix_resources/files/" + \
-#                 "U_Apple_macOS_10-12_V1R1_STIG_Security_and_Privacy_Policy.mobileconfig"
-            self.pwprofile = "/Applications/stonix4mac.app/Contents/" + \
-                         "Resources/stonix.app/Contents/MacOS/" + \
-                         "stonix_resources/files/" + \
-                         "U_Apple_macOS_10-12_V1R1_STIG_Passcode_Policy.mobileconfig"
-            self.secprofile = "/Applications/stonix4mac.app/Contents/" + \
-                          "Resources/stonix.app/Contents/MacOS/" + \
-                          "stonix_resources/files/" + \
-                          "U_Apple_macOS_10-12_V1R1_STIG_Security_and_Privacy_Policy.mobileconfig"
-################################################################################################
+        self.os_major_ver = self.environ.getosmajorver()
+        self.os_minor_ver = self.environ.getosminorver()
+        baseconfigpath = "/Applications/stonix4mac.app/Contents/Resources/stonix.app/Contents/MacOS/stonix_resources/files/"
+        self.passprofiledict = {"10.10": baseconfigpath + "U_Apple_OS_X_10-10_Workstation_V1R2_STIG_Passcode_Policy.mobileconfig",
+                             "10.11": baseconfigpath + "U_Apple_OS_X_10-11_V1R1_STIG_Passcode_Policy.mobileconfig",
+                             "10.12": baseconfigpath + "U_Apple_macOS_10-12_V1R1_STIG_Passcode_Policy.mobileconfig",
+                             "10.13": baseconfigpath + "U_Apple_OS_X_10-13_V1R0-1_STIG_Passcode_Policy.mobileconfig",
+                             "10.14": ""}
+        self.secprofiledict = {"10.10": baseconfigpath + "U_Apple_OS_X_10-10_Workstation_V1R2_STIG_Security_Privacy_Policy.mobileconfig",
+                               "10.11": baseconfigpath + "U_Apple_OS_X_10-11_V1R1_STIG_Security_and_Privacy_Policy.mobileconfig",
+                               "10.12": baseconfigpath + "U_Apple_macOS_10-12_V1R1_STIG_Security_and_Privacy_Policy.mobileconfig",
+                               "10.13": baseconfigpath + "U_Apple_OS_X_10-13_V1R0-1_STIG_Security_and_Privacy_Policy.mobileconfig",
+                               "10.14": ""}
+
+        try:
+            self.pwprofile = self.passprofiledict[str(self.os_major_ver) + "." + str(self.os_minor_ver)]
+        except KeyError:
+            self.logger.log(LogPriority.DEBUG, "Could not locate appropriate password policy profile for macOS X version: " + str(self.os_major_ver) + "." + str(self.os_minor_ver))
+            self.pwprofile = ""
+
+        try:
+            self.secprofile = self.secprofiledict[str(self.os_major_ver) + "." + str(self.os_minor_ver)]
+        except KeyError:
+            self.logger.log(LogPriority.DEBUG, "Could not locate appropriate privacy and security policy profile for macOS X version: " + str(self.os_major_ver) + "." + str(self.os_minor_ver))
+            self.secprofile = ""
+
+        if self.pwprofile == "":
+            self.logger.log(LogPriority.DEBUG, "Could not locate the Password policy profile for this version of macOS X")
+            self.fall_back_profiles('pass', self.os_minor_ver)
+        if self.secprofile == "":
+            self.logger.log(LogPriority.DEBUG, "Could not locate the Privacy and Security policy profile for this version of macOS X")
+            self.fall_back_profiles('sec', self.os_minor_ver)
+
+    def fall_back_profiles(self, policy, minorver):
+        '''
+        if the current system is a new version of mac, for which we do
+        not yet have a profile (due to STIG guidance release lag), then
+        use the profiles for the previous version of macOS
+
+        @param policy: string; policy to roll back (can be 'pass' or 'sec')
+        @param minorver: string; minor revision number to iterate over
+
+        @author: Breen Malmberg
+        '''
+
+        if int(minorver) < 10:
+            self.logger.log(LogPriority.DEBUG, "Failed to find a suitable fall-back profile for this version of macOS X")
+            return
+        # if both are properly set, then exit recursion
+        if bool(self.pwprofile and self.secprofile):
+            return
+
+        # set previous version of macOS to use
+        rollbackminor = int(minorver) - 1
+        rollbackversion = str(self.os_major_ver) + "." + str(rollbackminor)
+
+        try:
+            if policy == 'pass':
+                self.logger.log(LogPriority.DEBUG, "Attempting to roll back to older Password policy profile, for macOS X version: " + rollbackversion)
+                self.pwprofile = self.passprofiledict[rollbackversion]
+                if self.pwprofile != "":
+                    self.logger.log(LogPriority.DEBUG, "Using Password policy profile for macOS X version: " + rollbackversion)
+                else:
+                    return self.fall_back_profiles('pass', rollbackminor)
+        except KeyError:
+            self.pwprofile = ""
+            return self.fall_back_profiles('pass', rollbackminor)
+
+        try:
+            if policy == 'sec':
+                self.logger.log(LogPriority.DEBUG, "Attempting to roll back to older Privacy and Security policy profile, for macOS X version: " + rollbackversion)
+                self.secprofile = self.secprofiledict[rollbackversion]
+                if self.secprofile != "":
+                    self.logger.log(LogPriority.DEBUG, "Using Privacy and Security policy profile for macOS X version: " + rollbackversion)
+                else:
+                    return self.fall_back_profiles('sec', rollbackminor)
+        except KeyError:
+            self.secprofile = ""
+            return self.fall_back_profiles('sec', rollbackminor)
 
     def report(self):
         '''
-        @since: 3/9/2016
-        @author: dwalker'''
+        report compliance to password policy and
+        security and privacy policy
+
+        @return: self.compliant
+        @rtype: bool
+
+        @author: Derek Walker
+        @change: Breen Malmberg - 10/25/2018 - added doc string; refactor
+        '''
+
+        self.compliant = True
+        self.pwcompliant = False
+        self.secompliant = False
+        self.detailedresults = ""
+        self.ch = CommandHelper(self.logger)
+        listprofiles = ["/usr/bin/profiles", "-P"]
+
+        if not self.pwprofile:
+            self.detailedresults += "\nCould not determine the appropriate password policy profile for your system."
+            self.compliant = False
+            self.formatDetailedResults("report", self.compliant, self.detailedresults)
+            self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+            return self.compliant
+        if not self.secprofile:
+            self.detailedresults += "\nCould not determine the appropriate privacy and security policy profile for your system."
+            self.compliant = False
+            self.formatDetailedResults("report", self.compliant, self.detailedresults)
+            self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+            return self.compliant
+
         try:
-            compliant1, compliant2, compliant = False, False, True
-            self.pwreport = True
-            self.secreport = True
-            self.detailedresults = ""
-            self.ch = CommandHelper(self.logger)
-            cmd = ["/usr/bin/profiles", "-P"]
-            if not self.ch.executeCommand(cmd):
-                compliant = False
-                self.detailedresults += "Unable to run profiles command\n"
+
+            if not self.ch.executeCommand(listprofiles):
+                self.compliant = False
+                self.detailedresults += "\nFailed to get list of profiles on this system"
             else:
                 output = self.ch.getOutput()
                 if output:
                     for line in output:
-                        if search("^There are no configuration profiles installed", line.strip()):
-                            compliant = False
+                        if re.search("^There are no configuration profiles installed", line.strip()):
+                            self.compliant = False
                             self.detailedresults += "There are no configuration profiles installed\n"
                             break
-                        if search("mil\.disa\.STIG\.passwordpolicy\.alacarte$", line.strip()):
-                            compliant1 = True
-                        if search("mil\.disa\.STIG\.Security_Privacy\.alacarte$", line.strip()):
-                            compliant2 = True
-            if not compliant1:
-                self.pwreport = False
-            if not compliant2:
-                self.secreport = False
-            if not self.pwreport or not self.secreport:
-                compliant = False
-            self.compliant = compliant
+                        if re.search("mil\.disa\.STIG\.passwordpolicy\.alacarte$", line.strip()):
+                            self.pwcompliant = True
+                        if re.search("mil\.disa\.STIG\.Security_Privacy\.alacarte$", line.strip()):
+                            self.secompliant = True
+
+            if not self.pwcompliant:
+                self.detailedresults += "\nPassword policy profile is not installed"
+                self.compliant = False
+            if not self.secompliant:
+                self.detailedresults += "\nPrivacy and Security policy profile is not installed"
+                self.compliant = False
+
         except (KeyboardInterrupt, SystemExit):
-            # User initiated exit
             raise
         except Exception:
             self.rulesuccess = False
             self.detailedresults += "\n" + traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("report", self.compliant,
-                                   self.detailedresults)
+        self.formatDetailedResults("report", self.compliant, self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
 
-###############################################################################
-
     def fix(self):
+        '''
+        install the password policy and privacy and security policy profiles
+
+        @return: self.rulesuccess
+        @rtype: bool
+
+        @author: Derek Walker
+        @change: Breen Malmberg - 10/25/2018 - added doc string; refactor
+        '''
+
+        self.iditerator = 0
+        self.rulesuccess = True
+        self.detailedresults = ""
+        profiles = "/usr/bin/profiles"
+        pinstall = ""
+        premove = ""
+
+        # if macOS X is Sierra or previous, then use old
+        # profiles command structure
+        if int(self.os_minor_ver) <= 12:
+            pinstall = profiles + " -I -F "
+            premove = profiles + " -R -F "
+        # else use newer profiles commands
+        else:
+            pinstall = profiles + " install -path="
+            premove = profiles + " remove -path="
+
         try:
-            if not self.pwci.getcurrvalue() and not self.sci.getcurrvalue():
-                return
-            if self.pwci.getcurrvalue() or self.sci.getcurrvalue():
-                success = True
-                self.detailedresults = ""
-                self.iditerator = 0
-                eventlist = self.statechglogger.findrulechanges(self.rulenumber)
-                for event in eventlist:
-                    self.statechglogger.deleteentry(event)
+
+            # if password policy ci enabled
             if self.pwci.getcurrvalue():
-                if not self.pwreport:
-                    if os.path.exists(self.pwprofile):
-                        cmd = ["/usr/bin/profiles", "-I", "-F", self.pwprofile]
-                        if not self.ch.executeCommand(cmd):
-                            success = False
-                        else:
-                            self.iditerator += 1
-                            myid = iterate(self.iditerator, self.rulenumber)
-                            cmd = ["/usr/bin/profiles", "-R", "-p",
-                                   self.passidentifier]
-                            event = {"eventtype": "comm",
-                                     "command": cmd}
-                            self.statechglogger.recordchgevent(myid, event)
+                # install password policy profile
+                if not self.pwcompliant:
+                    installpwp = pinstall + self.pwprofile
+                    self.ch.executeCommand(installpwp)
+                    retcode = self.ch.getReturnCode()
+                    # if successfull
+                    if retcode == 0:
+                        # configure undo action
+                        self.iditerator += 1
+                        myid = iterate(self.iditerator, self.rulenumber)
+                        undopwp = premove + self.pwprofile
+                        event = {"eventtype": "comm",
+                                 "command": undopwp}
+                        self.statechglogger.recordchgevent(myid, event)
+                        self.detailedresults += "\nSuccessfully installed Password policy profile in:\n" + str(self.pwprofile)
+                    # if not successful
                     else:
-                        success = False
-                        self.detailedresults += "You do not have the password " + \
-                            "profile needed to install\n"
+                        self.rulesuccess = False
+                        self.detailedresults += "\nFailed to install Password policy profile!"
+                        errmsg = self.ch.getErrorString()
+                        self.logger.log(LogPriority.DEBUG, errmsg)
+                else:
+                    self.detailedresults += "\nPassword policy profile was already installed. Nothing to do."
+
+            # if privacy and sec policy ci enabled
             if self.sci.getcurrvalue():
-                if not self.secreport:
-                    if os.path.exists(self.secprofile):
-                        cmd = ["/usr/bin/profiles", "-I", "-F", self.secprofile]
-                        if not self.ch.executeCommand(cmd):
-                            success = False
-                        else:
-                            self.iditerator += 1
-                            myid = iterate(self.iditerator, self.rulenumber)
-                            cmd = ["/usr/bin/profiles", "-R", "-p",
-                                   self.secidentifier]
-                            event = {"eventtype": "comm",
-                                     "command": cmd}
-                            self.statechglogger.recordchgevent(myid, event)
+                # install privacy and security profile
+                if not self.secompliant:
+                    installsecp = pinstall + self.secprofile
+                    self.ch.executeCommand(installsecp)
+                    retcode = self.ch.getReturnCode()
+                    # if successfull
+                    if retcode == 0:
+                        # configure undo action
+                        self.iditerator += 1
+                        myid = iterate(self.iditerator, self.rulenumber)
+                        undosecp = premove + self.secprofile
+                        event = {"eventtype": "comm",
+                                 "command": undosecp}
+                        self.statechglogger.recordchgevent(myid, event)
+                        self.detailedresults += "\nSuccessfully installed Privacy and Security policy profile in:\n" + str(self.secprofile)
+                    # if not successful
                     else:
-                        success = False
-                        self.detailedresults += "You do not have the password " + \
-                            "profile needed to install\n"
-            self.rulesuccess = success
+                        self.rulesuccess = False
+                        self.detailedresults += "\nFailed to install Privacy and Security policy profile!"
+                        errmsg = self.ch.getErrorString()
+                        self.logger.log(LogPriority.DEBUG, errmsg)
+                else:
+                    self.detailedresults += "\nPrivacy and Security policy profile was already installed. Nothing to do."
+
+                # sync new profiles with users
+                self.ch.executeCommand(profiles + " sync")
+
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception:
             self.rulesuccess = False
             self.detailedresults += "\n" + traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("fix", self.rulesuccess,
-                                   self.detailedresults)
+        self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.rulesuccess
