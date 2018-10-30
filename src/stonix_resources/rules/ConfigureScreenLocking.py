@@ -205,8 +205,10 @@ class ConfigureScreenLocking(RuleKVEditor):
             else:
                 self.ph = Pkghelper(self.logger, self.environ)
                 if not self.reportGnome():
+                    self.detailedresults += "reporgnome() failed\n"
                     compliant = False
                 if not self.reportKde():
+                    self.detailedresults += "reportkde() failed\n"
                     compliant = False
                 self.compliant = compliant
         except(KeyboardInterrupt, SystemExit):
