@@ -73,7 +73,7 @@ cd qt-everywhere-opensource-src-5.9.7
 ############
 # Make sure the "-sdk" parameter in the .configure command below is
 # specific to the operating system you are building on.
-./configure -opensource -confirm-license -release -no-rpath -prefix /opt/tools/lib/Qt5.9.4 -libdir /opt/tools/lib/Qt5.9.4/lib -nomake examples -nomake tests -bindir /opt/tools/lib/Qt5.9.4/bin -headerdir /opt/tools/lib/Qt5.9.4/includes -plugindir /opt/tools/lib/Qt5.9.4/plugins -importdir /opt/tools/lib/Qt5.9.4/qmlOne -qmldir /opt/tools/lib/Qt5.9.4/qmlTwo -datadir /opt/tools/lib/Qt5.9.4/data -docdir /opt/tools/lib/Qt5.9.4/doc -continue -silent -archdatadir /opt/tools/lib/Qt5.9.4/arch  -no-pkg-config -sdk macosx10.13 2>&1 | tee ../logs/qt-configure-out.txt
+./configure -opensource -confirm-license -release -no-rpath -prefix /opt/tools/lib/Qt5.9.7 -libdir /opt/tools/lib/Qt5.9.7/lib -nomake examples -nomake tests -bindir /opt/tools/lib/Qt5.9.7/bin -headerdir /opt/tools/lib/Qt5.9.7/includes -plugindir /opt/tools/lib/Qt5.9.7/plugins -importdir /opt/tools/lib/Qt5.9.7/qmlOne -qmldir /opt/tools/lib/Qt5.9.7/qmlTwo -datadir /opt/tools/lib/Qt5.9.7/data -docdir /opt/tools/lib/Qt5.9.7/doc -continue -silent -archdatadir /opt/tools/lib/Qt5.9.7/arch  -no-pkg-config -sdk macosx10.13 2>&1 | tee ../logs/qt-configure-out.txt
 make -j 4 2>&1 | tee ../logs/qt-make.log
 
 sudo make install 2>&1 | tee ../logs/qt-make-install.log

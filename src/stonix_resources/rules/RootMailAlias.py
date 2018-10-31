@@ -283,14 +283,6 @@ class RootMailAlias(Rule):
                 self.detailedresults += '\nFile ' + str(self.aliasfile) + ' does not have the correct ownership and permissions: ' + ','.join(str(p) for p in self.fileperms)
                 self.compliant = False
 
-            # check if system is apt-get based, and if it is, whether or not mailman package is installed
-            self.logger.log(LogPriority.DEBUG, "Checking if this is an apt-get based system...")
-            if not re.search("os x", self.myos) and self.ph.manager == "apt-get":
-                self.logger.log(LogPriority.DEBUG, "This is an apt-get based system. Checking if mailman is installed...")
-                if not self.ph.check("mailman"):
-                    self.detailedresults += '\nPackage: mailman is not installed'
-                    self.compliant = False
-
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception:
@@ -331,10 +323,6 @@ class RootMailAlias(Rule):
 
             # fix the file contents
             fixsuccess = self.fixFileContents(self.aliasfile)
-
-            # install mailman, if apt-get based
-            if not re.search("os x", self.myos) and self.ph.manager == "apt-get":
-                self.ph.install("mailman")
 
         except (KeyboardInterrupt, SystemExit):
             raise
@@ -398,7 +386,7 @@ class RootMailAlias(Rule):
             if replaced:
                 f = open(tmppath, 'w')
                 f.writelines(contentlines)
-                f.close
+                f.close()
                 self.iditerator += 1
                 myid = iterate(self.iditerator, self.rulenumber)
                 event = {"eventtype": "conf",
@@ -449,7 +437,7 @@ class RootMailAlias(Rule):
 
                 f = open(tmppath, 'w')
                 f.writelines(contentlines)
-                f.close
+                f.close()
                 self.iditerator += 1
                 myid = iterate(self.iditerator, self.rulenumber)
                 event = {"eventtype": "conf",

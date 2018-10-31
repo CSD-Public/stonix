@@ -43,6 +43,12 @@ This class is responsible for securing the Apache webserver configuration.
                 to include the new functionality
 @change: 2018/10/12 Brandon R. Gonzales - Change subprocess command calls to
                 instead use CommandHelper.
+@change: 2018/10/26 Brandon R. Gonzales - Add condition to confirm that apache
+                webserver is installed before attempting to restart and
+                check that the configurations of the service are valid
+@change: 2018/10/29 Brandon R. Gonzales - Rule no longer runs if apache web
+                server is not installed; Add disk_cache_module to the
+                nonessential modules list
 '''
 from __future__ import absolute_import
 
@@ -89,6 +95,7 @@ class SecureApacheWebserver(Rule):
         self.comment = re.compile('^#|^;')
         self.ch = CommandHelper(self.logdispatch)
         self.ph = Pkghelper(self.logdispatch, self.environ)
+        self.apacheinstalled = False
         conflocations = ['/etc/httpd/conf/httpd.conf',
                          '/etc/apache2/apache2.conf',
                          '/etc/httpd/httpd.conf',
@@ -171,6 +178,7 @@ class SecureApacheWebserver(Rule):
             'proxy_connect_module modules/mod_proxy_connect.so',
             'cache_module modules/mod_cache.so',
             'cache_disk_module modules/mod_cache_disk.so',
+            'disk_cache_module modules/mod_disk_cache.so',
             'cache_socache_module modules/mod_cache_socache.so',
             'ext_filter_module modules/mod_ext_filter.so',
             'expires_module modules/mod_expires.so',
@@ -564,97 +572,115 @@ development but some existing applications may use insecure side effects.'''
         @author: dkennel
         @return: bool - False if the method died during execution
         '''
-        self.logdispatch.log(LogPriority.DEBUG, 'Entering report method')
         compliant = True
         self.detailedresults = ""
+
+        self.apacheinstalled = False
+        self.configsvalid = True
         try:
-            for filename in self.conffiles:
-                if os.path.exists(filename):
-                    rhandle = open(filename, 'r')
-                else:
-                    continue
-                conf = rhandle.readlines()
-                rhandle.close()
-                self.logdispatch.log(LogPriority.DEBUG,
-                                     ['SecureApacheWebserver.report',
-                                      'Checking aglobals'])
-                founddict1 = self.__checkvalues(self.aglobals, conf)
-                for entry in self.aglobals:
-                    if founddict1[entry] == False:
-                        compliant = False
-                        self.httpcompliant = False
-                        self.detailedresults = self.detailedresults + \
-                                               'Required directive ' + entry + \
-                                               ' not found in Apache configuration. \n'
+            self.apacheinstalled = self.ph.check("httpd") or self.ph.check("apache2")
 
-            if self.securewebdirs.getcurrvalue():
-                self.logdispatch.log(LogPriority.DEBUG,
-                                     'Checking web directory configurations')
-                for conf in self.conffiles:
-                    if os.path.exists(conf):
-                        webdircompliant, webdirresults = self.__reportwebdirs(conf)
-                        if not webdircompliant:
-                            self.webdircompliant = False
+            if self.apacheinstalled:
+                # Restarting apache webserver to confirm that the current
+                # configurations are valid
+                for path in self.binpaths:
+                    if os.path.exists(path):
+                        configtest = [path, '-t', ]
+                        self.ch.executeCommand(configtest)
+                        if self.ch.getReturnCode() != 0:
+                            # Check if httpd configurations are valid
                             compliant = False
-                            self.detailedresults += "\n" + webdirresults
+                            self.configsvalid = False
+                            self.detailedresults += "\nApache web server is installed, " + \
+                                                    "however the configurations are " + \
+                                                    "invalid. This rule will not run " + \
+                                                    "until these configurations are " + \
+                                                    "fixed manually: \n" + \
+                                                    "\n".join(self.ch.getErrorOutput()) + \
+                                                    "\n\n" + self.detailedresults
 
-            self.logdispatch.log(LogPriority.DEBUG, \
-                                 'Checking file/directory permissions')
-            permscompliant, permsresults = self.__reportpermissions()
-            if not permscompliant:
-                self.permissionscompliant = False
-                compliant = False
-                self.detailedresults += "\n" + permsresults
+                if self.configsvalid:
+                    for filename in self.conffiles:
+                        if os.path.exists(filename):
+                            rhandle = open(filename, 'r')
+                        else:
+                            continue
+                        conf = rhandle.readlines()
+                        rhandle.close()
+                        self.logdispatch.log(LogPriority.DEBUG,
+                                             ['SecureApacheWebserver.report',
+                                              'Checking aglobals'])
+                        founddict1 = self.__checkvalues(self.aglobals, conf)
+                        for entry in self.aglobals:
+                            if founddict1[entry] == False:
+                                compliant = False
+                                self.httpcompliant = False
+                                self.detailedresults = self.detailedresults + \
+                                                       'Required directive ' + entry + \
+                                                       ' not found in Apache configuration. \n'
 
-            if self.environ.getosfamily() == "linux":
-                self.logdispatch.log(LogPriority.DEBUG, 'Checking installed security modules')
-                secmodcompliant, results = self.__reportsecuritymod()
-                if not secmodcompliant:
-                    self.secmodulescompliant = False
-                    compliant = False
-                    self.detailedresults += "\n" + results
+                    if self.securewebdirs.getcurrvalue():
+                        self.logdispatch.log(LogPriority.DEBUG,
+                                             'Checking web directory configurations')
+                        for conf in self.conffiles:
+                            if os.path.exists(conf):
+                                webdircompliant, webdirresults = self.__reportwebdirs(conf)
+                                if not webdircompliant:
+                                    self.webdircompliant = False
+                                    compliant = False
+                                    self.detailedresults += "\n" + webdirresults
 
-            self.logdispatch.log(LogPriority.DEBUG, 'Checking for non-essential modules')
-            modcompliant, results = self.__reportminimizemod()
-            if not modcompliant:
-                self.modulescompliant = False
-                compliant = False
-                self.detailedresults += "\n" + results
-
-            self.logdispatch.log(LogPriority.DEBUG, 'Checking sslfiles')
-            for filename in self.sslfiles:
-                rhandle3 = open(filename, 'r')
-                conf3 = rhandle3.readlines()
-                rhandle3.close()
-                founddict3 = self.__checkvalues(self.sslitems, conf3)
-                for entry in self.sslitems:
-                    if founddict3[entry] == False:
+                    self.logdispatch.log(LogPriority.DEBUG, \
+                                         'Checking file/directory permissions')
+                    permscompliant, permsresults = self.__reportpermissions()
+                    if not permscompliant:
+                        self.permissionscompliant = False
                         compliant = False
-                        self.sslcompliant = False
-                        self.detailedresults += "\n" + filename + \
-                                                ' should contain ' + entry
-            if os.path.exists(self.phpfile):
-                self.logdispatch.log(LogPriority.DEBUG, 'Checking phpfile')
-                rhandle4 = open(self.phpfile, 'r')
-                conf = rhandle4.readlines()
-                rhandle4.close()
-                founddict4 = self.__checkvalues(self.phpitems, conf)
-                for entry in self.phpitems:
-                    if founddict4[entry] == False:
-                        compliant = False
-                        self.phpcompliant = False
-                        self.detailedresults += "\n"+ self.phpfile + \
-                                                ' should contain ' + entry
-            for path in self.binpaths:
-                if os.path.exists(path):
-                    configtest = [path, '-t',]
-                    self.ch.executeCommand(configtest)
+                        self.detailedresults += "\n" + permsresults
 
-                    if self.ch.getReturnCode() != 0:
-                        # Check if httpd configurations are valid
+                    if self.environ.getosfamily() == "linux":
+                        self.logdispatch.log(LogPriority.DEBUG, 'Checking installed security modules')
+                        secmodcompliant, results = self.__reportsecuritymod()
+                        if not secmodcompliant:
+                            self.secmodulescompliant = False
+                            compliant = False
+                            self.detailedresults += "\n" + results
+
+                    self.logdispatch.log(LogPriority.DEBUG, 'Checking for non-essential modules')
+                    modcompliant, results = self.__reportminimizemod()
+                    if not modcompliant:
+                        self.modulescompliant = False
                         compliant = False
-                        self.detailedresults = "\nInvalid httpd configurations. This may require a manual fix: \n" + \
-                                                "\n".join(self.ch.getErrorOutput()) + "\n\n" + self.detailedresults
+                        self.detailedresults += "\n" + results
+
+                    self.logdispatch.log(LogPriority.DEBUG, 'Checking sslfiles')
+                    for filename in self.sslfiles:
+                        rhandle3 = open(filename, 'r')
+                        conf3 = rhandle3.readlines()
+                        rhandle3.close()
+                        founddict3 = self.__checkvalues(self.sslitems, conf3)
+                        for entry in self.sslitems:
+                            if founddict3[entry] == False:
+                                compliant = False
+                                self.sslcompliant = False
+                                self.detailedresults += "\n" + filename + \
+                                                        ' should contain ' + entry
+                    if os.path.exists(self.phpfile):
+                        self.logdispatch.log(LogPriority.DEBUG, 'Checking phpfile')
+                        rhandle4 = open(self.phpfile, 'r')
+                        conf = rhandle4.readlines()
+                        rhandle4.close()
+                        founddict4 = self.__checkvalues(self.phpitems, conf)
+                        for entry in self.phpitems:
+                            if founddict4[entry] == False:
+                                compliant = False
+                                self.phpcompliant = False
+                                self.detailedresults += "\n"+ self.phpfile + \
+                                                    ' should contain ' + entry
+            else:
+                self.logdispatch.log(LogPriority.DEBUG,
+                                     'Apache web server is not installed. Nothing to do.')
+                self.detailedresults += "Apache web server is not installed. Nothing to do."
             self.compliant = compliant
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
@@ -956,11 +982,9 @@ development but some existing applications may use insecure side effects.'''
                                   'myfile': confpath}
                         self.statechglogger.recordchgevent(eid2, event2)
         else:
-            # Note to devs. This function calls the configtest function of the
-            # apache server to check the config file for correctness. Because of
-            # this we copy the config, then work on the live file. Then we do a
-            # series of file swaps to put things in the right spots for the call
-            # to the statechglogger.recordfilechange() function, before putting
+            # Note to devs. We do a series of file swaps to put things in the
+            # right spots for the call  to the
+            # statechglogger.recordfilechange() function, before putting
             # things back where they're supposed to go. The gymnastics has to do
             # with the fact that the recordfilechange() and revertfilechange()
             # use the patch utility so file names are important.
@@ -986,65 +1010,47 @@ development but some existing applications may use insecure side effects.'''
             whandle = open(conffile, 'w')
             whandle.write(localconf)
             whandle.close()
-            configtest = ''
-            for path in self.binpaths:
-                if os.path.exists(path):
-                    configtest = [path, '-t',]
-                    self.ch.executeCommand(configtest)
 
-                    if self.ch.getReturnCode() != 0:
-                        # Configuration failed selftest rollback the change!
-                        changecomplete = False
-                        localconf = undoconf
-                        whandle = open(conffile, 'w')
-                        whandle.write(undoconf)
-                        whandle.close()
-                        os.remove(tempfile)
-                        self.logdispatch.log(LogPriority.INFO,
-                                             ['SecureApacheWebserver.__fixapachemodules',
-                                              'Conf failed test! Module changes undone.'])
-            if changecomplete:
-                # We actually wrote our changes into the main config file so we
-                # need to flip flop the temp and primary config files
-                statdata = os.stat(conffile)
-                self.logdispatch.log(LogPriority.DEBUG,
-                                     ['SecureApacheWebserver.__fixapachemodules',
-                                      'Moving : ' + str(conffile) + ' to ' + str(tempfile2)])
-                shutil.move(conffile, tempfile2)
-                self.logdispatch.log(LogPriority.DEBUG,
-                                     ['SecureApacheWebserver.__fixapachemodules',
-                                      'Moving : ' + str(tempfile) + ' to ' + str(conffile)])
-                shutil.move(tempfile, conffile)
-                mytype = 'conf'
-                mystart = 'notconfigured'
-                myend = 'configured'
-                myid = eventid1
-                event = {'eventtype': mytype,
-                         'startstate': mystart,
-                         'endstate': myend,
-                         'myfile': conffile}
-                owner = statdata.st_uid
-                group = statdata.st_gid
-                mode = stat.S_IMODE(statdata.st_mode)
-                self.statechglogger.recordchgevent(myid, event)
-                self.statechglogger.recordfilechange(conffile, tempfile2, myid)
-                self.logdispatch.log(LogPriority.DEBUG,
-                                     ['SecureApacheWebserver.__fixapachemodules',
-                                      'Renaming : ' + str(tempfile2) + ' to ' + str(conffile)])
-                os.rename(tempfile2, conffile)
-                if owner != 0 or group != 0 or mode != 416:
-                    mytype2 = 'perm'
-                    mystart2 = [owner, group, mode]
-                    myend2 = [0, 0, 416]
-                    myid2 = eventid2
-                    event2 = {'eventtype': mytype2,
-                              'startstate': mystart2,
-                              'endstate': myend2,
-                              'myfile': conffile}
-                    self.statechglogger.recordchgevent(myid2, event2)
-                os.chown(conffile, 0, 0)
-                os.chmod(conffile, 416)
-                resetsecon(conffile)
+            # Swap the temp and primary config files
+            statdata = os.stat(conffile)
+            self.logdispatch.log(LogPriority.DEBUG,
+                                 ['SecureApacheWebserver.__fixapachemodules',
+                                  'Moving : ' + str(conffile) + ' to ' + str(tempfile2)])
+            shutil.move(conffile, tempfile2)
+            self.logdispatch.log(LogPriority.DEBUG,
+                                 ['SecureApacheWebserver.__fixapachemodules',
+                                  'Moving : ' + str(tempfile) + ' to ' + str(conffile)])
+            shutil.move(tempfile, conffile)
+            mytype = 'conf'
+            mystart = 'notconfigured'
+            myend = 'configured'
+            myid = eventid1
+            event = {'eventtype': mytype,
+                     'startstate': mystart,
+                     'endstate': myend,
+                     'myfile': conffile}
+            owner = statdata.st_uid
+            group = statdata.st_gid
+            mode = stat.S_IMODE(statdata.st_mode)
+            self.statechglogger.recordchgevent(myid, event)
+            self.statechglogger.recordfilechange(conffile, tempfile2, myid)
+            self.logdispatch.log(LogPriority.DEBUG,
+                                 ['SecureApacheWebserver.__fixapachemodules',
+                                  'Renaming : ' + str(tempfile2) + ' to ' + str(conffile)])
+            os.rename(tempfile2, conffile)
+            if owner != 0 or group != 0 or mode != 416:
+                mytype2 = 'perm'
+                mystart2 = [owner, group, mode]
+                myend2 = [0, 0, 416]
+                myid2 = eventid2
+                event2 = {'eventtype': mytype2,
+                          'startstate': mystart2,
+                          'endstate': myend2,
+                          'myfile': conffile}
+                self.statechglogger.recordchgevent(myid2, event2)
+            os.chown(conffile, 0, 0)
+            os.chmod(conffile, 416)
+            resetsecon(conffile)
 
     def __fixsslconfig(self, sslfile, eventid1, eventid2):
         '''SecureApacheWebserver.__fixsslconfig() private method to configure
