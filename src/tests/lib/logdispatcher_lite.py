@@ -274,7 +274,7 @@ class LogDispatcher ():
             detail = str(msg_data[1])
             entry.Detail = detail.strip()
         else:
-            entry.Detail = msg_data.strip()
+            entry.Detail = str(msg_data.strip())
 
         return entry
 
