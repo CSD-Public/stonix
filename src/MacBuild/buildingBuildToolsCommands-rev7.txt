@@ -1,6 +1,10 @@
 #####
 # FOR REFERENCE ONLY.
-
+#  Document verified on 10.13.
+#  Hardware Requirements:
+#  16Gb ram
+#  60Gb HD
+#  2 processors (4 recommended)
 
 #####
 # Download and install Xcode from the macOS App store
@@ -132,5 +136,16 @@ cd /opt/tools/PyInstaller-3.2.1
 chmod +x ./setup.py
 
 sudo -E ./setup.py install --root=/opt/tools
+
+#####
+# Get the usbstick from Brandon or Roy that has the signing keychain, and the password to the keychain.
+
+#####
+# Go to the following directory in the source code:
+cd <parent-dirs>/stonix/src/Macbuild
+
+#####
+# Run the build command:
+time sudo ./build.py -d -s "Developer ID" -k /Volumes/<usbstick>/stonix.keychain-db 2>&1 | tee build-output_`/bin/date "+%Y-%m-%d_%H-%M-%S"`.log
 
 

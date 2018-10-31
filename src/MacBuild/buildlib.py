@@ -46,7 +46,7 @@ from subprocess import Popen, STDOUT, PIPE
 #####
 # Hard coded to pre-defined build tool site for
 # buildingBuildToolsCommands-rev5.txt
-site.addsitedir('/opt/tools/lib/python2.7/site-packages')
+site.addsitedir('/opt/tools/Library/Python/2.7/site-packages')
 from PyInstaller.building import makespec, build_main
 
 sys.path.append('./ramdisk')
