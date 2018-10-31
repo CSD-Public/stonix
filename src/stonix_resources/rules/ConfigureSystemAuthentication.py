@@ -221,6 +221,9 @@ class ConfigureSystemAuthentication(Rule):
         elif self.ph.manager == "zypper":
             self.pampassfile = "/etc/pam.d/common-password-pc"
             self.pamauthfile = "/etc/pam.d/common-auth-pc"
+        elif self.ph.manager == "dnf":
+            self.pampassfile = "/etc/pam.d/password-auth"
+            self.pamauthfile = "/etc/pam.d/system-auth"
         else:
             self.pampassfile = "/etc/pam.d/password-auth-ac"
             self.pamauthfile = "/etc/pam.d/system-auth-ac"
