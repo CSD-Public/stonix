@@ -49,6 +49,8 @@ This class is responsible for securing the Apache webserver configuration.
 @change: 2018/10/29 Brandon R. Gonzales - Rule no longer runs if apache web
                 server is not installed; Add disk_cache_module to the
                 nonessential modules list
+@change: 2018/11/1 Brandon R. Gonzales - Add conditions to prevent using
+                package helper when running on a darwin based system
 '''
 from __future__ import absolute_import
 
@@ -488,6 +490,9 @@ development but some existing applications may use insecure side effects.'''
         results = ''
         compliant = True
 
+        if self.environ.getosfamily() == "darwin":
+            return compliant, results
+
         # Check if httpd is installed (only available on rpm based systems)
         if self.ph.check("httpd"):
             for pkg in self.securitymods:
@@ -578,7 +583,10 @@ development but some existing applications may use insecure side effects.'''
         self.apacheinstalled = False
         self.configsvalid = True
         try:
-            self.apacheinstalled = self.ph.check("httpd") or self.ph.check("apache2")
+            if self.environ.getosfamily() == "darwin":
+                self.apacheinstalled = True
+            else:
+                self.apacheinstalled = self.ph.check("httpd") or self.ph.check("apache2")
 
             if self.apacheinstalled:
                 # Restarting apache webserver to confirm that the current
@@ -894,6 +902,9 @@ development but some existing applications may use insecure side effects.'''
         @author Brandon R. Gonzales
         '''
         success = True
+
+        if self.environ.getosfamily() == "darwin":
+            return success
 
         for pkg in self.securitymods:
             if self.ph.checkAvailable(pkg):
