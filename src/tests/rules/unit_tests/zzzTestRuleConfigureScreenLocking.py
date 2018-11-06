@@ -277,7 +277,9 @@ directory, invalid form of /etc/passwd"
             setcmds2 = "/desktop/gnome/session/idle_delay 5"
             for cmd in setcmds1:
                 cmd2 = gconf + " --type bool --set " + cmd
+                self.ch.executeCommand(cmd2)
             cmd2 = gconf + " --type int --set " + setcmds2
+            self.ch.executeCommand(cmd2)
         if os.path.exists(gsettings):
             setcmds = [" set org.gnome.desktop.screensaver " +
                        "idle-activation-enabled false",
@@ -287,8 +289,8 @@ directory, invalid form of /etc/passwd"
                        " set org.gnome.desktop.session idle-delay 20"]
             for cmd in setcmds:
                 cmd2 = gsettings + cmd
-                self.cmdhelper.executeCommand(cmd2)
-                if self.cmdhelper.getReturnCode() != 0:
+                self.ch.executeCommand(cmd2)
+                if self.ch.getReturnCode() != 0:
                     success = False
                     info += "Unable to set value for " + cmd + \
                         "using gsettings\n"
