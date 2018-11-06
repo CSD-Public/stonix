@@ -275,7 +275,7 @@ directory, invalid form of /etc/passwd"
             setcmds1 = ["/apps/gnome-screensaver/idle_activation_enabled false",
                        "/apps/gnome-screensaver/lock_enabled false"]
             setcmds2 = "/desktop/gnome/session/idle_delay 5"
-            for cmd in setcmds:
+            for cmd in setcmds1:
                 cmd2 = gconf + " --type bool --set " + cmd
             cmd2 = gconf + " --type int --set " + setcmds2
         if os.path.exists(gsettings):
