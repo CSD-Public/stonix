@@ -34,6 +34,7 @@ import unittest
 import sys
 
 sys.path.append("../../../..")
+from glob import glob
 from src.tests.lib.RuleTestTemplate import RuleTest
 from src.stonix_resources.CommandHelper import CommandHelper
 from src.tests.lib.logdispatcher_mock import LogPriority
