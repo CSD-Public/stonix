@@ -33,13 +33,19 @@ from __future__ import absolute_import
 import unittest
 import sys
 import re
+import os
+import traceback
 
 sys.path.append("../../../..")
 from glob import glob
+from pwd import getpwnam
 from src.tests.lib.RuleTestTemplate import RuleTest
 from src.stonix_resources.CommandHelper import CommandHelper
 from src.tests.lib.logdispatcher_mock import LogPriority
 from src.stonix_resources.rules.ConfigureScreenLocking import ConfigureScreenLocking
+from src.stonix_resources.KVEditorStonix import KVEditorStonix
+from ..stonixutilityfunctions import iterate, checkPerms, setPerms, createFile
+from ..stonixutilityfunctions import readFile, resetsecon, getOctalPerms, writeFile
 from subprocess import PIPE, Popen
 
 
