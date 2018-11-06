@@ -21,7 +21,6 @@
 # See the GNU General Public License for more details.                        #
 #                                                                             #
 ###############################################################################
-from CodeWarrior.Standard_Suite import line
 '''
 This is a Unit Test for Rule ConfigureAppleSoftwareUpdate
 
