@@ -501,7 +501,6 @@ class ConfigureScreenLocking(RuleKVEditor):
                             if not re.search("^/home/", homebase):
                                 continue
                             kfile = homebase + "/.kde/share/config/kscreensaverrc"
-#                             kfile = homebase + '/kdesktoprc'
                             if not os.path.exists(kfile):
                                 self.detailedresults += "Could " + \
                                     "not find " + kfile + "\n"
@@ -571,53 +570,33 @@ directory, invalid form of /etc/passwd"
                             homebase = temp[5]
                             if not re.search("^/home/", homebase):
                                 continue
-                            homebase += '/.kde'
-                            if not os.path.exists(homebase):
-                                self.detailedresults += "Could not find " + \
-                                    homebase + "\n"
+                            kfile = homebase + "/.kde/share/config/kscreensaverrc"
+                            if not os.path.exists(kfile):
+                                self.detailedresults += \
+                                    "Could not find " + kfile + \
+                                    "\n"
                                 compliant = False
                             else:
-                                homebase += '/share'
-                                if not os.path.exists(homebase):
-                                    self.detailedresults += "Could not find " + \
-                                        homebase + "\n"
+                                uid = getpwnam(temp[0])[2]
+                                gid = getpwnam(temp[0])[3]
+                                if not checkPerms(kfile,
+                                                  [uid, gid,
+                                                   0o600],
+                                                  self.logger):
+                                    self.detailedresults += \
+                                        "Incorrect permissions " + \
+                                        "for file " + kfile + \
+                                        ": Expected 600, " + \
+                                        "found " + \
+                                        getOctalPerms(kfile) + \
+                                        "\n"
                                     compliant = False
-                                else:
-                                    homebase += '/config'
-                                    if not os.path.exists(homebase):
-                                        self.detailedresults += "Could not " + \
-                                            "find " + homebase + "\n"
-                                        compliant = False
-                                    else:
-                                        kfile = homebase + '/kdesktoprc'
-                                        if not os.path.exists(kfile):
-                                            kfile = homebase + '/kscreensaverrc'
-                                            if not os.path.exists(kfile):
-                                                self.detailedresults += \
-                                                    "Could not find " + kfile + \
-                                                    "\n"
-                                                compliant = False
-                                            else:
-                                                uid = getpwnam(temp[0])[2]
-                                                gid = getpwnam(temp[0])[3]
-                                                if not checkPerms(kfile,
-                                                                  [uid, gid,
-                                                                   0o600],
-                                                                  self.logger):
-                                                    self.detailedresults += \
-                                                        "Incorrect permissions " + \
-                                                        "for file " + kfile + \
-                                                        ": Expected 600, " + \
-                                                        "found " + \
-                                                        getOctalPerms(kfile) + \
-                                                        "\n"
-                                                    compliant = False
-                                                if not self.searchFile(kfile):
-                                                    self.detailedresults += \
-                                                        "Did not find " + \
-                                                        "required contents " + \
-                                                        "in " + kfile + "\n"
-                                                    compliant = False
+                                if not self.searchFile(kfile):
+                                    self.detailedresults += \
+                                        "Did not find " + \
+                                        "required contents " + \
+                                        "in " + kfile + "\n"
+                                    compliant = False
                             if not compliant:
                                 self.kdefix.append(temp[0])
                             break
@@ -871,7 +850,6 @@ for this portion of the rule\n"
             homebase += user + "/.kde/share/config"
             if not os.path.exists(homebase):
                 os.makedirs(homebase)
-#             kfile = homebase + "/kdesktoprc"
             kfile = homebase + "/kscreensaverrc"
             if not self.correctFile(kfile, user, homebase):
                 success = False
