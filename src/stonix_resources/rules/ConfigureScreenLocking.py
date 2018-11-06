@@ -832,9 +832,14 @@ for this portion of the rule\n"
                                                          "closedeq")
                     self.kveditordconf.report()
                 if self.kveditordconf.fixables:
-                    self.kveditordconf.fix()
-                    self.kveditordconf.commit()
-            
+                    if not self.kveditordconf.fix():
+                        success = False
+                        self.detailedresults += "Unable to put correct settings inside " + \
+                            self.dconfsettings + "\n"
+                    elif self.kveditordconf.commit():
+                        success = False
+                        self.detailedresults += "Unable to put correct settings inside " + \
+                            self.dconfsettings + "\n"
                 #run dconf update command to make dconf changes take effect
                 if os.path.exists("/bin/dconf"):
                     cmd = "/bin/dconf update"
