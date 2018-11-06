@@ -44,8 +44,8 @@ from src.stonix_resources.CommandHelper import CommandHelper
 from src.tests.lib.logdispatcher_mock import LogPriority
 from src.stonix_resources.rules.ConfigureScreenLocking import ConfigureScreenLocking
 from src.stonix_resources.KVEditorStonix import KVEditorStonix
-from ..stonixutilityfunctions import iterate, checkPerms, setPerms, createFile
-from ..stonixutilityfunctions import readFile, resetsecon, getOctalPerms, writeFile
+from src.stonix_resources.stonixutilityfunctions import iterate, checkPerms, setPerms, createFile
+from src.stonix_resources.stonixutilityfunctions import readFile, resetsecon, getOctalPerms, writeFile
 from subprocess import PIPE, Popen
 
 
