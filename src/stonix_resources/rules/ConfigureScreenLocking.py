@@ -391,74 +391,78 @@ class ConfigureScreenLocking(RuleKVEditor):
                     self.detailedresults += "There is no value set for:" + \
                         cmd2 + "\n"
                     compliant = False
-
-            #instantiate a kveditor to ensure self.dconfsettings file
-            #contains correct contents
-            self.dconfsettings = "/etc/dconf/db/local.d/local.key"
-            self.dconfdata = {"org/gnome/desktop/screensaver": {
-                                            "idle-activation-enabled": "true",
-                                            "lock-enabled": "true",
-                                            "lock-delay": "0",
-                                            "picture-opacity": "100",
-                                            "picture-uri": "\'\'"},
-                              "org/gnome/desktop/session": {
-                                            "idle-delay": "uint32 900"}}
-            self.kveditordconf = KVEditorStonix( self.statechglogger,
-                                                 self.logger,
-                                                 "tagconf",
-                                                 self.dconfsettings,
-                                                 self.dconfsettings + ".tmp",
-                                                 self.dconfdata, "present",
-                                                 "closedeq")
-            if not self.kveditordconf.report():
-                self.detailedresults += self.dconfsettings + \
-                    " doesn't cotain correct contents\n"
-                compliant = False
-
-            #check self.dconfuserprofile file to ensure existence
-            #and/or correct contents
-            self.dconfuserprofile = "/etc/dconf/profile/user"
-            self.userprofilecontent = "user-db:user\n" + \
-                                      "system-db:local"
-            if os.path.exists(self.dconfuserprofile):
-                contents = readFile(self.dconfuserprofile, self.logger)
-                contentstring = ""
-                for line in contents:
-                    contentstring += line
-                if not re.search(self.userprofilecontent, contentstring):
+            if self.environ.geteuid() == 0:
+                #instantiate a kveditor to ensure self.dconfsettings file
+                #contains correct contents
+                self.dconfsettings = "/etc/dconf/db/local.d/local.key"
+                if os.path.exists(self.dconfsettings):
+                    self.dconfdata = {"org/gnome/desktop/screensaver": {
+                                                    "idle-activation-enabled": "true",
+                                                    "lock-enabled": "true",
+                                                    "lock-delay": "0",
+                                                    "picture-opacity": "100",
+                                                    "picture-uri": "\'\'"},
+                                      "org/gnome/desktop/session": {
+                                                    "idle-delay": "uint32 900"}}
+                    self.kveditordconf = KVEditorStonix( self.statechglogger,
+                                                         self.logger,
+                                                         "tagconf",
+                                                         self.dconfsettings,
+                                                         self.dconfsettings + ".tmp",
+                                                         self.dconfdata, "present",
+                                                         "closedeq")
+                    if not self.kveditordconf.report():
+                        self.detailedresults += self.dconfsettings + \
+                            " doesn't cotain correct contents\n"
+                        compliant = False
+                else:
                     compliant = False
-                    self.detailedresults += "Correct contents weren't " + \
-                        "found in " + self.dconfuserprofile + "\n"
-            else:
-                compliant = False
-                self.detailedresults += self.dconfuserprofile + " not " + \
-                    "found\n"
-            
-            #the following file locks the settings we earlier set with the 
-            #gsettings command so that they don't default upon logout and/or
-            #reboot.  Check the file for the correct contents
-            self.dconfsettingslock = "/etc/dconf/db/local.d/locks/stonix-settings.conf"
-            self.dconflockdata = ["/org/gnome/desktop/session/idle-delay",
-                       "/org/gnome/desktop/session/idle-activation-enabled",
-                       "/org/gnome/desktop/screensaver/lock-enabled",
-                       "/org/gnome/desktop/screensaver/lock-delay",
-                       "/org/gnome/desktop/screensaver/picture-uri"]
-            if os.path.exists(self.dconfsettingslock):
-                contents = readFile(self.dconfsettingslock, self.logger)
-                for line in contents:
-                    if line.strip() in self.dconflockdata:
-                        self.dconflockdata.remove(line.strip())
-                if self.dconflockdata:
-                    output = "The following settings should be locked " + \
-                        "from changes by the user but aren't:\n"
+                    self.detailedresults += self.dconfsettings + " not found\n"
+    
+                #check self.dconfuserprofile file to ensure existence
+                #and/or correct contents
+                self.dconfuserprofile = "/etc/dconf/profile/user"
+                self.userprofilecontent = "user-db:user\n" + \
+                                          "system-db:local"
+                if os.path.exists(self.dconfuserprofile):
+                    contents = readFile(self.dconfuserprofile, self.logger)
+                    contentstring = ""
+                    for line in contents:
+                        contentstring += line
+                    if not re.search(self.userprofilecontent, contentstring):
+                        compliant = False
+                        self.detailedresults += "Correct contents weren't " + \
+                            "found in " + self.dconfuserprofile + "\n"
+                else:
                     compliant = False
-                    for item in self.dconflockdata:
-                        output += item + "\n"
-                    self.detailedresults += output
-            else:
-                compliant = False
-                self.detailedresults += self.dconfsettingslock + " not " + \
-                    "found\n"
+                    self.detailedresults += self.dconfuserprofile + " not " + \
+                        "found\n"
+                
+                #the following file locks the settings we earlier set with the 
+                #gsettings command so that they don't default upon logout and/or
+                #reboot.  Check the file for the correct contents
+                self.dconfsettingslock = "/etc/dconf/db/local.d/locks/stonix-settings.conf"
+                self.dconflockdata = ["/org/gnome/desktop/session/idle-delay",
+                           "/org/gnome/desktop/session/idle-activation-enabled",
+                           "/org/gnome/desktop/screensaver/lock-enabled",
+                           "/org/gnome/desktop/screensaver/lock-delay",
+                           "/org/gnome/desktop/screensaver/picture-uri"]
+                if os.path.exists(self.dconfsettingslock):
+                    contents = readFile(self.dconfsettingslock, self.logger)
+                    for line in contents:
+                        if line.strip() in self.dconflockdata:
+                            self.dconflockdata.remove(line.strip())
+                    if self.dconflockdata:
+                        output = "The following settings should be locked " + \
+                            "from changes by the user but aren't:\n"
+                        compliant = False
+                        for item in self.dconflockdata:
+                            output += item + "\n"
+                        self.detailedresults += output
+                else:
+                    compliant = False
+                    self.detailedresults += self.dconfsettingslock + " not " + \
+                        "found\n"
         return compliant
 
 ###############################################################################
@@ -754,69 +758,90 @@ for this portion of the rule\n"
             # Set gsettings with dconf
             # Unlock dconf settings
             # Create dconf settings lock file
-            if not os.path.exists(self.dconfsettingslock):
-                if not createFile(self.dconfsettingslock, self.logger):
-                    self.rulesuccess = False
-                    self.detailedresults += "Unabled to create stonix-settings file\n"
-                    self.formatDetailedResults("fix", self.rulesuccess,
-                               self.detailedresults)
-                    return False
-            
-            #write correct contents to dconf lock file
-            if os.path.exists(self.dconfsettingslock):
-                # Write to the lock file
-                if self.dconflockdata:
-                    contents = ""
-                    tmpfile = self.dconfsettingslock + ".tmp"
-                    for line in self.dconflockdata:
-                        contents += line + "\n"
-                    if not writeFile(tmpfile, contents, self.logger):
+            if self.environ.geteuid() == 0:
+                if not os.path.exists(self.dconfsettingslock):
+                    if not createFile(self.dconfsettingslock, self.logger):
                         self.rulesuccess = False
-                        self.detailedresults += "Unable to write contents to " + \
-                            "stonix-settings file\n"
-                    else:
-                        os.rename(tmpfile, self.dconfsettingslock)
-                        os.chown(self.dconfsettingslock, 0, 0)
-                        os.chmod(self.dconfsettingslock, 493)
-                        resetsecon(self.dconfsettingslock)
-            
-            # Create dconf user profile file
-            if not os.path.exists(self.dconfuserprofile):
-                if not createFile(self.dconfuserprofile, self.logger):
-                    self.rulesuccess = False
-                    self.detailedresults += "Unabled to create dconf " + \
-                                            "user profile file\n"
-                    self.formatDetailedResults("fix", self.rulesuccess,
-                               self.detailedresults)
-                    return False
-
-            # Write dconf user profile
-            if os.path.exists(self.dconfuserprofile):
-                tmpfile = self.dconfuserprofile + ".tmp"
-                if not writeFile(tmpfile, self.userprofilecontent, self.logger):
-                    self.rulesuccess = False
-                    self.detailedresults += "Unabled to write to dconf user" + \
-                        " profile file\n"
-                    self.formatDetailedResults("fix", self.rulesuccess,
+                        self.detailedresults += "Unable to create stonix-settings file\n"
+                        self.formatDetailedResults("fix", self.rulesuccess,
                                    self.detailedresults)
-                    return False
-                else:
-                    os.rename(tmpfile, self.dconfuserprofile)
-                    os.chown(self.dconfuserprofile, 0, 0)
-                    os.chmod(self.dconfuserprofile, 493)
-                    resetsecon(self.dconfuserprofile)
-            # Fix dconf settings
-            if not self.kveditordconf.report():
-                self.kveditordconf.fix()
-                self.kveditordconf.commit()
+                        return False
+                #write correct contents to dconf lock file
+                if os.path.exists(self.dconfsettingslock):
+                    # Write to the lock file
+                    if self.dconflockdata:
+                        contents = ""
+                        tmpfile = self.dconfsettingslock + ".tmp"
+                        for line in self.dconflockdata:
+                            contents += line + "\n"
+                        if not writeFile(tmpfile, contents, self.logger):
+                            self.rulesuccess = False
+                            self.detailedresults += "Unable to write contents to " + \
+                                "stonix-settings file\n"
+                        else:
+                            os.rename(tmpfile, self.dconfsettingslock)
+                            os.chown(self.dconfsettingslock, 0, 0)
+                            os.chmod(self.dconfsettingslock, 493)
+                            resetsecon(self.dconfsettingslock)
+                # Create dconf user profile file
+                if not os.path.exists(self.dconfuserprofile):
+                    if not createFile(self.dconfuserprofile, self.logger):
+                        self.rulesuccess = False
+                        self.detailedresults += "Unable to create dconf " + \
+                                                "user profile file\n"
+                        self.formatDetailedResults("fix", self.rulesuccess,
+                                   self.detailedresults)
+                        return False
+                # Write dconf user profile
+                if os.path.exists(self.dconfuserprofile):
+                    tmpfile = self.dconfuserprofile + ".tmp"
+                    if not writeFile(tmpfile, self.userprofilecontent, self.logger):
+                        self.rulesuccess = False
+                        self.detailedresults += "Unabled to write to dconf user" + \
+                            " profile file\n"
+                        self.formatDetailedResults("fix", self.rulesuccess,
+                                       self.detailedresults)
+                        return False
+                    else:
+                        os.rename(tmpfile, self.dconfuserprofile)
+                        os.chown(self.dconfuserprofile, 0, 0)
+                        os.chmod(self.dconfuserprofile, 493)
+                        resetsecon(self.dconfuserprofile)
+                # Fix dconf settings
+                if not os.path.exists(self.dconfsettings):
+                    if not createFile(self.dconfsettings, self.logger):
+                        self.rulesuccess = False
+                        self.detailedresults += "Unable to create " + self.dconfsettings + " file \n"
+                        self.formatDetailedResults("fix", self.rulesuccess,
+                                   self.detailedresults)
+                        return False
+                    self.dconfdata = {"org/gnome/desktop/screensaver": {
+                                                    "idle-activation-enabled": "true",
+                                                    "lock-enabled": "true",
+                                                    "lock-delay": "0",
+                                                    "picture-opacity": "100",
+                                                    "picture-uri": "\'\'"},
+                                      "org/gnome/desktop/session": {
+                                                    "idle-delay": "uint32 900"}}
+                    self.kveditordconf = KVEditorStonix( self.statechglogger,
+                                                         self.logger,
+                                                         "tagconf",
+                                                         self.dconfsettings,
+                                                         self.dconfsettings + ".tmp",
+                                                         self.dconfdata, "present",
+                                                         "closedeq")
+                    self.kveditordconf.report()
+                if self.kveditordconf.fixables:
+                    self.kveditordconf.fix()
+                    self.kveditordconf.commit()
             
-            #run dconf update command to make dconf changes take effect
-            if os.path.exists("/bin/dconf"):
-                cmd = "/bin/dconf update"
-                self.cmdhelper.executeCommand(cmd)
-            elif os.path.exists("/usr/bin/dconf"):
-                cmd = "/usr/bin/dconf update"
-                self.cmdhelper.executeCommand(cmd)
+                #run dconf update command to make dconf changes take effect
+                if os.path.exists("/bin/dconf"):
+                    cmd = "/bin/dconf update"
+                    self.cmdhelper.executeCommand(cmd)
+                elif os.path.exists("/usr/bin/dconf"):
+                    cmd = "/usr/bin/dconf update"
+                    self.cmdhelper.executeCommand(cmd)
         self.detailedresults += info
         return success
 
