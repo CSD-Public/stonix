@@ -130,6 +130,7 @@ class zzzTestRuleConfigureScreenLocking(RuleTest):
                                              "LockGrace": "60000",
                                              "Timeout": "840"}}
         self.kderuin = []
+        debug = "Inside setkde method"
         success = True
         bindir = glob("/usr/bin/kde*")
         kdefound = False
@@ -139,10 +140,8 @@ class zzzTestRuleConfigureScreenLocking(RuleTest):
         if kdefound and self.environ.geteuid() == 0:
             contents = readFile("/etc/passwd", self.logger)
             if not contents:
-                debug = "You have some serious issues, /etc/passwd is blank\n"
-                self.logger.log(LogPriority.INFO, debug)
-                self.rulesuccess = False
-                self.detailedresults += "No contents found in /etc/passwd!\n"
+                debug += "You have some serious issues, /etc/passwd is blank\n"
+                self.logger.log(LogPriority.ERROR, debug)
                 return False
             for line in contents:
                 temp = line.split(":")
@@ -161,28 +160,22 @@ class zzzTestRuleConfigureScreenLocking(RuleTest):
                                     if not setPerms(kfile, [0, 0, 0o644],
                                                     self.logger):
                                         success = False
-                                        self.detailedresults += \
-                                        "Unable to set incorrect perms " + \
-                                        "on " + kfile + " for testing\n"
+                                        debug += "Unable to set incorrect perms " + \
+                                            "on " + kfile + " for testing\n"
                                 if not self.wreckFile(kfile):
-                                    self.detailedresults += \
-                                        "Was not able to mess " + \
+                                    debug += "Was not able to mess " + \
                                         "up file for testing\n"
                                     success = False
                         else:
                             debug += "placeholder 6 in /etc/passwd is not a \
 directory, invalid form of /etc/passwd"
-                            self.logger.log(LogPriority.DEBUG, debug)
-                            self.detailedresults += "Unexpected formatting in " + \
-                                "/etc/passwd"
+                            self.logger.log(LogPriority.ERROR, debug)
                             return False
                 except IndexError:
                     success = False
                     debug += traceback.format_exc() + "\n"
                     debug += "Index out of range\n"
-                    self.logger.log(LogPriority.DEBUG, debug)
-                    self.detailedresults += "Unexpected formatting in " + \
-                        "/etc/passwd"
+                    self.logger.log(LogPriority.ERROR, debug)
                     break
                 except Exception:
                     break
@@ -193,9 +186,7 @@ directory, invalid form of /etc/passwd"
             contents = readFile('/etc/passwd', self.logger)
             if not contents:
                 debug += "You have some serious issues, /etc/passwd is blank\n"
-                self.logger.log(LogPriority.INFO, debug)
-                self.rulesuccess = False
-                self.detailedresults += "No contents found in /etc/passwd!\n"
+                self.logger.log(LogPriority.ERROR, debug)
                 return False
             compliant = True
             for line in contents:
@@ -215,33 +206,29 @@ directory, invalid form of /etc/passwd"
                                     if not setPerms(kfile, [0, 0, 0o644],
                                                     self.logger):
                                         success = False
-                                        self.detailedresults += \
-                                        "Unable to set incorrect perms " + \
-                                        "on " + kfile + " for testing\n"
+                                        debug += "Unable to set incorrect perms " + \
+                                            "on " + kfile + " for testing\n"
                                 if not self.wreckFile(kfile):
-                                    self.detailedresults += \
-                                        "Was not able to mess " + \
+                                    debug += "Was not able to mess " + \
                                         "up file for testing\n"
                                     success = False
                         else:
                             debug += "placeholder 6 in /etc/passwd is not a \
 directory, invalid form of /etc/passwd"
-                            self.logger.log(LogPriority.DEBUG, debug)
-                            self.detailedresults += "Unexpected formatting in " + \
-                                "/etc/passwd"
+                            self.logger.log(LogPriority.ERROR, debug)
                             return False
                         break
                 except IndexError:
                     success = False
                     debug += traceback.format_exc() + "\n"
                     debug += "Index out of range\n"
-                    self.logger.log(LogPriority.DEBUG, debug)
+                    self.logger.log(LogPriority.ERROR, debug)
                     self.detailedresults += "Unexpected formatting in " + \
                         "/etc/passwd"
                     break
                 except Exception:
                     debug += traceback.format_exc() + "\n"
-                    self.logger.log(LogPriority.DEBUG, debug)
+                    self.logger.log(LogPriority.ERROR, debug)
                     break
         return success
 
@@ -251,6 +238,7 @@ directory, invalid form of /etc/passwd"
         @return: bool
         '''
         success = True
+        debug = "Inside setgnome method\n"
         gconf = "/usr/bin/gconftool-2"
         gsettings = "/usr/bin/gsettings"
         dconfsettingslock = "/etc/dconf/db/local.d/locks/stonix-settings.conf"
@@ -277,9 +265,13 @@ directory, invalid form of /etc/passwd"
             setcmds2 = "/desktop/gnome/session/idle_delay 5"
             for cmd in setcmds1:
                 cmd2 = gconf + " --type bool --set " + cmd
-                self.ch.executeCommand(cmd2)
+                if not self.ch.executeCommand(cmd2):
+                    success = False
+                    debug += "Issues setting " + cmd2 + "\n"
             cmd2 = gconf + " --type int --set " + setcmds2
-            self.ch.executeCommand(cmd2)
+            if not self.ch.executeCommand(cmd2):
+                success = False
+                debug += "Issues setting " + cmd2 + "\n"
         if os.path.exists(gsettings):
             setcmds = [" set org.gnome.desktop.screensaver " +
                        "idle-activation-enabled false",
@@ -289,11 +281,9 @@ directory, invalid form of /etc/passwd"
                        " set org.gnome.desktop.session idle-delay 20"]
             for cmd in setcmds:
                 cmd2 = gsettings + cmd
-                self.ch.executeCommand(cmd2)
-                if self.ch.getReturnCode() != 0:
+                if not self.ch.executeCommand(cmd2):
                     success = False
-                    info += "Unable to set value for " + cmd + \
-                        "using gsettings\n"
+                    debug += "Issues setting " + cmd2 + "\n"
         if self.environ.geteuid() == 0:
             #write correct contents to dconf lock file
             if os.path.exists(dconfsettingslock):
@@ -307,7 +297,7 @@ directory, invalid form of /etc/passwd"
                         tempstring += line
                 if not writeFile(tmpfile, tempstring, self.logger):
                     success = False
-                    self.detailedresults += "Unable to write contents to " + \
+                    debug += "Unable to write contents to " + \
                         "stonix-settings file\n"
                 else:
                     os.rename(tmpfile, dconfsettingslock)
@@ -325,15 +315,15 @@ directory, invalid form of /etc/passwd"
                                                "closedeq")
                 if not self.kveditor.report():
                     success = False
-                    self.detailedresults += "Unable to set incorrect contents " + \
+                    debug += "Unable to set incorrect contents " + \
                         "for " + dconfsettings + "\n"
                 elif not self.kveditor.fix():
                     success = False
-                    self.detailedresults += "Unable to set incorrect contents " + \
+                    debug += "Unable to set incorrect contents " + \
                         "for " + dconfsettings + "\n"
                 elif not self.kveditor.commit():
                     success = False
-                    self.detailedresults += "Unable to set incorrect contents " + \
+                    debug += "Unable to set incorrect contents " + \
                         "for " + dconfsettings + "\n"
             
             if os.path.exists(dconfuserprofile):
@@ -349,14 +339,15 @@ directory, invalid form of /etc/passwd"
                     tempfile = dconfuserprofile + ".tmp"
                     if not writeFile(tempfile, contentstring, self.logger):
                         success = False
-                        self.detailedresults += "Unable to set incorrect contents " + \
+                        debug += "Unable to set incorrect contents " + \
                         "for " + dconfuserprofile + "\n"
                     else:
                         os.rename(tmpfile, dconfuserprofile)
                         os.chown(dconfuserprofile, 0, 0)
                         os.chmod(dconfuserprofile, 493)
                         resetsecon(dconfuserprofile)
-
+        self.logger.log(LogPriority.ERROR, debug)
+        return success
     def wreckFile(self, filehandle):
         '''Method to ensure correct contents are NOT in file for testing
         @author: dwalker
