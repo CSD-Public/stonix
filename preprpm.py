@@ -53,7 +53,7 @@ def readversion(srcpath):
 
     for line in fd:
         if re.search('^STONIXVERSION =', line):
-            ver = line.split('=')[1].strip('\"')
+            ver = line.split('=')[1].strip('"')
             break
     return ver
 
@@ -64,6 +64,8 @@ def checkspec(srcpath, ver):
     '''
 
     print("Checking if program versions in localize and stonix.spec file match...")
+
+    ver = ver.strip()
     specpath = os.path.join(srcpath, 'stonix.spec')
     rh = open(specpath, 'r')
     fd = rh.readlines()
