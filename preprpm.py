@@ -55,6 +55,11 @@ def readversion(srcpath):
         if re.search('^STONIXVERSION =', line):
             ver = line.split('=')[1]
             break
+    # for some reason, the strip method
+    # ver.strip('"') will not strip double quotes
+    # from the string, so we will manually remove them...
+    ver = ver.strip()
+    ver = ver[1:][:-1]
     return ver
 
 def checkspec(srcpath, ver):
@@ -64,13 +69,6 @@ def checkspec(srcpath, ver):
     '''
 
     print("Checking if program versions in localize and stonix.spec file match...")
-
-    ver = ver.strip()
-
-    # for some reason, the strip method
-    # ver.strip('"') will not strip double quotes
-    # from the string, so we will manually remove them...
-    ver = ver[1:][:-1]
 
     specpath = os.path.join(srcpath, 'stonix.spec')
     rh = open(specpath, 'r')
