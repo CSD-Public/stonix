@@ -40,35 +40,41 @@ import shutil
 
 
 def readversion(srcpath):
-    '''Pull the version string out of the source code. Return version as a
-    string.'''
+    '''
+    Pull the version string out of the source code. Return version as a
+    string.
+    '''
+
     papath = os.path.join(srcpath, 'stonix_resources/localize.py')
-    print papath
     rh = open(papath, 'r')
     fd = rh.readlines()
     rh.close()
     ver = None
+
     for line in fd:
-        if re.search('STONIXVERSION =', line):
+        if re.search('^STONIXVERSION =', line):
             ver = line.split('=')[1].strip('\"')
             break
     return ver
 
-
 def checkspec(srcpath, ver):
-    '''Check the spec file to make sure it has the right version number. Exit
-    if it does not.'''
+    '''
+    Check the spec file to make sure it has the right version number. Exit
+    if it does not.
+    '''
+
+    print("Checking if program versions in localize and stonix.spec file match...")
     specpath = os.path.join(srcpath, 'stonix.spec')
     rh = open(specpath, 'r')
     fd = rh.readlines()
     rh.close()
     specver = None
+
     for line in fd:
-        if re.search('Version:', line):
-            fixedline = line.strip()
-            splits = fixedline.split()
-            specver = splits[1]
-            print specver
+        if re.search('^Version:', line):
+            specver = line.split()[1].strip()
+            break
+
     print("Version number in localize: " + str(ver))
     print("Version number in stonix.spec file: " + str(specver))
     if str(specver) != str(ver):
@@ -78,25 +84,29 @@ def checkspec(srcpath, ver):
     else:
         print("Versions match. Proceeding...")
 
-
 def maketarball(srcpath, ver):
-    '''Pull together the required files into a tarball.'''
+    '''
+    Pull together the required files into a tarball.
+    '''
+
     pathelements = srcpath.split('/')
     upone = '/'.join(pathelements[:-1])
     versionedsrc = os.path.join(upone, 'stonix-' + ver)
-    shutil.copytree(srcpath, versionedsrc, symlinks=True,
-                    ignore=shutil.ignore_patterns('*.pyc', '*.ui', '.svn', 'zzz*.py'))
+    shutil.copytree(srcpath, versionedsrc, symlinks=True, ignore=shutil.ignore_patterns('*.pyc', '*.ui', '.svn', 'zzz*.py'))
     tarballpath = 'stonix-' + ver + '.tgz'
     tarcmd = '/bin/tar -czvf ' + tarballpath + ' ' + versionedsrc
     tarproc = subprocess.call(tarcmd, shell=True)
 
-
 def main():
-    '''main'''
+    '''
+    main
+    '''
+
     myusage = 'usage: %prog [options] path to STONIX src'
     parser = optparse.OptionParser(usage=myusage)
     (options, args) = parser.parse_args()
     srcpath = None
+
     if len(args) == 0 or len(args) > 1:
         print 'Wrong number of arguments passed'
         sys.exit(1)
