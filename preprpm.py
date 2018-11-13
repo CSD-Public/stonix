@@ -49,12 +49,9 @@ def readversion(srcpath):
     rh.close()
     ver = None
     for line in fd:
-        if re.search('STONIXVERSION', line):
-            fixedline = re.sub("'|\|", '', line)
-            fixedline = fixedline.strip()
-            splits = fixedline.split()
-            ver = splits[2]
-            print ver
+        if re.search('STONIXVERSION =', line):
+            ver = line.split('=')[1].strip('\"')
+            break
     return ver
 
 
@@ -72,12 +69,14 @@ def checkspec(srcpath, ver):
             splits = fixedline.split()
             specver = splits[1]
             print specver
-    if not specver == ver:
-        print 'Spec file version does not match program version!'
-        print 'Fix spec file and re-run this script.'
+    print("Version number in localize: " + str(ver))
+    print("Version number in stonix.spec file: " + str(specver))
+    if str(specver) != str(ver):
+        print("Program versions specified in localize and stonix.spec files do not match")
+        print("Please correct this and re-run the script")
         sys.exit(1)
     else:
-        return
+        print("Versions match. Proceeding...")
 
 
 def maketarball(srcpath, ver):
