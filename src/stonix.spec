@@ -123,10 +123,36 @@ installed at /usr/local/stonix/stonixdb.sql
 %attr(0750,root,apache) /var/www/html/stonix/results.php
 
 %changelog
+* Tue Nov 13 2018 Breen Malmberg <bemalmbe@lanl.gov> - 0.9.24
+- Misc - The rule InstallLANLWINOLTCA was renamed to "InstallLANLcert"
+- Fixed - InstallLANLcert - An error "certutil: function failed: SEC_ERROR_BAD_DATABASE: security library: bad database" caused by certificates not being installed correctly by the rule
+- Fixed - Framework - There was an error determining a system's mac address, being caused by a syntax mistake in a network utility command call on older linux systems
+- Misc - Added nessusagent and encase to the default list of white-listed services in the rule MinimizeServices
+- Fixed - Framework - Included rules LimitConcurrentLogins and DisableFTP to macOS X versions 10.13 and 10.14
+- Fixed - RootMailAlias - Removed code dependency on "mailman" package on apt-get based systems as it is no longer necessary
+- Fixed - RootMailAlias - 2 typo's in function calls which resulted in fix code not being called correctly
+- Fixed - DisableRemoteAppleEvents - rule refactored to use macOS X command interface commands instead of editing plist files directly; resolved an issue with incorrect configuration of plist file access_remote_ae.plist
+- Fixed - BlockSystemAccounts - rule refactored to clean up and streamline the method for detecting and writing configuration changes on both mac and linux systems; resolved an issue with incorrect detection of configuration changes in /etc/passwd
+- Fixed - DisableRemoveableStorage - altered report method to use crontab command instead of manually inspecting plist files
+- Fixed - SystemAccounting - updated rule to work with macOS X 10.14 (file name change rc.conf -> rc.common)
+- Fixed - Framework - Updated log network send method to break up and send in smaller, contiguous chunks - any message larger than the socket limit of 65507; resolved an issue with the logger not being able to send very large log messages
+- Fixed - SecureHomeDir - Updated reporting method to handle cases where non-user, service/system accounts had a home directory on the system
+- Fixed - Framework - added code to handle the case where the package manager service was currently in use (locked) when a call was made to it from STONIX
+- Fixed - ConfigureLANLLDAP - Updated some system configuration file names to reflect the new names they were changed to, for Fedora 28 systems
+- Fixed - Framework - Corrected a logging regression in getting the the log data to send to the logging server
+- Fixed - Framework - A string conversion issue with the log import script causing logs to fail to be imported into the logging database
+- Fixed - AuditSSHKeys - Made corrections to rule help text
+- Fixed - SecureApacheWebServer - Will no longer attempt to check for correct apache configurations if the apache server is not installed
+- Fixed - SecureApacheWebServer - A complex issue causing fix changes to be reverted immediately after being applied, in a remote edge case on Fedora 28
+- Fixed - SetNTP - An issue causing the rule to incorrectly report non compliant on High Sierra (macOS X 10.13) systems after the fix is applied
+- Fixed - DisableRemoveableStorage - An issue causing the mac related reporting to fail on Sierra (macOS X 10.12) systems
+- Fixed - SetNTP - Code expecting a string argument was being passed a list, causing the command to run the ntp utility to fail
+- Fixed - ConfigureAppleSoftwareUpdate - detailed results feedback regarding required user actions in the case of non-compliance have been updated/clarified
+
 * Tue Oct 2 2018 Brandon Gonzales <bgonz12@lanl.gov> - 0.9.23
 - New – SecureApacheWebserver – Update to the rule. Now installs apache security modules on rpm based systems.
 - New – SecureApacheWebserver – Update to the rule. Now limits the available web directory server methods to GET and POST. Other server methods must be added manually in each web directory configuration.
-- New - DisableRemoteAppleEvents – Update to the rule. Remote apple events service will be enabled if the “disable apple events” CI is disabled. The rule now includes a CI to configure the list of remote access users.
+- New - DisableRemoteAppleEvents – Update to the rule. Remote apple events service will be enabled if the "disable apple events" CI is disabled. The rule now includes a CI to configure the list of remote access users.
 - New – ReduceSudoTimeout – Update to the rule. Added a CI to allow the user to specify their own timeout value (between 0 and 15 in minutes).
 - New – STONIX UI – Changed search bar functionality. Expanded the search scope to include ci names and instructions.
 - Fixed – Unicode encoding issue – A QT GUI bug where text was not displaying properly due to a failed conversion between unicode and utf-8.
