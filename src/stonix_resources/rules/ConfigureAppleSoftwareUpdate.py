@@ -40,6 +40,8 @@ dictionary
 @change: 2017/08/28 ekkehard - Added self.sethelptext()
 @change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
 @change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
+@change: 2018/07/11 Brandon R. Gonzales - Add reporting output/instructions to
+            detailed results when the system requires software updates
 '''
 from __future__ import absolute_import
 import re
@@ -281,6 +283,35 @@ class ConfigureAppleSoftwareUpdate(RuleKVEditor):
             self.softwareupdatehasnotrun = False
         else:
             success = True
+        return success
+
+    def afterreport(self):
+        success = True
+
+        # The KVEditor object for "RecommendedUpdates" may require a manual
+        # fix (running apple software updates). Here is where we instruct the
+        # user on how to fix this item if it is non-compliant.
+        self.getKVEditor("RecommendedUpdates")
+        compliant = self.kveditor.report()
+        if not compliant:
+            # OSX 10.14+ has a different way of updating software
+            if re.search("10\.12\.*", self.environ.getosver()) or \
+               re.search("10\.13\.*", self.environ.getosver()):
+                self.detailedresults = "\nThe software on this system is " + \
+                                       "not up-to-date. Please update " + \
+                                       "your software by opening the App " + \
+                                       "Store, navigating to the " + \
+                                       "'Updates' tab, and running " + \
+                                       "'UPDATE ALL'.\n\n" + \
+                                       self.detailedresults
+            else:
+                self.detailedresults = "\nThe software on this system is " + \
+                                       "not up-to-date. Please update " + \
+                                       "your software by opening System " + \
+                                       "Preferences, navigating to the " + \
+                                       "'Software Update' menu, and " + \
+                                       "running the necessary updates.\n\n" + \
+                                       self.detailedresults
         return success
 
 ###############################################################################

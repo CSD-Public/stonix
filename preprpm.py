@@ -40,64 +40,79 @@ import shutil
 
 
 def readversion(srcpath):
-    '''Pull the version string out of the source code. Return version as a
-    string.'''
+    '''
+    Pull the version string out of the source code. Return version as a
+    string.
+    '''
+
     papath = os.path.join(srcpath, 'stonix_resources/localize.py')
-    print papath
     rh = open(papath, 'r')
     fd = rh.readlines()
     rh.close()
     ver = None
+
     for line in fd:
-        if re.search('STONIXVERSION', line):
-            fixedline = re.sub("'|\|", '', line)
-            fixedline = fixedline.strip()
-            splits = fixedline.split()
-            ver = splits[2]
-            print ver
+        if re.search('^STONIXVERSION =', line):
+            ver = line.split('=')[1]
+            break
+    # for some reason, the strip method
+    # ver.strip('"') will not strip double quotes
+    # from the string, so we will manually remove them...
+    ver = ver.strip()
+    ver = ver[1:][:-1]
     return ver
 
-
 def checkspec(srcpath, ver):
-    '''Check the spec file to make sure it has the right version number. Exit
-    if it does not.'''
+    '''
+    Check the spec file to make sure it has the right version number. Exit
+    if it does not.
+    '''
+
+    print("Checking if program versions in localize and stonix.spec file match...")
+
     specpath = os.path.join(srcpath, 'stonix.spec')
     rh = open(specpath, 'r')
     fd = rh.readlines()
     rh.close()
     specver = None
+
     for line in fd:
-        if re.search('Version:', line):
-            fixedline = line.strip()
-            splits = fixedline.split()
-            specver = splits[1]
-            print specver
-    if not specver == ver:
-        print 'Spec file version does not match program version!'
-        print 'Fix spec file and re-run this script.'
+        if re.search('^Version:', line):
+            specver = line.split()[1].strip()
+            break
+
+    print("Version number in localize: " + str(ver))
+    print("Version number in stonix.spec file: " + str(specver))
+    if str(specver) != str(ver):
+        print("Program versions specified in localize and stonix.spec files do not match")
+        print("Please correct this and re-run the script")
         sys.exit(1)
     else:
-        return
-
+        print("Versions match. Proceeding...")
 
 def maketarball(srcpath, ver):
-    '''Pull together the required files into a tarball.'''
+    '''
+    Pull together the required files into a tarball.
+    '''
+
     pathelements = srcpath.split('/')
     upone = '/'.join(pathelements[:-1])
     versionedsrc = os.path.join(upone, 'stonix-' + ver)
-    shutil.copytree(srcpath, versionedsrc, symlinks=True,
-                    ignore=shutil.ignore_patterns('*.pyc', '*.ui', '.svn', 'zzz*.py'))
+    shutil.copytree(srcpath, versionedsrc, symlinks=True, ignore=shutil.ignore_patterns('*.pyc', '*.ui', '.svn', 'zzz*.py'))
     tarballpath = 'stonix-' + ver + '.tgz'
     tarcmd = '/bin/tar -czvf ' + tarballpath + ' ' + versionedsrc
     tarproc = subprocess.call(tarcmd, shell=True)
 
-
 def main():
-    '''main'''
+    '''
+    main
+    '''
+
     myusage = 'usage: %prog [options] path to STONIX src'
     parser = optparse.OptionParser(usage=myusage)
     (options, args) = parser.parse_args()
     srcpath = None
+
     if len(args) == 0 or len(args) > 1:
         print 'Wrong number of arguments passed'
         sys.exit(1)
