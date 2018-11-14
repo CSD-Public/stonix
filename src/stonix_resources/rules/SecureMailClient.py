@@ -32,6 +32,7 @@ dictionary
 @change: 2017/07/17 ekkehard - make eligible for macOS High Sierra 10.13
 @change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
 @change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
+@change: 2018/09/11 Brandon R. Gonzales - remove applicability for Mojave 10.14
 '''
 from __future__ import absolute_import
 import os
@@ -59,8 +60,11 @@ class SecureMailClient(RuleKVEditor):
         self.sethelptext()
         self.rootrequired = False
         self.guidance = []
+        # This rule is being made not applicable to 10.14 Mojave because the
+        # user plist required for fix is now sip protected. We are waiting for
+        # a solution to this issue either through research or Apple support.
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.11', 'r', '10.14.10']}}
+                           'os': {'Mac OS X': ['10.11', 'r', '10.13.6']}}
 
         mailplist = "/Library/Containers/com.apple.mail/Data/Library/" + \
             "Preferences/com.apple.mail.plist"
