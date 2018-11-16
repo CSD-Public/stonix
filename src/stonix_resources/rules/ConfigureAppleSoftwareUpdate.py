@@ -40,24 +40,28 @@ dictionary
 @change: 2017/08/28 ekkehard - Added self.sethelptext()
 @change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
 @change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
-@change: 2018/07/11 Brandon R. Gonzales - Add reporting output/instructions to
+@change: 2018/11/07 Brandon R. Gonzales - Add reporting output/instructions to
             detailed results when the system requires software updates
+@change: 2018/11/16 Brandon R. Gonzales - ConfigureCatalogURL is now fixed
+            through command helper.
 '''
 from __future__ import absolute_import
 import re
 import types
+import traceback
+
 from ..ruleKVEditor import RuleKVEditor
 from ..CommandHelper import CommandHelper
+from ..logdispatcher import LogPriority
 from ..localize import APPLESOFTUPDATESERVER
-
 
 class ConfigureAppleSoftwareUpdate(RuleKVEditor):
     '''
-    This Mac Only rule does three thing:
+    This Mac Only rule does three things:
     To fix issue the following commands:
 
     1. Set the default Apple Software Update Server for the organization server
-    defaults -currentHost write /Library/Preferences/com.apple.SoftwareUpdate CatalogURL http://apple.foo.com:8088/
+    softwareupdate --set-catalog http://apple.foo.com:8088/
     2. Disables AutomaticDownload:
     defaults -currentHost write /Library/Preferences/com.apple.SoftwareUpdate AutomaticDownload -bool no
     3. Disables AutomaticCheckEnabled:
@@ -75,7 +79,7 @@ class ConfigureAppleSoftwareUpdate(RuleKVEditor):
     9. Disables automatic macOS (OS X) updates
     defaults write /Library/Preferences/com.apple.commerce AutoUpdateRestartRequired -bool no
 
-    1. defaults -currentHost read /Library/Preferences/com.apple.SoftwareUpdate CatalogURL
+    1. defaults -currentHost read /Library/Preferences/com.apple.SoftwareUpdate AppleCatalogURL
     2. defaults -currentHost read /Library/Preferences/com.apple.SoftwareUpdate AutomaticDownload
     3. defaults -currentHost read /Library/Preferences/com.apple.SoftwareUpdate AutomaticCheckEnabled
     4. defaults -currentHost read /Library/Preferences/com.apple.SoftwareUpdate ConfigDataInstall
@@ -108,28 +112,32 @@ class ConfigureAppleSoftwareUpdate(RuleKVEditor):
                            'os': {'Mac OS X': ['10.11', 'r', '10.14.10']}}
 
         if self.environ.getostype() == "Mac OS X":
+            self.ccurlci = None
             if self.checkConsts([APPLESOFTUPDATESERVER]):
+                # ConfigureCatalogURL ci needs to be set up manually because
+                # it is reported with kveditor and fixed with command helper
+                datatype = 'bool'
+                key = 'CONFIGURECATALOGURL'
+                instructions = "Set software update server (AppleCatalogURL) to '" + \
+                               str(APPLESOFTUPDATESERVER) + \
+                               "'. This should always be enabled. If disabled " + \
+                               " it will point to the Apple Software Update " + \
+                               "Server. NOTE: your system will report as not " + \
+                               "compliant if you disable this option."
+                default = True
+                self.ccurlci = self.initCi(datatype, key, instructions, default)
                 self.addKVEditor("ConfigureCatalogURL",
                                  "defaults",
                                  "/Library/Preferences/com.apple.SoftwareUpdate",
                                  "",
-                                 {"CatalogURL": [str(APPLESOFTUPDATESERVER),
-                                                 str(APPLESOFTUPDATESERVER)]},
+                                 {"AppleCatalogURL": [str(APPLESOFTUPDATESERVER),
+                                                      str(APPLESOFTUPDATESERVER)]},
                                  "present",
                                  "",
-                                 "Set software update server (CatalogURL) to '" +
-                                 str(APPLESOFTUPDATESERVER) +
-                                 "'. This should always be enabled. If disabled " + \
-                                 " it will point to the Apple Software Update " + \
-                                 "Server. NOTE: your system will report as not " + \
-                                 "compliant if you disable this option.",
+                                 instructions,
                                  None,
-                                 False,
-                                 {"CatalogURL":
-                                  [re.escape("The domain/default pair of (/Library" + \
-                                             "/Preferences/com.apple.Software" + \
-                                             "Update, CatalogURL) does not exist"),
-                                   None]})
+                                 True,
+                                 {})
             else:
                 self.detailedresults += "\nThe Configure Catalogue URL portion of this rule requires that the constant: APPLESOFTWAREUPDATESERVER be defined and not None. Please ensure this constant is set properly in localize.py"
             osxversion = str(self.environ.getosver())
@@ -227,7 +235,6 @@ class ConfigureAppleSoftwareUpdate(RuleKVEditor):
                                  None,
                                  False,
                                  {"CriticalUpdateInstall": ["0", "-bool no"]})
-
             self.addKVEditor("DisableAllowPreReleaseInstallation",
                              "defaults",
                              "/Library/Preferences/com.apple.SoftwareUpdate",
@@ -285,33 +292,171 @@ class ConfigureAppleSoftwareUpdate(RuleKVEditor):
             success = True
         return success
 
-    def afterreport(self):
-        success = True
+    def report(self):
+        '''
+        Calls the inherited RuleKVEditor report method.
 
-        # The KVEditor object for "RecommendedUpdates" may require a manual
-        # fix (running apple software updates). Here is where we instruct the
-        # user on how to fix this item if it is non-compliant.
-        self.getKVEditor("RecommendedUpdates")
-        compliant = self.kveditor.report()
-        if not compliant:
-            # OSX 10.14+ has a different way of updating software
-            if re.search("10\.12\.*", self.environ.getosver()) or \
-               re.search("10\.13\.*", self.environ.getosver()):
-                self.detailedresults = "\nThe software on this system is " + \
-                                       "not up-to-date. Please update " + \
-                                       "your software by opening the App " + \
-                                       "Store, navigating to the " + \
-                                       "'Updates' tab, and running " + \
-                                       "'UPDATE ALL'.\n\n" + \
-                                       self.detailedresults
+        Additionally checks that the APPLESOFTWAREUPDATESERVER constant is
+        set, the ConfigureCatalogueURL kveditor item is enabled, and gives
+        instructions on how to manually fix the RecommendedUpdates kveditor
+        item if it is not compliant.
+        @author: Brandon R. Gonzales
+        @return: bool - true if rule is compliant, false otherwise
+        '''
+
+        # Invoke super method
+        self.resultReset()
+        rulekvecompliant = RuleKVEditor.report(self, True)
+
+        try:
+            compliant = True
+            detailedresults = ""
+
+            if not self.checkConsts([APPLESOFTUPDATESERVER]):
+                compliant = False
+                detailedresults += "\nThe Configure Catalogue URL " + \
+                    "portion of this rule requires that the constant: " + \
+                    "APPLESOFTWAREUPDATESERVER be defined and not None. " + \
+                    "Please ensure this constant is set properly in " + \
+                    "localize.py"
+            elif not self.ccurlci.getcurrvalue():
+                compliant = False
+                detailedresults += "\nThe Configure Catalogue URL " + \
+                                   "portion of this rule requires that " + \
+                                   "the ci: CONFIGURECATALOGURL be " + \
+                                   "enabled. Please enable this " + \
+                                   "configuration item either in the " + \
+                                   "STONIX GUI or stonix.conf"
+
+            # The KVEditor object for "RecommendedUpdates" may require a manual
+            # fix (running apple software updates). Here is where we instruct the
+            # user on how to fix this item if it is non-compliant.
+            self.getKVEditor("RecommendedUpdates")
+            softwareupdated = self.kveditor.report()
+            if not softwareupdated:
+                compliant = False
+                # OSX 10.14+ has a different way of updating software
+                if re.search("10\.12\.*", self.environ.getosver()) or \
+                   re.search("10\.13\.*", self.environ.getosver()):
+                    detailedresults = "\nThe software on this system is " + \
+                                      "not up-to-date. Please update " + \
+                                      "your software by opening the App " + \
+                                      "Store, navigating to the " + \
+                                      "'Updates' tab, and running " + \
+                                      "'UPDATE ALL'.\n\n" + \
+                                      detailedresults
+                else:
+                    detailedresults = "\nThe software on this system is " + \
+                                      "not up-to-date. Please update " + \
+                                      "your software by opening System " + \
+                                      "Preferences, navigating to the " + \
+                                      "'Software Update' menu, and " + \
+                                      "running the necessary updates.\n\n" + \
+                                      detailedresults
+
+            compliant = compliant and rulekvecompliant
+            self.resultAppend(detailedresults)
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except Exception, err:
+            compliant = False
+            self.detailedresults = self.detailedresults + \
+            str(traceback.format_exc())
+            self.rulesuccess = False
+            self.logdispatch.log(LogPriority.ERROR,
+                                 [self.prefix(),
+                                  "exception - " + str(err) + \
+                                  " - " + self.detailedresults])
+        self.compliant = compliant
+        self.formatDetailedResults("report", self.compliant,
+                                   self.detailedresults)
+        self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+        return compliant
+
+    def fix(self):
+        '''
+        Calls the inherited RuleKVEditor fix method.
+
+        Additionally fixes the ConfigureCatalogURL kveditor item though
+        command helper(instead of using RuleKVEditor).
+
+        @author: Brandon R. Gonzales
+        @return: bool - True if fix was successful, False otherwise
+        '''
+        rulekvesuccess = RuleKVEditor.fix(self, True)
+
+        try:
+            success = True
+            detailedresults = ""
+
+            if self.checkConsts([APPLESOFTUPDATESERVER]) and self.ccurlci != None:
+                if self.ccurlci.getcurrvalue():
+                    cmd1 = ["softwareupdate", "--set-catalog",
+                            str(APPLESOFTUPDATESERVER)]
+                    self.ch.executeCommand(cmd1)
+                else:
+                    cmd2 = ["softwareupdate", "--clear-catalog"]
+                    self.ch.executeCommand(cmd2)
             else:
-                self.detailedresults = "\nThe software on this system is " + \
-                                       "not up-to-date. Please update " + \
-                                       "your software by opening System " + \
-                                       "Preferences, navigating to the " + \
-                                       "'Software Update' menu, and " + \
-                                       "running the necessary updates.\n\n" + \
-                                       self.detailedresults
+                success = False
+                detailedresults += "\nThe Configure Catalogue URL " + \
+                    "portion of this rule requires that the constant: " + \
+                    "APPLESOFTWAREUPDATESERVER be defined and not None. " + \
+                    "Please ensure this constant is set properly in " + \
+                    "localize.py"
+
+            success = success and rulekvesuccess
+            self.resultAppend(detailedresults)
+        except (KeyboardInterrupt, SystemExit):
+            success = False
+            raise
+        except Exception, err:
+            success = False
+            self.detailedresults = self.detailedresults + \
+            str(traceback.format_exc())
+            self.rulesuccess = False
+            self.logdispatch.log(LogPriority.ERROR,
+                                 [self.prefix(),
+                                  "exception - " + str(err) + \
+                                  " - " + self.detailedresults])
+        self.formatDetailedResults("fix", success,
+                                   self.detailedresults)
+        self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+        return success
+
+    def undo(self):
+        '''
+        Calls the inherited RuleKVEditor undo method.
+
+        Additionally reverts the ConfigureCatalogURL kveditor item though
+        command helper(instead of using RuleKVEditor).
+
+        @author: Brandon R. Gonzales
+        @return: bool - True if fix was successful, False otherwise
+        '''
+        rulekvesuccess = RuleKVEditor.undo(self)
+
+        try:
+            success = True
+            detailedresults = ""
+
+            cmd = ["softwareupdate", "--clear-catalog"]
+            self.ch.executeCommand(cmd)
+
+            success = success and rulekvesuccess
+            self.resultAppend(detailedresults)
+        except (KeyboardInterrupt, SystemExit):
+            success = False
+            raise
+        except Exception, err:
+            success = False
+            self.detailedresults = self.detailedresults + \
+            str(traceback.format_exc())
+            self.rulesuccess = False
+            self.logdispatch.log(LogPriority.ERROR,
+                                 [self.prefix(),
+                                  "exception - " + str(err) + \
+                                  " - " + self.detailedresults])
         return success
 
 ###############################################################################
