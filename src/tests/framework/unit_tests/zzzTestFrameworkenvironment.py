@@ -36,6 +36,7 @@ import re
 import pwd
 import sys
 import unittest
+from unittest.case import SkipTest
 if os.geteuid() == 0:
     try:
         import dmidecode
@@ -57,6 +58,7 @@ class zzzTestFrameworkenvironment(unittest.TestCase):
             open("/etc/property-number", "w").write("0123456798")
             self.created = True
         self.euid = os.geteuid()
+
     def tearDown(self):
         if self.created:
             os.remove("/etc/property-number")
@@ -119,19 +121,27 @@ class zzzTestFrameworkenvironment(unittest.TestCase):
 
     def testGetChassisSerNo(self):
         chassisserial = '0'
-        if DMI and self.euid == 0:
-            try:
-                chassis = dmidecode.chassis()
-                for key in chassis:
-                    chassisserial = chassis[key]['data']['Serial Number']
-            except(IndexError, KeyError):
-                # got unexpected data back from dmidecode
-                pass
-        unittestchassisserial = chassisserial.strip()
-        envchassisserial = self.to.get_chassis_serial_number()
-        self.assertEqual(unittestchassisserial, envchassisserial)
-        print 'Ser: ' + self.to.get_chassis_serial_number()
-
+        if DMI:
+            if self.euid == 0:
+                try:
+                    chassis = dmidecode.chassis()
+                    for key in chassis:
+                        chassisserial = chassis[key]['data']['Serial Number']
+                except(IndexError, KeyError):
+                    # got unexpected data back from dmidecode
+                    pass
+                unittestchassisserial = chassisserial.strip()
+                envchassisserial = self.to.get_chassis_serial_number()
+                self.assertEqual(unittestchassisserial, envchassisserial)
+                print 'Ser: ' + self.to.get_chassis_serial_number()
+            else:
+                msg =  "Not running as root, Chassis serial number " + \
+                "information not availble\n"
+                self.skipTest(msg)
+        else:
+            msg = "dmidecode module not available for import. " + \
+                "Unable to retrieve serial chassis number\n"
+            self.skipTest(msg)
     def testGetSysMfg(self):
         mfg = self.to.get_system_manufacturer()
         print 'SysMFG: ' + mfg
