@@ -36,7 +36,14 @@ import re
 import pwd
 import sys
 import unittest
-
+if os.geteuid() == 0:
+    try:
+        import dmidecode
+        DMI = True
+    except(ImportError):
+        DMI = False
+else:
+    DMI = False
 sys.path.append("../../../..")
 import src.stonix_resources.environment as environment
 
@@ -111,10 +118,18 @@ class zzzTestFrameworkenvironment(unittest.TestCase):
         print 'SysSer: ' + self.to.get_system_serial_number()
 
     def testGetChassisSerNo(self):
-        if self.to.get_chassis_serial_number() == "":
-            self.assertTrue(True)
-        else:
-            self.assertTrue(self.to.get_chassis_serial_number())
+        chassisserial = '0'
+        if DMI and self.euid == 0:
+            try:
+                chassis = dmidecode.chassis()
+                for key in chassis:
+                    chassisserial = chassis[key]['data']['Serial Number']
+            except(IndexError, KeyError):
+                # got unexpected data back from dmidecode
+                pass
+        unittestchassisserial = chassisserial.strip()
+        envchassisserial = self.to.get_chassis_serial_number()
+        self.assertEqual(unittestchassisserial, envchassisserial)
         print 'Ser: ' + self.to.get_chassis_serial_number()
 
     def testGetSysMfg(self):
