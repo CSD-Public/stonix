@@ -36,7 +36,6 @@ import re
 import pwd
 import sys
 import unittest
-from unittest.case import SkipTest
 if os.geteuid() == 0:
     try:
         import dmidecode
