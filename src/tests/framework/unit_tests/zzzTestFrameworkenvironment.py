@@ -56,7 +56,7 @@ class zzzTestFrameworkenvironment(unittest.TestCase):
         if not os.path.exists("/etc/property-number"):
             open("/etc/property-number", "w").write("0123456798")
             self.created = True
-
+            self.euid = os.geteuid()
     def tearDown(self):
         if self.created:
             os.remove("/etc/property-number")
