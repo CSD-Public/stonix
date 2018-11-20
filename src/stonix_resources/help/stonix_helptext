@@ -153,9 +153,7 @@ In interactive start-up mode it is possible to control which services are run."
 
 Internet sharing uses the open-source 'Network Address Translation Daemon' (NATD) process to share an internet connection with other computers and devices on a local network. Unless specifically required, Internet sharing should be turned off. If used, it should only be turned on when actual sharing is needed. A much better solution is a dedicated router. Apple makes a number of certified compatible routers."
 
-<123>        "***On Solaris: AUDIT-ONLY; NO FIX*** 
-
-This rule disables IPV6 functionality."
+<123>        "This rule disables IPv6 functionality on all system interfaces."
 
 <202>        "This rule turns off the infrared receiver that allows the user to remotely control their Mac with a remote control."
 
