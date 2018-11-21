@@ -746,6 +746,7 @@ class RuleDictionary ():
         self.logdispatch.log(LogPriority.INFO, str(messagestring))
         keys = sorted(self.ruledictionary.keys(), reverse=True)
         for key in keys:
+            messagestring = ""
             rulename = self.ruledictionary[key]["rulename"]
             try:
                 rule = self.ruledictionary[key]["ruleobject"]
