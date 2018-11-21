@@ -51,15 +51,12 @@ import src.stonix_resources.environment as environment
 class zzzTestFrameworkenvironment(unittest.TestCase):
 
     def setUp(self):
-        print "in setUp method\n\n"
         self.to = environment.Environment()
         self.created = False
         if not os.path.exists("/etc/property-number"):
             open("/etc/property-number", "w").write("0123456798")
             self.created = True
-        print "after checking if that path exists\n"
         self.euid = os.geteuid()
-        print "self.euid: " + str(self.euid) + "\n\n"
 
     def tearDown(self):
         if self.created:
