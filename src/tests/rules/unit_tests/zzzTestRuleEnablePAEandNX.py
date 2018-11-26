@@ -28,8 +28,10 @@ This is a Unit Test for Rule EnablePAEandNX
 @change: 5/9/2016 Original Implementation
 '''
 from __future__ import absolute_import
+
 import sys
 import unittest
+import os
 
 sys.path.append("../../../..")
 from src.tests.lib.RuleTestTemplate import RuleTest
@@ -77,10 +79,18 @@ class zzzTestRuleEnablePAEandNX(RuleTest):
 
         self.rule.initobjs()
 
-        self.assertFalse(self.rule.checkPAE(""), "checkPAE should return False if no package is specified")
-        self.assertFalse(self.rule.checkPAE([]), "checkPAE should return False if package specified is not of type: string")
-        self.assertFalse(self.rule.checkPAE(1), "checkPAE should return False if package specified is not of type: string")
-        self.assertFalse(self.rule.checkPAE({}), "checkPAE should return False if package specified is not of type: string")
+        self.assertFalse(self.rule.checkPAE([]))
+        self.assertFalse(self.rule.checkPAE(1))
+        self.assertFalse(self.rule.checkPAE({}))
+
+    def test_path(self):
+        '''
+
+        @return:
+        '''
+
+        result = os.path.exists("/proc/cpuinfo")
+        self.assertTrue(result)
 
     def test_getSystemARCH(self):
         '''
@@ -89,8 +99,12 @@ class zzzTestRuleEnablePAEandNX(RuleTest):
         @author: Breen Malmberg
         '''
 
-        self.assertFalse(self.rule.getSystemARCH() not in [32, 64], "The return value of getSystemARCH should always be either 32 or 64")
-        self.assertTrue(self.rule.getSystemARCH() in [32, 64], "The return value of getSystemARCH should always be either 32 or 64")
+        result = True
+
+        if self.rule.getSystemARCH() not in [32, 64]:
+            result = False
+
+        self.assertTrue(result)
 
     def test_getSystemOS(self):
         '''
@@ -99,17 +113,8 @@ class zzzTestRuleEnablePAEandNX(RuleTest):
         @author: Breen Malmberg
         '''
 
-        self.assertFalse(self.rule.getSystemOS() == "", "getSystemOS should never return a blank string")
-
-    def test_checkNX(self):
-        '''
-        test returns for checkNX method
-
-        @author: Breen Malmberg
-        '''
-
-        # stub
-        pass
+        if self.rule.getSystemOS() == "":
+            self.fail("getSystemOS returned a blank string. This should never happen.")
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
         '''

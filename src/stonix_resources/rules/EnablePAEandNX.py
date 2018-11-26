@@ -291,7 +291,7 @@ and NX features, the kernel-PAE package should be installed to enable XD or NX s
             if not paeflag:
                 self.detailedresults += "\nThe pae CPU flag was not found."
 
-            retval = paeflag and paepkg
+            retval = bool(paeflag and paepkg)
 
         except Exception:
             raise
