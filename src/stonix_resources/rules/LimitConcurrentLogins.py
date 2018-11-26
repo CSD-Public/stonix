@@ -230,9 +230,11 @@ class LimitConcurrentLogins(Rule):
         # if a user enters an invalid value for the MAXLOGINS CI, reset the value
         # to 10 and inform the user
         if self.userloginsvalue == "":
+            self.cinum.updatecurrvalue("10")
             self.userloginsvalue = "10"
             self.logger.log(LogPriority.DEBUG, "A blank value was entered for MAXLOGINS. Resetting to default value of 10...")
         if not self.userloginsvalue.isdigit():
+            self.cinum.updatecurrvalue("10")
             self.userloginsvalue = "10"
             self.logger.log(LogPriority.DEBUG, "An invalid value was entered for MAXLOGINS. Please enter a single, positive integer. Resetting to default value of 10...")
 
