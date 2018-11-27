@@ -642,9 +642,16 @@ directory, invalid form of /etc/passwd"
                     eventlist = self.statechglogger.findrulechanges(self.rulenumber)
                     for event in eventlist:
                         self.statechglogger.deleteentry(event)
-                if self.fixGnome() and self.fixKde():
-                    self.rulesuccess = True
-                else:
+                #Do not change logic of code to if self.fixGnome() and self.fixKde()
+                #for the sake of condensing code.  Python will short circuit the logic 
+                #and not enter the fixKde() if for some reason fixGnome() fails.
+                success1 = False
+                success2 = False
+                if self.fixGnome():
+                    success1 = True
+                if self.fixKde():
+                    success2 = True
+                if success1 and success2:
                     self.rulesuccess = False
         except(KeyboardInterrupt, SystemExit):
             raise
@@ -815,7 +822,7 @@ for this portion of the rule\n"
                         success = False
                         self.detailedresults += "Unable to put correct settings inside " + \
                             self.dconfsettings + "\n"
-                    elif self.kveditordconf.commit():
+                    elif not self.kveditordconf.commit():
                         success = False
                         self.detailedresults += "Unable to put correct settings inside " + \
                             self.dconfsettings + "\n"
