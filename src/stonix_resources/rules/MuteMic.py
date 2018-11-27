@@ -100,6 +100,405 @@ valid exceptions.'
         myci = self.initCi(datatype, key, instructions, default)
         return myci
 
+    def report(self):
+        '''
+        Report method for MuteMic. Uses the platform native method to read
+        the input levels. Levels must be zero to pass. Note for Linux the use
+        of amixer presumes pulseaudio.
+
+        @author: dkennel
+        @change: Breen Malmberg - 07/19/2016 - added variable defaults initialization;
+        added commandhelper object self.ch
+        '''
+
+        # defaults
+        self.compliant = True
+        self.detailedresults = ""
+        self.ch = CommandHelper(self.logger)
+
+        try:
+
+            if self.environ.getosfamily() == 'darwin':
+                if not self.reportmac():
+                    self.compliant = False
+            elif os.path.exists(self.amixer):
+                if not self.reportlinux():
+                    self.compliant = False
+            if os.path.exists(self.pulsedefaults):
+                if not self.checkpulseaudio():
+                    self.compliant = False
+
+        except (KeyboardInterrupt, SystemExit):
+            # User initiated exit
+            raise
+        except Exception:
+            self.rulesuccess = False
+            self.detailedresults += traceback.format_exc()
+            self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
+        self.formatDetailedResults("report", self.compliant, self.detailedresults)
+        self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+        return self.compliant
+
+    def reportmac(self):
+        '''
+        determine the volume level of the input device on a mac
+
+        @return: retval
+        @rtype: bool
+        @author: Breen Malmberg
+        '''
+
+        retval = True
+        command = "/usr/bin/osascript -e 'get the input volume of (get volume settings)'"
+
+        try:
+
+            self.ch.executeCommand(command)
+            output = self.ch.getOutputString()
+            retcode = self.ch.getReturnCode()
+            if retcode != 0:
+                retval = False
+                errmsg = self.ch.getErrorString()
+                self.detailedresults += "Error while running command: " + str(command) + " :\n" + str(errmsg) + "\n"
+            if re.search("[1-9]+", output.strip(), re.IGNORECASE):
+                retval = False
+                self.detailedresults += "The microphone is not muted\n"
+
+        except Exception:
+            raise
+        return retval
+
+    def reportlinux(self):
+        '''
+        determine the volume level and mute status of all mic's
+        and capture devices, using linux-specific mechanisms and
+        commands/paths
+
+        @return: retval
+        @rtype: bool
+        @author: Breen Malmberg
+        '''
+
+        retval = True
+        getc0Controls = self.amixer + " -c 0 scontrols"
+        getgenCap = self.amixer + " sget 'Capture'"
+        miccontrols = []
+        micbcontrols = []
+        c0Capcontrols = []
+
+        try:
+            if self.soundDeviceExists():
+                self.ch.executeCommand(getc0Controls)
+                output = self.ch.getOutput()
+                retcode = self.ch.getReturnCode()
+                if retcode != 0:
+                    retval = False
+                    errmsg = self.ch.getErrorString()
+                    self.detailedresults += "\nError while running command: " + str(getc0Controls) + " :\n" + str(errmsg)
+                    self.logger.log(LogPriority.DEBUG, ["MuteMic.reportlinux", "\n\nRETURN CODE WAS: " + str(retcode) + "\n\n"])
+                for line in output:
+                    if re.search("^Simple\s+mixer\s+control\s+\'.*Mic\'", line, re.IGNORECASE):
+                        sline = line.split("'")
+                        miccontrols.append("'" + str(sline[1]) + "'")
+                    elif re.search("^Simple\s+mixer\s+control\s+\'.*Mic\s+Boost.*\'", line, re.IGNORECASE):
+                        sline = line.split("'")
+                        micbcontrols.append("'" + str(sline[1]) + "'")
+                    elif re.search("^Simple\s+mixer\s+control\s+\'.*Capture.*\'", line, re.IGNORECASE):
+                        sline = line.split("'")
+                        c0Capcontrols.append("'" + str(sline[1]) + "'")
+                for mc in miccontrols:
+                    getc0mic = self.amixer + " -c 0 sget " + mc
+                    self.ch.executeCommand(getc0mic)
+                    output = self.ch.getOutput()
+                    retcode = self.ch.getReturnCode()
+                    if retcode != 0:
+                        retval = False
+                        errmsg = self.ch.getErrorString()
+                        self.detailedresults += "\nError while running command: " + str(getc0mic) + " :\n" + str(errmsg)
+                        self.logger.log(LogPriority.DEBUG, ["MuteMic.reportlinux", "\n\nRETURN CODE WAS: " + str(retcode) + "\n\n"])
+                    for line in output:
+                        if re.search("\[[0-9]+\%\]", line, re.IGNORECASE):
+                            if not re.search("\[0\%\]", line, re.IGNORECASE):
+                                retval = False
+                                self.detailedresults += "The microphone labeled: " + str(mc) + " does not have its volume level set to 0"
+                for mcb in micbcontrols:
+                    getc0micb = self.amixer + " -c 0 sget " + mcb
+                    self.ch.executeCommand(getc0micb)
+                    output = self.ch.getOutput()
+                    retcode = self.ch.getReturnCode()
+                    if retcode != 0:
+                        retval = False
+                        errmsg = self.ch.getErrorString()
+                        self.detailedresults += "\nError while running command: " + str(getc0micb) + " :\n" + str(errmsg)
+                        self.logger.log(LogPriority.DEBUG, "\n\nRETURN CODE WAS: " + str(retcode) + "\n\n")
+                    for line in output:
+                        if re.search("\[[0-9]+\%\]", line, re.IGNORECASE):
+                            if not re.search("\[0\%\]", line, re.IGNORECASE):
+                                retval = False
+                                self.detailedresults += "The microphone boost labeled: " + str(mcb) + " does not have its volume level set to 0"
+                        elif re.search("\[on\]|\[off\]", line, re.IGNORECASE):
+                            if not re.search("\[off\]", line, re.IGNORECASE):
+                                retval = False
+                                self.detailedresults += "The microphone boost labeled: " + str(mcb) + " is not turned off"
+    
+                for cap in c0Capcontrols:
+                    getc0Cap = self.amixer + " -c 0 sget " + cap
+                    self.ch.executeCommand(getc0Cap)
+                    output = self.ch.getOutput()
+                    retcode = self.ch.getReturnCode()
+                    if retcode != 0:
+                        retval = False
+                        errmsg = self.ch.getErrorString()
+                        self.detailedresults += "\nError while running command: " + str(getc0Cap) + " :\n" + str(errmsg)
+                    for line in output:
+                        if re.search("\[[0-9]+\%\]", line, re.IGNORECASE):
+                            if not re.search("\[0\%\]", line, re.IGNORECASE):
+                                retval = False
+                                self.detailedresults += "\nCapture control labeled: " + str(cap) + " does not have its volume level set to 0"
+                                break
+                    for line in output:
+                        if re.search("\[on\]", line, re.IGNORECASE):
+                            retval = False
+                            self.detailedresults += "\nCapture control labeled: " + str(cap) + " is not turned off"
+                            break
+            else:
+                self.logger.log(LogPriority.DEBUG, "No capture hardware devices found")
+            
+
+            self.ch.executeCommand(getgenCap)
+            output = self.ch.getOutput()
+            retcode = self.ch.getReturnCode()
+            if retcode != 0:
+                errmsg = self.ch.getErrorString()
+                # if the control does not exist, then there is no problem:
+                # we can't mute/unmute/use a non-existent control
+                errignore0 = "Unable to find simple control"
+                # if pulseaudio isn't running, then there is no problem:
+                # the system is likely running in headless mode
+                errignore1 = "PulseAudio: Unable to connect: Connection refused"
+                # if amixer unable to access devices, then there is no problem
+                # capture control devices are likely missing firmware
+                errignore2 = "amixer: Mixer attach default error: No such file or directory"
+                if not re.search(errignore0, errmsg, re.IGNORECASE) and \
+                   not re.search(errignore1, errmsg, re.IGNORECASE) and \
+                   not re.search(errignore2, errmsg, re.IGNORECASE):
+                    retval = False
+                    self.detailedresults += "\nError while running command: " + str(getgenCap) + " :\n" + str(errmsg)
+            for line in output:
+                if re.search("\[[0-9]+\%\]", line, re.IGNORECASE):
+                    if not re.search("\[0\%\]", line, re.IGNORECASE):
+                        retval = False
+                        self.detailedresults += "\nGeneric Capture control does not have its volume level set to 0"
+            for line in output:
+                if re.search("\[on\]", line, re.IGNORECASE):
+                    retval = False
+                    self.detailedresults += "\nGeneric Capture control is not turned off"
+                    break
+
+            systype = self.getSysType()
+
+            if systype == "systemd":
+                if not os.path.exists(self.systemdscriptname):
+                    retval = False
+                    self.detailedresults += "\nThe startup script to mute mics was not found"
+            if systype == "sysvinit":
+                if os.path.exists(self.sysvscriptname):
+                    f = open(self.sysvscriptname, "r")
+                    contentlines = f.readlines()
+                    f.close()
+                    found = False
+                    for line in contentlines:
+                        if re.search("amixer", line, re.IGNORECASE):
+                            found = True
+                    if not found:
+                        retval = False
+                        self.detailedresults += "\nSystem not configured to mute mics on startup."
+
+        except Exception:
+            raise
+        return retval
+
+    def fix(self):
+        '''
+        Fix method for MuteMic. Uses platform native methods to set the input
+        levels to zero. Note for Linux the use of amixer presumes pulseaudio.
+
+        @return: self.rulesuccess
+        @rtype: bool
+        @author: dkennel
+        @change: Breen Malmberg - 07/19/2016 - fixed comment block; init return
+        value to default and self.detailedresults as well; commands now run
+        through commandhelper object: self.ch; wrapped entire method in try/except;
+        added more debugging output
+        '''
+
+        # defaults
+        self.detailedresults = ""
+        success = True
+
+        try:
+
+            if self.environ.geteuid() != 0:
+                self.detailedresults += "\nYou are not running STONIX with elevated privileges. Some fix functionality will be disabled for this rule."
+
+            # if the CI is disabled, then don't run the fix
+            if not self.mutemicrophone.getcurrvalue():
+                self.logger.log(LogPriority.DEBUG, "\n\n\nmute microphone CI was not enabled so nothing will be done!\n\n\n")
+                return
+
+            self.logger.log(LogPriority.DEBUG, "Attempting to mute all mic's and capture sources...")
+            if self.environ.getosfamily() == 'darwin':
+                if not self.fixmac():
+                    success = False
+
+            if os.path.exists('/usr/bin/amixer'):
+                if not self.fixlinux():
+                    success = False
+
+            if os.path.exists(self.pulsedefaults) and self.environ.geteuid() == 0:
+                if not self.fixPulseAudio():
+                    success = False
+
+            self.logger.log(LogPriority.DEBUG, "Finished muting all mic's and capture sources")
+
+        except (KeyboardInterrupt, SystemExit):
+            # User initiated exit
+            raise
+        except Exception:
+            self.rulesuccess = False
+            self.detailedresults += traceback.format_exc()
+            self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
+        self.formatDetailedResults("fix", success, self.detailedresults)
+        return success
+
+    def fixmac(self):
+        '''
+        run commands to turn off microphones on mac
+
+        @return: retval
+        @rtype: bool
+        @author: Breen Malmberg
+        '''
+
+        # defaults
+        retval = True
+        command = "/usr/bin/osascript -e 'set volume input volume 0'"
+
+        self.logger.log(LogPriority.DEBUG, "System detected as: darwin. Running fixmac()...")
+
+        try:
+
+            self.ch.executeCommand(command)
+            retcode = self.ch.getReturnCode()
+            if retcode != 0:
+                retval = False
+                errmsg = self.ch.getErrorString()
+                self.detailedresults += "Error while running command: " + str(command) + " :\n" + str(errmsg) + "\n"
+
+        except Exception:
+            raise
+        return retval
+
+    def fixlinux(self):
+        '''
+        run commands to turn off microphones on linux
+
+        @return: retval
+        @rtype: bool
+        @author: Breen Malmberg
+        '''
+
+        retval = True
+
+        self.systemdcomment = ["# Added by STONIX\n\n"]
+        self.systemdunit = ["[Unit]\n", "Description=Mute Mic at system boot\n", "After=basic.target\n\n"]
+        self.systemdservice = ["[Service]\n", "Type=oneshot\n"]
+        self.systemdinstall = ["\n[Install]\n", "WantedBy=basic.target\n"]
+        self.sysvscriptcmds = []
+        self.systemdscript = []
+
+        self.logger.log(LogPriority.DEBUG, "\n\n\nSystem detected as: linux. Running fixlinux()...\n\n\n")
+
+        try:
+
+            devices = self.getDevices()
+            self.logger.log(LogPriority.DEBUG, "\nNumber of devices on this system is: " + str(len(devices)))
+
+            if not devices:
+                mics = self.getMics("0")
+                for m in mics:
+                    mutemiccmd = self.amixer + " -c 0 sset " + m + " 0% nocap mute off"
+                    self.systemdservice.append("ExecStart=" + str(mutemiccmd) + "\n")
+                    self.sysvscriptcmds.append(str(mutemiccmd) + "\n")
+                    self.ch.executeCommand(mutemiccmd)
+                mutecapturecmd = self.amixer + " -c 0 sset 'Capture' 0% mute off"
+                self.ch.executeCommand(mutecapturecmd)
+                self.systemdservice.append("ExecStart=" + str(mutecapturecmd) + "\n")
+                self.sysvscriptcmds.append(str(mutecapturecmd) + "\n")
+
+            else:
+                for di in devices:
+                    mics = self.getMics(di)
+                    self.logger.log(LogPriority.DEBUG, "\nNumber of mic's on device index " + str(di) + " is " + str(len(mics)))
+                    for m in mics:
+                        mutemiccmd = self.amixer + " -c " + di + " sset " + m + " 0% nocap mute off"
+                        self.systemdservice.append("ExecStart=" + str(mutemiccmd) + "\n")
+                        self.sysvscriptcmds.append(str(mutemiccmd) + "\n")
+                        self.ch.executeCommand(mutemiccmd)
+                    mutecapturecmd = self.amixer + " -c " + di + " sset 'Capture' 0% mute off"
+                    self.ch.executeCommand(mutecapturecmd)
+                    self.systemdservice.append("ExecStart=" + str(mutecapturecmd) + "\n")
+                    self.sysvscriptcmds.append(str(mutecapturecmd) + "\n")
+
+            # get card 0 Capture control info
+            # this is separate from the general Capture
+            self.ch.executeCommand(self.amixer + " -c 0 sget Capture")
+            output = self.ch.getOutput()
+            retcode = self.ch.getReturnCode()
+            if retcode != 0:
+                retval = False
+                errmsg = self.ch.getErrorString()
+                self.detailedresults += "\nError while running command: " + str(self.amixer + " -c 0 sget Capture") + " :\n" + str(errmsg)
+            for line in output:
+                # toggle the c0 Capture control off (mute it)
+                if re.search("\[on\]", line, re.IGNORECASE):
+                    self.ch.executeCommand(self.amixer + " -c 0 sset Capture toggle")
+                    retcodeB = self.ch.getReturnCode()
+                    if retcodeB != 0:
+                        retval = False
+                        errmsg = self.ch.getErrorString()
+                        self.detailedresults += "\nError while running command: " + str(self.amixer +  " -c 0 sset Capture toggle") + " :\n" + str(errmsg)
+                    # again, we don't want to toggle more than once
+                    break
+
+            # set card 0 Capture volume to 0
+            self.ch.executeCommand(self.amixer + " -c 0 sset Capture 0")
+            self.systemdservice.append("ExecStart=" + self.amixer + " -c 0 sset Capture 0\n")
+            self.sysvscriptcmds.append(self.amixer + " -c 0 sset Capture 0\n")
+            retcode = self.ch.getReturnCode()
+            if retcode != 0:
+                retval = False
+                errmsg = self.ch.getErrorString()
+                self.detailedresults += "\nError while running command: " + str(self.amixer + " -c 0 sset Capture 0") + " :\n" + str(errmsg)
+
+            setGenCap = self.amixer + " sset 'Capture' 0% nocap off mute"
+            self.systemdservice.append("ExecStart=" + str(setGenCap) + "\n")
+            self.sysvscriptcmds.append(setGenCap)
+            self.ch.executeCommand(setGenCap)
+            retcode = self.ch.getReturnCode()
+            if retcode != 0:
+                retval = False
+                errmsg = self.ch.getErrorString()
+                self.detailedresults += "\nError while running command: " + str(setGenCap) + " :\n" + str(errmsg)
+
+            systype = self.getSysType()
+            script = self.buildScript(systype)
+            self.finishScript(systype, script)
+
+        except Exception:
+            raise
+        return retval
+
     def setPaths(self):
         '''
         determine the correct paths for each utility,
@@ -292,224 +691,6 @@ valid exceptions.'
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
         return True
 
-    def reportlinux(self):
-        '''
-        determine the volume level and mute status of all mic's
-        and capture devices, using linux-specific mechanisms and
-        commands/paths
-
-        @return: retval
-        @rtype: bool
-        @author: Breen Malmberg
-        '''
-
-        retval = True
-        getc0Controls = self.amixer + " -c 0 scontrols"
-        getgenCap = self.amixer + " sget 'Capture'"
-        miccontrols = []
-        micbcontrols = []
-        c0Capcontrols = []
-
-        try:
-            if self.soundDeviceExists():
-                self.ch.executeCommand(getc0Controls)
-                output = self.ch.getOutput()
-                retcode = self.ch.getReturnCode()
-                if retcode != 0:
-                    retval = False
-                    errmsg = self.ch.getErrorString()
-                    self.detailedresults += "\nError while running command: " + str(getc0Controls) + " :\n" + str(errmsg)
-                    self.logger.log(LogPriority.DEBUG, ["MuteMic.reportlinux", "\n\nRETURN CODE WAS: " + str(retcode) + "\n\n"])
-                for line in output:
-                    if re.search("^Simple\s+mixer\s+control\s+\'.*Mic\'", line, re.IGNORECASE):
-                        sline = line.split("'")
-                        miccontrols.append("'" + str(sline[1]) + "'")
-                    elif re.search("^Simple\s+mixer\s+control\s+\'.*Mic\s+Boost.*\'", line, re.IGNORECASE):
-                        sline = line.split("'")
-                        micbcontrols.append("'" + str(sline[1]) + "'")
-                    elif re.search("^Simple\s+mixer\s+control\s+\'.*Capture.*\'", line, re.IGNORECASE):
-                        sline = line.split("'")
-                        c0Capcontrols.append("'" + str(sline[1]) + "'")
-                for mc in miccontrols:
-                    getc0mic = self.amixer + " -c 0 sget " + mc
-                    self.ch.executeCommand(getc0mic)
-                    output = self.ch.getOutput()
-                    retcode = self.ch.getReturnCode()
-                    if retcode != 0:
-                        retval = False
-                        errmsg = self.ch.getErrorString()
-                        self.detailedresults += "\nError while running command: " + str(getc0mic) + " :\n" + str(errmsg)
-                        self.logger.log(LogPriority.DEBUG, ["MuteMic.reportlinux", "\n\nRETURN CODE WAS: " + str(retcode) + "\n\n"])
-                    for line in output:
-                        if re.search("\[[0-9]+\%\]", line, re.IGNORECASE):
-                            if not re.search("\[0\%\]", line, re.IGNORECASE):
-                                retval = False
-                                self.detailedresults += "The microphone labeled: " + str(mc) + " does not have its volume level set to 0"
-                for mcb in micbcontrols:
-                    getc0micb = self.amixer + " -c 0 sget " + mcb
-                    self.ch.executeCommand(getc0micb)
-                    output = self.ch.getOutput()
-                    retcode = self.ch.getReturnCode()
-                    if retcode != 0:
-                        retval = False
-                        errmsg = self.ch.getErrorString()
-                        self.detailedresults += "\nError while running command: " + str(getc0micb) + " :\n" + str(errmsg)
-                        self.logger.log(LogPriority.DEBUG, "\n\nRETURN CODE WAS: " + str(retcode) + "\n\n")
-                    for line in output:
-                        if re.search("\[[0-9]+\%\]", line, re.IGNORECASE):
-                            if not re.search("\[0\%\]", line, re.IGNORECASE):
-                                retval = False
-                                self.detailedresults += "The microphone boost labeled: " + str(mcb) + " does not have its volume level set to 0"
-                        elif re.search("\[on\]|\[off\]", line, re.IGNORECASE):
-                            if not re.search("\[off\]", line, re.IGNORECASE):
-                                retval = False
-                                self.detailedresults += "The microphone boost labeled: " + str(mcb) + " is not turned off"
-    
-                for cap in c0Capcontrols:
-                    getc0Cap = self.amixer + " -c 0 sget " + cap
-                    self.ch.executeCommand(getc0Cap)
-                    output = self.ch.getOutput()
-                    retcode = self.ch.getReturnCode()
-                    if retcode != 0:
-                        retval = False
-                        errmsg = self.ch.getErrorString()
-                        self.detailedresults += "\nError while running command: " + str(getc0Cap) + " :\n" + str(errmsg)
-                    for line in output:
-                        if re.search("\[[0-9]+\%\]", line, re.IGNORECASE):
-                            if not re.search("\[0\%\]", line, re.IGNORECASE):
-                                retval = False
-                                self.detailedresults += "\nCapture control labeled: " + str(cap) + " does not have its volume level set to 0"
-                                break
-                    for line in output:
-                        if re.search("\[on\]", line, re.IGNORECASE):
-                            retval = False
-                            self.detailedresults += "\nCapture control labeled: " + str(cap) + " is not turned off"
-                            break
-            else:
-                self.logger.log(LogPriority.DEBUG, "No capture hardware devices found")
-            
-
-            self.ch.executeCommand(getgenCap)
-            output = self.ch.getOutput()
-            retcode = self.ch.getReturnCode()
-            if retcode != 0:
-                errmsg = self.ch.getErrorString()
-                # if the control does not exist, then there is no problem:
-                # we can't mute/unmute/use a non-existent control
-                errignore0 = "Unable to find simple control"
-                # if pulseaudio isn't running, then there is no problem:
-                # the system is likely running in headless mode
-                errignore1 = "PulseAudio: Unable to connect: Connection refused"
-                # if amixer unable to access devices, then there is no problem
-                # capture control devices are likely missing firmware
-                errignore2 = "amixer: Mixer attach default error: No such file or directory"
-                if not re.search(errignore0, errmsg, re.IGNORECASE) and \
-                   not re.search(errignore1, errmsg, re.IGNORECASE) and \
-                   not re.search(errignore2, errmsg, re.IGNORECASE):
-                    retval = False
-                    self.detailedresults += "\nError while running command: " + str(getgenCap) + " :\n" + str(errmsg)
-            for line in output:
-                if re.search("\[[0-9]+\%\]", line, re.IGNORECASE):
-                    if not re.search("\[0\%\]", line, re.IGNORECASE):
-                        retval = False
-                        self.detailedresults += "\nGeneric Capture control does not have its volume level set to 0"
-            for line in output:
-                if re.search("\[on\]", line, re.IGNORECASE):
-                    retval = False
-                    self.detailedresults += "\nGeneric Capture control is not turned off"
-                    break
-
-            systype = self.getSysType()
-
-            if systype == "systemd":
-                if not os.path.exists(self.systemdscriptname):
-                    retval = False
-                    self.detailedresults += "\nThe startup script to mute mics was not found"
-            if systype == "sysvinit":
-                if os.path.exists(self.sysvscriptname):
-                    f = open(self.sysvscriptname, "r")
-                    contentlines = f.readlines()
-                    f.close()
-                    found = False
-                    for line in contentlines:
-                        if re.search("amixer", line, re.IGNORECASE):
-                            found = True
-                    if not found:
-                        retval = False
-                        self.detailedresults += "\nSystem not configured to mute mics on startup."
-
-        except Exception:
-            raise
-        return retval
-
-    def reportmac(self):
-        '''
-        determine the volume level of the input device on a mac
-
-        @return: retval
-        @rtype: bool
-        @author: Breen Malmberg
-        '''
-
-        retval = True
-        command = "/usr/bin/osascript -e 'get the input volume of (get volume settings)'"
-
-        try:
-
-            self.ch.executeCommand(command)
-            output = self.ch.getOutputString()
-            retcode = self.ch.getReturnCode()
-            if retcode != 0:
-                retval = False
-                errmsg = self.ch.getErrorString()
-                self.detailedresults += "\nError while running command: " + str(command) + " :\n" + str(errmsg)
-            if re.search("[1-9]+", output.strip(), re.IGNORECASE):
-                retval = False
-                self.detailedresults += "\nThe microphone is not muted"
-
-        except Exception:
-            raise
-        return retval
-
-    def report(self):
-        '''
-        Report method for MuteMic. Uses the platform native method to read
-        the input levels. Levels must be zero to pass. Note for Linux the use
-        of amixer presumes pulseaudio.
-
-        @author: dkennel
-        @change: Breen Malmberg - 07/19/2016 - added variable defaults initialization;
-        added commandhelper object self.ch
-        '''
-
-        # defaults
-        self.compliant = True
-        self.detailedresults = ""
-        self.ch = CommandHelper(self.logger)
-
-        try:
-
-            if self.environ.getosfamily() == 'darwin':
-                if not self.reportmac():
-                    self.compliant = False
-            elif os.path.exists(self.amixer):
-                if not self.reportlinux():
-                    self.compliant = False
-            if os.path.exists(self.pulsedefaults):
-                if not self.checkpulseaudio():
-                    self.compliant = False
-
-        except (KeyboardInterrupt, SystemExit):
-            # User initiated exit
-            raise
-        except Exception:
-            self.rulesuccess = False
-            self.detailedresults += traceback.format_exc()
-            self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("report", self.compliant, self.detailedresults)
-        self.logdispatch.log(LogPriority.INFO, self.detailedresults)
-        return self.compliant
-
     def fixPulseAudio(self):
         '''
         This method adds lines to the end of the pulse audio services default
@@ -598,87 +779,6 @@ valid exceptions.'
                 " - " + str(traceback.format_exc())
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
 
-        return retval
-
-    def fix(self):
-        '''
-        Fix method for MuteMic. Uses platform native methods to set the input
-        levels to zero. Note for Linux the use of amixer presumes pulseaudio.
-
-        @return: self.rulesuccess
-        @rtype: bool
-        @author: dkennel
-        @change: Breen Malmberg - 07/19/2016 - fixed comment block; init return
-        value to default and self.detailedresults as well; commands now run
-        through commandhelper object: self.ch; wrapped entire method in try/except;
-        added more debugging output
-        '''
-
-        # defaults
-        self.detailedresults = ""
-        success = True
-
-        try:
-
-            if self.environ.geteuid() != 0:
-                self.detailedresults += "\nYou are not running STONIX with elevated privileges. Some fix functionality will be disabled for this rule."
-
-            # if the CI is disabled, then don't run the fix
-            if not self.mutemicrophone.getcurrvalue():
-                self.logger.log(LogPriority.DEBUG, "\n\n\nmute microphone CI was not enabled so nothing will be done!\n\n\n")
-                return
-
-            self.logger.log(LogPriority.DEBUG, "Attempting to mute all mic's and capture sources...")
-            if self.environ.getosfamily() == 'darwin':
-                if not self.fixmac():
-                    success = False
-
-            if os.path.exists('/usr/bin/amixer'):
-                if not self.fixlinux():
-                    success = False
-
-            if os.path.exists(self.pulsedefaults) and self.environ.geteuid() == 0:
-                if not self.fixPulseAudio():
-                    success = False
-
-            self.logger.log(LogPriority.DEBUG, "Finished muting all mic's and capture sources")
-
-        except (KeyboardInterrupt, SystemExit):
-            # User initiated exit
-            raise
-        except Exception:
-            self.rulesuccess = False
-            self.detailedresults += traceback.format_exc()
-            self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("fix", success, self.detailedresults)
-        return success
-
-    def fixmac(self):
-        '''
-        run commands to turn off microphones on mac
-
-        @return: retval
-        @rtype: bool
-        @author: Breen Malmberg
-        '''
-
-        # defaults
-        retval = True
-        command = "/usr/bin/osascript -e 'set volume input volume 0'"
-
-        self.logger.log(LogPriority.DEBUG, "System detected as: darwin. Running fixmac()...")
-
-        try:
-
-            self.ch.executeCommand(command)
-            retcode = self.ch.getReturnCode()
-            if retcode != 0:
-                retval = False
-                errmsg = self.ch.getErrorString()
-                self.detailedresults += "\nError while running command: " + str(command) + " :\n" + str(errmsg)
-
-        except Exception:
-            raise
         return retval
 
     def getDevices(self):
@@ -901,106 +1001,6 @@ valid exceptions.'
 
         except Exception:
             raise
-
-    def fixlinux(self):
-        '''
-        run commands to turn off microphones on linux
-
-        @return: retval
-        @rtype: bool
-        @author: Breen Malmberg
-        '''
-
-        retval = True
-
-        self.systemdcomment = ["# Added by STONIX\n\n"]
-        self.systemdunit = ["[Unit]\n", "Description=Mute Mic at system boot\n", "After=basic.target\n\n"]
-        self.systemdservice = ["[Service]\n", "Type=oneshot\n"]
-        self.systemdinstall = ["\n[Install]\n", "WantedBy=basic.target\n"]
-        self.sysvscriptcmds = []
-        self.systemdscript = []
-
-        self.logger.log(LogPriority.DEBUG, "\n\n\nSystem detected as: linux. Running fixlinux()...\n\n\n")
-
-        try:
-
-            devices = self.getDevices()
-            self.logger.log(LogPriority.DEBUG, "\nNumber of devices on this system is: " + str(len(devices)))
-
-            if not devices:
-                mics = self.getMics("0")
-                for m in mics:
-                    mutemiccmd = self.amixer + " -c 0 sset " + m + " 0% nocap mute off"
-                    self.systemdservice.append("ExecStart=" + str(mutemiccmd) + "\n")
-                    self.sysvscriptcmds.append(str(mutemiccmd) + "\n")
-                    self.ch.executeCommand(mutemiccmd)
-                mutecapturecmd = self.amixer + " -c 0 sset 'Capture' 0% mute off"
-                self.ch.executeCommand(mutecapturecmd)
-                self.systemdservice.append("ExecStart=" + str(mutecapturecmd) + "\n")
-                self.sysvscriptcmds.append(str(mutecapturecmd) + "\n")
-
-            else:
-                for di in devices:
-                    mics = self.getMics(di)
-                    self.logger.log(LogPriority.DEBUG, "\nNumber of mic's on device index " + str(di) + " is " + str(len(mics)))
-                    for m in mics:
-                        mutemiccmd = self.amixer + " -c " + di + " sset " + m + " 0% nocap mute off"
-                        self.systemdservice.append("ExecStart=" + str(mutemiccmd) + "\n")
-                        self.sysvscriptcmds.append(str(mutemiccmd) + "\n")
-                        self.ch.executeCommand(mutemiccmd)
-                    mutecapturecmd = self.amixer + " -c " + di + " sset 'Capture' 0% mute off"
-                    self.ch.executeCommand(mutecapturecmd)
-                    self.systemdservice.append("ExecStart=" + str(mutecapturecmd) + "\n")
-                    self.sysvscriptcmds.append(str(mutecapturecmd) + "\n")
-
-            # get card 0 Capture control info
-            # this is separate from the general Capture
-            self.ch.executeCommand(self.amixer + " -c 0 sget Capture")
-            output = self.ch.getOutput()
-            retcode = self.ch.getReturnCode()
-            if retcode != 0:
-                retval = False
-                errmsg = self.ch.getErrorString()
-                self.detailedresults += "\nError while running command: " + str(self.amixer + " -c 0 sget Capture") + " :\n" + str(errmsg)
-            for line in output:
-                # toggle the c0 Capture control off (mute it)
-                if re.search("\[on\]", line, re.IGNORECASE):
-                    self.ch.executeCommand(self.amixer + " -c 0 sset Capture toggle")
-                    retcodeB = self.ch.getReturnCode()
-                    if retcodeB != 0:
-                        retval = False
-                        errmsg = self.ch.getErrorString()
-                        self.detailedresults += "\nError while running command: " + str(self.amixer +  " -c 0 sset Capture toggle") + " :\n" + str(errmsg)
-                    # again, we don't want to toggle more than once
-                    break
-
-            # set card 0 Capture volume to 0
-            self.ch.executeCommand(self.amixer + " -c 0 sset Capture 0")
-            self.systemdservice.append("ExecStart=" + self.amixer + " -c 0 sset Capture 0\n")
-            self.sysvscriptcmds.append(self.amixer + " -c 0 sset Capture 0\n")
-            retcode = self.ch.getReturnCode()
-            if retcode != 0:
-                retval = False
-                errmsg = self.ch.getErrorString()
-                self.detailedresults += "\nError while running command: " + str(self.amixer + " -c 0 sset Capture 0") + " :\n" + str(errmsg)
-
-            setGenCap = self.amixer + " sset 'Capture' 0% nocap off mute"
-            self.systemdservice.append("ExecStart=" + str(setGenCap) + "\n")
-            self.sysvscriptcmds.append(setGenCap)
-            self.ch.executeCommand(setGenCap)
-            retcode = self.ch.getReturnCode()
-            if retcode != 0:
-                retval = False
-                errmsg = self.ch.getErrorString()
-                self.detailedresults += "\nError while running command: " + str(setGenCap) + " :\n" + str(errmsg)
-
-            systype = self.getSysType()
-            script = self.buildScript(systype)
-            self.finishScript(systype, script)
-
-        except Exception:
-            raise
-        return retval
 
     def undo(self):
         '''
