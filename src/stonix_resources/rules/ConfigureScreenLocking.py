@@ -651,7 +651,7 @@ directory, invalid form of /etc/passwd"
                     success1 = True
                 if self.fixKde():
                     success2 = True
-                if success1 and success2:
+                if not success1 or not success2:
                     self.rulesuccess = False
         except(KeyboardInterrupt, SystemExit):
             raise
