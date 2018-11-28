@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 ###############################################################################
 #                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2018.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -22,14 +22,14 @@
 #                                                                             #
 ###############################################################################
 '''
-This is a Unit Test for Rule ConfigureAppleSoftwareUpdate
+This is a Unit Test for Rule ConfigureSystemAuthentication
 
 @author: ekkehard j. koch
-@change: 03/18/2013 Original Implementation
-@change: 2016/02/10 roy Added sys.path.append for being able to unit test this
-                        file as well as with the test harness.
+@author: Breen Malmberg
 '''
+
 from __future__ import absolute_import
+
 import unittest
 import sys
 
@@ -57,6 +57,35 @@ class zzzTestRuleConfigureSystemAuthentication(RuleTest):
 
     def runTest(self):
         self.simpleRuleTest()
+
+    def test_account_locking_detection(self):
+        '''
+
+        @return:
+        '''
+
+        self.rule.report()
+        result = bool(self.rule.usingpamfail or self.rule.usingpamtally2)
+        self.assertTrue(result) # if false, then system is using neither in which case the rule will be in trouble
+
+    def test_editor_creation(self):
+        '''
+
+        @return:
+        '''
+
+        result1 = False
+        result2 = False
+
+        self.rule.report()
+
+        if self.rule.editor1:
+            result1 = True
+        if self.rule.editor2:
+            result2 = True
+
+        self.assertTrue(result1)
+        self.assertTrue(result2)
 
     def setConditionsForRule(self):
         '''
@@ -111,5 +140,4 @@ class zzzTestRuleConfigureSystemAuthentication(RuleTest):
         return success
 
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()

@@ -662,7 +662,6 @@ class ConfigureSystemAuthentication(Rule):
 #                                 self.detailedresults += "Unable to set " + \
 #                                     "correct permissions on " + pamfile + "\n"
 
-    
     def checkaccountlockout(self):
         '''
         Method to determine which account locking program to
