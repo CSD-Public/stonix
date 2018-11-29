@@ -182,6 +182,7 @@ class DisableIPV6(Rule):
         else:
             networkservices = self.ch.getOutput()
             for ns in networkservices:
+                # ignore non-network service output lines
                 if re.search("denotes that", ns, re.IGNORECASE):
                     continue
                 else:
@@ -306,20 +307,24 @@ class DisableIPV6(Rule):
 
             # iterate through list, setting ipv6 off for each network service
             for ns in networkservices:
-                self.logger.log(LogPriority.DEBUG, "Attempting to disable ipv6 on " + ns)
-                self.ch.executeCommand(disableipv6 + ' "' + ns + '"')
-                retcode = self.ch.getReturnCode()
-                # record undo info
-                if retcode == 0:
-                    self.iditerator += 1
-                    myid = iterate(self.iditerator, self.rulenumber)
-                    event = {'eventtype': 'comm',
-                             'command': networksetup + ' -setv6automatic ' + '"' + ns + '"'}
-                    self.statechglogger.recordchgevent(myid, event)
-                    self.logger.log(LogPriority.DEBUG, "Successfully disabled ipv6 for " + ns)
+                # ignore non-network service output lines
+                if re.search("denotes that", ns, re.IGNORECASE):
+                    continue
                 else:
-                    success = False
-                    self.detailedresults += "\nFailed to turn off ipv6 for: " + ns
+                    self.logger.log(LogPriority.DEBUG, "Attempting to disable ipv6 on " + ns)
+                    self.ch.executeCommand(disableipv6 + ' "' + ns + '"')
+                    retcode = self.ch.getReturnCode()
+                    # record undo info
+                    if retcode == 0:
+                        self.iditerator += 1
+                        myid = iterate(self.iditerator, self.rulenumber)
+                        event = {'eventtype': 'comm',
+                                 'command': networksetup + ' -setv6automatic ' + '"' + ns + '"'}
+                        self.statechglogger.recordchgevent(myid, event)
+                        self.logger.log(LogPriority.DEBUG, "Successfully disabled ipv6 for " + ns)
+                    else:
+                        success = False
+                        self.detailedresults += "\nFailed to turn off ipv6 for: " + ns
 
         except Exception:
             raise
