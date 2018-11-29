@@ -182,18 +182,21 @@ class DisableIPV6(Rule):
         else:
             networkservices = self.ch.getOutput()
             for ns in networkservices:
-                self.logger.log(LogPriority.DEBUG, "Getting information for network service: " + ns)
-                self.ch.executeCommand(getinfo + ' "' + ns + '"')
-                retcode = self.ch.getReturnCode()
-                if retcode != 0:
-                    compliant = False
-                    self.detailedresults += "\nFailed to get information for network service: " + ns
+                if re.search("denotes that", ns, re.IGNORECASE):
+                    continue
                 else:
-                    nsinfo = self.ch.getOutput()
-                    for line in nsinfo:
-                        if re.search(ipv6status, line, re.IGNORECASE):
-                            compliant = False
-                            self.detailedresults += "\nNetwork Service " + ns + " has ipv6 enabled"
+                    self.logger.log(LogPriority.DEBUG, "Getting information for network service: " + ns)
+                    self.ch.executeCommand(getinfo + ' "' + ns + '"')
+                    retcode = self.ch.getReturnCode()
+                    if retcode != 0:
+                        compliant = False
+                        self.detailedresults += "\nFailed to get information for network service: " + ns
+                    else:
+                        nsinfo = self.ch.getOutput()
+                        for line in nsinfo:
+                            if re.search(ipv6status, line, re.IGNORECASE):
+                                compliant = False
+                                self.detailedresults += "\nNetwork Service " + ns + " has ipv6 enabled"
 
     def fix(self):
         '''
