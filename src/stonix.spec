@@ -123,6 +123,17 @@ installed at /usr/local/stonix/stonixdb.sql
 %attr(0750,root,apache) /var/www/html/stonix/results.php
 
 %changelog
+* Mon Dec 3 2018 Derek Walker <dwalker@lanl.gov> - 0.9.25
+- DisableSerialLoginPrompts - improvements to automated testing
+- Environment class - improvements to automated testing
+- ConfigureScreenLocking - improvements to automated testing
+- ConfigureSystemAuthentication - improvements to automated testing
+- EnablePAEandNX - improvements to automated testing
+- LimitConcurrentLogins - improvements to automated testing
+- Mac os x 10.12, 10.13, 10.14 unit test pipeline improved
+- SecureApacheWebServer - improvements to automated testing
+- Man page updated for stonix, included -G option
+
 * Tue Nov 13 2018 Breen Malmberg <bemalmbe@lanl.gov> - 0.9.24
 - Misc - The rule InstallLANLWINOLTCA was renamed to "InstallLANLcert"
 - Fixed - InstallLANLcert - An error "certutil: function failed: SEC_ERROR_BAD_DATABASE: security library: bad database" caused by certificates not being installed correctly by the rule
