@@ -174,26 +174,38 @@ class DisableIPV6(Rule):
         self.logger.log(LogPriority.DEBUG, "Checking network services for ipv6...")
 
         self.logger.log(LogPriority.DEBUG, "Getting list of network services...")
-        self.ch.executeCommand(listnetworkservices)
-        retcode = self.ch.getReturnCode()
-        if retcode != 0:
-            compliant = False
-            self.detailedresults += "\nFailed to get list of network services"
-        else:
-            networkservices = self.ch.getOutput()
-            for ns in networkservices:
-                self.logger.log(LogPriority.DEBUG, "Getting information for network service: " + ns)
-                self.ch.executeCommand(getinfo + ' "' + ns + '"')
-                retcode = self.ch.getReturnCode()
-                if retcode != 0:
-                    compliant = False
-                    self.detailedresults += "\nFailed to get information for network service: " + ns
-                else:
-                    nsinfo = self.ch.getOutput()
-                    for line in nsinfo:
-                        if re.search(ipv6status, line, re.IGNORECASE):
+
+        try:
+
+            self.ch.executeCommand(listnetworkservices)
+            retcode = self.ch.getReturnCode()
+            if retcode != 0:
+                compliant = False
+                self.detailedresults += "\nFailed to get list of network services"
+            else:
+                networkservices = self.ch.getOutput()
+                for ns in networkservices:
+                    # ignore non-network service output lines
+                    if re.search("denotes that", ns, re.IGNORECASE):
+                        continue
+                    else:
+                        self.logger.log(LogPriority.DEBUG, "Getting information for network service: " + ns)
+                        self.ch.executeCommand(getinfo + ' "' + ns + '"')
+                        retcode = self.ch.getReturnCode()
+                        if retcode != 0:
                             compliant = False
-                            self.detailedresults += "\nNetwork Service " + ns + " has ipv6 enabled"
+                            self.detailedresults += "\nFailed to get information for network service: " + ns
+                        else:
+                            nsinfo = self.ch.getOutput()
+                            for line in nsinfo:
+                                if re.search(ipv6status, line, re.IGNORECASE):
+                                    compliant = False
+                                    self.detailedresults += "\nNetwork Service " + ns + " has ipv6 enabled"
+
+        except Exception:
+            raise
+
+        return compliant
 
     def fix(self):
         '''
@@ -303,20 +315,24 @@ class DisableIPV6(Rule):
 
             # iterate through list, setting ipv6 off for each network service
             for ns in networkservices:
-                self.logger.log(LogPriority.DEBUG, "Attempting to disable ipv6 on " + ns)
-                self.ch.executeCommand(disableipv6 + ' "' + ns + '"')
-                retcode = self.ch.getReturnCode()
-                # record undo info
-                if retcode == 0:
-                    self.iditerator += 1
-                    myid = iterate(self.iditerator, self.rulenumber)
-                    event = {'eventtype': 'comm',
-                             'command': networksetup + ' -setv6automatic ' + '"' + ns + '"'}
-                    self.statechglogger.recordchgevent(myid, event)
-                    self.logger.log(LogPriority.DEBUG, "Successfully disabled ipv6 for " + ns)
+                # ignore non-network service output lines
+                if re.search("denotes that", ns, re.IGNORECASE):
+                    continue
                 else:
-                    success = False
-                    self.detailedresults += "\nFailed to turn off ipv6 for: " + ns
+                    self.logger.log(LogPriority.DEBUG, "Attempting to disable ipv6 on " + ns)
+                    self.ch.executeCommand(disableipv6 + ' "' + ns + '"')
+                    retcode = self.ch.getReturnCode()
+                    # record undo info
+                    if retcode == 0:
+                        self.iditerator += 1
+                        myid = iterate(self.iditerator, self.rulenumber)
+                        event = {'eventtype': 'comm',
+                                 'command': networksetup + ' -setv6automatic ' + '"' + ns + '"'}
+                        self.statechglogger.recordchgevent(myid, event)
+                        self.logger.log(LogPriority.DEBUG, "Successfully disabled ipv6 for " + ns)
+                    else:
+                        success = False
+                        self.detailedresults += "\nFailed to turn off ipv6 for: " + ns
 
         except Exception:
             raise

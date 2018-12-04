@@ -37,23 +37,23 @@ format of entries.
 KERB5
 @change: 2014/08/20 - Added version variable to here and updated all locations
 that access the version variable to use this copy.
-@change: 2015/03/01 - ekkehard - incremented STONIXVERSION = 0.9.11
-@change: 2015/04/07 - ekkehard - incremented STONIXVERSION = 0.9.12
+@change: 2015/03/01 - ekkehard - incremented STONIXVERSION = 0.9.26
+@change: 2015/04/07 - ekkehard - incremented STONIXVERSION = 0.9.26
 @change: 2015/12/07 - eball Renamed KERB5 to MACKRB5 and KRB5 to LINUXKRB5
-@change: 2016/02/03 - ekkehard - incremented STONIXVERSION = 0.9.13
+@change: 2016/02/03 - ekkehard - incremented STONIXVERSION = 0.9.26
 @change: 2016/05/05 - eball Add LOCALDOMAINS for AuditFirefoxUsage(84)
 @change: 2017/03/07 - dkennel add FISMACAT for FISMA/FIPS 199 risk category
-@change: 2017/07/07 - ekkehard - incremented STONIXVERSION = 0.9.14
-@change: 2017/10/10 - ekkehard - incremented STONIXVERSION = 0.9.15
-@change: 2017/11/13 - ekkehard - incremented STONIXVERSION = 0.9.16
-@change: 2018/02/06 - ekkehard - incremented STONIXVERSION = 0.9.17
-@change: 2018/02/06 - ekkehard - incremented STONIXVERSION = 0.9.18
-@change: 2018/04/11 - ekkehard - incremented STONIXVERSION = 0.9.19
-@change: 2018/05/08 - ekkehard - incremented STONIXVERSION = 0.9.20
-@change: 2018/06/08 - ekkehard - incremented STONIXVERSION = 0.9.21
+@change: 2017/07/07 - ekkehard - incremented STONIXVERSION = 0.9.26
+@change: 2017/10/10 - ekkehard - incremented STONIXVERSION = 0.9.26
+@change: 2017/11/13 - ekkehard - incremented STONIXVERSION = 0.9.26
+@change: 2018/02/06 - ekkehard - incremented STONIXVERSION = 0.9.26
+@change: 2018/02/06 - ekkehard - incremented STONIXVERSION = 0.9.26
+@change: 2018/04/11 - ekkehard - incremented STONIXVERSION = 0.9.26
+@change: 2018/05/08 - ekkehard - incremented STONIXVERSION = 0.9.26
+@change: 2018/06/08 - ekkehard - incremented STONIXVERSION = 0.9.26
 @change: 2018/08/21 - Brandon - changed CRACKLIB_HIGH_REGEX minlen and
                                 PWQUALITY_HIGH_REGEX minlen from 12 to 14
-@change: 2018/11/14 - Breen Malmberg - incremented STONIXVERSION = 0.9.25
+@change: 2018/11/14 - Breen Malmberg - incremented STONIXVERSION = 0.9.26
 '''
 
 FISMACAT = 'med'
@@ -64,7 +64,7 @@ FISMACAT = 'med'
 # arbitrary values are fine. A recommended local version might look like this:
 # 1.2.2-local3 or just 1.2.2-3 or 1.2.2.3
 # Variable Type: String
-STONIXVERSION = "0.9.25"
+STONIXVERSION = '0.9.26'
 
 # The report server should be a string containing a valid FQDN or IP address
 # for the host that STONIX should upload it's run report XML data to.
