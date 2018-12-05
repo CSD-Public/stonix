@@ -321,7 +321,9 @@ valid exceptions.'
             if systype == "systemd":
                 if not os.path.exists(self.systemdscriptname):
                     retval = False
-                    self.detailedresults += "\nThe startup script to mute mics was not found"
+                    self.detailedresults += "The startup script to mute mics was not found\n"
+                    debug = "The startup script to mute mics was not found\n"
+                    self.logger.log(LogPriority.DEBUG, debug)
             if systype == "sysvinit":
                 if os.path.exists(self.sysvscriptname):
                     f = open(self.sysvscriptname, "r")
@@ -333,7 +335,7 @@ valid exceptions.'
                             found = True
                     if not found:
                         retval = False
-                        self.detailedresults += "\nSystem not configured to mute mics on startup."
+                        self.detailedresults += "System not configured to mute mics on startup."
 
         except Exception:
             raise
