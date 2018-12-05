@@ -541,7 +541,11 @@ class Environment:
             print "environment::getmacaddr():WARNING: Could not detect any net utility type/location"
             return macaddr
         elif "nmcli" in netutil:
-            netcmd = netutil +  " -t dev list"
+            # fork fork fork...
+            if re.search("debian|ubuntu", self.getostype(), re.IGNORECASE):
+                netcmd = netutil + " device show"
+            else:
+                netcmd = netutil +  " -t dev list"
         elif "ifconfig" in netutil:
             netcmd = netutil + " -a"
         elif "ip" in netutil:
