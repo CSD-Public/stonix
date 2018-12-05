@@ -159,11 +159,6 @@ ALLOWNETS = ['192.168.0.1/24']
 # Variable Type: String
 XINETDALLOW = '192.168.0.1/24'
 
-# Specify a subnet to allow printer browsing on
-# This will be written in the cups config file for the system
-# Variable Type: String
-PRINTBROWSESUBNET = '192.168.0.1/24'
-
 # Specify a list of internal Network Time Protocol (NTP) Servers
 # Variable Type: List (of strings)
 NTPSERVERSINTERNAL = None
