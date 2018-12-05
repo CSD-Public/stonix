@@ -178,7 +178,7 @@ valid exceptions.'
         @rtype: bool
         @author: Breen Malmberg
         '''
-
+        debug = ""
         retval = True
         getc0Controls = self.amixer + " -c 0 scontrols"
         getgenCap = self.amixer + " sget 'Capture'"
@@ -195,7 +195,8 @@ valid exceptions.'
                     retval = False
                     errmsg = self.ch.getErrorString()
                     self.detailedresults += "\nError while running command: " + str(getc0Controls) + " :\n" + str(errmsg)
-                    self.logger.log(LogPriority.DEBUG, ["MuteMic.reportlinux", "\n\nRETURN CODE WAS: " + str(retcode) + "\n\n"])
+                    debug = getc0Controls + " command returned " + str(retcode) + "\n"
+                    self.logger.log(LogPriority.DEBUG, debug)
                 for line in output:
                     if re.search("^Simple\s+mixer\s+control\s+\'.*Mic\'", line, re.IGNORECASE):
                         sline = line.split("'")
@@ -215,12 +216,15 @@ valid exceptions.'
                         retval = False
                         errmsg = self.ch.getErrorString()
                         self.detailedresults += "\nError while running command: " + str(getc0mic) + " :\n" + str(errmsg)
-                        self.logger.log(LogPriority.DEBUG, ["MuteMic.reportlinux", "\n\nRETURN CODE WAS: " + str(retcode) + "\n\n"])
+                        debug = getc0mic + " command returned " + str(retcode) + "\n"
+                        self.logger.log(LogPriority.DEBUG, debug)
                     for line in output:
                         if re.search("\[[0-9]+\%\]", line, re.IGNORECASE):
                             if not re.search("\[0\%\]", line, re.IGNORECASE):
                                 retval = False
                                 self.detailedresults += "The microphone labeled: " + str(mc) + " does not have its volume level set to 0"
+                                debug = "Didn't find 0% level for " + line + "\n"
+                                self.logger.log(LogPriority.DEBUG, debug)
                 for mcb in micbcontrols:
                     getc0micb = self.amixer + " -c 0 sget " + mcb
                     self.ch.executeCommand(getc0micb)
@@ -229,17 +233,22 @@ valid exceptions.'
                     if retcode != 0:
                         retval = False
                         errmsg = self.ch.getErrorString()
-                        self.detailedresults += "\nError while running command: " + str(getc0micb) + " :\n" + str(errmsg)
-                        self.logger.log(LogPriority.DEBUG, "\n\nRETURN CODE WAS: " + str(retcode) + "\n\n")
+                        self.detailedresults += "Error while running command: " + str(getc0micb) + " :\n" + str(errmsg) + "\n"
+                        debug = getc0micb + " command returned " + str(retcode) + "\n"
+                        self.logger.log(LogPriority.DEBUG, debug)
                     for line in output:
                         if re.search("\[[0-9]+\%\]", line, re.IGNORECASE):
                             if not re.search("\[0\%\]", line, re.IGNORECASE):
                                 retval = False
-                                self.detailedresults += "The microphone boost labeled: " + str(mcb) + " does not have its volume level set to 0"
+                                self.detailedresults += "The microphone boost labeled: " + str(mcb) + " does not have its volume level set to 0\n"
+                                debug = "The microphone boost labeled: " + str(mcb) + " does not have its volume level set to 0\n"
+                                self.logger.log(LogPriority.DEBUG(), debug)
                         elif re.search("\[on\]|\[off\]", line, re.IGNORECASE):
                             if not re.search("\[off\]", line, re.IGNORECASE):
                                 retval = False
-                                self.detailedresults += "The microphone boost labeled: " + str(mcb) + " is not turned off"
+                                self.detailedresults += "The microphone boost labeled: " + str(mcb) + " is not turned off\n"
+                                debug = "The microphone boost labeled: " + str(mcb) + " is not turned off\n"
+                                self.logger.log(LogPriority.DEBUG(), debug)
     
                 for cap in c0Capcontrols:
                     getc0Cap = self.amixer + " -c 0 sget " + cap
@@ -250,16 +259,22 @@ valid exceptions.'
                         retval = False
                         errmsg = self.ch.getErrorString()
                         self.detailedresults += "\nError while running command: " + str(getc0Cap) + " :\n" + str(errmsg)
+                        debug = getc0Cap + " command returned " + str(retcode) + "\n"
+                        self.logger.log(LogPriority.DEBUG, debug)
                     for line in output:
                         if re.search("\[[0-9]+\%\]", line, re.IGNORECASE):
                             if not re.search("\[0\%\]", line, re.IGNORECASE):
                                 retval = False
-                                self.detailedresults += "\nCapture control labeled: " + str(cap) + " does not have its volume level set to 0"
+                                self.detailedresults += "Capture control labeled: " + str(cap) + " does not have its volume level set to 0\n"
+                                debug = "Capture control labeled: " + str(cap) + " does not have its volume level set to 0\n"
+                                self.logger.log(LogPriority.DEBUG, debug)
                                 break
                     for line in output:
                         if re.search("\[on\]", line, re.IGNORECASE):
                             retval = False
-                            self.detailedresults += "\nCapture control labeled: " + str(cap) + " is not turned off"
+                            self.detailedresults += "Capture control labeled: " + str(cap) + " is not turned off\n"
+                            debug = "Capture control labeled: " + str(cap) + " is not turned off\n"
+                            self.logger.log(LogPriority.DEBUG, debug)
                             break
             else:
                 self.logger.log(LogPriority.DEBUG, "No capture hardware devices found")
@@ -283,16 +298,22 @@ valid exceptions.'
                    not re.search(errignore1, errmsg, re.IGNORECASE) and \
                    not re.search(errignore2, errmsg, re.IGNORECASE):
                     retval = False
-                    self.detailedresults += "\nError while running command: " + str(getgenCap) + " :\n" + str(errmsg)
+                    self.detailedresults += "Error while running command: " + str(getgenCap) + " :\n" + str(errmsg) + "\n"
+                    debug = "Error while running command: " + str(getgenCap) + " :\n" + str(errmsg) + "\n"
+                    self.logger.log(LogPriority.DEBUG, debug)
             for line in output:
                 if re.search("\[[0-9]+\%\]", line, re.IGNORECASE):
                     if not re.search("\[0\%\]", line, re.IGNORECASE):
                         retval = False
-                        self.detailedresults += "\nGeneric Capture control does not have its volume level set to 0"
+                        self.detailedresults += "Generic Capture control does not have its volume level set to 0\n"
+                        debug = "Generic Capture control does not have its volume level set to 0\n"
+                        self.logger.log(LogPriority.DEBUG, debug)
             for line in output:
                 if re.search("\[on\]", line, re.IGNORECASE):
                     retval = False
-                    self.detailedresults += "\nGeneric Capture control is not turned off"
+                    self.detailedresults += "Generic Capture control is not turned off\n"
+                    debug = "Generic Capture control is not turned off\n"
+                    self.logger.log(LogPriority.DEBUG, debug)
                     break
 
             systype = self.getSysType()
