@@ -317,25 +317,25 @@ valid exceptions.'
                     break
 
             systype = self.getSysType()
-
-            if systype == "systemd":
-                if not os.path.exists(self.systemdscriptname):
-                    retval = False
-                    self.detailedresults += "The startup script to mute mics was not found\n"
-                    debug = "The startup script to mute mics was not found\n"
-                    self.logger.log(LogPriority.DEBUG, debug)
-            if systype == "sysvinit":
-                if os.path.exists(self.sysvscriptname):
-                    f = open(self.sysvscriptname, "r")
-                    contentlines = f.readlines()
-                    f.close()
-                    found = False
-                    for line in contentlines:
-                        if re.search("amixer", line, re.IGNORECASE):
-                            found = True
-                    if not found:
+            if self.environ.geteuid() != 0:
+                if systype == "systemd":
+                    if not os.path.exists(self.systemdscriptname):
                         retval = False
-                        self.detailedresults += "System not configured to mute mics on startup."
+                        self.detailedresults += "The startup script to mute mics was not found\n"
+                        debug = "The startup script to mute mics was not found\n"
+                        self.logger.log(LogPriority.DEBUG, debug)
+                if systype == "sysvinit":
+                    if os.path.exists(self.sysvscriptname):
+                        f = open(self.sysvscriptname, "r")
+                        contentlines = f.readlines()
+                        f.close()
+                        found = False
+                        for line in contentlines:
+                            if re.search("amixer", line, re.IGNORECASE):
+                                found = True
+                        if not found:
+                            retval = False
+                            self.detailedresults += "System not configured to mute mics on startup."
 
         except Exception:
             raise
@@ -944,7 +944,7 @@ valid exceptions.'
             if retcode != 0:
                 errmsg = self.ch.getErrorString()
                 self.detailedresults += "\nError while running command: " +str(checkbasecmd) + " :\n" + str(errmsg)
-    
+            debug = str(output) + ""
             for line in output:
                 if re.search("systemd", line, re.IGNORECASE):
                     systemd = True
@@ -1005,7 +1005,7 @@ valid exceptions.'
                 retcode = self.ch.getReturnCode()
                 if retcode != 0:
                     errmsg = self.ch.getErrorString()
-                    self.detailedresults += "\nError while running command: " + str(enablescript) + " :\n" + str(errmsg)
+                    self.detailedresults += "Error while running command: " + str(enablescript) + " :\n" + str(errmsg) + "\n"
     
             if systype == "sysvinit":
     
