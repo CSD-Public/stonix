@@ -60,6 +60,8 @@ class MuteMic(Rule):
     device.
 
     @author: dkennel
+    @change: dwalker 11/6/2018 - Updated rule to only check contents of
+            protected files inside /etc/ if uid is 0
     '''
 
     def __init__(self, config, environ, logger, statechglogger):
@@ -177,6 +179,8 @@ valid exceptions.'
         @return: retval
         @rtype: bool
         @author: Breen Malmberg
+        @change: dwalker 11/6/2018 - Updated rule to only check contents of
+            protected files inside /etc/ if uid is 0
         '''
         debug = ""
         retval = True
@@ -317,7 +321,7 @@ valid exceptions.'
                     break
 
             systype = self.getSysType()
-            if self.environ.geteuid() != 0:
+            if self.environ.geteuid() = 0:
                 if systype == "systemd":
                     if not os.path.exists(self.systemdscriptname):
                         retval = False
