@@ -32,6 +32,8 @@ prompt and wait issues during undo.
 @change: 2016/06/10 dkennel - Updated recordfilechange to handle case where
 oldfile does not exist
 @change: 2017/10/23 rsn - change to new service helper interface
+@change: 2018/12/06 Brandon R. Gonzales - Fixed issue where patch files are
+        created without a trailing endline character
 '''
 import shelve
 import shutil
@@ -183,6 +185,7 @@ are an end user please report a bug.''')
                                          fromfile=newfile,
                                          tofile=oldfile):
             patchhandle.write(line)
+        patchhandle.write("\n")
         patchhandle.close()
         return True
 

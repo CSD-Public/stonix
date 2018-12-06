@@ -763,6 +763,7 @@ class InstallBanners(RuleKVEditor):
                 tf.write(contents)
             elif isinstance(contents, list):
                 tf.writelines(contents)
+            tf.write("\n")
             tf.close()
 
             if not fileCreated:
