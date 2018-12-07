@@ -40,6 +40,9 @@ that occurs when pulseaudio isn't running
 @change 2018/02/20 bgonz12 - change reportLinux() to ignore an amixer error
 that occurs when system sound card(s) is missing firmware
 @change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
+@change: 2018/12/07 dwalker - updated rule with more debugging, more recorded
+    state change events, removed overriding of undo method, implemented pre-
+    written methods for reading file, writing to file, and creating file.
 '''
 from __future__ import absolute_import
 import traceback
@@ -49,7 +52,8 @@ import subprocess
 
 from ..rule import Rule
 from ..logdispatcher import LogPriority
-from ..stonixutilityfunctions import resetsecon
+from ..stonixutilityfunctions import resetsecon, readFile, writeFile, iterate
+from ..stonixutilityfunctions import checkPerms, setPerms, createFile
 from ..CommandHelper import CommandHelper
 
 
@@ -81,7 +85,9 @@ class MuteMic(Rule):
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
                            'os': {'Mac OS X': ['10.11', 'r', '10.14.10']}}
-
+        self.root = True
+        if self.environ.geteuid() != 0:
+            self.root = False
         self.setPaths()
 
         self.rcorig = self.getOrigRCcontents()
@@ -219,7 +225,7 @@ valid exceptions.'
                     if retcode != 0:
                         retval = False
                         errmsg = self.ch.getErrorString()
-                        self.detailedresults += "\nError while running command: " + str(getc0mic) + " :\n" + str(errmsg)
+                        self.detailedresults += "Error while running command: " + str(getc0mic) + " :\n" + str(errmsg) + "\n"
                         debug = getc0mic + " command returned " + str(retcode) + "\n"
                         self.logger.log(LogPriority.DEBUG, debug)
                     for line in output:
@@ -262,7 +268,7 @@ valid exceptions.'
                     if retcode != 0:
                         retval = False
                         errmsg = self.ch.getErrorString()
-                        self.detailedresults += "\nError while running command: " + str(getc0Cap) + " :\n" + str(errmsg)
+                        self.detailedresults += "Error while running command: " + str(getc0Cap) + " :\n" + str(errmsg) + "\n"
                         debug = getc0Cap + " command returned " + str(retcode) + "\n"
                         self.logger.log(LogPriority.DEBUG, debug)
                     for line in output:
@@ -321,25 +327,31 @@ valid exceptions.'
                     break
 
             systype = self.getSysType()
-            if self.environ.geteuid() == 0:
-                if systype == "systemd":
-                    if not os.path.exists(self.systemdscriptname):
+            if systype == "systemd":
+                if not os.path.exists(self.systemdscriptname):
+                    self.detailedresults += "The startup script to mute mics was not found\n"
+                    debug = "The startup script to mute mics was not found\n"
+                    if not self.root:
+                        self.detailedresults += "This is ok as a regular user but needs " + \
+                            "to be fixed while running this rule and stonix in root context\n"
+                    else:
                         retval = False
-                        self.detailedresults += "The startup script to mute mics was not found\n"
-                        debug = "The startup script to mute mics was not found\n"
-                        self.logger.log(LogPriority.DEBUG, debug)
-                if systype == "sysvinit":
-                    if os.path.exists(self.sysvscriptname):
-                        f = open(self.sysvscriptname, "r")
-                        contentlines = f.readlines()
-                        f.close()
-                        found = False
-                        for line in contentlines:
-                            if re.search("amixer", line, re.IGNORECASE):
-                                found = True
-                        if not found:
+                    self.logger.log(LogPriority.DEBUG, debug)
+            if systype == "sysvinit":
+                if os.path.exists(self.sysvscriptname):
+                    contents = readFile(self.sysvscriptname, self.logger)
+                    found = False
+                    for line in contents:
+                        if re.search("amixer", line, re.IGNORECASE):
+                            found = True
+                    if not found:
+                        self.detailedresults += "System not configured to mute mics on startup."
+                        if not self.root:
+                            self.detailedresults += "This is ok as a regular user but needs " + \
+                            "to be fixed while running this rule and stonix in root context\n"
+                        else:
                             retval = False
-                            self.detailedresults += "System not configured to mute mics on startup."
+                        
 
         except Exception:
             raise
@@ -365,14 +377,14 @@ valid exceptions.'
 
         try:
 
-            if self.environ.geteuid() != 0:
-                self.detailedresults += "\nYou are not running STONIX with elevated privileges. Some fix functionality will be disabled for this rule."
+            if not self.root:
+                self.detailedresults += "You are not running STONIX with elevated privileges. Some fix functionality will be disabled for this rule.\n"
 
             # if the CI is disabled, then don't run the fix
             if not self.mutemicrophone.getcurrvalue():
-                self.logger.log(LogPriority.DEBUG, "\n\n\nmute microphone CI was not enabled so nothing will be done!\n\n\n")
+                self.logger.log(LogPriority.DEBUG, "MUTEMICROPHONE CI was not enabled so nothing will be done!\n\n\n")
                 return
-
+            self.iditerator = 0
             self.logger.log(LogPriority.DEBUG, "Attempting to mute all mic's and capture sources...")
             if self.environ.getosfamily() == 'darwin':
                 if not self.fixmac():
@@ -410,6 +422,7 @@ valid exceptions.'
         # defaults
         retval = True
         command = "/usr/bin/osascript -e 'set volume input volume 0'"
+        undocmd = "/usr/bin/osascript -e 'set volume input volume 100'"
 
         self.logger.log(LogPriority.DEBUG, "System detected as: darwin. Running fixmac()...")
 
@@ -420,8 +433,16 @@ valid exceptions.'
             if retcode != 0:
                 retval = False
                 errmsg = self.ch.getErrorString()
-                self.detailedresults += "Error while running command: " + str(command) + " :\n" + str(errmsg) + "\n"
-
+                self.detailedresults += "Error while running command: " + \
+                    str(command) + " :\n" + str(errmsg) + "\n"
+                self.logger.log(LogPriority.DEBUG, self.detailedresults)
+            else:
+                if self.root:
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, myid)
+                    event = {"eventtype": "commandstring",
+                             "command": undocmd}
+                    self.statechglogger.recordchgevent(myid, event)
         except Exception:
             raise
         return retval
@@ -443,13 +464,15 @@ valid exceptions.'
         self.systemdinstall = ["\n[Install]\n", "WantedBy=basic.target\n"]
         self.sysvscriptcmds = []
         self.systemdscript = []
-
-        self.logger.log(LogPriority.DEBUG, "\n\n\nSystem detected as: linux. Running fixlinux()...\n\n\n")
+        debug = "\n\nSystem detected as: linux. Running fixlinux()...\n\n"
+        self.logger.log(LogPriority.DEBUG, debug)
 
         try:
 
             devices = self.getDevices()
-            self.logger.log(LogPriority.DEBUG, "\nNumber of devices on this system is: " + str(len(devices)))
+            debug = "Number of devices on this system is: " + \
+                str(len(devices)) + "\n"
+            self.logger.log(LogPriority.DEBUG, debug)
 
             if not devices:
                 mics = self.getMics("0")
@@ -466,7 +489,9 @@ valid exceptions.'
             else:
                 for di in devices:
                     mics = self.getMics(di)
-                    self.logger.log(LogPriority.DEBUG, "\nNumber of mic's on device index " + str(di) + " is " + str(len(mics)))
+                    debug = "Number of mic's on device index " + \
+                        str(di) + " is " + str(len(mics)) + "\n"
+                    self.logger.log(LogPriority.DEBUG, debug)
                     for m in mics:
                         mutemiccmd = self.amixer + " -c " + di + " sset " + m + " 0% nocap mute off"
                         self.systemdservice.append("ExecStart=" + str(mutemiccmd) + "\n")
@@ -485,7 +510,13 @@ valid exceptions.'
             if retcode != 0:
                 retval = False
                 errmsg = self.ch.getErrorString()
-                self.detailedresults += "\nError while running command: " + str(self.amixer + " -c 0 sget Capture") + " :\n" + str(errmsg)
+                self.detailedresults += "Error while running command: " + \
+                    str(self.amixer + " -c 0 sget Capture") + " :\n" + \
+                    str(errmsg) + "\n"
+                debug = "Error while running command: " + \
+                    str(self.amixer + " -c 0 sget Capture") + " :\n" + \
+                    str(errmsg) + "\n"
+                self.logger.log(LogPriority.DEBUG, debug)
             for line in output:
                 # toggle the c0 Capture control off (mute it)
                 if re.search("\[on\]", line, re.IGNORECASE):
@@ -494,7 +525,21 @@ valid exceptions.'
                     if retcodeB != 0:
                         retval = False
                         errmsg = self.ch.getErrorString()
-                        self.detailedresults += "\nError while running command: " + str(self.amixer +  " -c 0 sset Capture toggle") + " :\n" + str(errmsg)
+                        debug = "Error while running command: " + \
+                            str(self.amixer +  " -c 0 sset Capture toggle") + \
+                            " :\n" + str(errmsg) + "\n"
+                        self.logger.log(LogPriority.DEBUG, debug)
+                        self.detailedresults += "Error while running command: " + \
+                            str(self.amixer +  " -c 0 sset Capture toggle") + \
+                            " :\n" + str(errmsg) + "\n"
+                    else:
+                        if self.root:
+                            undocmd = self.amixer + " -c 0 sset Capture toggle"
+                            self.iditerator += 1
+                            myid = iterate(self.iditerator, self.rulenumber)
+                            event = {"eventtype": "commandstring",
+                                     "command": undocmd}
+                            self.statechglogger.recordchgevent(myid, event)
                     # again, we don't want to toggle more than once
                     break
 
@@ -506,8 +551,21 @@ valid exceptions.'
             if retcode != 0:
                 retval = False
                 errmsg = self.ch.getErrorString()
-                self.detailedresults += "\nError while running command: " + str(self.amixer + " -c 0 sset Capture 0") + " :\n" + str(errmsg)
-
+                debug = "Error while running command: " + \
+                    str(self.amixer + " -c 0 sset Capture 0") + \
+                    " :\n" + str(errmsg)
+                self.logger.log(LogPriority.DEBUG, debug)
+                self.detailedresults += "Error while running command: " + \
+                    str(self.amixer + " -c 0 sset Capture 0") + \
+                    " :\n" + str(errmsg) + "\n"
+            else:
+                if self.root:
+                    undocmd = self.amixer + " -c 0 sset Capture 100"
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    event = {"eventtype": "commandstring",
+                             "command": undocmd}
+                    self.statechglogger.recordchgevent(myid, event)
             setGenCap = self.amixer + " sset 'Capture' 0% nocap off mute"
             self.systemdservice.append("ExecStart=" + str(setGenCap) + "\n")
             self.sysvscriptcmds.append(setGenCap)
@@ -516,12 +574,25 @@ valid exceptions.'
             if retcode != 0:
                 retval = False
                 errmsg = self.ch.getErrorString()
-                self.detailedresults += "\nError while running command: " + str(setGenCap) + " :\n" + str(errmsg)
-
-            systype = self.getSysType()
-            script = self.buildScript(systype)
-            self.finishScript(systype, script)
-
+                debug = "Error while running command: " + \
+                    str(setGenCap) + " :\n" + str(errmsg) + "\n"
+                self.logger.log(LogPriority.DEBUG, debug)
+                self.detailedresults += "Error while running command: " + \
+                    str(setGenCap) + " :\n" + str(errmsg) + "\n"
+            else:
+                if self.root:
+                    undocmd = self.amixer + ' sset Capture Volume 65536,65536 unmute'
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    event = {"eventtype": "commandstring",
+                             "command": undocmd}
+                self.statechglogger.recordchgevent(myid, event)
+            if self.root:
+                systype = self.getSysType()
+                script = self.buildScript(systype)
+                if script:
+                    self.finishScript(systype, script)
+                
         except Exception:
             raise
         return retval
@@ -567,15 +638,19 @@ valid exceptions.'
         arecorddir = "/usr/bin/arecord"
         arecordcheck = arecorddir + " -l"
         arecordRE = "^card\s+[0-9]"
+        debug = ""
 
         try:
             if not os.path.exists(procdir):
-                self.logger.log(LogPriority.DEBUG, "Sound device directory within /proc does not exist.")
+                debug = "Sound device directory within /proc does not exist."
+                self.logger.log(LogPriority.DEBUG, debug)
             else:
                 self.ch.executeCommand(proccheck)
                 retcode = self.ch.getReturnCode()
                 if retcode != 0:
-                    self.logger.log(LogPriority.DEBUG, "Command Failed: " + str(proccheck) + " with return code: " + str(retcode))
+                    debug = "Command Failed: " + str(proccheck) + \
+                        " with return code: " + str(retcode) + "\n"
+                    self.logger.log(LogPriority.DEBUG, debug)
                 outputlines = self.ch.getOutput()
                 if outputlines:
                     for line in outputlines:
@@ -583,12 +658,15 @@ valid exceptions.'
                             sdevicefound = True
                             
             if not os.path.exists(arecorddir):
-                self.logger.log(LogPriority.DEBUG, "/usr/bin/arecord command not found on this system.")
+                debug = "/usr/bin/arecord command not found on this system.\n"
+                self.logger.log(LogPriority.DEBUG, debug)
             else:
                 self.ch.executeCommand(arecordcheck)
                 retcode = self.ch.getReturnCode()
                 if retcode != 0:
-                    self.logger.log(LogPriority.DEBUG, "Command Failed: " + str(arecordcheck) + " with return code: " + str(retcode))
+                    debug = "Command Failed: " + str(arecordcheck) + \
+                        " with return code: " + str(retcode) + "\n"
+                    self.logger.log(LogPriority.DEBUG, debug)
                 outputlines = self.ch.getOutput()
                 if outputlines:
                     for line in outputlines:
@@ -596,10 +674,11 @@ valid exceptions.'
                             sdevicefound = True
     
             if sdevicefound:
-                self.logger.log(LogPriority.DEBUG, "Sound device found on this system... Proceeding to configure it.")
+                debug = "Sound device found on this system... Proceeding to configure it."
+                self.logger.log(LogPriority.DEBUG, debug)
             else:
-                self.logger.log(LogPriority.DEBUG, "No sound devices found on this system.")
-
+                debug = "No sound devices found on this system.\n"
+                self.logger.log(LogPriority.DEBUG, debug)
         except Exception:
             raise
         return sdevicefound
@@ -614,18 +693,13 @@ valid exceptions.'
         @author: Breen Malmberg
         '''
 
-        origcontents = []
-
         try:
 
             if os.path.exists(self.sysvscriptname):
-                f = open(self.sysvscriptname, "r")
-                origcontents = f.readlines()
-                f.close()
-
+                contents = readFile(self.sysvscriptname, self.logger)
         except Exception:
             raise
-        return origcontents
+        return contents
 
     def findPulseMic(self):
         '''
@@ -683,19 +757,23 @@ valid exceptions.'
         linesfound = 0
         if not os.path.exists(self.pulsedefaults):
             return True
-
+        debug = "Performing checkpulseaudio method\n"
+        self.logger.log(LogPriority.DEBUG, debug)
         expectedlines = []
         try:
+            debug = ""
             indexlist = self.findPulseMic()
+            debug = "Mic devices list: " + str(indexlist) + "\n"
+            self.logger.log(LogPriority.DEBUG, debug)
             if len(indexlist) > 0:
                 for index in indexlist:
                     line = 'set-source-mute ' + index + ' 1\n'
                     expectedlines.append(line)
-
-                fhandle = open(self.pulsedefaults, 'r')
-                defaultsdata = fhandle.readlines()
-                fhandle.close()
-
+                debug = "lines expected to be found in " + \
+                    self.pulsedefaults + ":\n"
+                debug += str(expectedlines) + "\n"
+                self.logger.log(LogPriority.DEBUG, debug)
+                defaultsdata = readFile(self.pulsedefaults, self.logger)
                 for eline in expectedlines:
                     for pulseline in defaultsdata:
                         if re.search(eline, pulseline):
@@ -707,13 +785,23 @@ valid exceptions.'
                 if linesfound == len(indexlist):
                     return True
                 else:
-                    return False
+                    debug = "Didn't find all the expected lines inside " + \
+                        self.pulsedefaults + "\n"
+                    self.logger.log(LogPriority.DEBUG, debug)
+                    self.detailedresults += "Didn't find all the expected lines inside " + \
+                        self.pulsedefaults + "\n"
+                    if self.environ.geteuid() != 0:
+                        self.detailedresults += "This is ok as a regular user but needs " + \
+                            "to be fixed while running this rule and stonix in root context\n"
+                        return True
+                    else:
+                        return False
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
         except Exception, err:
             self.rulesuccess = False
-            self.detailedresults = self.detailedresults + "\n" + str(err) + \
+            self.detailedresults += "\n" + str(err) + \
                 " - " + str(traceback.format_exc())
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
         return True
@@ -744,8 +832,10 @@ valid exceptions.'
 
         expectedlines = []
 
-        if self.environ.geteuid() != 0:
-            self.detailedresults += "\nYou are currently running this rule as an unprivileged user. This rule requires root privileges to configure pulse audio."
+        if not self.root:
+            self.detailedresults += "You are currently running this rule " + \
+                "as an unprivileged user. This rule requires root " + \
+                "privileges to configure pulse audio.\n"
             return
 
         try:
@@ -757,10 +847,7 @@ valid exceptions.'
                     line = 'set-source-mute ' + index + ' 1\n'
                     expectedlines.append(line)
 
-                fhandle = open(self.pulsedefaults, 'r')
-                defaultsdata = fhandle.readlines()
-                fhandle.close()
-
+                defaultsdata = readFile(self.pulsedefaults, self.logger)
                 for eline in expectedlines:
                     elinefound = False
                     for pulseline in defaultsdata:
@@ -775,26 +862,35 @@ valid exceptions.'
                         self.logdispatch.log(LogPriority.DEBUG,
                                              ['fixPulseAudio',
                                               'Appended line ' + str(eline)])
-                tempfile = self.pulsedefaults + '.stonixtmp'
-                whandle = open(tempfile, 'w')
+                tempstring = ""
                 for line in defaultsdata:
-                    whandle.write(line)
-                whandle.close()
-                mytype1 = 'conf'
-                mystart1 = self.currstate
-                myend1 = self.targetstate
-                myid1 = '0201001'
-                self.statechglogger.recordfilechange(self.pulsedefaults,
-                                                     tempfile, myid1)
-                event1 = {'eventtype': mytype1,
-                          'startstate': mystart1,
-                          'endstate': myend1,
-                          'myfile': self.pulsedefaults}
-                self.statechglogger.recordchgevent(myid1, event1)
-                os.rename(tempfile, self.pulsedefaults)
-                os.chown(self.pulsedefaults, 0, 0)
-                os.chmod(self.pulsedefaults, 420)  # int of 644
-                resetsecon(self.pulsedefaults)
+                    tempstring += line
+                tempfile = self.pulsedefaults + '.tmp'
+                if writeFile(tempfile, tempstring, self.logger):
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    event = {"eventtype": "conf",
+                             "filepath": self.pulsedefaults}
+                    self.statechglogger.recordchgevent(myid, event)
+                    self.statechglogger.recordfilechange(self.pulsedefaults,
+                                                     tempfile, myid)
+                    os.rename(tempfile, self.pulsedefaults)
+                    if setPerms(self.pulsedefaults, [0, 0, 0o420]):
+                        resetsecon(self.pulsedefaults)
+                    else:
+                        self.detailedresults += "Unable to set permissions " + \
+                            "on " + self.pulsedefaults + "file\n"
+                        debug = "Unable to set permissions " + \
+                            "on " + self.pulsedefaults + "file\n"
+                        self.logger.log(LogPriority.DEBUG, debug)
+                        retval = False
+                else:
+                    self.detailedresults += "Unable to write contents to " + \
+                        self.pulsedefaults + " file\n"
+                    debug = "Unable to write contents to " + \
+                        self.pulsedefaults + " file\n"
+                    self.logger.log(LogPriority.DEBUG, debug)
+                    retval = False
 
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
@@ -802,10 +898,9 @@ valid exceptions.'
         except Exception, err:
             self.rulesuccess = False
             retval = False
-            self.detailedresults = self.detailedresults + "\n" + str(err) + \
+            self.detailedresults += "\n" + str(err) + \
                 " - " + str(traceback.format_exc())
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
-
         return retval
 
     def getDevices(self):
@@ -820,7 +915,7 @@ valid exceptions.'
         indexes = []
 
         cmd = "/usr/bin/pacmd list-sinks"
-
+        debug = ""
         try:
 
             self.ch.executeCommand(cmd)
@@ -828,7 +923,11 @@ valid exceptions.'
             output = self.ch.getOutput()
             if retcode != 0:
                 errmsg = self.ch.getErrorString()
-                self.detailedresults += "\nError while running command: " + str(cmd) + " :\n" + str(errmsg)
+                debug = "Error while running command: " + \
+                    str(cmd) + " :\n" + str(errmsg) + "\n"
+                self.logger.log(LogPriority.DEBUG, debug)
+                self.detailedresults += "Error while running command: " + \
+                    str(cmd) + " :\n" + str(errmsg) + "\n"
                 return indexes
             for line in output:
                 if re.search("index\:", line, re.IGNORECASE):
@@ -838,7 +937,8 @@ valid exceptions.'
         except Exception:
             raise
         if not indexes:
-            self.logger.log(LogPriority.DEBUG, "Returning a blank list for indexes!")
+            self.logger.log(LogPriority.DEBUG,
+                            "Returning a blank list for indexes!")
         return indexes
 
     def getMics(self, index):
@@ -853,7 +953,7 @@ valid exceptions.'
 
         mics = []
         cmd = self.amixer + " -c " + index + " scontrols"
-
+        debug = ""
         try:
 
             self.ch.executeCommand(cmd)
@@ -861,15 +961,21 @@ valid exceptions.'
             output = self.ch.getOutput()
             if retcode != 0:
                 errmsg = self.ch.getErrorString()
-                self.detailedresults += "\nError while running command: " + str(cmd) + " :\n" + str(errmsg)
+                debug = "Error while running command: " + \
+                    str(cmd) + " :\n" + str(errmsg) + "\n"
+                self.logger.log(LogPriority.DEBUG, debug)
+                self.detailedresults += "Error while running command: " + \
+                    str(cmd) + " :\n" + str(errmsg) + "\n"
             for line in output:
-                if re.search("^Simple\s+mixer\s+control\s+\'.*Mic\'", line, re.IGNORECASE):
+                if re.search("^Simple\s+mixer\s+control\s+\'.*Mic\'",
+                             line, re.IGNORECASE):
                     sline = line.split("'")
                     mics.append("'" + str(sline[1]).strip() + "'")
         except Exception:
             raise
         if not mics:
-            self.logger.log(LogPriority.DEBUG, "Returning a blank list for mics!")
+            self.logger.log(LogPriority.DEBUG,
+                            "Returning a blank list for mics!")
         return mics
 
     def buildScript(self, systype):
@@ -901,22 +1007,20 @@ valid exceptions.'
 
                 # if the script already exists, put the
                 # existing contents at the beginning
-                f = open(self.sysvscriptname, "r")
-                contentlines = f.readlines()
-                f.close()
-
-                for line in contentlines:
-                    if re.search("^exit \0", line, re.IGNORECASE):
-                        exitcodefound = True
-                        contentlines = [c.replace(line, "") for c in contentlines]
-
-                for line in contentlines:
-                    script.append(line)
-                script.append("\n")
-                for line in self.sysvscriptcmds:
-                    script.append(line)
-                if exitcodefound:
-                    script.append("\nexit 0")
+                contents = readFile(self.sysvscriptname, self.logger)
+                if contents:
+                    for line in contents:
+                        if re.search("^exit \0", line, re.IGNORECASE):
+                            exitcodefound = True
+                            contents = [c.replace(line, "") for c in contents]
+    
+                    for line in contents:
+                        script.append(line)
+                    script.append("\n")
+                    for line in self.sysvscriptcmds:
+                        script.append(line)
+                    if exitcodefound:
+                        script.append("\nexit 0")
 
         except Exception:
             raise
@@ -937,27 +1041,33 @@ valid exceptions.'
         sysvinit = False
         checkbasecmd = "pidof systemd && echo 'systemd' || echo 'sysvinit'"
         systype = ""
+        debug = ""
 
         try:
 
-            self.logger.log(LogPriority.DEBUG, "Detecting whether OS is systemd or sysvinit based...")
+            self.logger.log(LogPriority.DEBUG, 
+                            "Detecting whether OS is systemd or sysvinit based...")
             self.ch.executeCommand(checkbasecmd)
             retcode = self.ch.getReturnCode()
             output = self.ch.getOutput()
     
             if retcode != 0:
                 errmsg = self.ch.getErrorString()
-                self.detailedresults += "\nError while running command: " +str(checkbasecmd) + " :\n" + str(errmsg)
+                self.detailedresults += "Error while running command: " + \
+                    str(checkbasecmd) + " :\n" + str(errmsg) + "\n"
             debug = str(output) + ""
             for line in output:
                 if re.search("systemd", line, re.IGNORECASE):
                     systemd = True
-                    self.logger.log(LogPriority.DEBUG, "OS detected as systemd based")
+                    self.logger.log(LogPriority.DEBUG,
+                                    "OS detected as systemd based")
                 if re.search("sysvinit", line, re.IGNORECASE):
                     sysvinit = True
-                    self.logger.log(LogPriority.DEBUG, "OS detected as sysvinit based")
+                    self.logger.log(LogPriority.DEBUG,
+                                    "OS detected as sysvinit based")
             if not systemd and not sysvinit:
-                self.logger.log(LogPriority.DEBUG, "\n\n\nDid not detect either systemd or sysvinit in output\n\n\n")
+                debug = "\nDid not detect either systemd or sysvinit in output\n"
+                self.logger.log(LogPriority.DEBUG, debug)
             if systemd:
                 systype = "systemd"
             if sysvinit:
@@ -974,33 +1084,69 @@ valid exceptions.'
         @return: void
         @author: Breen Malmberg
         '''
-
-        if self.environ.geteuid() != 0:
-            self.detailedresults += "\nYou are currently running this rule as an unprivileged user. This rule requires root privileges to create the startup script.\nWithout the startup script, the mic(s) will not be disabled at boot time, or upon reboot."
-            return
-
+        retval = True
+        if not self.root:
+            self.detailedresults += "You are currently running this rule " + \
+                "as an unprivileged user. This rule requires root " + \
+                "privileges to create the startup script.\nWithout the " + \
+                "startup script, the mic(s) will not be disabled at boot " + \
+                "time, or upon reboot.\n"
+            return retval
+        
         try:
-
+            created1, created2 = False, False
             if systype == "systemd":
-
-                tempsystemdscriptname = self.systemdscriptname + ".stonixtmp"
-
+                tempfile = self.systemdscriptname + ".stonixtmp"
                 # make sure the base directory exists
                 # before we attempt to write a file to it
                 if not os.path.exists(self.systemdbase):
                     os.makedirs(self.systemdbase, 0755)
-        
-                # write the script to disk
-                tf = open(tempsystemdscriptname, "w")
-                tf.writelines(script)
-                tf.close()
-        
-                os.rename(tempsystemdscriptname, self.systemdscriptname)
-        
-                # own the script by root root
-                # make the script executable
-                os.chown(self.systemdscriptname, 0, 0)
-                os.chmod(self.systemdscriptname, 0644)
+                if not os.path.exist(self.systemdscriptname):
+                    if not createFile(self.systemdscriptname, self.logger):
+                        retval = False
+                        self.detailedresults += "Unable to create " + \
+                            self.systemdscriptname + " file\n"
+                    else:
+                        self.iditerator += 1
+                        myid = iterate(self.iditerator, self.rulenumber)
+                        event = {"eventtype": "creation",
+                                 "filepath": self.systemdscriptname}
+                        self.statechglogger.recordchgevent(myid, event)
+                        created1 = True
+                elif not checkPerms(self.systemdscriptname, [0, 0, 0o644],
+                                    self.logger):
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    if not setPerms(self.systemdscriptname, [0, 0, 0o644],
+                                    self.logger, self.statechglogger, myid):
+                        self.detailedresults += "Unable to set permissions " + \
+                            "on " + self.systemdscriptname + "\n"
+                        retval = False
+                if os.path.exists(self.systemdscriptname):
+                    tempstring = ""
+                    for line in script:
+                        tempstring += line
+                    if writeFile(tempfile, tempstring, self.logger):
+                        if not created1:
+                            self.iterator += 1
+                            myid = iterate(self.iditerator, self.rulenumber)
+                            event = {"eventtype": "conf",
+                                     "filepath": self.systemdscriptname}
+                            self.statechglogger.recordchgevent(myid, event)
+                            self.statechglogger.recordfilechange(self.systemdscriptname,
+                                                                 tempfile,
+                                                                 myid)
+                        os.rename(tempfile, self.systemdscriptname)
+                        if not setPerms(self.systemdscriptname, [0, 0, 0o644],
+                                        self.logger):
+                            self.detailedresults += "Unable to set permissions " + \
+                            "on " + self.systemdscriptname + "\n"
+                            retval = False
+                        resetsecon(self.systemscriptname)
+                else:
+                    self.detailedresults += self.systemdscriptname + \
+                        "doesn't exist\n"
+                    retval = False
         
                 # tell systemd to pull in the script unit
                 # when starting its target
@@ -1009,8 +1155,8 @@ valid exceptions.'
                 retcode = self.ch.getReturnCode()
                 if retcode != 0:
                     errmsg = self.ch.getErrorString()
-                    self.detailedresults += "Error while running command: " + str(enablescript) + " :\n" + str(errmsg) + "\n"
-    
+                    self.detailedresults += "Error while running command: " + \
+                        str(enablescript) + " :\n" + str(errmsg) + "\n"
             if systype == "sysvinit":
     
                 tempsysvscriptname = self.sysvscriptname + ".stonixtmp"
@@ -1029,43 +1175,43 @@ valid exceptions.'
         except Exception:
             raise
 
-    def undo(self):
-        '''
-        Undo method for MuteMic. Sets the inpnumut levels to 100.
-
-        @author: dkennel
-        '''
-
-        setlevels = None
-
-        try:
-
-            if self.environ.getosfamily() == 'darwin':
-                setlevels = "/usr/bin/osascript -e 'set volume input volume 100'"
-            elif os.path.exists(self.amixer):
-                setlevels = self.amixer + ' sset Capture Volume 65536,65536 unmute'
-
-            subprocess.call(setlevels, stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE,
-                            shell=True)
-
-            disablesysdscript = "/usr/bin/systemctl disable " + self.systemdscriptname
-            if os.path.exists(self.systemdscriptname):
-                self.ch.executeCommand(disablesysdscript)
-                os.remove(self.systemdscriptname)
-            if os.path.exists(self.sysvscriptname):
-                f = open(self.sysvscriptname, "w")
-                f.writelines(self.rcorig)
-                f.close()
-
-                os.chown(self.sysvscriptname, 0, 0)
-                os.chmod(self.sysvscriptname, 0755)
-
-        except (KeyboardInterrupt, SystemExit):
-            # User initiated exit
-            raise
-        except Exception, err:
-            self.rulesuccess = False
-            self.detailedresults = self.detailedresults + "\n" + str(err) + \
-                " - " + str(traceback.format_exc())
-            self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
+#     def undo(self):
+#         '''
+#         Undo method for MuteMic. Sets the inpnumut levels to 100.
+# 
+#         @author: dkennel
+#         '''
+# 
+#         setlevels = None
+# 
+#         try:
+# 
+#             if self.environ.getosfamily() == 'darwin':
+#                 setlevels = "/usr/bin/osascript -e 'set volume input volume 100'"
+#             elif os.path.exists(self.amixer):
+#                 setlevels = self.amixer + ' sset Capture Volume 65536,65536 unmute'
+# 
+#             subprocess.call(setlevels, stdout=subprocess.PIPE,
+#                             stderr=subprocess.PIPE,
+#                             shell=True)
+# 
+#             disablesysdscript = "/usr/bin/systemctl disable " + self.systemdscriptname
+#             if os.path.exists(self.systemdscriptname):
+#                 self.ch.executeCommand(disablesysdscript)
+#                 os.remove(self.systemdscriptname)
+#             if os.path.exists(self.sysvscriptname):
+#                 f = open(self.sysvscriptname, "w")
+#                 f.writelines(self.rcorig)
+#                 f.close()
+# 
+#                 os.chown(self.sysvscriptname, 0, 0)
+#                 os.chmod(self.sysvscriptname, 0755)
+# 
+#         except (KeyboardInterrupt, SystemExit):
+#             # User initiated exit
+#             raise
+#         except Exception, err:
+#             self.rulesuccess = False
+#             self.detailedresults = self.detailedresults + "\n" + str(err) + \
+#                 " - " + str(traceback.format_exc())
+#             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
