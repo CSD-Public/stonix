@@ -321,7 +321,7 @@ valid exceptions.'
                     break
 
             systype = self.getSysType()
-            if self.environ.geteuid() = 0:
+            if self.environ.geteuid() == 0:
                 if systype == "systemd":
                     if not os.path.exists(self.systemdscriptname):
                         retval = False
