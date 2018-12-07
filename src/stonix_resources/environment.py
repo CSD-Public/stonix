@@ -541,11 +541,10 @@ class Environment:
             print "environment::getmacaddr():WARNING: Could not detect any net utility type/location"
             return macaddr
         elif "nmcli" in netutil:
-            # fork fork fork...
-            if re.search("debian|ubuntu", self.getostype(), re.IGNORECASE):
-                netcmd = netutil + " device show"
-            else:
+            if self.getosmajorver() == "6":
                 netcmd = netutil +  " -t dev list"
+            else:
+                netcmd = netutil + " device show"
         elif "ifconfig" in netutil:
             netcmd = netutil + " -a"
         elif "ip" in netutil:
@@ -563,17 +562,14 @@ class Environment:
             for line in macinfo:
                 match = re.search(macre, line)
                 if match is not None:
-                    # print 'Matched MAC address'
                     macaddr = match.group()
-                if re.search(ipaddress, line):
-                    # print 'Found ipaddress'
-                    break
+                    if macaddr != "00:00:00:00:00:00":
+                        break
 
         except Exception:
             raise
 
         self.macaddress = macaddr
-        return macaddr
 
     def getnetutil(self):
         '''
@@ -642,7 +638,6 @@ class Environment:
             ipaddr = self.getdefaultip()
 
         self.ipaddress = ipaddr
-        return ipaddr
 
     def sethostname(self):
         '''
@@ -666,7 +661,6 @@ class Environment:
             raise
 
         self.hostname = hostfqdn
-        return hostfqdn
 
     def guessnetwork(self):
         """
@@ -697,6 +691,21 @@ class Environment:
 
         ipaddr = '127.0.0.1'
         gateway = ''
+
+        try:
+            if os.path.exists("/usr/bin/nmcli"):
+                nmclicmd = subprocess.Popen("/usr/bin/nmcli -t dev list", shell=True, stdout=subprocess.PIPE, close_fds=True)
+                nmclidata = nmclicmd.stdout.readlines()
+                for line in nmclidata:
+                    if re.search("IP4-SETTINGS.ADDRESS:", line):
+                        sline = line.split(":")
+                        ipaddr = sline[1]
+                        break
+        except Exception:
+            pass
+
+        if ipaddr != "127.0.0.1":
+            return ipaddr
 
         if sys.platform == 'linux2':
 
