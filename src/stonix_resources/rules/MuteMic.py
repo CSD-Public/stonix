@@ -1101,6 +1101,7 @@ valid exceptions.'
                 # before we attempt to write a file to it
                 if not os.path.exists(self.systemdbase):
                     os.makedirs(self.systemdbase, 0755)
+                #if file doesn't exist, create it and record creation event
                 if not os.path.exist(self.systemdscriptname):
                     if not createFile(self.systemdscriptname, self.logger):
                         retval = False
@@ -1113,6 +1114,7 @@ valid exceptions.'
                                  "filepath": self.systemdscriptname}
                         self.statechglogger.recordchgevent(myid, event)
                         created1 = True
+                #otherwise check permissions, if incorrect, record perm event
                 elif not checkPerms(self.systemdscriptname, [0, 0, 0o644],
                                     self.logger):
                     self.iditerator += 1
@@ -1122,12 +1124,16 @@ valid exceptions.'
                         self.detailedresults += "Unable to set permissions " + \
                             "on " + self.systemdscriptname + "\n"
                         retval = False
+                #file should now exist unless there were problems creating it
                 if os.path.exists(self.systemdscriptname):
                     tempstring = ""
                     for line in script:
                         tempstring += line
+                    #write the script contents to the file
                     if writeFile(tempfile, tempstring, self.logger):
                         if not created1:
+                            #if file was created then undo deletes it
+                            #otherwise we record the event for the file write
                             self.iterator += 1
                             myid = iterate(self.iditerator, self.rulenumber)
                             event = {"eventtype": "conf",
@@ -1137,12 +1143,18 @@ valid exceptions.'
                                                                  tempfile,
                                                                  myid)
                         os.rename(tempfile, self.systemdscriptname)
+                        #do another setPerms call but without the state logger
+                        #since we recorded the event earlier if necessary
                         if not setPerms(self.systemdscriptname, [0, 0, 0o644],
                                         self.logger):
                             self.detailedresults += "Unable to set permissions " + \
                             "on " + self.systemdscriptname + "\n"
                             retval = False
                         resetsecon(self.systemscriptname)
+                    else:
+                        retval = False
+                        self.detailedresults += "Unable to write contents " + \
+                            "to " + self.systemdscriptname + "\n"
                 else:
                     self.detailedresults += self.systemdscriptname + \
                         "doesn't exist\n"
@@ -1157,21 +1169,61 @@ valid exceptions.'
                     errmsg = self.ch.getErrorString()
                     self.detailedresults += "Error while running command: " + \
                         str(enablescript) + " :\n" + str(errmsg) + "\n"
+                    retval = False
+            #doing essentially the exact same thing we did above for systemd
             if systype == "sysvinit":
     
-                tempsysvscriptname = self.sysvscriptname + ".stonixtmp"
-    
-                # write the script to disk
-                tf = open(tempsysvscriptname, "w")
-                tf.writelines(script)
-                tf.close()
-    
-                os.rename(tempsysvscriptname, self.sysvscriptname)
-    
-                # make sure permissions are correct
-                os.chown(self.sysvscriptname, 0, 0)
-                os.chmod(self.sysvscriptname, 0755)
-
+                tempfile = self.sysvscriptname + ".stonixtmp"
+                if not os.path.exist(self.sysvscriptname):
+                    if not createFile(self.sysvscriptname, self.logger):
+                        retval = False
+                        self.detailedresults += "Unable to create " + \
+                            self.sysvscriptname + " file\n"
+                    else:
+                        self.iditerator += 1
+                        myid = iterate(self.iditerator, self.rulenumber)
+                        event = {"eventtype": "creation",
+                                 "filepath": self.sysvscriptname}
+                        self.statechglogger.recordchgevent(myid, event)
+                        created2 = True
+                elif not checkPerms(self.sysvscriptname, [0, 0, 0o644],
+                                    self.logger):
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    if not setPerms(self.sysvscriptname, [0, 0, 0o644],
+                                    self.logger, self.statechglogger, myid):
+                        self.detailedresults += "Unable to set permissions " + \
+                            "on " + self.sysvscriptname + "\n"
+                        retval = False
+                if os.path.exists(self.sysvscriptname):
+                    tempstring = ""
+                    for line in script:
+                        tempstring += line
+                    if writeFile(tempfile, tempstring, self.logger):
+                        if not created2:
+                            self.iterator += 1
+                            myid = iterate(self.iditerator, self.rulenumber)
+                            event = {"eventtype": "conf",
+                                     "filepath": self.sysvscriptname}
+                            self.statechglogger.recordchgevent(myid, event)
+                            self.statechglogger.recordfilechange(self.sysvscriptname,
+                                                                 tempfile,
+                                                                 myid)
+                        os.rename(tempfile, self.sysvscriptname)
+                        if not setPerms(self.sysvscriptname, [0, 0, 0o755],
+                                        self.logger):
+                            self.detailedresults += "Unable to set permissions " + \
+                            "on " + self.sysvscriptname + "\n"
+                            retval = False
+                        resetsecon(self.sysvscriptname)
+                    else:
+                        retval = False
+                        self.detailedresults += "Unable to write contents " + \
+                            "to " + self.sysvscriptname + "\n"
+                else:
+                    self.detailedresults += self.sysvscriptname + \
+                        "doesn't exist\n"
+                    retval = False
         except Exception:
             raise
 
