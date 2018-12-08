@@ -586,7 +586,7 @@ valid exceptions.'
                     myid = iterate(self.iditerator, self.rulenumber)
                     event = {"eventtype": "commandstring",
                              "command": undocmd}
-                self.statechglogger.recordchgevent(myid, event)
+                    self.statechglogger.recordchgevent(myid, event)
             if self.root:
                 systype = self.getSysType()
                 script = self.buildScript(systype)
