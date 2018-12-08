@@ -154,7 +154,7 @@ class Yum(object):
                     removed = False
 
             if removed:
-                self.logger.log(LogPriority.DEBUG, "Package " + str(package) + " was successfully installed")
+                self.logger.log(LogPriority.DEBUG, "Package " + str(package) + " was successfully removed")
             else:
                 self.logger.log(LogPriority.DEBUG, "Failed to remove package " + str(package))
 
