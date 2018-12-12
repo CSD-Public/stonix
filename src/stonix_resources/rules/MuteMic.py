@@ -345,7 +345,7 @@ valid exceptions.'
                         if re.search("amixer", line, re.IGNORECASE):
                             found = True
                     if not found:
-                        self.detailedresults += "System not configured to mute mics on startup."
+                        self.detailedresults += "System not configured to mute mics on startup.\n"
                         if not self.root:
                             self.detailedresults += "This is ok as a regular user but needs " + \
                             "to be fixed while running this rule and stonix in root context\n"
@@ -1224,46 +1224,6 @@ valid exceptions.'
                     self.detailedresults += self.sysvscriptname + \
                         "doesn't exist\n"
                     retval = False
+            return retval
         except Exception:
             raise
-
-#     def undo(self):
-#         '''
-#         Undo method for MuteMic. Sets the inpnumut levels to 100.
-# 
-#         @author: dkennel
-#         '''
-# 
-#         setlevels = None
-# 
-#         try:
-# 
-#             if self.environ.getosfamily() == 'darwin':
-#                 setlevels = "/usr/bin/osascript -e 'set volume input volume 100'"
-#             elif os.path.exists(self.amixer):
-#                 setlevels = self.amixer + ' sset Capture Volume 65536,65536 unmute'
-# 
-#             subprocess.call(setlevels, stdout=subprocess.PIPE,
-#                             stderr=subprocess.PIPE,
-#                             shell=True)
-# 
-#             disablesysdscript = "/usr/bin/systemctl disable " + self.systemdscriptname
-#             if os.path.exists(self.systemdscriptname):
-#                 self.ch.executeCommand(disablesysdscript)
-#                 os.remove(self.systemdscriptname)
-#             if os.path.exists(self.sysvscriptname):
-#                 f = open(self.sysvscriptname, "w")
-#                 f.writelines(self.rcorig)
-#                 f.close()
-# 
-#                 os.chown(self.sysvscriptname, 0, 0)
-#                 os.chmod(self.sysvscriptname, 0755)
-# 
-#         except (KeyboardInterrupt, SystemExit):
-#             # User initiated exit
-#             raise
-#         except Exception, err:
-#             self.rulesuccess = False
-#             self.detailedresults = self.detailedresults + "\n" + str(err) + \
-#                 " - " + str(traceback.format_exc())
-#             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
