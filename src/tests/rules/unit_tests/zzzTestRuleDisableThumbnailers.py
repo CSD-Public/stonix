@@ -40,7 +40,7 @@ from src.tests.lib.logdispatcher_mock import LogPriority
 from src.stonix_resources.rules.DisableThumbnailers import DisableThumbnailers
 
 
-class zzzTestRuleSecureIPV6(RuleTest):
+class zzzTestRuleDisableThumbnailers(RuleTest):
 
     def setUp(self):
         RuleTest.setUp(self)
