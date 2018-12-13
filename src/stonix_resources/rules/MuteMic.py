@@ -90,8 +90,6 @@ class MuteMic(Rule):
             self.root = False
         self.setPaths()
 
-        self.rcorig = self.getOrigRCcontents()
-
     def __initializeMuteMicrophone(self):
         '''
         Private method to initialize the configurationitem object for the
@@ -682,24 +680,6 @@ valid exceptions.'
         except Exception:
             raise
         return sdevicefound
-
-    def getOrigRCcontents(self):
-        '''
-        retrieve the original contents of rc.local
-        if it exists
-
-        @return: origcontents
-        @rtype: list
-        @author: Breen Malmberg
-        '''
-
-        try:
-
-            if os.path.exists(self.sysvscriptname):
-                contents = readFile(self.sysvscriptname, self.logger)
-        except Exception:
-            raise
-        return contents
 
     def findPulseMic(self):
         '''
