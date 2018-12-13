@@ -108,6 +108,10 @@ CENTRALLOGHOST = None
 # Full warning banner text
 WARNINGBANNER = None
 
+GDMWARNINGBANNER = None
+
+GDM3WARNINGBANNER = None
+
 # Variable Type: String
 # Shorter version of warning banner
 # Needed on some systems which have limited warning banner display area

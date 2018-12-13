@@ -630,6 +630,8 @@ LANL-stonix."""
                 if v == None:
                     retval = False
 
+            self.logdispatch.log(LogPriority.DEBUG, "One or more constants defined in localize.py, which are required for " + self.rulename + " to run, are missing or undefined")
+
         except Exception:
             raise
         return retval
