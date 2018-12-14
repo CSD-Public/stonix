@@ -802,11 +802,6 @@ class InstallBanners(RuleKVEditor):
             if not self.reportFileContents(self.sshdfile, self.sshbannerlist):
                 compliant = False
 
-            if not self.lightdm:
-
-                if not self.reportFileContents(self.loginbannerfile, WARNINGBANNER):
-                    compliant = False
-
         except Exception:
             raise
         return compliant
