@@ -290,7 +290,6 @@ class InstallBanners(RuleKVEditor):
         @author: Breen Malmberg
         '''
 
-        self.motd = WARNINGBANNER + '\n'
         if not self.sshdfile:
             self.sshdfile = '/etc/ssh/sshd_config'
         self.bannerfiles = ["/etc/banners/in.ftpd",
@@ -333,7 +332,6 @@ class InstallBanners(RuleKVEditor):
 
         self.mac = True
 
-        self.motd = WARNINGBANNER
         if not self.sshdfile:
             self.sshdfile = '/private/etc/sshd_config'
         self.ftpwelcomelocs = ["/etc/ftpwelcome", "/private/etc/ftpwelcome"]
@@ -1123,7 +1121,7 @@ class InstallBanners(RuleKVEditor):
         try:
 
             for f in self.bannerfiles:
-                if not self.setFileContents(f, self.bannertext):
+                if not self.setFileContents(f, WARNINGBANNER):
                     success = False
 
         except Exception:
