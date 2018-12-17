@@ -341,6 +341,7 @@ class InstallBanners(RuleKVEditor):
         '''
 
         self.mac = True
+        self.bannertext = WARNINGBANNER
 
         if not self.sshdfile:
             self.sshdfile = '/private/etc/sshd_config'
@@ -1014,7 +1015,7 @@ class InstallBanners(RuleKVEditor):
                 retval = False
             if os.path.exists(self.ftpwelcomefile):
                 if not self.reportFileContents(self.ftpwelcomefile,
-                                               WARNINGBANNER):
+                                               self.bannertext):
                     retval = False
                     self.detailedresults += '\nIncorrect configuration ' + \
                         'text in: ' + str(self.ftpwelcomefile)
@@ -1025,7 +1026,7 @@ class InstallBanners(RuleKVEditor):
 
             if os.path.exists(self.policybanner):
                 if not self.reportFileContents(self.policybanner,
-                                               WARNINGBANNER):
+                                               self.bannertext):
                     retval = False
                     self.detailedresults += '\nIncorrect configuration ' + \
                         'text in: ' + str(self.policybanner)
