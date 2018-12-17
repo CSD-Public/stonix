@@ -195,24 +195,25 @@ class ConfigureScreenLocking(RuleKVEditor):
             if self.environ.getosfamily() == "darwin":
                 if not self.reportMac():
                     self.compliant = False
+            elif self.environ.getosfamily() == "linux":
 
-            # cannot make the necessary per-user configuration changes properly as root
-            if self.effectiveUserID == 0:
-                self.compliant = False
-                self.detailedresults += "\nCannot properly report on user configurations of idle screen locking while running as root. Please run this rule without elevated privileges."
-                self.formatDetailedResults("report", self.compliant, self.detailedresults)
-                self.logdispatch.log(LogPriority.INFO, self.detailedresults)
-                return self.compliant
-
-            if os.path.exists("/usr/bin/dconf"):
-                if not self.reportgnome3():
+                # cannot make the necessary per-user configuration changes properly as root
+                if self.effectiveUserID == 0:
                     self.compliant = False
-            if os.path.exists("/usr/bin/gconftool-2"):
-                if not self.reportgnome2():
-                    self.compliant = False
-            if os.path.exists("/usr/bin/kwriteconfig"):
-                if not self.reportKde():
-                    self.compliant = False
+                    self.detailedresults += "\nCannot properly report on user configurations of idle screen locking while running as root. Please run this rule without elevated privileges."
+                    self.formatDetailedResults("report", self.compliant, self.detailedresults)
+                    self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+                    return self.compliant
+    
+                if os.path.exists("/usr/bin/dconf"):
+                    if not self.reportgnome3():
+                        self.compliant = False
+                if os.path.exists("/usr/bin/gconftool-2"):
+                    if not self.reportgnome2():
+                        self.compliant = False
+                if os.path.exists("/usr/bin/kwriteconfig"):
+                    if not self.reportKde():
+                        self.compliant = False
 
         except(KeyboardInterrupt, SystemExit):
             raise
@@ -394,34 +395,36 @@ class ConfigureScreenLocking(RuleKVEditor):
 
         try:
 
-            # if the ci is not enabled, do not run fix
-            if not self.ci.getcurrvalue():
-                self.detailedresults += "\nRule was not enabled so nothing was done"
-                self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
-                self.logdispatch.log(LogPriority.INFO, self.detailedresults)
-                return self.rulesuccess
-
             if self.environ.getosfamily() == "darwin":
                 if not self.fixMac():
                     self.rulesuccess = False
 
-            # cannot make the necessary per-user configuration changes properly as root
-            if self.effectiveUserID == 0:
-                self.rulesuccess = False
-                self.detailedresults += "\nCannot properly fix user configurations of idle screen locking while running as root. Please run this rule without elevated privileges first."
-                self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
-                self.logdispatch.log(LogPriority.INFO, self.detailedresults)
-                return self.rulesuccess
+            elif self.environ.getosfamily() == "linux":
 
-            if os.path.exists("/usr/bin/dconf"):
-                if not self.fixgnome3():
+                # if the ci is not enabled, do not run fix
+                if not self.ci.getcurrvalue():
+                    self.detailedresults += "\nRule was not enabled so nothing was done"
+                    self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
+                    self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+                    return self.rulesuccess
+
+                # cannot make the necessary per-user configuration changes properly as root
+                if self.effectiveUserID == 0:
                     self.rulesuccess = False
-            if os.path.exists("/usr/bin/gconftool-2"):
-                if not self.fixgnome2():
-                    self.rulesuccess = False
-            if os.path.exists("/usr/bin/kwriteconfig"):
-                if not self.fixKde():
-                    self.rulesuccess = False
+                    self.detailedresults += "\nCannot properly fix user configurations of idle screen locking while running as root. Please run this rule without elevated privileges first."
+                    self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
+                    self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+                    return self.rulesuccess
+    
+                if os.path.exists("/usr/bin/dconf"):
+                    if not self.fixgnome3():
+                        self.rulesuccess = False
+                if os.path.exists("/usr/bin/gconftool-2"):
+                    if not self.fixgnome2():
+                        self.rulesuccess = False
+                if os.path.exists("/usr/bin/kwriteconfig"):
+                    if not self.fixKde():
+                        self.rulesuccess = False
 
         except(KeyboardInterrupt, SystemExit):
             raise
