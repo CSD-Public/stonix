@@ -151,6 +151,7 @@ class MinimizeServices(Rule):
                              'ondemand',
                              'portmap',
                              'postfix',
+                             'psacct',
                              'pulseaudio',
                              'purge-kernels',
                              'random',
@@ -445,7 +446,6 @@ class MinimizeServices(Rule):
                                'systemd-vconsole-setup.service',
                                'systemd-resolved.service',
                                'systemd-resolved',
-
                                'tcsd.service', 'tuned.service',
                                'udev',
                                'udev.service',

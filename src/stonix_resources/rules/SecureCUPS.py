@@ -51,7 +51,6 @@ from ..ServiceHelper import ServiceHelper
 from ..pkghelper import Pkghelper
 from ..CommandHelper import CommandHelper
 from ..KVEditorStonix import KVEditorStonix
-from ..localize import PRINTBROWSESUBNET
 from ..stonixutilityfunctions import iterate
 
 
@@ -106,23 +105,17 @@ class SecureCUPS(Rule):
 
         datatype3 = 'bool'
         key3 = 'DISABLEPRINTBROWSING'
-        instructions3 = 'To prevent STONIX from disabling print browsing, set the value of ' + \
-        'DisablePrintBrowsing to False. ! This option is mutually exclusive with PrintBrowseSubnet ! ' + \
-        'If both PrintBrowseSubnet and DisablePrintBrowsing are checked/enabled, DisablePrintBrowsing ' + \
-        'will take priority!'
+        instructions3 = 'If this machine is to be used as a print server and you wish to enable automatic client discovery of ' \
+                        'its shared printers/print resources, then set the value of DISABLEPRINTBROWSING TO False'
         default3 = True
         self.DisablePrintBrowsing = self.initCi(datatype3, key3, instructions3, default3)
 
-        datatype4 = 'bool'
+        datatype4 = 'string'
         key4 = 'PRINTBROWSESUBNET'
-        instructions4 = 'To allow printer browsing on a specific subnet, set ' + \
-        'the value of PrintBrowseSubnet to True. The subnet to allow printer ' + \
-        'browsing for is specified in localize by setting the value of ' + \
-        'PRINTBROWSESUBNET. If PRINTBROWSESUBNET is set to an empty string, ' + \
-        'nothing will be written. ! This option is mutually exclusive with DisablePrintBrowsing ! ' + \
-        'If both PrintBrowseSubnet and DisablePrintBrowsing are checked/enabled, DisablePrintBrowsing ' + \
-        'will take priority!'
-        default4 = False
+        instructions4 = 'If this machine is to be used as a print server and you wish to enable automatic client discovery of ' \
+                        'its shared printers/print resources, you may wish to limit that discovery to clients only on a certain subnet. ' \
+                        'Please customize the value of PRINTBROWSESUBNET to match your networks requirements. Ex: 192.168.0.0/16'
+        default4 = ''
         self.PrintBrowseSubnet = self.initCi(datatype4, key4, instructions4, default4)
 
         datatype5 = 'bool'
@@ -404,14 +397,13 @@ class SecureCUPS(Rule):
                 self.cupsdconfopts["Browsing"] = "Off"
                 self.cupsdconfopts["BrowseAllow"] = "none"
                 self.cupsdconfopts["BrowseWebIF"] = "No"
-            if self.checkConsts([PRINTBROWSESUBNET]):
-                if self.PrintBrowseSubnet.getcurrvalue():
-                    self.cupsdconfopts["Browsing"] = "On"
-                    self.cupsdconfopts["BrowseOrder"] = "allow,deny"
-                    self.cupsdconfopts["BrowseDeny"] = "all"
-                    self.cupsdconfopts["BrowseAllow"] = PRINTBROWSESUBNET
-            else:
-                self.detailedresults += "\nThe constant PRINTBROWSESUBNET is currently not defined (set to None), in localize.py. Setting the print browse subnet requires this to be defined."
+
+            if self.PrintBrowseSubnet.getcurrvalue():
+                self.cupsdconfopts["Browsing"] = "On"
+                self.cupsdconfopts["BrowseOrder"] = "allow,deny"
+                self.cupsdconfopts["BrowseDeny"] = "all"
+                self.cupsdconfopts["BrowseAllow"] = self.PrintBrowseSubnet.getcurrvalue()
+
             if self.DisableGenericPort.getcurrvalue():
                 self.cupsdconfremopts["Port"] = "631"
             if self.SetDefaultAuthType.getcurrvalue():
