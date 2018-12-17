@@ -712,7 +712,9 @@ class InstallBanners(RuleKVEditor):
             for line in outlines:
                 sline = line.split()
                 if len(sline) > 1:
-                    g3ver = float(sline[1])
+                    splitver = sline[1].split('.')
+                    combinedver = splitver[0] + '.' + splitver[1]
+                    g3ver = float(combinedver)
                 else:
                     try:
                         g3ver = float(sline[0])
