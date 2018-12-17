@@ -156,9 +156,17 @@ class InstallBanners(RuleKVEditor):
         retval = True
 
         self.logger.log(LogPriority.DEBUG, "Forcing display manager to be lightdm...")
-        self.lightdm = True
 
-        cmd = '/usr/sbin/dpkg-reconfigure --frontend=noninteractive lightdm'
+        if self.gnome2:
+            cmd = '/usr/sbin/dpkg-reconfigure --frontend=noninteractive gdm'
+        elif self.gnome3:
+            cmd = '/usr/sbin/dpkg-reconfigure --frontend=noninteractive gdm3'
+        else:
+            cmd = '/usr/sbin/dpkg-reconfigure --frontend=noninteractive lightdm'
+
+        cmd2 = "/usr/sbin/dpkg --configure lightdm"
+
+        self.lightdm = True
         path = '/etc/X11/default-display-manager'
         opt = '/usr/sbin/lightdm\n'
         mode = 0644
@@ -167,23 +175,25 @@ class InstallBanners(RuleKVEditor):
 
         try:
 
+            if not self.setFileContents(path, opt, [uid, gid, mode]):
+                retval = False
+
             if not self.ph.check('lightdm'):
                 self.logger.log(LogPriority.DEBUG, "Package: lightdm not installed yet. Installing lightdm...")
                 if not self.ph.install('lightdm'):
                     retval = False
                     self.detailedresults += "\nFailed to install lightdm"
+
             if not self.ch.executeCommand(cmd):
                 retval = False
                 self.detailedresults += "\nFailed to set lightdm as default display manager"
 
-            f = open(path, 'w')
-            f.write(opt)
-            f.close()
+            self.ch.executeCommand(cmd2)
 
-            os.chmod(path, mode)
-            os.chown(path, uid, gid)
-
-            self.detailedresults += "\nThe display manager has been changed to lightdm. These changes will only take effect once the system has been restarted."
+            if retval:
+                self.detailedresults += "\nThe display manager has been changed to lightdm. These changes will only take effect once the system has been restarted."
+            else:
+                self.detailedresults += "\nFailed to change default display manager to lightdm. Login banner may not display."
 
         except Exception:
             raise
