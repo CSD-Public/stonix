@@ -273,7 +273,7 @@ class InstallBanners(RuleKVEditor):
                 'greeter-show-manual-login=true',
                 'autologin-user=']
         key2 = self.loginbannerfile
-        val2 = self.bannertext
+        val2 = WARNINGBANNER
         key3 = '/etc/lightdm/lightdm.conf.d/stonixlightdm.conf'
         val3 = ['[SeatDefaults]',
                 'greeter-setup-script=/bin/sh -c "until /usr/bin/zenity ' +
