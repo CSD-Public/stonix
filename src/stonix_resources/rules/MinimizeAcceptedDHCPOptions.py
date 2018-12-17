@@ -242,8 +242,8 @@ only options which must vary on a host-by-host basis be assigned via DHCP. This 
                     self.checkdict["supersede " + item] = DHCPSup[item]
 
                 if DHCPDict[item] == "request":
-                    # there is an issue with virtual machines running debian or ubuntu
-                    # on vmware which causes networking to break if request subnet-mask option is set
+                    # there is an issue on debian virtual machines running in vmware which
+                    # causes networking to break if the request subnet-mask option is set
                     if not re.search("debian|ubuntu", self.environ.getostype(), re.IGNORECASE):
                         self.checklist.append("request " + item)
                         self.checklist.append("require " + item)
@@ -304,8 +304,8 @@ only options which must vary on a host-by-host basis be assigned via DHCP. This 
                         contents.append("supersede " + item + " " +
                                         str(DHCPSup[item]) + ";\n")
                     if DHCPDict[item] == "request":
-                        # there is an issue with virtual machines running debian or ubuntu
-                        # on vmware which causes networking to break if request subnet-mask option is set
+                        # there is an issue on debian virtual machines running in vmware which
+                        # causes networking to break if the request subnet-mask option is set
                         if not re.search("debian|ubuntu", self.environ.getostype(), re.IGNORECASE):
                             contents.append("request " + item + ";\n")
                             contents.append("require " + item + ";\n")
