@@ -1082,7 +1082,7 @@ valid exceptions.'
                 if not os.path.exists(self.systemdbase):
                     os.makedirs(self.systemdbase, 0755)
                 #if file doesn't exist, create it and record creation event
-                if not os.path.exist(self.systemdscriptname):
+                if not os.path.exists(self.systemdscriptname):
                     if not createFile(self.systemdscriptname, self.logger):
                         retval = False
                         self.detailedresults += "Unable to create " + \
