@@ -402,7 +402,11 @@ class InstallBanners(RuleKVEditor):
                 if os.path.exists("/usr/sbin/gdm3"):
                     self.setgnome3()
                 if os.path.exists("/usr/sbin/gdm"):
-                    self.setgnome2()
+                    # fedora uses dconf and a gdm3-like process even if it is using gnome2/gdm
+                    if re.search("fedora", self.environ.getostype(), re.IGNORECASE):
+                        self.setgnome3()
+                    else:
+                        self.setgnome2()
                 if os.path.exists("/usr/sbin/lightdm"):
                     self.setlightdm()
                 elif os.path.exists("/usr/bin/startkde"):
