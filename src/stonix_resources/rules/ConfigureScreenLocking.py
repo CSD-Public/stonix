@@ -64,7 +64,6 @@ from ..stonixutilityfunctions import readFile, resetsecon, getOctalPerms, writeF
 from ..ruleKVEditor import RuleKVEditor
 from ..logdispatcher import LogPriority
 from ..pkghelper import Pkghelper
-from subprocess import PIPE, Popen
 from ..KVEditorStonix import KVEditorStonix
 from ..CommandHelper import CommandHelper
 import os
@@ -175,10 +174,6 @@ class ConfigureScreenLocking(RuleKVEditor):
                            "CONFIGURESCREENLOCKING to False."
             default = True
             self.ci = self.initCi(datatype, key, instructions, default)
-            self.kdeprops = {"ScreenSaver": {"Enabled": "true",
-                                             "Lock": "true",
-                                             "LockGrace": "60000",
-                                             "Timeout": "840"}}
             #self.gnomeInst variable determines in the fixGnome method
             #at the beginning if we even proceed.  If False we don't proceed
             #and is fine.  Gets set to True in reportGnome method if 
@@ -186,6 +181,9 @@ class ConfigureScreenLocking(RuleKVEditor):
             self.gnomeInst = False
             self.useGconf = True
             self.iditerator = 0
+            self.cmdhelper = CommandHelper(self.logger)
+            self.ph = Pkghelper(self.logger, self.environ)
+            self.kdesddm = self.ph.check("sddm")
 
     def report(self):
         '''
@@ -200,17 +198,41 @@ class ConfigureScreenLocking(RuleKVEditor):
         try:
             compliant = True
             self.detailedresults = ""
-            if self.environ.getosfamily() == "darwin":
-                self.compliant = self.reportMac()
-            else:
-                self.ph = Pkghelper(self.logger, self.environ)
-                if not self.reportGnome():
-                    self.detailedresults += "reporgnome() failed\n"
-                    compliant = False
-                if not self.reportKde():
-                    self.detailedresults += "reportkde() failed\n"
-                    compliant = False
-                self.compliant = compliant
+            if self.environ.osfamily == 'linux':
+
+                if self.ph.check("gdm") or self.ph.check("gdm3"):
+                    self.gnomeInstalled = True
+                    if not self.reportGnome():
+                        self.detailedresults += "Gnome GUI environment " + \
+                                                "does not appear to be correctly configured " + \
+                                                "for screen locking parameters.\n"
+                        compliant = False
+                    else:
+                        self.detailedresults += "Gnome GUI environment " + \
+                                                "appears to be correctly configured for " + \
+                                                "screen locking parameters.\n"
+                else:
+                    self.gnomeInstalled = False
+                    self.detailedresults += "Gnome not installed.  No need to configure for gnome.\n"
+
+                if self.ph.check("kdm") or self.ph.check("kde-workspace") or \
+                                      self.ph.check("sddm"):
+                    self.kdeInstalled = True
+                    if not self.reportKde():
+                        self.detailedresults += "KDE GUI environment " + \
+                                                "does not appear to be correctly configured " + \
+                                                "for screen locking parameters.\n"
+                        compliant = False
+                    else:
+                        self.detailedresults += "KDE GUI environment " + \
+                                                "appears to be correctly configured for " + \
+                                                "screen locking parameters.\n"
+                else:
+                    self.kdeInstalled = False
+                    self.detailedresults += "KDE not installed.  No need to configure for kde.\n"
+            elif self.environ.getosfamily() == "darwin":
+                compliant = self.reportMac()
+            self.compliant = compliant
         except(KeyboardInterrupt, SystemExit):
             raise
         except Exception:
@@ -247,20 +269,15 @@ class ConfigureScreenLocking(RuleKVEditor):
         '''
 
         compliant = True
-        self.cmdhelper = CommandHelper(self.logger)
         gsettings = "/usr/bin/gsettings"
         gconf = "/usr/bin/gconftool-2"
         self.gesttingsidletime = ""
         self.gconfidletime = ""
         self.setcmds = ""
         #may need to change code in the future to make gconf and
-        #gsettings mutually exclusive with if elif else self.gnomeInst = False
+        #gsettings mutually exclusive with if elif else self.gnomeInstalled = False
         #if they are found to conflict with each other
         if os.path.exists(gconf):
-            #self.gnomeInst variable determines in the fixGnome method
-            #at the beginning if we even proceed.  If False we don't proceed
-            #and is fine.
-            self.gnomeInst = True
             getcmds = {"/apps/gnome-screensaver/idle_activation_enabled":
                        "true",
                        "/apps/gnome-screensaver/lock_enabled": "true",
@@ -476,151 +493,75 @@ class ConfigureScreenLocking(RuleKVEditor):
         @param self - essential if you override this definition
         @return: bool
         '''
-        compliant = True
-        self.kdefix = []
-        debug = ""
-        bindir = glob("/usr/bin/kde*")
-        kdefound = False
-        for kdefile in bindir:
-            if re.search("^/usr/bin/kde\d$", str(kdefile)):
-                kdefound = True
-        if kdefound and self.environ.geteuid() == 0:
+        self.kdefix = {}
+        self.kdeprops = {"ScreenSaver": {"Enabled": "true",
+                                         "Lock": "true",
+                                         "LockGrace": "60000",
+                                         "Timeout": "840"}}
+        if self.kdesddm:
+            kdecheck = ".config/kdeglobals"
+            rcpath = ".config/kscreenlockerrc"
+        else:
+            kdecheck = ".kde"
+            rcpath = ".kde/share/config/kscreensaverrc"
+        if self.environ.geteuid() == 0:
             contents = readFile("/etc/passwd", self.logger)
-            if not contents:
-                debug = "You have some serious issues, /etc/passwd is blank\n"
-                self.logger.log(LogPriority.INFO, debug)
-                self.rulesuccess = False
-                self.detailedresults += "No contents found in /etc/passwd!\n"
-                return False
             for line in contents:
+                username = ""
+                homepath = ""
                 temp = line.split(":")
                 try:
-                    if int(temp[2]) >= 500:
-                        if temp[5] and re.search('/', temp[5]):
-                            homebase = temp[5]
-                            if not re.search("^/home/", homebase):
-                                continue
-                            kfile = homebase + "/.kde/share/config/kscreensaverrc"
-                            if not os.path.exists(kfile):
-                                self.detailedresults += "Could " + \
-                                    "not find " + kfile + "\n"
-                                compliant = False
-                            else:
-                                uid = getpwnam(temp[0])[2]
-                                gid = getpwnam(temp[0])[3]
-                                if not checkPerms(kfile,
-                                                  [uid, gid,
-                                                   0o600],
-                                                  self.logger):
-                                    self.detailedresults += \
-                                        "Incorrect permissions " + \
-                                        "for file " + kfile + \
-                                        ": Expected 600, " + \
-                                        "found " + \
-                                        getOctalPerms(kfile) + \
-                                        "\n"
-                                    compliant = False
-                                if not self.searchFile(kfile):
-                                    self.detailedresults += \
-                                        "Did not find " + \
-                                        "required contents " + \
-                                        "in " + kfile + "\n"
-                                    compliant = False
-                            if not compliant:
-                                self.kdefix.append(temp[0])
-                        else:
-                            debug += "placeholder 6 in /etc/passwd is not a \
-directory, invalid form of /etc/passwd"
-                            self.logger.log(LogPriority.DEBUG, debug)
-                            self.detailedresults += "Unexpected formatting in " + \
-                                "/etc/passwd"
-                            return False
-                except IndexError:
-                    compliant = False
-                    debug += traceback.format_exc() + "\n"
-                    debug += "Index out of range\n"
-                    self.logger.log(LogPriority.DEBUG, debug)
-                    self.detailedresults += "Unexpected formatting in " + \
-                        "/etc/passwd"
-                    break
-                except Exception:
-                    break
+                    username = temp[0]
+                    homepath = temp[5]
+                except(IndexError):
+                    self.logdispatch.log(LogPriority.DEBUG,
+                                         ['ConfigureScreenLocking',
+                                           'IndexError processing ' + str(temp)])
+                    continue
+                kdeparent = os.path.join(homepath, kdecheck)
+                kdefile = os.path.join(homepath, rcpath)
+                if not os.path.exists(kdeparent):
+                    # User does not user KDE
+                    continue
+                elif not os.path.exists(kdefile):
+                    self.kdefix.[username] = homepath
+                    self.detailedresults += kdefile + " not found for " + \
+                        str(username) + "\n"
+                    self.logger.log(LogPriority.DEBUG, self.detailedresults)
+                    continue
+                elif not self.searchFile(kdefile):
+                    self.detailedresults += "Did not find " + \
+                        "required contents " + "in " + username + \
+                        "'s " + kdefile + "\n"
+                    self.kdefix[username] = homepath
             if self.kdefix:
                 self.detailedresults += "The following users don't " + \
-                                        "have kde configured:\n"
+                                        "have kde properly configured for " + \
+                                        "screen locking:\n"
                 for user in self.kdefix:
                     self.detailedresults += user + "\n"
-        elif kdefound:
-            who = "/usr/bin/whoami"
-            message = Popen(who, stdout=PIPE, shell=False)
-            info = message.stdout.read().strip()
-            contents = readFile('/etc/passwd', self.logger)
-            if not contents:
-                debug += "You have some serious issues, /etc/passwd is blank\n"
-                self.logger.log(LogPriority.INFO, debug)
-                self.rulesuccess = False
-                self.detailedresults += "No contents found in /etc/passwd!\n"
                 return False
-            compliant = True
-            for line in contents:
-                temp = line.split(':')
-                try:
-                    if temp[0] == info:
-                        if temp[5] and re.search('/', temp[5]):
-                            homebase = temp[5]
-                            if not re.search("^/home/", homebase):
-                                continue
-                            kfile = homebase + "/.kde/share/config/kscreensaverrc"
-                            if not os.path.exists(kfile):
-                                self.detailedresults += \
-                                    "Could not find " + kfile + \
-                                    "\n"
-                                compliant = False
-                            else:
-                                uid = getpwnam(temp[0])[2]
-                                gid = getpwnam(temp[0])[3]
-                                if not checkPerms(kfile,
-                                                  [uid, gid,
-                                                   0o600],
-                                                  self.logger):
-                                    self.detailedresults += \
-                                        "Incorrect permissions " + \
-                                        "for file " + kfile + \
-                                        ": Expected 600, " + \
-                                        "found " + \
-                                        getOctalPerms(kfile) + \
-                                        "\n"
-                                    compliant = False
-                                if not self.searchFile(kfile):
-                                    self.detailedresults += \
-                                        "Did not find " + \
-                                        "required contents " + \
-                                        "in " + kfile + "\n"
-                                    compliant = False
-                            if not compliant:
-                                self.kdefix.append(temp[0])
-                            break
-                        else:
-                            debug += "placeholder 6 in /etc/passwd is not a \
-directory, invalid form of /etc/passwd"
-                            self.logger.log(LogPriority.DEBUG, debug)
-                            self.detailedresults += "Unexpected formatting in " + \
-                                "/etc/passwd"
-                            return False
-                        break
-                except IndexError:
-                    compliant = False
-                    debug += traceback.format_exc() + "\n"
-                    debug += "Index out of range\n"
-                    self.logger.log(LogPriority.DEBUG, debug)
-                    self.detailedresults += "Unexpected formatting in " + \
-                        "/etc/passwd"
-                    break
-                except Exception:
-                    debug += traceback.format_exc() + "\n"
-                    self.logger.log(LogPriority.DEBUG, debug)
-                    break
-        return compliant
+            else:
+                return True
+        else:
+            kdeparent = os.path.join(self.environ.geteuidhome(), kdecheck)
+            kdefile = os.path.join(kdeparent, rcpath)
+            if not os.path.exists(kdeparent):
+                self.detailedresults += "Current user doesn't use kde.  " + \
+                    "No need to configure.\n"
+                self.logger.log(LogPriority.DEBUG, self.detailedresults)
+                return True
+            else:
+                if not os.path.exists(kdefile):
+                    self.detailedresults += "Your " + kdefile + \
+                        " file doesn't exist.\n"
+                    return False
+                elif not self.searchFile(kdefile):
+                    self.detailedresults += "Did not find " + \
+                        "required contents in " + kdefile + "\n"
+                    return False
+                else:
+                    return True
 
 ###############################################################################
 
@@ -632,16 +573,29 @@ directory, invalid form of /etc/passwd"
         @return: bool - True if fix is successful, False if it isn't
         '''
         try:
+            if not self.ci.getcurrvalue():
+                self.detailedresults += "Rule not enabled so nothing was done\n"
+                self.logger.log(LogPriority.DEBUG, 'Rule was not enabled, so nothing was done')
+                return
             self.detailedresults = ""
-            if self.environ.getosfamily() == "darwin":
+            success = True
+            if self.environ.geteuid() == 0:
+                self.iditerator = 0
+                eventlist = self.statechglogger.findrulechanges(self.rulenumber)
+                for event in eventlist:
+                    self.statechglogger.deleteentry(event)
+            if self.environ.getosfamily() == "linux":
+                if self.gnomeInstalled:
+                    if not self.fixGnome():
+                        success = False
+                if self.kdeInstalled:
+                    if not self.fixKde():
+                        success = False
+            elif self.environ.getosfamily() == "darwin":
                 self.rulesuccess = self.fixMac()
             elif self.ci.getcurrvalue():
                 # clear out event history so only the latest fix is recorded
-                if self.environ.geteuid() == 0:
-                    self.iditerator = 0
-                    eventlist = self.statechglogger.findrulechanges(self.rulenumber)
-                    for event in eventlist:
-                        self.statechglogger.deleteentry(event)
+
                 #Do not change logic of code to if self.fixGnome() and self.fixKde()
                 #for the sake of condensing code.  Python will short circuit the logic 
                 #and not enter the fixKde() if for some reason fixGnome() fails.
@@ -652,7 +606,7 @@ directory, invalid form of /etc/passwd"
                 if self.fixKde():
                     success2 = True
                 if not success1 or not success2:
-                    self.rulesuccess = False
+                    success = False
         except(KeyboardInterrupt, SystemExit):
             raise
         except Exception:
@@ -687,15 +641,6 @@ directory, invalid form of /etc/passwd"
         '''
         info = ""
         success = True
-        #variable self.gnomeInst is False and represents
-        #the fact that gnome isn't installed.  This is ok
-        #and meaning we don't have to configure it.  Return
-        #True
-        if not self.gnomeInst:
-            self.detailedresults += "Gnome is not installed, no fix necessary \
-for this portion of the rule\n"
-            return True
-
         gconf = "/usr/bin/gconftool-2"
         gsettings = "/usr/bin/gsettings"
         if os.path.exists(gconf):
@@ -850,22 +795,45 @@ for this portion of the rule\n"
                 isn't
         '''
 
-        debug = ""
         success = True
-        homebase = "/home/"
-        for user in self.kdefix:
-            homebase += user + "/.kde/share/config"
-            if not os.path.exists(homebase):
-                os.makedirs(homebase)
-            kfile = homebase + "/kscreensaverrc"
-            if not self.correctFile(kfile, user, homebase):
+        if self.environ.geteuid() == 0:
+            self.logdispatch.log(LogPriority.DEBUG,
+                                 ['ForceIdleLogout.__fixkde4',
+                                  'Root context starting loop'])
+            if not self.kdefix:
+                return True
+            for user in self.kdefix:
+                homepath = self.kdefix[user]
+                kdefile = os.path.join(homepath, self.rcpath)
+                if not self.correctFile(kdefile, user):
+                    success = False
+                    self.detailedresults += "Unable to configure " + \
+                                            kdefile + "\n"
+                    self.logger.log(LogPriority.DEBUG, self.detailedresults)
+        else:
+            homepath = self.environ.geteuidhome()
+            kdefile = os.path.join(homepath, self.rcpath)
+            uidnum = int(self.environ.geteuid())
+            passwddata = readFile("/etc/passwd", self.logger)
+            found = False
+            for user in passwddata:
+                user = user.split(':')
+                try:
+                    puidnum = int(user[2])
+                    pdefgid = int(user[3])
+                except(IndexError):
+                    continue
+                if puidnum == uidnum:
+                    homepath = user[5]
+                    found = True
+            if not found:
+                self.detailedresults += "Could not obtain your user id.\n" + \
+                                        "Stonix couldn't proceed with correcting " + kdefile + "\n"
                 success = False
-                self.detailedresults += "Unable to configure desktop " + \
-                    "for " + user + "\n"
-                debug += "Unable to configure desktop " + \
-                    "for " + user + "\n"
-        if debug:
-            self.logger.log(LogPriority.DEBUG, debug)
+            elif not self.correctFile(kdefile, homepath):
+                self.detailedresults += "Stonix couldn't correct the contents " + \
+                                        " of " + kdefile + "\n"
+                success = False
         return success
 
 ###############################################################################
@@ -891,7 +859,7 @@ for this portion of the rule\n"
             return True
 ###############################################################################
 
-    def correctFile(self, kfile, user, homebase):
+    def correctFile(self, kfile, user):
         '''separate method to find the correct contents of each file passed in
         as a parameter.
         @author: dwalker
@@ -900,37 +868,46 @@ for this portion of the rule\n"
          '''
         created = False
         success = True
+        self.editor = ""
+        debug = ""
         if not os.path.exists(kfile):
-            f = open(kfile, "w")
-            f.close()
+            if not createFile(kfile, self.logger):
+                self.detailedresults += "Unable to create " + kfile + \
+                    " file for the user\n"
+                self.logger.log(LogPriority.DEBUG, self.detailedresults)
+                return False
             created = True
             if self.environ.geteuid() == 0:
                 self.iditerator += 1
                 myid = iterate(self.iditerator, self.rulenumber)
-                event = {"eventtype": "creation", "filepath": kfile}
+                event = {"eventtype": "creation",
+                         "filepath": kfile}
                 self.statechglogger.recordchgevent(myid, event)
 
-        uid = getpwnam(user)[2]
-        gid = getpwnam(user)[3]
-        if not created:
-            if not checkPerms(kfile, [uid, gid, 0600], self.logger):
-                if self.environ.geteuid() == 0:
-                    self.iditerator += 1
-                    myid = iterate(self.iditerator, self.rulenumber)
-                    if not setPerms(kfile, [uid, gid, 0600], self.logger,
-                                    self.statechglogger, myid):
-                        success = False
         if not self.searchFile(kfile):
             if self.editor.fixables:
-                if self.environ.geteuid() == 0:
+                if self.environ.geteuid() == 0 and not created:
                     self.iditerator += 1
                     myid = iterate(self.iditerator, self.rulenumber)
                     self.editor.setEventID(myid)
                 if not self.editor.fix():
+                    debug = "Kveditor fix is failing for file " + \
+                        kfile + "\n"
+                    self.logger.log(LogPriority.DEBUG, debug)
+                    self.detailedresults += "Unable to correct contents for " + \
+                        kfile + "\n"
                     return False
                 elif not self.editor.commit():
+                    debug = "Kveditor commit is failing for file " + \
+                            kfile + "\n"
+                    self.logger.log(LogPriority.DEBUG, debug)
+                    self.detailedresults += "Unable to correct contents for " + \
+                               kfile + "\n"
                     return False
+        uid = getpwnam(user)[2]
+        gid = getpwnam(user)[3]
         os.chmod(kfile, 0600)
         os.chown(kfile, uid, gid)
-        resetsecon(homebase)
+        resetsecon(kfile)
         return success
+
