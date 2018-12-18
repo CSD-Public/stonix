@@ -203,11 +203,10 @@ shells set the value of this to False, or No.'''
 
                 for line in contentlines:
                     sline = line.split(":")
-
                     if int(sline[2]) < int(uid_min):
                         if sline[0] not in exclude_accounts:
-
                             system_accounts_list.append(sline[0])
+
             except IndexError:
                 pass
 
@@ -285,25 +284,26 @@ shells set the value of this to False, or No.'''
         path = "/etc/passwd"
         tmppath = path + ".stonixtmp"
         self.iditerator = 0
+        newcontentlines = []
 
         try:
 
             if not self.ci.getcurrvalue():
                 return self.rulesuccess
 
-            self.ch.executeCommand("rm -f " + tmppath)
-            self.ch.executeCommand("cp /etc/passwd " + tmppath)
-            rf = open(tmppath, "r")
-            contentlines = rf.readlines()
-            rf.close()
-            for c in self.corrections_needed:
-                for line in contentlines:
-                    if re.search(c, line):
-                        sline = line.split(":")
-                        contentlines = [c.replace(sline[6], "/sbin/nologin\n") for c in contentlines]
-            wf = open(tmppath, "w")
-            wf.writelines(contentlines)
-            wf.close()
+            f = open(path, "r")
+            contentlines = f.readlines()
+            f.close()
+
+            for line in contentlines:
+                sline = line.split(":")
+                if sline[0] in self.corrections_needed:
+                    sline[6] = "/sbin/nologin\n"
+                line = ":".join(sline)
+                newcontentlines.append(line)
+
+            tf = open(tmppath, "w")
+            tf.writelines(newcontentlines)
 
             self.iditerator += 1
             myid = iterate(self.iditerator, self.rulenumber)
