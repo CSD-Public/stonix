@@ -1187,6 +1187,10 @@ class InstallBanners(RuleKVEditor):
 
         try:
 
+            if not self.setFileContents("/etc/issue", self.bannertext):
+                success = False
+                self.detailedresults += "\nFailed to properly configure the banner text in file /etc/issue"
+
             # write configuration options to gnome system-wide database
             for gcmd in gconfcommands:
                 if not self.checkCommand(gcmd):
@@ -1208,6 +1212,10 @@ class InstallBanners(RuleKVEditor):
         success = True
 
         try:
+
+            if not self.setFileContents("/etc/issue", self.bannertext):
+                success = False
+                self.detailedresults += "\nFailed to properly configure the banner text in file /etc/issue"
 
             self.logger.log(LogPriority.DEBUG, "Applying gdm profile configurations...")
 
