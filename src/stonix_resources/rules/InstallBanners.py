@@ -657,6 +657,8 @@ class InstallBanners(RuleKVEditor):
             if val:
                 outputstr = self.ch.getOutputString()
                 if not regex:
+                    outputstr = outputstr.strip()
+                    val = val.strip()
                     if outputstr.find(val) == -1:
                         retval = False
                         self.detailedresults += "\nDesired output:\n" + val + "\nnot found in command output"
