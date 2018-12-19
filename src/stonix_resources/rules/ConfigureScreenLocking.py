@@ -315,7 +315,8 @@ class ConfigureScreenLocking(RuleKVEditor):
                     #check if value is correct with associated key
                     elif output[0].strip() != getcmds[cmd]:
                         self.detailedresults += cmd2 + " didn't produce the \
-    desired value after being run which is " + getcmds[cmd] + "\n"
+                            desired value after being run which is " + \
+                            getcmds[cmd] + "\n"
                     #value is correct so remove it from the tempdict
                     else:
                         del tempdict[cmd]
@@ -494,16 +495,20 @@ class ConfigureScreenLocking(RuleKVEditor):
         @return: bool
         '''
         self.kdefix = {}
-        self.kdeprops = {"ScreenSaver": {"Enabled": "true",
-                                         "Lock": "true",
-                                         "LockGrace": "60000",
-                                         "Timeout": "840"}}
         if self.kdesddm:
             kdecheck = ".config/kdeglobals"
             rcpath = ".config/kscreenlockerrc"
+            self.kdeprops = {"Daemon": {"Autolock": "true",
+                                        "LockGrace": "60",
+                                        "LockOnResume": "true",
+                                        "Timeout": "14"}}
         else:
             kdecheck = ".kde"
             rcpath = ".kde/share/config/kscreensaverrc"
+            self.kdeprops = {"ScreenSaver": {"Enabled": "true",
+                                             "Lock": "true",
+                                             "LockGrace": "60000",
+                                             "Timeout": "840"}}
         if self.environ.geteuid() == 0:
             contents = readFile("/etc/passwd", self.logger)
             for line in contents:
@@ -524,7 +529,7 @@ class ConfigureScreenLocking(RuleKVEditor):
                     # User does not user KDE
                     continue
                 elif not os.path.exists(kdefile):
-                    self.kdefix.[username] = homepath
+                    self.kdefix[username] = homepath
                     self.detailedresults += kdefile + " not found for " + \
                         str(username) + "\n"
                     self.logger.log(LogPriority.DEBUG, self.detailedresults)
