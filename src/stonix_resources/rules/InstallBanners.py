@@ -306,7 +306,6 @@ class InstallBanners(RuleKVEditor):
                             "/etc/banners/in.rlogind",
                             "/etc/banners/in.rshd",
                             "/etc/banners/in.telnetd",
-                            "/etc/issue",
                             "/etc/banner"]
 
     def setcommon(self):
@@ -401,13 +400,13 @@ class InstallBanners(RuleKVEditor):
 
                 if os.path.exists("/usr/sbin/gdm3"):
                     self.setgnome3()
-                if os.path.exists("/usr/sbin/gdm"):
+                elif os.path.exists("/usr/sbin/gdm"):
                     # fedora uses dconf and a gdm3-like process even if it is using gnome2/gdm
                     if re.search("fedora", self.environ.getostype(), re.IGNORECASE):
                         self.setgnome3()
                     else:
                         self.setgnome2()
-                if os.path.exists("/usr/sbin/lightdm"):
+                elif os.path.exists("/usr/sbin/lightdm"):
                     self.setlightdm()
                 elif os.path.exists("/usr/bin/startkde"):
                     self.setkde()
@@ -839,10 +838,10 @@ class InstallBanners(RuleKVEditor):
             gconf = "/usr/bin/gconftool-2"
             confDict = {"/apps/gdm/simple-greeter/disable_user_list": "true",
                         "/apps/gdm/simple-greeter/banner_message_enable": "true",
-                        "/apps/gdm/simple-greeter/banner_message_text": self.bannertext}
+                        "/apps/gdm/simple-greeter/banner_message_text": GDMWARNINGBANNER}
             gconfcommands = []
             for item in confDict:
-                gconfcommands.append(gconf + " --get " + item)
+                gconfcommands.append(gconf + " -g " + item)
 
             for gcmd in gconfcommands:
                 if not self.checkCommand(gcmd, confDict[gcmd.split()[2]], False):
@@ -901,7 +900,7 @@ class InstallBanners(RuleKVEditor):
         keyfile = "/etc/dconf/db/gdm.d/01-banner-message"
         keyfileoptslist = ["[org/gnome/login-screen]",
                            "banner-message-enable=true",
-                           "banner-message-text='" + self.bannertext + "'",
+                           "banner-message-text='" + GDM3WARNINGBANNER + "'",
                            "disable-user-list=true"]
 
         if not self.reportFileContents(keyfile, keyfileoptslist):
@@ -1189,7 +1188,7 @@ class InstallBanners(RuleKVEditor):
 
         try:
 
-            if not self.setFileContents("/etc/issue", self.bannertext):
+            if not self.setFileContents("/etc/issue", GDMWARNINGBANNER):
                 success = False
                 self.detailedresults += "\nFailed to properly configure the banner text in file /etc/issue"
 
@@ -1215,7 +1214,7 @@ class InstallBanners(RuleKVEditor):
 
         try:
 
-            if not self.setFileContents("/etc/issue", self.bannertext):
+            if not self.setFileContents("/etc/issue", GDM3WARNINGBANNER):
                 success = False
                 self.detailedresults += "\nFailed to properly configure the banner text in file /etc/issue"
 
@@ -1246,7 +1245,7 @@ class InstallBanners(RuleKVEditor):
             gdmkeyfile = gdmkeyfilebase + "/01-banner-message"
             gdmkeyfileconflist = ["[org/gnome/login-screen]\n",
                                   "banner-message-enable=true\n",
-                                  "banner-message-text='" + self.bannertext + "'\n",
+                                  "banner-message-text='" + GDM3WARNINGBANNER + "'\n",
                                   "disable-user-list=true\n"]
             if not os.path.exists(gdmkeyfilebase):
                 self.logger.log(LogPriority.DEBUG, "gdm keyfile base directory does not exist. Creating it...")
