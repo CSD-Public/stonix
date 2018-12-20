@@ -400,7 +400,9 @@ class InstallBanners(RuleKVEditor):
                 if os.path.exists("/usr/sbin/gdm3"):
                     self.setgnome3()
                 elif os.path.exists("/usr/sbin/gdm"):
-                    if re.search("fedora", self.environ.getostype()):
+                    self.ch.executeCommand("/usr/sbin/gdm --version")
+                    gnomeversionstring = self.ch.getOutputString()
+                    if re.search("GDM\s+3\.", gnomeversionstring, re.IGNORECASE):
                         self.setgnome3()
                     else:
                         self.setgnome2()
