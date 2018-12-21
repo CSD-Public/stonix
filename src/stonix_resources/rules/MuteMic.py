@@ -1130,7 +1130,7 @@ valid exceptions.'
                             self.detailedresults += "Unable to set permissions " + \
                             "on " + self.systemdscriptname + "\n"
                             retval = False
-                        resetsecon(self.systemscriptname)
+                        resetsecon(self.systemdscriptname)
                     else:
                         retval = False
                         self.detailedresults += "Unable to write contents " + \
