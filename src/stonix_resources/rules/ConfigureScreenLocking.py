@@ -497,14 +497,14 @@ class ConfigureScreenLocking(RuleKVEditor):
         self.kdefix = {}
         if self.kdesddm:
             kdecheck = ".config/kdeglobals"
-            rcpath = ".config/kscreenlockerrc"
+            self.rcpath = ".config/kscreenlockerrc"
             self.kdeprops = {"Daemon": {"Autolock": "true",
                                         "LockGrace": "60",
                                         "LockOnResume": "true",
                                         "Timeout": "14"}}
         else:
             kdecheck = ".kde"
-            rcpath = ".kde/share/config/kscreensaverrc"
+            self.rcpath = ".kde/share/config/kscreensaverrc"
             self.kdeprops = {"ScreenSaver": {"Enabled": "true",
                                              "Lock": "true",
                                              "LockGrace": "60000",
@@ -524,7 +524,7 @@ class ConfigureScreenLocking(RuleKVEditor):
                                            'IndexError processing ' + str(temp)])
                     continue
                 kdeparent = os.path.join(homepath, kdecheck)
-                kdefile = os.path.join(homepath, rcpath)
+                kdefile = os.path.join(homepath, self.rcpath)
                 if not os.path.exists(kdeparent):
                     # User does not user KDE
                     continue
@@ -550,7 +550,7 @@ class ConfigureScreenLocking(RuleKVEditor):
                 return True
         else:
             kdeparent = os.path.join(self.environ.geteuidhome(), kdecheck)
-            kdefile = os.path.join(kdeparent, rcpath)
+            kdefile = os.path.join(kdeparent, self.rcpath)
             if not os.path.exists(kdeparent):
                 self.detailedresults += "Current user doesn't use kde.  " + \
                     "No need to configure.\n"
@@ -584,11 +584,6 @@ class ConfigureScreenLocking(RuleKVEditor):
                 return
             self.detailedresults = ""
             success = True
-            if self.environ.geteuid() == 0:
-                self.iditerator = 0
-                eventlist = self.statechglogger.findrulechanges(self.rulenumber)
-                for event in eventlist:
-                    self.statechglogger.deleteentry(event)
             if self.environ.getosfamily() == "linux":
                 if self.gnomeInstalled:
                     if not self.fixGnome():
@@ -597,21 +592,13 @@ class ConfigureScreenLocking(RuleKVEditor):
                     if not self.fixKde():
                         success = False
             elif self.environ.getosfamily() == "darwin":
-                self.rulesuccess = self.fixMac()
-            elif self.ci.getcurrvalue():
-                # clear out event history so only the latest fix is recorded
-
-                #Do not change logic of code to if self.fixGnome() and self.fixKde()
-                #for the sake of condensing code.  Python will short circuit the logic 
-                #and not enter the fixKde() if for some reason fixGnome() fails.
-                success1 = False
-                success2 = False
-                if self.fixGnome():
-                    success1 = True
-                if self.fixKde():
-                    success2 = True
-                if not success1 or not success2:
-                    success = False
+                if self.environ.geteuid() == 0:
+                    self.iditerator = 0
+                    eventlist = self.statechglogger.findrulechanges(self.rulenumber)
+                    for event in eventlist:
+                        self.statechglogger.deleteentry(event)
+                success = self.fixMac()
+            self.rulesuccess = success
         except(KeyboardInterrupt, SystemExit):
             raise
         except Exception:
@@ -803,13 +790,14 @@ class ConfigureScreenLocking(RuleKVEditor):
         success = True
         if self.environ.geteuid() == 0:
             self.logdispatch.log(LogPriority.DEBUG,
-                                 ['ForceIdleLogout.__fixkde4',
-                                  'Root context starting loop'])
+                                 'ConfigureScreenLocking.fixKde')
             if not self.kdefix:
                 return True
             for user in self.kdefix:
                 homepath = self.kdefix[user]
+                print "homepath is: " + str(homepath) + "\n\n"
                 kdefile = os.path.join(homepath, self.rcpath)
+                print "kdefile is: " + str(kdefile) + "\n\n"
                 if not self.correctFile(kdefile, user):
                     success = False
                     self.detailedresults += "Unable to configure " + \
@@ -882,19 +870,10 @@ class ConfigureScreenLocking(RuleKVEditor):
                 self.logger.log(LogPriority.DEBUG, self.detailedresults)
                 return False
             created = True
-            if self.environ.geteuid() == 0:
-                self.iditerator += 1
-                myid = iterate(self.iditerator, self.rulenumber)
-                event = {"eventtype": "creation",
-                         "filepath": kfile}
-                self.statechglogger.recordchgevent(myid, event)
+
 
         if not self.searchFile(kfile):
             if self.editor.fixables:
-                if self.environ.geteuid() == 0 and not created:
-                    self.iditerator += 1
-                    myid = iterate(self.iditerator, self.rulenumber)
-                    self.editor.setEventID(myid)
                 if not self.editor.fix():
                     debug = "Kveditor fix is failing for file " + \
                         kfile + "\n"
