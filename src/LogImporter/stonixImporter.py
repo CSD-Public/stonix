@@ -50,15 +50,15 @@ class ReportParser(object):
             self.path = path
             self.tree = ''
             if self.path is not None:
-                # sometimes a blank path is passed and that causes
-                # ET.parse to barf and subsequently the script to die
-                if self.path != '':
-                    self.tree = ET.parse(self.path)
+		# sometimes a blank path is passed and that causes
+		# ET.parse to barf and subsequently the script to die
+		if self.path != '':
+                	self.tree = ET.parse(self.path)
 
         except Exception:
             message = traceback.format_exc()
             log_error(message)
-            sys.exit(1)
+            # sys.exit(1)
 
     def openreport(self, path):
         '''
@@ -74,10 +74,14 @@ class ReportParser(object):
             if os.path.exists(path):
                 self.tree = ET.parse(path)
 
+        except ET.ParseError, err:
+            row, column = err.position
+            log_error("Catastrophic failure")
+            log_error("error on row", row, "column", column, ":", v)
         except Exception:
             message = traceback.format_exc()
             log_error(message)
-            sys.exit(1)
+            # sys.exit(1)
 
     def parsereport(self):
         '''
@@ -126,8 +130,8 @@ class DBhandler(object):
 
         self.con = None
         try:
-            self.con = mdb.Connect('hosturi', 'stonixlogdbname',
-                                   'password', 'dbusername')
+            self.con = mdb.Connect('localhost', 'stonixdb',
+                                   'He4vyKandi0ad', 'stonix')
 
         except Exception:
             message = traceback.format_exc()
@@ -259,7 +263,7 @@ def log_error(trace_msg):
         # if you alter this path, ensure that you make the
         # necessary logrotate configuration changes on the server
         # as well
-        log_path = "stonix_import_script_logpath"
+        log_path = "/var/log/stoniximport.log"
 
         f = open(log_path, 'a')
         f.write(log_time + " - " + trace_msg + "\n\n")
@@ -309,7 +313,7 @@ def main():
         try:
 
             repfile = os.path.join(reportdir, reportfile)
-
+            log_error("repfile: " + str(repfile))
             parser.openreport(repfile)
             reportdata = parser.parsereport()
             metadata = reportdata[0]
@@ -334,7 +338,7 @@ def main():
         except Exception:
             message = traceback.format_exc()
             log_error(message)
-            sys.exit(1)
+            # sys.exit(1)
 
     try:
 
