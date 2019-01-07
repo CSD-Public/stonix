@@ -50,7 +50,10 @@ class ReportParser(object):
             self.path = path
             self.tree = ''
             if self.path is not None:
-                self.tree = ET.parse(self.path)
+                # sometimes a blank path is passed and that causes
+                # ET.parse to barf and subsequently the script to die
+                if self.path != '':
+                    self.tree = ET.parse(self.path)
 
         except Exception:
             message = traceback.format_exc()
