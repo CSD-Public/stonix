@@ -657,11 +657,14 @@ class InstallBanners(RuleKVEditor):
             if val:
                 outputstr = self.ch.getOutputString()
                 if not regex:
-                    outputstr = outputstr.strip()
-                    val = val.strip()
+                    # outputstr = outputstr.strip()
+                    # val = val.strip()
                     if outputstr.find(val) == -1:
                         retval = False
-                        self.detailedresults += "\nDesired output:\n" + val + "\nnot found in command output"
+                        self.detailedresults += "\nDesired output:\n"
+                        self.detailedresults += val
+                        self.detailedresults += "\n\nActual output:\n"
+                        self.detailedresults += outputstr
                 else:
                     if not re.search(val, outputstr, re.IGNORECASE):
                         retval = False
@@ -839,7 +842,7 @@ class InstallBanners(RuleKVEditor):
             gconf = "/usr/bin/gconftool-2"
             confDict = {"/apps/gdm/simple-greeter/disable_user_list": "true",
                         "/apps/gdm/simple-greeter/banner_message_enable": "true",
-                        "/apps/gdm/simple-greeter/banner_message_text": GDMWARNINGBANNER}
+                        "/apps/gdm/simple-greeter/banner_message_text": ALTWARNINGBANNER} # gdm 2 db cannot reliably store/preserve/interpret newline characters
             gconfcommands = []
             for item in confDict:
                 gconfcommands.append(gconf + " -g " + item)
