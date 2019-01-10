@@ -99,13 +99,17 @@ class DisableRemoveableStorage(Rule):
         default = False
         self.storageci = self.initCi(datatype, key, instructions, default)
 
+        #global variables
+        self.grubfiles = ["/boot/grub2/grub.cfg",
+                          "/boot/grub/grub.cfg"
+                          "/boot/grub/grub.conf"]
         self.pcmcialist = ['pcmcia-cs', 'kernel-pcmcia-cs', 'pcmciautils']
         self.pkgremovedlist = []
         self.iditerator = 0
         self.created = False
         self.daemonpath = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]))) + "/stonix_resources/disablestorage"
         self.sethelptext()
-
+        self.grubperms = ""
         self.ph = Pkghelper(self.logger, self.environ)
         self.ch = CommandHelper(self.logger)
 
@@ -134,142 +138,8 @@ class DisableRemoveableStorage(Rule):
             if self.environ.getostype() == "Mac OS X":
                 compliant = self.reportMac()
             else:
-                self.udevfile = "/etc/udev/rules.d/10-local.rules"
-                lsmodcmd = ""
-                self.mvcmd = "/bin/mv"
-                if os.path.exists("/sbin/lsmod"):
-                    lsmodcmd = "/sbin/lsmod"
-                elif os.path.exists("/usr/bin/lsmod"):
-                    lsmodcmd = "/usr/bin/lsmod"
-                self.lsmod = False
-                removeables = []
-                usbmods = ["usb_storage",
-                           "usb-storage"]
-                self.grubfiles = ["/boot/grub2/grub.cfg",
-                             "/boot/grub/grub.cfg"
-                             "/boot/grub/grub.conf"]
-                self.detailedresults = ""
-                self.grubperms = ""
-                if re.search("Red Hat", self.environ.getostype()) and \
-                        re.search("^6", self.environ.getosver()):
-                    self.grubperms = [0 ,0,  0o600]
-                elif self.ph.manager is "apt-get":
-                    self.grubperms = [0, 0, 0o400]
-                else:
-                    self.grubperms = [0, 0, 0o644]
-                # check compliance of grub file(s) if exists
-                for grub in self.grubfiles:
-                    if os.path.exists(grub):
-                        if self.grubperms:
-                            if not checkPerms(grub, self.grubperms, self.logger):
-                                compliant = False
-                                self.detailedresults += "Permissions " + \
-                                    "incorrect on " + grub + " file\n"
-                        contents = readFile(grub, self.logger)
-                        if contents:
-                            for line in contents:
-                                if re.search("^kernel", line.strip()) or re.search("^linux", line.strip()) \
-                                        or re.search("^linux16", line.strip()):
-                                    if not re.search("\s+nousb\s*", line):
-                                        debug = grub + " file doesn't " + \
-                                            "contain nousb kernel option\n"
-                                        self.detailedresults += grub + " file doesn't " + \
-                                            "contain nousb kernel option\n"
-                                        self.logger.log(LogPriority.DEBUG,
-                                                        debug)
-                                        compliant = False
-                                    if not re.search("\s+usbcore\.authorized_default=0\s*", line):
-                                        debug = grub + " file doesn't " + \
-                                            "contain usbcore.authorized_default=0 " + \
-                                            "kernel option\n"
-                                        self.detailedresults += grub + " file doesn't " + \
-                                            "contain usbcore.authorized_default=0 " + \
-                                            "kernel option\n"
-                                        compliant = False
-                # check for existence of certain usb packages, non-compliant
-                # if any exist
-                for item in self.pcmcialist:
-                    if self.ph.check(item):
-                        self.detailedresults += item + " is installed " + \
-                            "and shouldn't be\n"
-                        compliant = False
-                if lsmodcmd:
-                    for usb in usbmods:
-                        cmd = [lsmodcmd, "|", "grep", usb]
-                        self.ch.executeCommand(cmd)
-                        if self.ch.getReturnCode() == "0":
-                            compliant = False
-                            self.detailedresults += "lsmod command shows usb not disabled\n"
-                            break
-                found1 = True
-                self.blacklist = {"blacklist usb_storage": False,
-                                  "install usbcore /bin/true": False,
-                                  "install usb-storage /bin/true": False,
-                                  "blacklist uas": False,
-                                  "blacklist firewire-ohci": False,
-                                  "blacklist firewire-sbp2": False}
-                if os.path.exists("/etc/modprobe.d"):
-                    dirs = glob.glob("/etc/modprobe.d/*")
-                    # since file name doesn't matter
-                    # i.e. all files are read and treated the same in
-                    # modprobe.d, if directives are found in any of
-                    # the files inside this directory, where they don't
-                    # have to be in the same file, the system is compliant
-                    for directory in dirs:
-                        contents = readFile(directory, self.logger)
-                        for item in self.blacklist:
-                            for line in contents:
-                                if re.search("^" + item, line.strip()):
-                                    self.blacklist[item] = True
-                    # if we don't find directives in any of the files in
-                    # modprobe.d, we will now check /etc/modprobe.conf
-                    # we will still keep track of whether we already found
-                    # one directive in one of the files in modprobe.d
-                    for item in self.blacklist:
-                        if not self.blacklist[item]:
-                            found1 = False
-                else:
-                    found1 = False
-                if not found1:
-                    if os.path.exists("/etc/modprobe.conf"):
-                        contents = readFile("/etc/modprobe.conf")
-                        if contents:
-                            for item in self.blacklist:
-                                for line in contents:
-                                    if re.search("^" + item,
-                                                 line.strip()):
-                                        self.blacklist[item] = True
-                    for item in self.blacklist:
-                        if not self.blacklist[item]:
-                            debug = "modprobe.conf nor blacklist " + \
-                                "files contain " + item + "\n"
-                            self.logger.log(LogPriority.DEBUG, debug)
-                            compliant = False
-                for item in self.blacklist:
-                    if self.blacklist[item]:
-                        removeables.append(item)
-                for item in removeables:
-                    del(self.blacklist[item])
-                found2 = False
-                if os.path.exists(self.udevfile):
-                    if not checkPerms(self.udevfile, [0, 0, 0o644], self.logger):
-                        self.detailedresults += "Permissions not correct " + \
-                            "on " + self.udevfile + "\n"
-                        compliant = False
-                    contents = readFile(self.udevfile, self.logger)
-                    for line in contents:
-                        if re.search("ACTION\=\=\"add\"\, SUBSYSTEMS\=\=\"usb\"\, RUN\+\=\"/bin/sh \-c \'for host in /sys/bus/usb/devices/usb\*\; do echo 0 \> \$host/authorized\_default\; done\'\"", line.strip()):
-                            found2 = True
-                    if not found2:
-                        self.detailedresults += "Udev rule not found to disable usb at boot\n"
-                        debug = "Udev rule not found to disable usb at boot\n"
-                        self.logger.log(LogPriority.DEBUG, debug)
-                        compliant = False
-                else:
-                    self.detailedresults += "Udev file doesn't exist to disable usb at boot\n"
-                    debug = "Udev file doesn't exist to disable usb at boot\n"
-                    self.logger.log(LogPriority.DEBUG, debug)
-                    compliant = False
+                compliant = self.reportLinux()
+
             self.compliant = compliant
         except OSError:
             self.detailedresults = traceback.format_exc()
@@ -285,7 +155,178 @@ class DisableRemoveableStorage(Rule):
                                    self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
-###############################################################################
+
+    def reportLinux(self):
+        '''
+        sub method for linux portion of compliance reporting
+        @author: dwalker
+        @return: compliant
+        @rtype: boolean
+        '''
+        compliant = True
+        lsmodcmd = ""
+
+        #determine location of lsmod binary
+        if os.path.exists("/sbin/lsmod"):
+            lsmodcmd = "/sbin/lsmod"
+        elif os.path.exists("/usr/bin/lsmod"):
+            lsmodcmd = "/usr/bin/lsmod"
+
+        usbmods = ["usb_storage",
+                   "usb-storage"]
+        #run lsmod command and look for any of the items from
+        #usbmods list in the output.  If item exists in output
+        #then that usb module is not disabled.  This is for
+        #reporting only.  There is no fix using lsmod command.
+        if lsmodcmd:
+            for usb in usbmods:
+                cmd = [lsmodcmd, "|", "grep", usb]
+                self.ch.executeCommand(cmd)
+                if self.ch.getReturnCode() == "0":
+                    compliant = False
+                    self.detailedresults += "lsmod command shows usb not disabled\n"
+                    break
+
+        # check compliance of grub file(s) if files exist
+        if re.search("Red Hat", self.environ.getostype()) and \
+                re.search("^6", self.environ.getosver()):
+            self.grubperms = [0, 0, 0o600]
+        elif self.ph.manager is "apt-get":
+            self.grubperms = [0, 0, 0o400]
+        else:
+            self.grubperms = [0, 0, 0o644]
+        for grub in self.grubfiles:
+            if os.path.exists(grub):
+                if self.grubperms:
+                    if not checkPerms(grub, self.grubperms, self.logger):
+                        compliant = False
+                        self.detailedresults += "Permissions " + \
+                                                "incorrect on " + grub + " file\n"
+                contents = readFile(grub, self.logger)
+                if contents:
+                    for line in contents:
+                        if re.search("^kernel", line.strip()) or re.search("^linux", line.strip()) \
+                                or re.search("^linux16", line.strip()):
+                            if not re.search("\s+nousb\s*", line):
+                                debug = grub + " file doesn't " + \
+                                        "contain nousb kernel option\n"
+                                self.detailedresults += grub + " file doesn't " + \
+                                                        "contain nousb kernel option\n"
+                                self.logger.log(LogPriority.DEBUG,
+                                                debug)
+                                compliant = False
+                            if not re.search("\s+usbcore\.authorized_default=0\s*", line):
+                                debug = grub + " file doesn't " + \
+                                        "contain usbcore.authorized_default=0 " + \
+                                        "kernel option\n"
+                                self.detailedresults += grub + " file doesn't " + \
+                                                        "contain usbcore.authorized_default=0 " + \
+                                                        "kernel option\n"
+                                self.logger.log(LogPriority.DEBUG,
+                                                debug)
+                                compliant = False
+        # check for existence of certain usb packages, non-compliant
+        # if any exist
+        for item in self.pcmcialist:
+            if self.ph.check(item):
+                self.detailedresults += item + " is installed " + \
+                                        "and shouldn't be\n"
+                compliant = False
+
+        #check modprobe files inside modprobe.d directory for
+        #contents inside self.blacklist variable
+        removeables = []
+        found1 = True
+        #self.blacklist dictionary contains the directives
+        #and the value we're looking for (key) and contains
+        #a default value of False for each one.  Upon finding
+        #each directive and value pair e.g. blacklist usb_storage
+        #the dictionary is updated with a True value.  This keeps
+        #track of the directives we didnt find or that had
+        #incorrect values
+        self.blacklist = {"blacklist usb_storage": False,
+                          "install usbcore /bin/true": False,
+                          "install usb-storage /bin/true": False,
+                          "blacklist uas": False,
+                          "blacklist firewire-ohci": False,
+                          "blacklist firewire-sbp2": False}
+        #check if /etc/modprobe.d directory exists
+        if os.path.exists("/etc/modprobe.d"):
+            #extract all files inside modprobe.d
+            dirs = glob.glob("/etc/modprobe.d/*")
+            # since file name doesn't matter
+            # i.e. all files are read and treated the same in
+            # modprobe.d, if directives are found in any of
+            # the files inside this directory, where they don't
+            # have to be in the same file, the system is compliant
+            for directory in dirs:
+                contents = readFile(directory, self.logger)
+                for item in self.blacklist:
+                    for line in contents:
+                        if re.search("^" + item, line.strip()):
+                            self.blacklist[item] = True
+            # if we don't find all directives in any of the files in
+            # modprobe.d, we will now check /etc/modprobe.conf as
+            # they are all equivalent. We will still keep track of
+            # whether we already found one directive in one of the
+            # files in modprobe.d
+            for item in self.blacklist:
+                if not self.blacklist[item]:
+                    found1 = False
+        else:
+            found1 = False
+
+        #either not all directives inside self.blacklist were found
+        #or /etc/modprobe.d didn't exist.  Now we check /etc/modprobe.conf
+        #for any remaining unfound directives.
+        if not found1:
+            if os.path.exists("/etc/modprobe.conf"):
+                contents = readFile("/etc/modprobe.conf")
+                if contents:
+                    for item in self.blacklist:
+                        for line in contents:
+                            if re.search("^" + item,
+                                         line.strip()):
+                                self.blacklist[item] = True
+            for item in self.blacklist:
+                if not self.blacklist[item]:
+                    debug = "modprobe.conf nor blacklist " + \
+                            "files contain " + item + "\n"
+                    self.logger.log(LogPriority.DEBUG, debug)
+                    compliant = False
+        #any directives that were found we remove from self.blacklist
+        #We must add to a variable called removeables first then
+        #iterate through removeables and remove each item self.blacklist
+        for item in self.blacklist:
+            if self.blacklist[item]:
+                removeables.append(item)
+        for item in removeables:
+            del (self.blacklist[item])
+
+        #check the contents of the udev file for a certain desired line
+        self.udevfile = "/etc/udev/rules.d/10-local.rules"
+        found2 = False
+        if os.path.exists(self.udevfile):
+            if not checkPerms(self.udevfile, [0, 0, 0o644], self.logger):
+                self.detailedresults += "Permissions not correct " + \
+                                        "on " + self.udevfile + "\n"
+                compliant = False
+            contents = readFile(self.udevfile, self.logger)
+            for line in contents:
+                if re.search("ACTION\=\=\"add\"\, SUBSYSTEMS\=\=\"usb\"\, RUN\+\=\"/bin/sh \-c \'for host in /sys/bus/usb/devices/usb\*\; do echo 0 \> \$host/authorized\_default\; done\'\"",
+                        line.strip()):
+                    found2 = True
+            if not found2:
+                self.detailedresults += "Udev rule not found to disable usb at boot\n"
+                debug = "Udev rule not found to disable usb at boot\n"
+                self.logger.log(LogPriority.DEBUG, debug)
+                compliant = False
+        else:
+            self.detailedresults += "Udev file doesn't exist to disable usb at boot\n"
+            debug = "Udev file doesn't exist to disable usb at boot\n"
+            self.logger.log(LogPriority.DEBUG, debug)
+            compliant = False
+        return compliant
 
     def reportMac(self):
         '''
@@ -306,7 +347,7 @@ class DisableRemoveableStorage(Rule):
                 break
 
         if not compliant:
-            self.detailedresults += "\nMissing required system cron job"
+            self.detailedresults += "Missing required system cron job\n"
 
         return compliant
 
@@ -338,170 +379,7 @@ class DisableRemoveableStorage(Rule):
             if self.environ.getostype() == "Mac OS X":
                 success = self.fixMac()
             else:
-                created = False
-                changed = False
-                tempstring = ""
-                grubfilefound = False
-                blacklistf = "/etc/modprobe.d/stonix-blacklist.conf"
-                for grub in self.grubfiles:
-                    if os.path.exists(grub):
-                        grubfilefound = True
-                        if self.grubperms:
-                            if not checkPerms(grub, self.grubperms, self.logger):
-                                self.iditerator += 1
-                                myid = iterate(self.iditerator, self.rulenumber)
-                                if not setPerms(grub, self.grubperms, self.logger,
-                                                self.statechglogger, myid):
-                                    success = False
-                        contents = readFile(grub, self.logger)
-                        kernellinefound = False
-                        if contents:
-                            for line in contents:
-                                if re.search("^kernel", line.strip()) or re.search("^linux", line.strip()) \
-                                    or re.search("^linux16", line.strip()):
-                                    kernellinefound = True
-                                    if not re.search("\s+nousb\s*", line):
-                                        changed = True
-                                        tempstring += line.strip() + " nousb"
-                                    if not re.search("\s+usbcore\.authorized_default=0\s+", line):
-                                        changed = True
-                                        tempstring += line.strip() + " usbcore.authorized_default=0"
-                                    tempstring += "\n"
-                                else:
-                                    tempstring += line
-                        if not kernellinefound:
-                            changed = False
-                            self.detailedresults += "The grub file doesn't contain kernel line\n" + \
-                                "Unable to fully implement fixes in this rule\n"
-                            success = False
-                        if changed:
-                            tmpfile = grub + ".tmp"
-                            if writeFile(tmpfile, tempstring, self.logger):
-                                self.iditerator += 1
-                                myid = iterate(self.iditerator, self.rulenumber)
-                                event = {"eventtype": "conf",
-                                         "filepath": grub}
-                                self.statechglogger.recordchgevent(myid, event)
-                                self.statechglogger.recordfilechange(grub, tmpfile,
-                                                                     myid)
-                                os.rename(tmpfile, grub)
-                                if not setPerms(grub, self.grubperms, self.logger):
-                                    success = False
-                                    self.detailedresults += "Unable to set permissions on " + \
-                                        grub + " file\n"
-                            else:
-                                success = False
-                if not grubfilefound:
-                    self.detailedresults += "No grub configuration file found\n" + \
-                        "Unable to fully fix system for this rule\n"
-                    success = False
-                tempstring = ""
-                    # Check if self.blacklist still contains values, if it
-                    # does, then we didn't find all the blacklist values
-                    # in report
-                if self.blacklist:
-                    # didn't find one or both directives in the files
-                    # inside modprobe.d so we now check an alternate
-                    # so create stonixblacklist file if it doesn't
-                    # exist and put remaining unfound blacklist
-                    # items there
-                    if not os.path.exists(blacklistf):
-                        createFile(blacklistf, self.logger)
-                        self.iditerator += 1
-                        myid = iterate(self.iditerator, self.rulenumber)
-                        event = {"eventtype": "creation",
-                                 "filepath": blacklistf}
-                        self.statechglogger.recordchgevent(myid, event)
-                    else:
-                        if not checkPerms(blacklistf, [0, 0, 420],
-                                          self.logger):
-                            self.iditerator += 1
-                            myid = iterate(self.iditerator,
-                                           self.rulenumber)
-                            if not setPerms(blacklistf, [0, 0, 420],
-                                            self.logger,
-                                            self.statechglogger, myid):
-                                success = False
-                    for item in self.blacklist:
-                        tempstring += item + "\n"
-                    tmpfile = blacklistf + ".tmp"
-                    if writeFile(tmpfile, tempstring,
-                                 self.logger):
-                        self.iditerator += 1
-                        myid = iterate(self.iditerator,
-                                       self.rulenumber)
-                        event = {"eventtype": "conf",
-                                 "filepath": blacklistf}
-                        self.statechglogger.recordchgevent(myid, event)
-                        self.statechglogger.recordfilechange(blacklistf,
-                                                             tmpfile, myid)
-                        os.rename(tmpfile, blacklistf)
-                        os.chown(blacklistf, 0, 0)
-                        os.chmod(blacklistf, 420)
-                        resetsecon(blacklistf)
-                    if self.ph.manager == "apt-get":
-                        cmd = ["/usr/sbin/update-initramfs", "-u"]
-                        if not self.ch.executeCommand(cmd):
-                            success = False
-                            self.detailedresults += "Unable to run update-initramfs command\n"
-                for item in self.pcmcialist:
-                    if self.ph.check(item):
-                        self.ph.remove(item)
-                        self.pkgremovedlist.append(item)
-                if not os.path.exists(self.udevfile):
-                    if not createFile(self.udevfile, self.logger):
-                        self.detailedresults += "Unable to create " + \
-                            self.udevfile + " file\n"
-                        success = False
-                    else:
-                        created = True
-                if os.path.exists(self.udevfile):
-                    if not checkPerms(self.udevfile, [0, 0, 0o644], self.logger):
-                        if created:
-                            if not setPerms(self.udevfile, [0, 0, 0o644],
-                                            self.logger):
-                                success = False
-                                self.detailedresults += "Unable to set " + \
-                                    "permissions on " + self.udevfile + "\n"
-                        else:
-                            self.iditerator += 1
-                            myid = iterate(self.iditerator,
-                                           self.rulenumber)
-                            if not setPerms(self.udevfile, [0, 0, 0o644],
-                                            self.logger,
-                                            self.statechglogger, myid):
-                                success = False
-                                self.detailedresults += "Unable to set " + \
-                                    "permissions on " + self.udevfile + "\n"
-                    found = False
-                    contents = readFile(self.udevfile, self.logger)
-                    tempstring = ""
-                    for line in contents:
-                        if re.search("ACTION==\"add\"\, SUBSYSTEMS==\"usb\"\, RUN+=\"/bin/sh -c \'for host in /sys/bus/usb/devices/usb\*\; do echo 0 > \$host/authorized_default; done\'\"", line.strip()):
-                            found = True
-                        tempstring += line
-                    if not found:
-                        tempstring += "ACTION==\"add\", SUBSYSTEMS==\"usb\", RUN+=\"/bin/sh -c \'for host in /sys/bus/usb/devices/usb*; do echo 0 > $host/authorized_default; done\'\""
-                        tmpfile = self.udevfile + ".tmp"
-                        if writeFile(tmpfile, tempstring,
-                                 self.logger):
-                            if not created:
-                                self.iditerator += 1
-                                myid = iterate(self.iditerator,
-                                               self.rulenumber)
-                                event = {"eventtype": "conf",
-                                         "filepath": self.udevfile}
-                                self.statechglogger.recordchgevent(myid, event)
-                                self.statechglogger.recordfilechange(self.udevfile,
-                                                                     tmpfile, myid)
-                            os.rename(tmpfile, self.udevfile)
-                            os.chown(self.udevfile, 0, 0)
-                            os.chmod(self.udevfile, 0o644)
-                            resetsecon(self.udevfile)
-                        else:
-                            success = False
-                            self.detailedresults += "Unable to write changes " + \
-                                "to " + self.udevfile + "\n"
+                success = self.fixLinux()
             self.rulesuccess = success
         except (KeyboardInterrupt, SystemExit):
             raise
@@ -593,3 +471,178 @@ class DisableRemoveableStorage(Rule):
             self.logger.log(LogPriority.DEBUG, debug)
         return success
 
+    def fixLinux(self):
+        '''
+        sub method for linux portion of compliance fixing
+        @author: dwalker
+        @return: success
+        @rtype: boolean
+        '''
+        success = True
+        created = False
+        changed = False
+        tempstring = ""
+        grubfilefound = False
+        blacklistf = "/etc/modprobe.d/stonix-blacklist.conf"
+        for grub in self.grubfiles:
+            if os.path.exists(grub):
+                grubfilefound = True
+                if self.grubperms:
+                    if not checkPerms(grub, self.grubperms, self.logger):
+                        self.iditerator += 1
+                        myid = iterate(self.iditerator, self.rulenumber)
+                        if not setPerms(grub, self.grubperms, self.logger,
+                                        self.statechglogger, myid):
+                            success = False
+                contents = readFile(grub, self.logger)
+                kernellinefound = False
+                if contents:
+                    for line in contents:
+                        if re.search("^kernel", line.strip()) or re.search("^linux", line.strip()) \
+                                or re.search("^linux16", line.strip()):
+                            kernellinefound = True
+                            if not re.search("\s+nousb\s*", line):
+                                changed = True
+                                tempstring += line.strip() + " nousb"
+                            if not re.search("\s+usbcore\.authorized_default=0\s+", line):
+                                changed = True
+                                tempstring += line.strip() + " usbcore.authorized_default=0"
+                            tempstring += "\n"
+                        else:
+                            tempstring += line
+                if not kernellinefound:
+                    changed = False
+                    self.detailedresults += "The grub file doesn't contain kernel line\n" + \
+                                            "Unable to fully implement fixes in this rule\n"
+                    success = False
+                if changed:
+                    tmpfile = grub + ".tmp"
+                    if writeFile(tmpfile, tempstring, self.logger):
+                        self.iditerator += 1
+                        myid = iterate(self.iditerator, self.rulenumber)
+                        event = {"eventtype": "conf",
+                                 "filepath": grub}
+                        self.statechglogger.recordchgevent(myid, event)
+                        self.statechglogger.recordfilechange(grub, tmpfile,
+                                                             myid)
+                        os.rename(tmpfile, grub)
+                        if not setPerms(grub, self.grubperms, self.logger):
+                            success = False
+                            self.detailedresults += "Unable to set permissions on " + \
+                                                    grub + " file\n"
+                    else:
+                        success = False
+        if not grubfilefound:
+            self.detailedresults += "No grub configuration file found\n" + \
+                                    "Unable to fully fix system for this rule\n"
+            success = False
+        tempstring = ""
+        # Check if self.blacklist still contains values, if it
+        # does, then we didn't find all the blacklist values
+        # in report
+        if self.blacklist:
+            # didn't find one or both directives in the files
+            # inside modprobe.d so we now check an alternate
+            # so create stonixblacklist file if it doesn't
+            # exist and put remaining unfound blacklist
+            # items there
+            if not os.path.exists(blacklistf):
+                createFile(blacklistf, self.logger)
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                event = {"eventtype": "creation",
+                         "filepath": blacklistf}
+                self.statechglogger.recordchgevent(myid, event)
+            else:
+                if not checkPerms(blacklistf, [0, 0, 420],
+                                  self.logger):
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator,
+                                   self.rulenumber)
+                    if not setPerms(blacklistf, [0, 0, 420],
+                                    self.logger,
+                                    self.statechglogger, myid):
+                        success = False
+            for item in self.blacklist:
+                tempstring += item + "\n"
+            tmpfile = blacklistf + ".tmp"
+            if writeFile(tmpfile, tempstring,
+                         self.logger):
+                self.iditerator += 1
+                myid = iterate(self.iditerator,
+                               self.rulenumber)
+                event = {"eventtype": "conf",
+                         "filepath": blacklistf}
+                self.statechglogger.recordchgevent(myid, event)
+                self.statechglogger.recordfilechange(blacklistf,
+                                                     tmpfile, myid)
+                os.rename(tmpfile, blacklistf)
+                os.chown(blacklistf, 0, 0)
+                os.chmod(blacklistf, 420)
+                resetsecon(blacklistf)
+            if self.ph.manager == "apt-get":
+                cmd = ["/usr/sbin/update-initramfs", "-u"]
+                if not self.ch.executeCommand(cmd):
+                    success = False
+                    self.detailedresults += "Unable to run update-initramfs command\n"
+        for item in self.pcmcialist:
+            if self.ph.check(item):
+                self.ph.remove(item)
+                self.pkgremovedlist.append(item)
+        if not os.path.exists(self.udevfile):
+            if not createFile(self.udevfile, self.logger):
+                self.detailedresults += "Unable to create " + \
+                                        self.udevfile + " file\n"
+                success = False
+            else:
+                created = True
+        if os.path.exists(self.udevfile):
+            if not checkPerms(self.udevfile, [0, 0, 0o644], self.logger):
+                if created:
+                    if not setPerms(self.udevfile, [0, 0, 0o644],
+                                    self.logger):
+                        success = False
+                        self.detailedresults += "Unable to set " + \
+                                                "permissions on " + self.udevfile + "\n"
+                else:
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator,
+                                   self.rulenumber)
+                    if not setPerms(self.udevfile, [0, 0, 0o644],
+                                    self.logger,
+                                    self.statechglogger, myid):
+                        success = False
+                        self.detailedresults += "Unable to set " + \
+                                                "permissions on " + self.udevfile + "\n"
+            found = False
+            contents = readFile(self.udevfile, self.logger)
+            tempstring = ""
+            for line in contents:
+                if re.search(
+                        "ACTION==\"add\"\, SUBSYSTEMS==\"usb\"\, RUN+=\"/bin/sh -c \'for host in /sys/bus/usb/devices/usb\*\; do echo 0 > \$host/authorized_default; done\'\"",
+                        line.strip()):
+                    found = True
+                tempstring += line
+            if not found:
+                tempstring += "ACTION==\"add\", SUBSYSTEMS==\"usb\", RUN+=\"/bin/sh -c \'for host in /sys/bus/usb/devices/usb*; do echo 0 > $host/authorized_default; done\'\""
+                tmpfile = self.udevfile + ".tmp"
+                if writeFile(tmpfile, tempstring,
+                             self.logger):
+                    if not created:
+                        self.iditerator += 1
+                        myid = iterate(self.iditerator,
+                                       self.rulenumber)
+                        event = {"eventtype": "conf",
+                                 "filepath": self.udevfile}
+                        self.statechglogger.recordchgevent(myid, event)
+                        self.statechglogger.recordfilechange(self.udevfile,
+                                                             tmpfile, myid)
+                    os.rename(tmpfile, self.udevfile)
+                    os.chown(self.udevfile, 0, 0)
+                    os.chmod(self.udevfile, 0o644)
+                    resetsecon(self.udevfile)
+                else:
+                    success = False
+                    self.detailedresults += "Unable to write changes " + \
+                                            "to " + self.udevfile + "\n"
+        return success
