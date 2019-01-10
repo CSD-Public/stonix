@@ -1114,7 +1114,7 @@ valid exceptions.'
                         if not created1:
                             #if file was created then undo deletes it
                             #otherwise we record the event for the file write
-                            self.iterator += 1
+                            self.iditerator += 1
                             myid = iterate(self.iditerator, self.rulenumber)
                             event = {"eventtype": "conf",
                                      "filepath": self.systemdscriptname}
@@ -1130,7 +1130,7 @@ valid exceptions.'
                             self.detailedresults += "Unable to set permissions " + \
                             "on " + self.systemdscriptname + "\n"
                             retval = False
-                        resetsecon(self.systemscriptname)
+                        resetsecon(self.systemdscriptname)
                     else:
                         retval = False
                         self.detailedresults += "Unable to write contents " + \
@@ -1154,7 +1154,7 @@ valid exceptions.'
             if systype == "sysvinit":
     
                 tempfile = self.sysvscriptname + ".stonixtmp"
-                if not os.path.exist(self.sysvscriptname):
+                if not os.path.exists(self.sysvscriptname):
                     if not createFile(self.sysvscriptname, self.logger):
                         retval = False
                         self.detailedresults += "Unable to create " + \
@@ -1181,7 +1181,7 @@ valid exceptions.'
                         tempstring += line
                     if writeFile(tempfile, tempstring, self.logger):
                         if not created2:
-                            self.iterator += 1
+                            self.iditerator += 1
                             myid = iterate(self.iditerator, self.rulenumber)
                             event = {"eventtype": "conf",
                                      "filepath": self.sysvscriptname}
