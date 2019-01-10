@@ -68,6 +68,14 @@ class zzzTestRuleDisableRemoveableStorage(RuleTest):
         @author: ekkehard j. koch
         '''
         success = True
+        if self.environ.getostype() == "Mac OS X":
+            success = self.setConditionsForMac()
+        else:
+            success = self.setConditionsforLinux()
+        return success
+
+    def setConditionsForMac(self):
+        success = True
         daemonpath = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]))) + "/src/stonix_resources/disablestorage"
         plistpath = "/Library/LaunchDaemons/gov.lanl.stonix.disablestorage.plist"
         self.rule.daemonpath = daemonpath
