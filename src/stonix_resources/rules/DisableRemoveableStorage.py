@@ -169,7 +169,7 @@ class DisableRemoveableStorage(Rule):
                         if contents:
                             for line in contents:
                                 if re.search("^kernel", line.strip()) or re.search("^linux", line.strip()) \
-                                    or re.search("^linux16", line.strip()):
+                                        or re.search("^linux16", line.strip()):
                                     if not re.search("\s+nousb\s*", line):
                                         debug = grub + " file doesn't " + \
                                             "contain nousb kernel option\n"
