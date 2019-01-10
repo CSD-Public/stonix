@@ -437,7 +437,7 @@ valid exceptions.'
             else:
                 if self.root:
                     self.iditerator += 1
-                    myid = iterate(self.iditerator, myid)
+                    myid = iterate(self.iditerator, self.rulenumber)
                     event = {"eventtype": "commandstring",
                              "command": undocmd}
                     self.statechglogger.recordchgevent(myid, event)
