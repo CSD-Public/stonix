@@ -185,6 +185,14 @@ class Controller(Observable):
                             ['SafetyCheck',
                              'STONIX will now exit.'])
             sys.exit(1)
+
+        # this part added so stonix will create files with the intended root umask (022)
+        # instead of using the default user umask (which is currently being set to 077)
+        # running stonix with a umask of 077 would break several bits of functionality
+        # (namely installbanners, in some cases)
+        if self.environ.geteuid() == 0:
+            os.umask(022)
+
         self.lockfile = '/var/run/stonix.pid'
         if(self.environ.get_test_mode()):
             self.setuptesting()

@@ -59,7 +59,7 @@ class DisableUbuntuDataCollection(Rule):
         self.formatDetailedResults("initialize")
         self.guidance = []
         self.applicable = {'type': 'white',
-                           'family': ['linux']}
+                           'os': {'Ubuntu': ['16.04', '+']}}
         self.sethelptext()
 
         datatype = "bool"

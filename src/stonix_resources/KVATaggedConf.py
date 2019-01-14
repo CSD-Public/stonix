@@ -282,6 +282,8 @@ class KVATaggedConf():
     def setOpenClosedValue(self, fixables, removeables):
         contents1, contents2, contents3 = [], [], []
         if fixables:
+            #file is blank so just put each tag and corresponding
+            #key value pairs in file
             if not self.contents:
                 for tag in fixables:
                     self.contents.append("[" + tag + "]\n")
@@ -291,24 +293,45 @@ class KVATaggedConf():
                         elif self.configType == "closedeq":
                             self.contents.append(k + "=" + v + "\n")
             else:
+                #iterate through each tag value and key,value pair
                 for tag in fixables:
+                    #variable to track whether we found the desired tag or not
+                    tagfound = False
+                    #list variable that holds contents of file
                     contents = self.contents
-                    length = len(contents) - 1
+                    #variable to keep track of place in file where we will
+                    #splice contents of file after finding desired tag
                     iter1 = 0
+                    #variable that contains each key value pair to be found
+                    #under desired tag
+                    keys = fixables[tag]
                     for line in contents:
-                        keys = fixables[tag]
+                        #found a comment or blank space, increase place counter
                         if re.search("^#", line) or re.match('^\s*$', line):
                             iter1 += 1
+                        #found the tag we're looking for
                         elif re.search("^\[" + re.escape(tag) + "\]", line.strip()):
+                            #set tagfound to True
+                            tagfound = True
+                            #list variable that contains all lines in the file up to and
+                            #including the desired tag
                             contents1 = contents[:iter1 + 1]
+                            #variable that contains everything after the desired tag
                             tempcontents = contents[iter1 + 1:]
+                            #variable to keep track of just the contents contained
+                            #under the tag and nothing more
                             iter2 = 0
                             length = len(tempcontents) - 1
                             for line2 in tempcontents:
+                                #found a comment or blank space, increase place counter
                                 if re.search("^#", line2) or re.match('^\s*$', line2):
                                     iter2 += 1
+                                #found the next tag in the file, stop here
                                 elif re.search("^\[.*\]$", line2):
+                                    #list variable that contains just key,value pairs underneath
+                                    #desired tag
                                     contents2 = tempcontents[:iter2]
+                                    #list variable that contains everything else after contents2
                                     contents3 = tempcontents[iter2:]
                                     break
                                 elif iter2 == length:
@@ -318,32 +341,43 @@ class KVATaggedConf():
                                     iter2 += 1
                         else:
                             iter1 += 1
-                    if contents2:
-                        for key in keys:
-                            i = 0
-                            for line2 in contents2:
-                                if re.search("^#", line2) or re.match('^\s*$', line2):
-                                    i += 1
-                                elif re.search("=", line2.strip()):
-                                    temp = line2.strip().split("=")
-                                    if re.match("^" + re.escape(key) + "$", temp[0].strip()):
-                                        contents2.pop(i)
-                                    i += 1
-                                else:
-                                    i += 1
-                        for key in keys:
-                            if self.configType == "openeq":
-                                contents2.append(key + " = " + keys[key] + "\n")
-                            elif self.configType == "closedeq":
-                                contents2.append(key + "=" + keys[key] + "\n")
-                        self.contents = []
-                        for item in contents1:
-                            self.contents.append(item)
-                        for item in contents2:
-                            self.contents.append(item)
-                        if contents3:
-                            for item in contents3:
+                    #we found the desired tag
+                    if tagfound:
+                        #there were key value pairs underneath tag
+                        if contents2:
+                            for key in keys:
+                                i = 0
+                                for line2 in contents2:
+                                    if re.search("^#", line2) or re.match('^\s*$', line2):
+                                        i += 1
+                                    elif re.search("=", line2.strip()):
+                                        temp = line2.strip().split("=")
+                                        if re.match("^" + re.escape(key) + "$", temp[0].strip()):
+                                            contents2.pop(i)
+                                        i += 1
+                                    else:
+                                        i += 1
+                            for key in keys:
+                                if self.configType == "openeq":
+                                    contents2.append(key + " = " + keys[key] + "\n")
+                                elif self.configType == "closedeq":
+                                    contents2.append(key + "=" + keys[key] + "\n")
+                            self.contents = []
+                            for item in contents1:
                                 self.contents.append(item)
+                            for item in contents2:
+                                self.contents.append(item)
+                            if contents3:
+                                for item in contents3:
+                                    self.contents.append(item)
+                    else:
+                        #never found the desired tag so just add tag and key,value pairs
+                        self.contents.append("[" + tag + "]\n")
+                        for k, v in fixables[tag].iteritems():
+                            if self.configType == "openeq":
+                                self.contents.append(k + " = " + v + "\n")
+                            elif self.configType == "closedeq":
+                                self.contents.append(k + "=" + v + "\n")
         if removeables:
             for tag in removeables:
                 contents = self.contents
