@@ -123,6 +123,18 @@ installed at /usr/local/stonix/stonixdb.sql
 %attr(0750,root,apache) /var/www/html/stonix/results.php
 
 %changelog
+* Thu Jan 10 2019 Breen Malmberg <bemalmbe@lanl.gov> - 0.9.26
+- Fixed - Unit test for MuteMic was failing on all operating systems
+- Fixed - Unit test for SecureIPV6 was failing on RHEL 7
+- Fixed - A unit test was missing for rule InstallLANLcert
+- Fixed - An edge case condition where SecureHomeDir could corrupt the /etc/passwd file on openSUSE
+- Fixed - DisableIPV6 was not reporting correctly on several operating systems
+- Fixed - An issue which was causing InstallBanners to think that a system had gnome version 2 installed when, in some cases, it was actually version 3. This was causing the wrong fix and report logic to be run in those cases
+- Fixed - STONIX will now operate under a umask of 022 when running as root/sudo (effective user id = 0) so that files created with elevated privileges will always receive the correct base permissions
+- Fixed - Unit test for InstallBanners was failing on all operating systems
+- Fixed - A unit test was missing for rule NoDirectRootLogin
+- Fixed - A unit test was missing for rule ShowBlueToothIcon
+
 * Mon Dec 3 2018 Derek Walker <dwalker@lanl.gov> - 0.9.25
 - DisableSerialLoginPrompts - improvements to automated testing
 - Environment class - improvements to automated testing
