@@ -825,10 +825,10 @@ class InstallBanners(RuleKVEditor):
         #in 0.9.24 that was not putting in a newline affter the Banner specification
         #line.  This block of code will probably be able to be removed within a
         #few versions.
-        for line in contents:
-            if re.search("^Banner\s+/etc/banner$", line):
-                self.badline = True
-                continue
+        # for line in contents:
+        #     if re.search("^Banner\s+/etc/banner$", line):
+        #         self.badline = True
+        #         continue
         self.commoneditor =  KVEditorStonix(self.statechglogger, self.logger,
                                        "conf", self.sshdfile, self.sshdfile + ".tmp",
                                        self.sshbannerdict, "present", "space")
