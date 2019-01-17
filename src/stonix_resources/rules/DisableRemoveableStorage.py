@@ -101,7 +101,7 @@ class DisableRemoveableStorage(Rule):
 
         #global variables
         self.grubfiles = ["/boot/grub2/grub.cfg",
-                          "/boot/grub/grub.cfg"
+                          "/boot/grub/grub.cfg",
                           "/boot/grub/grub.conf"]
         self.pcmcialist = ['pcmcia-cs', 'kernel-pcmcia-cs', 'pcmciautils']
         self.pkgremovedlist = []
@@ -166,7 +166,7 @@ class DisableRemoveableStorage(Rule):
         compliant = True
         lsmodcmd = ""
 
-        #determine location of lsmod binary
+        # determine location of lsmod binary
         if os.path.exists("/sbin/lsmod"):
             lsmodcmd = "/sbin/lsmod"
         elif os.path.exists("/usr/bin/lsmod"):
@@ -174,10 +174,10 @@ class DisableRemoveableStorage(Rule):
 
         usbmods = ["usb_storage",
                    "usb-storage"]
-        #run lsmod command and look for any of the items from
-        #usbmods list in the output.  If item exists in output
-        #then that usb module is not disabled.  This is for
-        #reporting only.  There is no fix using lsmod command.
+        # run lsmod command and look for any of the items from
+        # usbmods list in the output.  If item exists in output
+        # then that usb module is not disabled.  This is for
+        # reporting only.  There is no fix using lsmod command.
         if lsmodcmd:
             for usb in usbmods:
                 cmd = [lsmodcmd, "|", "grep", usb]
@@ -233,17 +233,17 @@ class DisableRemoveableStorage(Rule):
                                         "and shouldn't be\n"
                 compliant = False
 
-        #check modprobe files inside modprobe.d directory for
-        #contents inside self.blacklist variable
+        # check modprobe files inside modprobe.d directory for
+        # contents inside self.blacklist variable
         removeables = []
         found1 = True
-        #self.blacklist dictionary contains the directives
-        #and the value we're looking for (key) and contains
-        #a default value of False for each one.  Upon finding
-        #each directive and value pair e.g. blacklist usb_storage
-        #the dictionary is updated with a True value.  This keeps
-        #track of the directives we didnt find or that had
-        #incorrect values
+        # self.blacklist dictionary contains the directives
+        # and the value we're looking for (key) and contains
+        # a default value of False for each one.  Upon finding
+        # each directive and value pair e.g. blacklist usb_storage
+        # the dictionary is updated with a True value.  This keeps
+        # track of the directives we didnt find or that had
+        # incorrect values
         self.blacklist = {"blacklist usb_storage": False,
                           "install usbcore /bin/true": False,
                           "install usb-storage /bin/true": False,
@@ -260,6 +260,8 @@ class DisableRemoveableStorage(Rule):
             # the files inside this directory, where they don't
             # have to be in the same file, the system is compliant
             for directory in dirs:
+                if os.path.isdir(directory):
+                    continue
                 contents = readFile(directory, self.logger)
                 for item in self.blacklist:
                     for line in contents:
@@ -276,9 +278,9 @@ class DisableRemoveableStorage(Rule):
         else:
             found1 = False
 
-        #either not all directives inside self.blacklist were found
-        #or /etc/modprobe.d didn't exist.  Now we check /etc/modprobe.conf
-        #for any remaining unfound directives.
+        # either not all directives inside self.blacklist were found
+        # or /etc/modprobe.d didn't exist.  Now we check /etc/modprobe.conf
+        # for any remaining unfound directives.
         if not found1:
             if os.path.exists("/etc/modprobe.conf"):
                 contents = readFile("/etc/modprobe.conf")
@@ -294,16 +296,16 @@ class DisableRemoveableStorage(Rule):
                             "files contain " + item + "\n"
                     self.logger.log(LogPriority.DEBUG, debug)
                     compliant = False
-        #any directives that were found we remove from self.blacklist
-        #We must add to a variable called removeables first then
-        #iterate through removeables and remove each item self.blacklist
+        # any directives that were found we remove from self.blacklist
+        # We must add to a variable called removeables first then
+        # iterate through removeables and remove each item self.blacklist
         for item in self.blacklist:
             if self.blacklist[item]:
                 removeables.append(item)
         for item in removeables:
             del (self.blacklist[item])
 
-        #check the contents of the udev file for a certain desired line
+        # check the contents of the udev file for a certain desired line
         self.udevfile = "/etc/udev/rules.d/10-local.rules"
         found2 = False
         if os.path.exists(self.udevfile):
@@ -351,7 +353,6 @@ class DisableRemoveableStorage(Rule):
 
         return compliant
 
-###############################################################################
 
     def fix(self):
         '''
@@ -392,8 +393,6 @@ class DisableRemoveableStorage(Rule):
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.rulesuccess
 
-###############################################################################
-
     def fixMac(self):
         '''This method will attempt to disable certain storage ports by moving
         certain kernel extensions.  If the check box is checked we will
@@ -425,7 +424,7 @@ class DisableRemoveableStorage(Rule):
                      "filepath": self.cronfile}
             self.statechglogger.recordchgevent(myid, event)
         if os.path.exists(self.cronfile):
-            #for this file we don't worry about permissions, SIP protected
+            # for this file we don't worry about permissions, SIP protected
             contents = readFile(self.cronfile, self.logger)
             found = False
             badline = False
@@ -479,11 +478,11 @@ class DisableRemoveableStorage(Rule):
         @rtype: boolean
         '''
         success = True
-        created = False
+        created1, created2 = False, False
         changed = False
         tempstring = ""
         grubfilefound = False
-        blacklistf = "/etc/modprobe.d/stonix-blacklist.conf"
+
         for grub in self.grubfiles:
             if os.path.exists(grub):
                 grubfilefound = True
@@ -536,33 +535,31 @@ class DisableRemoveableStorage(Rule):
             self.detailedresults += "No grub configuration file found\n" + \
                                     "Unable to fully fix system for this rule\n"
             success = False
+        blacklistf = "/etc/modprobe.d/stonix-blacklist.conf"
         tempstring = ""
         # Check if self.blacklist still contains values, if it
         # does, then we didn't find all the blacklist values
         # in report
         if self.blacklist:
-            # didn't find one or both directives in the files
-            # inside modprobe.d so we now check an alternate
-            # so create stonixblacklist file if it doesn't
+            # didn't find one or more directives in the files
+            # inside modprobe.d so we now check an alternate file
+            # we create stonixblacklist file if it doesn't
             # exist and put remaining unfound blacklist
             # items there
             if not os.path.exists(blacklistf):
+                created1 = True
                 createFile(blacklistf, self.logger)
                 self.iditerator += 1
                 myid = iterate(self.iditerator, self.rulenumber)
                 event = {"eventtype": "creation",
                          "filepath": blacklistf}
                 self.statechglogger.recordchgevent(myid, event)
-            else:
-                if not checkPerms(blacklistf, [0, 0, 420],
-                                  self.logger):
-                    self.iditerator += 1
-                    myid = iterate(self.iditerator,
-                                   self.rulenumber)
-                    if not setPerms(blacklistf, [0, 0, 420],
-                                    self.logger,
-                                    self.statechglogger, myid):
-                        success = False
+            # file was already present and we need contents already
+            # inside file to remain in newly written file
+            if not created1:
+                contents = readFile(blacklistf, self.logger)
+                for item in contents:
+                    tempstring += item
             for item in self.blacklist:
                 tempstring += item + "\n"
             tmpfile = blacklistf + ".tmp"
@@ -580,6 +577,15 @@ class DisableRemoveableStorage(Rule):
                 os.chown(blacklistf, 0, 0)
                 os.chmod(blacklistf, 420)
                 resetsecon(blacklistf)
+            if not checkPerms(blacklistf, [0, 0, 420],
+                              self.logger):
+                self.iditerator += 1
+                myid = iterate(self.iditerator,
+                               self.rulenumber)
+                if not setPerms(blacklistf, [0, 0, 420],
+                                self.logger,
+                                self.statechglogger, myid):
+                    success = False
             if self.ph.manager == "apt-get":
                 cmd = ["/usr/sbin/update-initramfs", "-u"]
                 if not self.ch.executeCommand(cmd):
@@ -595,10 +601,10 @@ class DisableRemoveableStorage(Rule):
                                         self.udevfile + " file\n"
                 success = False
             else:
-                created = True
+                created2 = True
         if os.path.exists(self.udevfile):
             if not checkPerms(self.udevfile, [0, 0, 0o644], self.logger):
-                if created:
+                if created2:
                     if not setPerms(self.udevfile, [0, 0, 0o644],
                                     self.logger):
                         success = False
@@ -628,7 +634,7 @@ class DisableRemoveableStorage(Rule):
                 tmpfile = self.udevfile + ".tmp"
                 if writeFile(tmpfile, tempstring,
                              self.logger):
-                    if not created:
+                    if not created2:
                         self.iditerator += 1
                         myid = iterate(self.iditerator,
                                        self.rulenumber)
