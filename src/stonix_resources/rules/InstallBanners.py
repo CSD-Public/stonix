@@ -821,14 +821,6 @@ class InstallBanners(RuleKVEditor):
                                     " does not exist.\n"
             return False
         contents = readFile(self.sshdfile, self.logger)
-        #the following is temporary code as a hotfix to an issue discovered
-        #in 0.9.24 that was not putting in a newline affter the Banner specification
-        #line.  This block of code will probably be able to be removed within a
-        #few versions.
-        # for line in contents:
-        #     if re.search("^Banner\s+/etc/banner$", line):
-        #         self.badline = True
-        #         continue
         self.commoneditor =  KVEditorStonix(self.statechglogger, self.logger,
                                        "conf", self.sshdfile, self.sshdfile + ".tmp",
                                        self.sshbannerdict, "present", "space")

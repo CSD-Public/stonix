@@ -278,9 +278,7 @@ class KVAConf():
                             temp = re.sub("\s+", " ", temp)  # replace all whitespace with just one whitespace character
                             temp = temp.split()  # separate contents into list separated by spaces
                             try:
-                                if len(temp) > 2:
-                                    continue  # this could indicate the file's format may be corrupted but that's not our issue
-                                elif temp[1] == value:  # the value is correct
+                                if temp[1] == value:  # the value is correct
                                     debug = "the value is correct\n"
                                     self.logger.log(LogPriority.DEBUG, debug)
                                     foundalready = True  # however we continue to make sure the key doesn't appear later in the file and have the wrong value
