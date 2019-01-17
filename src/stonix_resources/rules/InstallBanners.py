@@ -1177,7 +1177,7 @@ class InstallBanners(RuleKVEditor):
         if self.commoneditor.fixables:
             self.iditerator += 1
             myid = iterate(self.iditerator, self.rulenumber)
-            self.editor.setEventID(myid)
+            self.commoneditor.setEventID(myid)
             if not self.commoneditor.fix():
                 debug = self.sshdfile + " editor fix is returning false\n"
                 self.logger.log(LogPriority.DEBUG, debug)
