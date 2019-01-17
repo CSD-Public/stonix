@@ -277,6 +277,8 @@ class KVAConf():
                                 temp = line
                             temp = re.sub("\s+", " ", temp)  # replace all whitespace with just one whitespace character
                             temp = temp.split()  # separate contents into list separated by spaces
+                            print "length of temp is: " + str(len(temp)) + "\n"
+                            print "contents of temp is: " + str(temp) + "\n"
                             try:
                                 if len(temp) > 2:
                                     continue  # this could indicate the file's format may be corrupted but that's not our issue
