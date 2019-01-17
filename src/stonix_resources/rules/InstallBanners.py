@@ -40,6 +40,8 @@ Install and configure warning banners, to be displayed at startup.
 @change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
 @change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
 @change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
+@change: 1/17/2019 dwalker  - hotfix to correct issue with configuration
+    file changes in the reportcommon and fixcommon methods
 '''
 
 from __future__ import absolute_import
@@ -58,7 +60,7 @@ from ..localize import GDM3WARNINGBANNER
 from ..localize import ALTWARNINGBANNER
 from ..localize import OSXSHORTWARNINGBANNER
 from ..stonixutilityfunctions import fixInflation, iterate, createFile
-from ..stonixutilityfunctions import setPerms
+from ..stonixutilityfunctions import setPerms, readFile, writeFile
 
 
 class InstallBanners(RuleKVEditor):
@@ -127,6 +129,7 @@ class InstallBanners(RuleKVEditor):
             self.gnome3 = False
             self.kde = False
             self.lightdm = False
+            self.badline = False
 
         except Exception:
             raise
@@ -327,10 +330,7 @@ class InstallBanners(RuleKVEditor):
             if os.path.exists(loc):
                 self.sshdfile = str(loc)
 
-        sshdirective = "Banner "
-
-        self.sshbannerlist = [sshdirective + self.sshbannerfile]
-        self.sshbannerdict = {sshdirective: self.sshbannerfile}
+        self.sshbannerdict = {"Banner": self.sshbannerfile}
 
     def setmac(self):
         '''
@@ -816,15 +816,27 @@ class InstallBanners(RuleKVEditor):
         '''
 
         compliant = True
-
-        try:
-
-            if not self.reportFileContents(self.sshdfile, self.sshbannerlist):
-                compliant = False
-
-        except Exception:
-            raise
+        if not os.path.exists(self.sshdfile):
+            self.detailedresults += "Required configuration file " + self.ssdhfile + \
+                                    " does not exist.\n"
+            return False
+        contents = readFile(self.sshdfile)
+        #the following is temporary code as a hotfix to an issue discovered
+        #in 0.9.24 that was not putting in a newline affter the Banner specification
+        #line.  This block of code will probably be able to be removed within a
+        #few versions.
+        for line in contents:
+            if re.search("^Banner\s+/etc/banner$", line):
+                self.badline = True
+                continue
+        self.commoneditor =  KVEditorStonix(self.statechglogger, self.logger,
+                                       "conf", self.sshdfile, self.sshdfile + ".tmp",
+                                       self.sshbannerdict, "present", "space")
+        if not self.commoneditor.report():
+            compliant = False
+            self.detailedresults += self.sshdfile + " doesn't contain correct contents\n"
         return compliant
+
 
     def reportgnome2(self):
         '''
@@ -1162,13 +1174,21 @@ class InstallBanners(RuleKVEditor):
 
         success = True
 
-        try:
-
-            if not self.replaceFileContents(self.sshdfile, self.sshbannerdict):
+        if self.commoneditor.fixables:
+            self.iditerator += 1
+            myid = iterate(self.iditerator, self.rulenumber)
+            self.editor.setEventID(myid)
+            if not self.commoneditor.fix():
+                debug = self.sshdfile + " editor fix is returning false\n"
+                self.logger.log(LogPriority.DEBUG, debug)
                 success = False
-
-        except Exception:
-            raise
+            elif not self.commoneditor.commit():
+                debug = self.sshdfile + " editor commit is returning false\n"
+                self.logger.log(LogPriority.DEBUG, debug)
+                success = False
+            if not success:
+                self.detailedresults += "Unable to correct contents of " + \
+                    self.sshdfile + "\n"
         return success
 
     def fixgnome2(self):
