@@ -278,9 +278,7 @@ class KVAConf():
                             temp = re.sub("\s+", " ", temp)  # replace all whitespace with just one whitespace character
                             temp = temp.split()  # separate contents into list separated by spaces
                             try:
-                                if len(temp) > 2:
-                                    continue  # this could indicate the file's format may be corrupted but that's not our issue
-                                elif temp[1] == value:  # the value is correct
+                                if temp[1] == value:  # the value is correct
                                     debug = "the value is correct\n"
                                     self.logger.log(LogPriority.DEBUG, debug)
                                     foundalready = True  # however we continue to make sure the key doesn't appear later in the file and have the wrong value
@@ -313,7 +311,7 @@ class KVAConf():
                                 self.logger.log(LogPriority.DEBUG, debug)
                                 if item != "":
                                     debug = "the value we're looking for isn't blank\n"
-                                    self.logger.log(LogPriority.DEBUG, debug) 
+                                    self.logger.log(LogPriority.DEBUG, debug)
                                     temp = line.strip()  # strip off all trailing and leading whitespace
                                 else:
                                     debug = "the value we're looking for is blank\n"
@@ -322,7 +320,7 @@ class KVAConf():
                                 temp = re.sub("\s+", " ", temp)  # replace all whitespace with just one whitespace character
                                 temp = temp.split()  # separate contents into list separated by spaces
                                 if temp[0] == key:  # check to make sure key appears in beginning
-                                    debug = "found the key: " + key + "\n" 
+                                    debug = "found the key: " + key + "\n"
                                     self.logger.log(LogPriority.DEBUG, debug)
                                     try:
                                         if len(temp) > 2:
@@ -529,9 +527,7 @@ class KVAConf():
                             temp = line.strip() #remove all beginning and trailing whitespace
                             temp = re.sub("\s+", " ", temp) #replace all whitespace with just one space
                             temp = line.split()
-                            if len(temp) > 2:
-                                continue
-                            elif re.match("^" + key + "$", temp[0].strip()):
+                            if re.match("^" + key + "$", temp[0].strip()):
                                 poplist.append(line)
             if poplist:
                 for item in poplist:
