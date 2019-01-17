@@ -527,9 +527,7 @@ class KVAConf():
                             temp = line.strip() #remove all beginning and trailing whitespace
                             temp = re.sub("\s+", " ", temp) #replace all whitespace with just one space
                             temp = line.split()
-                            if len(temp) > 2:
-                                continue
-                            elif re.match("^" + key + "$", temp[0].strip()):
+                            if re.match("^" + key + "$", temp[0].strip()):
                                 poplist.append(line)
             if poplist:
                 for item in poplist:
