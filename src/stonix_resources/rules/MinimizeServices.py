@@ -38,6 +38,8 @@ ubuntu 16.04.
 @change: 2016/10/19 eball Added ssh and ssh.service for Deb8 compatibility
 @change: 2016/12/16 eball Added lvm2-activation{.,-early.}service to whitelist
 @change: 2017/10/24 rsn changing to use service helper, second gen
+@change: 2018/1/17 Brandon R. Gonzales Add sddm.service and sddm to the
+systemd whitelist
 '''
 
 from __future__ import absolute_import
@@ -383,6 +385,7 @@ class MinimizeServices(Rule):
                                'rngd.service', 'rpcbind.service',
                                'rpc-gssd.service', 'rpc-statd-notify.service',
                                'rpc-statd.service', 'rpc-svcgssd.service',
+                               'sddm.service', 'sddm',
                                'sendmail.service', 'sm-client.service',
                                'spice-vdagentd.service',
                                'ssh', 'ssh.service',
