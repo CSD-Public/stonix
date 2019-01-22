@@ -193,6 +193,21 @@ class RestrictMounting(Rule):
                     self.compliant = False
                     self.detailedresults += "GNOME automounting is enabled\n"
 
+            # reset these directories to be owned by their respective users
+            dirs = os.listdir('/run/user')
+            if dirs:
+                for d in dirs:
+                    # check if the directory is an integer representing a uid
+                    if re.search('^([+-]?[1-9]\d*|0)$', d, re.IGNORECASE):
+                        self.logger.log(LogPriority.DEBUG, "Found UID directory")
+                        try:
+                            os.chown('/run/user/' + d + '/dconf/user', int(d), int(d))
+                        except Exception as errmsg:
+                            self.logger.log(LogPriority.DEBUG, str(errmsg))
+                            continue
+            else:
+                self.logger.log(LogPriority.DEBUG, "no directories in /run/user")
+
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception:
@@ -389,6 +404,21 @@ class RestrictMounting(Rule):
                     success = False
                     self.detailedresults += "Fix failed to disable GNOME automounting\n"
 
+            # reset these directories to be owned by their respective users
+            dirs = os.listdir('/run/user')
+            if dirs:
+                for d in dirs:
+                    # check if the directory is an integer representing a uid
+                    if re.search('^([+-]?[1-9]\d*|0)$', d, re.IGNORECASE):
+                        self.logger.log(LogPriority.DEBUG, "Found UID directory")
+                        try:
+                            os.chown('/run/user/' + d + '/dconf/user', int(d), int(d))
+                        except Exception as errmsg:
+                            self.logger.log(LogPriority.DEBUG, str(errmsg))
+                            continue
+            else:
+                self.logger.log(LogPriority.DEBUG, "no directories in /run/user")
+
             self.rulesuccess = success
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
@@ -397,7 +427,6 @@ class RestrictMounting(Rule):
             self.rulesuccess = False
             self.detailedresults += "\n" + traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("fix", self.rulesuccess,
-                                   self.detailedresults)
+        self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.rulesuccess
