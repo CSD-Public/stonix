@@ -115,21 +115,19 @@ class RemoveSUIDGames(Rule):
     def report(self):
         try:
             compliant = True
-            results = ""
-
+            self.gamesfound = []
             for game in self.gamelist:
                 if os.path.exists(game):
+                    self.gamesfound.append(game)
                     compliant = False
-                    results += game + " found on system\n"
+                    self.detailedresults += game + " found on system\n"
 
             if(os.path.exists("/usr/games")):
                 usrgames = os.listdir("/usr/games")
                 if len(usrgames) > 0:
                     compliant = False
-                    results += "/usr/games dir is not empty\n"
-
+                    self.detailedresults += "/usr/games directory is not empty\n"
             self.compliant = compliant
-            self.detailedresults = results
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception:
@@ -140,6 +138,61 @@ class RemoveSUIDGames(Rule):
                                    self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
+
+    def fix(self):
+        try:
+            if not self.ci.getcurrvalue():
+                return
+            success = True
+            results = ""
+            self.iditerator = 0
+            eventlist = self.statechglogger.findrulechanges(self.rulenumber)
+            for event in eventlist:
+                self.statechglogger.deleteentry(event)
+
+            gamePkgs = ["gnome-games", "kdegames"]
+            for pkg in gamePkgs:
+                if self.ph.remove(pkg):
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    event = {"eventtype": "pkghelper",
+                             "pkgname": pkg,
+                             "startstate": "installed",
+                             "endstate": "removed"}
+                    self.statechglogger.recordchgevent(myid, event)
+                else:
+                    self.detailedresults += "Unable to remove " + pkg + "\n"
+
+            for game in self.gamesfound:
+                pkgName = self.ph.getPackageFromFile(game)
+                if pkgName is not None and self.ph.remove(pkgName):
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    event = {"eventtype": "pkghelper", "pkgname": pkgName,
+                             "startstate": "installed", "endstate": "removed"}
+                    self.statechglogger.recordchgevent(myid, event)
+                else:
+                    success = False
+                    results += "Unable to remove " + game + "\n"
+
+            if os.path.exists("/usr/games/"):
+                if not self.__cleandir("/usr/games/"):
+                    success = False
+                    results += "Unable to remove all games from /usr/games\n"
+
+            self.rulesuccess = success
+            self.detailedresults = results
+        except (KeyboardInterrupt, SystemExit):
+            # User initiated exit
+            raise
+        except Exception:
+            self.rulesuccess = False
+            self.detailedresults += "\n" + traceback.format_exc()
+            self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
+        self.formatDetailedResults("fix", self.rulesuccess,
+                                   self.detailedresults)
+        self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+        return self.rulesuccess
 
     def __cleandir(self, directory, depth=0):
         '''Recursively finds the package name for each file in a directory,
@@ -154,8 +207,6 @@ class RemoveSUIDGames(Rule):
         '''
         success = True
         dirlist = os.listdir(directory)
-        if directory[-1] != '/':
-            directory += '/'
 
         for path in dirlist:
             path = directory + path
@@ -189,59 +240,3 @@ class RemoveSUIDGames(Rule):
             if depth < 6:
                 success &= self.__cleandir(directory, depth+1)
         return success
-
-    def fix(self):
-        try:
-            if not self.ci.getcurrvalue():
-                return
-            success = True
-            results = ""
-            self.iditerator = 0
-            eventlist = self.statechglogger.findrulechanges(self.rulenumber)
-            for event in eventlist:
-                self.statechglogger.deleteentry(event)
-
-            gamePkgs = ["gnome-games", "kdegames"]
-            for pkg in gamePkgs:
-                self.ph.remove(pkg)
-                self.iditerator += 1
-                myid = iterate(self.iditerator, self.rulenumber)
-                event = {"eventtype": "pkghelper", "pkgname": pkg,
-                         "startstate": "installed", "endstate": "removed"}
-                self.statechglogger.recordchgevent(myid, event)
-
-            self.gamesfound = []
-            for game in self.gamelist:
-                if os.path.exists(game):
-                    self.gamesfound.append(game)
-
-            for game in self.gamesfound:
-                pkgName = self.ph.getPackageFromFile(game)
-                if pkgName is not None and self.ph.remove(pkgName):
-                    self.iditerator += 1
-                    myid = iterate(self.iditerator, self.rulenumber)
-                    event = {"eventtype": "pkghelper", "pkgname": pkgName,
-                             "startstate": "installed", "endstate": "removed"}
-                    self.statechglogger.recordchgevent(myid, event)
-                else:
-                    success = False
-                    results += "Unable to remove " + game + "\n"
-
-            if(os.path.exists("/usr/games")):
-                if not self.__cleandir("/usr/games"):
-                    success = False
-                    results += "Unable to remove all games from /usr/games\n"
-
-            self.rulesuccess = success
-            self.detailedresults = results
-        except (KeyboardInterrupt, SystemExit):
-            # User initiated exit
-            raise
-        except Exception:
-            self.rulesuccess = False
-            self.detailedresults += "\n" + traceback.format_exc()
-            self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("fix", self.rulesuccess,
-                                   self.detailedresults)
-        self.logdispatch.log(LogPriority.INFO, self.detailedresults)
-        return self.rulesuccess

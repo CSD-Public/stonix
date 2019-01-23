@@ -34,6 +34,7 @@ from stonixutilityfunctions import psRunning
 from logdispatcher import LogPriority
 from CommandHelper import CommandHelper
 from StonixExceptions import repoError
+from environment import Environment
 
 
 class Yum(object):
@@ -47,6 +48,7 @@ class Yum(object):
     '''
 
     def __init__(self, logger):
+        self.environ = Environment()
         self.logger = logger
         self.ch = CommandHelper(self.logger)
         self.yumloc = "/usr/bin/yum"
@@ -57,8 +59,12 @@ class Yum(object):
         self.listavail = self.search + "available "
         self.listinstalled = self.search + "installed "
         self.updatepkg = self.yumloc + " update -y --obsoletes "
-
-        self.rpmloc = "/usr/bin/rpm"
+        myos = self.environ.getostype().lower()
+        if re.search("red hat.*?release 6", myos) or \
+                re.search("^centos$", myos.strip()):
+            self.rpmloc = "/bin/rpm"
+        else:
+            self.rpmloc = "/usr/bin/rpm"
         self.provides = self.rpmloc + " -qf "
         self.query = self.rpmloc + " -qa "
 
