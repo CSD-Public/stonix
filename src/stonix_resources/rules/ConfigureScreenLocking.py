@@ -549,7 +549,7 @@ class ConfigureScreenLocking(RuleKVEditor):
         else:
             kdeparent1 = os.path.join(self.environ.geteuidhome(), ".kde")
             kdeparent2 = os.path.join(self.environ.geteuidhome(), ".kde4")
-            kdefile = os.path.join(self.environ.getuidhome(), self.rcpath)
+            kdefile = os.path.join(self.environ.geteuidhome(), self.rcpath)
             if not os.path.exists(kdeparent1) and not os.path.exists(kdeparent2):
                 self.detailedresults += "Current user doesn't use kde.  " + \
                     "No need to configure.\n"
