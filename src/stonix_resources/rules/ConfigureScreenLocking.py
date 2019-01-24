@@ -59,18 +59,16 @@ Created on Jul 11, 2013
     need be. Added additional comments for walkthrough of rule.
 '''
 from __future__ import absolute_import
-from ..stonixutilityfunctions import iterate, checkPerms, setPerms, createFile
-from ..stonixutilityfunctions import readFile, resetsecon, getOctalPerms, writeFile
+from ..stonixutilityfunctions import createFile
+from ..stonixutilityfunctions import readFile, resetsecon, writeFile
 from ..ruleKVEditor import RuleKVEditor
 from ..logdispatcher import LogPriority
 from ..pkghelper import Pkghelper
-from subprocess import PIPE, Popen
 from ..KVEditorStonix import KVEditorStonix
 from ..CommandHelper import CommandHelper
 import os
 import traceback
 import re
-from glob import glob
 from pwd import getpwnam
 
 
@@ -175,6 +173,17 @@ class ConfigureScreenLocking(RuleKVEditor):
             default = True
             self.ci = self.initCi(datatype, key, instructions, default)
 
+            #self.gnomeInst variable determines in the fixGnome method
+            #at the beginning if we even proceed.  If False we don't proceed
+            #and is fine.  Gets set to True in reportGnome method if
+            #either gconftool-2 or gsettings binaries exist.
+            self.gnomeInst = False
+            self.useGconf = True
+            self.iditerator = 0
+            self.cmdhelper = CommandHelper(self.logger)
+            self.ph = Pkghelper(self.logger, self.environ)
+            self.ch = CommandHelper(self.logger)
+
     def report(self):
         '''
         ConfigureScreenLocking.report() method to report whether system
@@ -187,34 +196,43 @@ class ConfigureScreenLocking(RuleKVEditor):
         '''
 
         self.detailedresults = ""
-        self.compliant = True
-        self.ch = CommandHelper(self.logger)
-
         try:
+            compliant = True
+            self.detailedresults = ""
+            if self.environ.osfamily == 'linux':
+                if self.ph.check("gdm") or self.ph.check("gdm3"):
+                    self.gnomeInstalled = True
+                    if not self.reportGnome():
+                        self.detailedresults += "Gnome GUI environment " + \
+                                                "does not appear to be correctly configured " + \
+                                                "for screen locking parameters.\n"
+                        compliant = False
+                    else:
+                        self.detailedresults += "Gnome GUI environment " + \
+                                                "appears to be correctly configured for " + \
+                                                "screen locking parameters.\n"
+                else:
+                    self.gnomeInstalled = False
+                    self.detailedresults += "Gnome not installed.  No need to configure for gnome.\n"
 
-            if self.environ.getosfamily() == "darwin":
-                if not self.reportMac():
-                    self.compliant = False
-            elif self.environ.getosfamily() == "linux":
-
-                # cannot make the necessary per-user configuration changes properly as root
-                if self.effectiveUserID == 0:
-                    self.compliant = False
-                    self.detailedresults += "\nCannot properly report on user configurations of idle screen locking while running as root. Please run this rule without elevated privileges."
-                    self.formatDetailedResults("report", self.compliant, self.detailedresults)
-                    self.logdispatch.log(LogPriority.INFO, self.detailedresults)
-                    return self.compliant
-    
-                if os.path.exists("/usr/bin/dconf"):
-                    if not self.reportgnome3():
-                        self.compliant = False
-                if os.path.exists("/usr/bin/gconftool-2"):
-                    if not self.reportgnome2():
-                        self.compliant = False
-                if os.path.exists("/usr/bin/kwriteconfig"):
+                if self.ph.check("kdm") or self.ph.check("kde-workspace") or \
+                                      self.ph.check("sddm") or self.ph.check("patterns-kde-kde_yast"):
+                    self.kdeInstalled = True
                     if not self.reportKde():
-                        self.compliant = False
-
+                        self.detailedresults += "KDE GUI environment " + \
+                                                "does not appear to be correctly configured " + \
+                                                "for screen locking parameters.\n"
+                        compliant = False
+                    else:
+                        self.detailedresults += "KDE GUI environment " + \
+                                                "appears to be correctly configured for " + \
+                                                "screen locking parameters.\n"
+                else:
+                    self.kdeInstalled = False
+                    self.detailedresults += "KDE not installed.  No need to configure for kde.\n"
+            elif self.environ.getosfamily() == "darwin":
+                compliant = self.reportMac()
+            self.compliant = compliant
         except(KeyboardInterrupt, SystemExit):
             raise
         except Exception:
@@ -236,7 +254,7 @@ class ConfigureScreenLocking(RuleKVEditor):
         success = RuleKVEditor.report(self, True)
         return success
 
-    def reportgnome2(self):
+    def reportGnome(self):
         '''
         determines if gnome is installed, if so, checks to see if the
         return value strings from running the gconftool-2 command are
@@ -250,82 +268,218 @@ class ConfigureScreenLocking(RuleKVEditor):
         '''
 
         compliant = True
+        gsettings = "/usr/bin/gsettings"
         gconf = "/usr/bin/gconftool-2"
-        confDict = {"--get /apps/gnome-screensaver/idle_activation_enabled": "true",
-                    "--get /apps/gnome-screensaver/idle_delay": "14",
-                    "--get /apps/gnome-screensaver/lock_delay": "1",
-                    "--get /apps/gnome-screensaver/lock_enabled": "true",
-                    "--get /apps/gnome-screensaver/mode": "blank-only",
-                    "--get /desktop/gnome/session/idle_delay": "15"}
-
-        gconfcommands = []
-        for item in confDict:
-            gconfcommands.append(gconf + " " + item)
-
-        self.logger.log(LogPriority.DEBUG, "Checking gconf screen locking configurations")
-
-        try:
-
-            for gcmd in gconfcommands:
-                self.ch.executeCommand(gcmd)
-                retcode = self.ch.getReturnCode()
-                if retcode != 0:
-                    errstr = self.ch.getErrorString()
-                    self.logger.log(LogPriority.DEBUG, errstr)
-                    self.detailedresults += "\nFailed to read the value of " + gcmd.split()[2]
-                    compliant = False
-                else:
-                    outputstr = self.ch.getOutputString()
-                    if not re.search(confDict[gcmd.split()[1] + " " + gcmd.split()[2]], outputstr, re.IGNORECASE):
-                        compliant = False
-                        self.detailedresults += "\nThe value of configuration option " + gcmd.split()[2] + " is incorrect"
-
-        except Exception:
-            raise
-        return compliant
-
-    def reportgnome3(self):
-        '''
-
-        @return:
-        '''
-
-        compliant = True
-
-        dconf = "/usr/bin/dconf"
-        confDict = {"/org/gnome/desktop/screensaver/lock-enabled": "true",
-                    "/org/gnome/desktop/screensaver/lock-delay": "60",
-                    "/org/gnome/desktop/session/idle-delay": "840",
-                    "/org/gnome/desktop/screensaver/picture-uri": ""}
-        dconfcommands = []
-        for item in confDict:
-            dconfcommands.append(dconf + " read " + item)
-
-        self.logger.log(LogPriority.DEBUG, "Checking dconf screen locking configurations")
-
-        try:
-
-            for dcmd in dconfcommands:
-                self.ch.executeCommand(dcmd)
-                retcode = self.ch.getReturnCode()
-                if retcode != 0:
-                    errstr = self.ch.getErrorString()
-                    self.logger.log(LogPriority.DEBUG, errstr)
-                    self.detailedresults += "\nFailed to configure option " + dcmd.split()[2]
-                    compliant = False
-                else:
-                    outputstr = self.ch.getOutputString()
-                    if dcmd.split()[2] == "/org/gnome/desktop/screensaver/picture-uri":
-                        if outputstr.strip() != confDict[dcmd.split()[2]]:
-                            compliant = False
-                            self.detailedresults += "\nConfiguration value for option " + dcmd.split()[2] + " is incorrect"
+        self.gesttingsidletime = ""
+        self.gconfidletime = ""
+        self.setcmds = ""
+        #may need to change code in the future to make gconf and
+        #gsettings mutually exclusive with if elif else self.gnomeInstalled = False
+        #if they are found to conflict with each other
+        if os.path.exists(gconf):
+            getcmds = {"/apps/gnome-screensaver/idle_activation_enabled":
+                       "true",
+                       "/apps/gnome-screensaver/lock_enabled": "true",
+                       "/apps/gnome-screensaver/mode": "blank-only",
+                       "/desktop/gnome/session/idle_delay": "15"}
+            #make a copy of the getcmds dictionary
+            tempdict = dict(getcmds)
+            #check each value using the gconftool-2 command
+            for cmd in getcmds:
+                #set the get command for each value
+                cmd2 = gconf +  " --get " + cmd
+                #execute the command
+                self.cmdhelper.executeCommand(cmd2)
+                #get output and error output
+                output = self.cmdhelper.getOutput()
+                error = self.cmdhelper.getError()
+                #the value is set
+                if output:
+                    #check this one separately since the value is
+                    #also able to be less than 15 mins and be compliant
+                    if cmd == "/desktop/gnome/session/idle_delay":
+                        if int(output[0].strip()) > 15:
+                            self.detailedresults += "Idle delay value " + \
+                                "is not 15 or lower (value: " + \
+                                output[0].strip() + ")\n"
+                        #if they have a value less than 15 mins this is ok
+                        #and we set the self.gconfidletime variable which is
+                        #used during setting gconf values in the fixGnome method
+                        elif int(output[0].strip()) < 15:
+                            self.gconfidletime = output[0].strip()
+                            del tempdict[cmd]
+                        #value is correct so remove it from the tempdic
+                        else:
+                            del tempdict[cmd]
+                    #check if value is correct with associated key
+                    elif output[0].strip() != getcmds[cmd]:
+                        self.detailedresults += cmd2 + " didn't produce the \
+                            desired value after being run which is " + \
+                            getcmds[cmd] + "\n"
+                    #value is correct so remove it from the tempdict
                     else:
-                        if not re.search(confDict[dcmd.split()[2]], outputstr):
+                        del tempdict[cmd]
+                #else the value isn't set
+                elif error:
+                    self.detailedresults += "There is no value set for:\n" + \
+                                            cmd2 + "\n"
+            #if tempdict still has leftover values then
+            #there were values that weren't correctly set
+            #and is non compliant
+            if tempdict:
+                compliant = False
+                #set self.setcmds variable to be a copy of tempdict which
+                #we use later in the fix to determine if we fix this portion
+                #of the rule or not
+                self.setcmds = tempdict
+        if os.path.exists(gsettings):
+            self.gnomeInst = True
+            #use gsettings command to see if the correct values are set
+            #for each key in getcmds dictionary
+            getcmds = {" get org.gnome.desktop.screensaver " +
+                       "idle-activation-enabled": "true",
+                       " get org.gnome.desktop.screensaver lock-enabled":
+                       "true",
+                       " get org.gnome.desktop.screensaver lock-delay":
+                       "0",
+                       " get org.gnome.desktop.screensaver picture-opacity":
+                       "100",
+                       " get org.gnome.desktop.screensaver picture-uri": "''",
+                       " get org.gnome.desktop.session idle-delay": "900"}
+            #run each gsettings get command for each key and get value
+            for cmd in getcmds:
+                cmd2 = gsettings + cmd
+                self.cmdhelper.executeCommand(cmd2)
+                output = self.cmdhelper.getOutput()
+                error = self.cmdhelper.getError()
+                if output:
+                    #check this one separately since the value is
+                    #also able to be less than 900 secs and be compliant
+                    if cmd == " get org.gnome.desktop.session idle-delay":
+                        try:
+                            splitOut = output[0].split()
+                            if len(splitOut) > 1:
+                                num = splitOut[1]
+                            else:
+                                num = splitOut[0]
+                            if int(num) > 900:
+                                compliant = False
+                                self.detailedresults += "Idle delay value " + \
+                                    "is not 900 seconds or lower (value: " +\
+                                    num + ")\n"
+                            #if they have a value less than 900 secs this is ok
+                            #and we set the self.gsettingsidletime variable which is
+                            #used during setting gsettings values in the fixGnome method
+                            elif int(num) < 900:
+                                self.gsettingsidletime = num
+                            elif int(num) == 0:
+                                compliant = False
+                                self.detailedresults += "Idle delay set  " + \
+                                    "to 0, meaning it is disabled.\n"
+                            else:
+                                self.gsettingsidletime = "900"
+                        except ValueError:
+                            self.detailedresults += "Unexpected result: " + \
+                                '"' + cmd2 + '" output was not a number\n'
                             compliant = False
-                            self.detailedresults += "\nConfiguration value for option " + dcmd.split()[2] + " is incorrect"
+                    elif cmd == " get org.gnome.desktop.screensaver lock-delay":
+                        try:
+                            splitOut = output[0].split()
+                            if len(splitOut) > 1:
+                                num = splitOut[1]
+                            else:
+                                num = splitOut[0]
+                            if int(num) != 0:
+                                compliant = False
+                                self.detailedresults += "Lock delay is not " + \
+                                    "set to 0\n"
+                        except ValueError:
+                            self.detailedresults += "Unexpected result: " + \
+                                '"' + cmd2 + '" output was not a number\n'
+                            compliant = False
+                    elif output[0].strip() != getcmds[cmd]:
+                        self.detailedresults += '"' + cmd2 + \
+                        "\" produced value: " + output[0].strip() + \
+                        " instead of the desired value: " + getcmds[cmd] + "\n"
+                        compliant = False
+                elif error:
+                    if re.search("No such key", error[0]):
+                        continue
+                    self.detailedresults += "There is no value set for:" + \
+                        cmd2 + "\n"
+                    compliant = False
+            if self.environ.geteuid() == 0:
+                # instantiate a kveditor to ensure self.dconfsettings file
+                # contains correct contents
+                self.dconfsettings = "/etc/dconf/db/local.d/local.key"
+                if os.path.exists(self.dconfsettings):
+                    self.dconfdata = {"org/gnome/desktop/screensaver": {
+                        "idle-activation-enabled": "true",
+                        "lock-enabled": "true",
+                        "lock-delay": "0",
+                        "picture-opacity": "100",
+                        "picture-uri": "\'\'"},
+                        "org/gnome/desktop/session": {
+                            "idle-delay": "uint32 900"}}
+                    self.kveditordconf = KVEditorStonix(self.statechglogger,
+                                                        self.logger,
+                                                        "tagconf",
+                                                        self.dconfsettings,
+                                                        self.dconfsettings + ".tmp",
+                                                        self.dconfdata, "present",
+                                                        "closedeq")
+                    if not self.kveditordconf.report():
+                        self.detailedresults += self.dconfsettings + \
+                                                " doesn't cotain correct contents\n"
+                        compliant = False
+                else:
+                    compliant = False
+                    self.detailedresults += self.dconfsettings + " not found\n"
 
-        except Exception:
-            raise
+                # check self.dconfuserprofile file to ensure existence
+                # and/or correct contents
+                self.dconfuserprofile = "/etc/dconf/profile/user"
+                self.userprofilecontent = "user-db:user\n" + \
+                                          "system-db:local"
+                if os.path.exists(self.dconfuserprofile):
+                    contents = readFile(self.dconfuserprofile, self.logger)
+                    contentstring = ""
+                    for line in contents:
+                        contentstring += line
+                    if not re.search(self.userprofilecontent, contentstring):
+                        compliant = False
+                        self.detailedresults += "Correct contents weren't " + \
+                                                "found in " + self.dconfuserprofile + "\n"
+                else:
+                    compliant = False
+                    self.detailedresults += self.dconfuserprofile + " not " + \
+                                            "found\n"
+
+                # the following file locks the settings we earlier set with the
+                # gsettings command so that they don't default upon logout and/or
+                # reboot.  Check the file for the correct contents
+                self.dconfsettingslock = "/etc/dconf/db/local.d/locks/stonix-settings.conf"
+                self.dconflockdata = ["/org/gnome/desktop/session/idle-delay",
+                                      "/org/gnome/desktop/session/idle-activation-enabled",
+                                      "/org/gnome/desktop/screensaver/lock-enabled",
+                                      "/org/gnome/desktop/screensaver/lock-delay",
+                                      "/org/gnome/desktop/screensaver/picture-uri"]
+                if os.path.exists(self.dconfsettingslock):
+                    contents = readFile(self.dconfsettingslock, self.logger)
+                    for line in contents:
+                        if line.strip() in self.dconflockdata:
+                            self.dconflockdata.remove(line.strip())
+                    if self.dconflockdata:
+                        output = "The following settings should be locked " + \
+                                 "from changes by the user but aren't:\n"
+                        compliant = False
+                        for item in self.dconflockdata:
+                            output += item + "\n"
+                        self.detailedresults += output
+                else:
+                    compliant = False
+                    self.detailedresults += self.dconfsettingslock + " not " + \
+                                            "found\n"
         return compliant
 
     def reportKde(self):
@@ -339,46 +493,79 @@ class ConfigureScreenLocking(RuleKVEditor):
         @param self - essential if you override this definition
         @return: bool
         '''
-
-        compliant = True
-        foundList = []
-
-        self.logger.log(LogPriority.DEBUG, "Checking kde screen locking configurations")
-
-        try:
-
-            confFile = os.path.expandvars("$HOME") + "/.config/kscreenlockerrc"
-            confDict = {"Autolock": "true",
-                        "LockGrace": "60",
-                        "LockOnResume": "true",
-                        "Timeout": "14"}
-
-            if not os.path.exists(confFile):
-                compliant = False
-                self.detailedresults += "\nMissing configuration file: " + confFile
-                return compliant
-
-            f = open(confFile, "r")
-            contentlines = f.readlines()
-            f.close()
-
-            for line in contentlines:
-                for item in confDict:
-                    if re.search("^" + item + "=" + confDict[item], line):
-                        foundList.append(item)
-
-            if not foundList:
-                compliant = False
-                self.detailedresults += "\nAll configuration options are missing"
-
-            for fl in foundList:
-                if fl not in confDict:
-                    self.detailedresults += "\nMissing configuration option: " + fl + " in " + confFile
-                    compliant = False
-
-        except Exception:
-            raise
-        return compliant
+        self.kdefix = {}
+        if self.ph.manager == "apt-get" or self.ph.manager == "zypper":
+            self.rcpath = ".config/kscreenlockerrc"
+            self.kdeprops = {"Daemon": {"Autolock": "true",
+                                        "LockGrace": "60",
+                                        "LockOnResume": "true",
+                                        "Timeout": "14"}}
+        else:
+            self.rcpath = ".kde/share/config/kscreensaverrc"
+            self.kdeprops = {"ScreenSaver": {"Enabled": "true",
+                                             "Lock": "true",
+                                             "LockGrace": "60000",
+                                             "Timeout": "840"}}
+        if self.environ.geteuid() == 0:
+            contents = readFile("/etc/passwd", self.logger)
+            for line in contents:
+                username = ""
+                homepath = ""
+                temp = line.split(":")
+                try:
+                    username = temp[0]
+                    homepath = temp[5]
+                except(IndexError):
+                    self.logdispatch.log(LogPriority.DEBUG,
+                                         ['ConfigureScreenLocking',
+                                           'IndexError processing ' + str(temp)])
+                    continue
+                kdeparent1 = os.path.join(homepath, ".kde")
+                kdeparent2 = os.path.join(homepath, ".kde4")
+                kdefile = os.path.join(homepath, self.rcpath)
+                if not os.path.exists(kdeparent1) and not os.path.exists(kdeparent2):
+                    # User does not user KDE
+                    continue
+                elif not os.path.exists(kdefile):
+                    self.kdefix[username] = homepath
+                    self.detailedresults += kdefile + " not found for " + \
+                        str(username) + "\n"
+                    self.logger.log(LogPriority.DEBUG, self.detailedresults)
+                    continue
+                elif not self.searchFile(kdefile):
+                    self.detailedresults += "Did not find " + \
+                        "required contents " + "in " + username + \
+                        "'s " + kdefile + "\n"
+                    self.kdefix[username] = homepath
+            if self.kdefix:
+                self.detailedresults += "The following users don't " + \
+                                        "have kde properly configured for " + \
+                                        "screen locking:\n"
+                for user in self.kdefix:
+                    self.detailedresults += user + "\n"
+                return False
+            else:
+                return True
+        else:
+            kdeparent1 = os.path.join(self.environ.geteuidhome(), ".kde")
+            kdeparent2 = os.path.join(self.environ.geteuidhome(), ".kde4")
+            kdefile = os.path.join(self.environ.geteuidhome(), self.rcpath)
+            if not os.path.exists(kdeparent1) and not os.path.exists(kdeparent2):
+                self.detailedresults += "Current user doesn't use kde.  " + \
+                    "No need to configure.\n"
+                self.logger.log(LogPriority.DEBUG, self.detailedresults)
+                return True
+            else:
+                if not os.path.exists(kdefile):
+                    self.detailedresults += "Your " + kdefile + \
+                        " file doesn't exist.\n"
+                    return False
+                elif not self.searchFile(kdefile):
+                    self.detailedresults += "Did not find " + \
+                        "required contents in " + kdefile + "\n"
+                    return False
+                else:
+                    return True
 
     def fix(self):
         '''
@@ -394,38 +581,27 @@ class ConfigureScreenLocking(RuleKVEditor):
         self.iditerator = 0
 
         try:
-
-            if self.environ.getosfamily() == "darwin":
-                if not self.fixMac():
-                    self.rulesuccess = False
-
-            elif self.environ.getosfamily() == "linux":
-
-                # if the ci is not enabled, do not run fix
-                if not self.ci.getcurrvalue():
-                    self.detailedresults += "\nRule was not enabled so nothing was done"
-                    self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
-                    self.logdispatch.log(LogPriority.INFO, self.detailedresults)
-                    return self.rulesuccess
-
-                # cannot make the necessary per-user configuration changes properly as root
-                if self.effectiveUserID == 0:
-                    self.rulesuccess = False
-                    self.detailedresults += "\nCannot properly fix user configurations of idle screen locking while running as root. Please run this rule without elevated privileges first."
-                    self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
-                    self.logdispatch.log(LogPriority.INFO, self.detailedresults)
-                    return self.rulesuccess
-    
-                if os.path.exists("/usr/bin/dconf"):
-                    if not self.fixgnome3():
-                        self.rulesuccess = False
-                if os.path.exists("/usr/bin/gconftool-2"):
-                    if not self.fixgnome2():
-                        self.rulesuccess = False
-                if os.path.exists("/usr/bin/kwriteconfig"):
+            if not self.ci.getcurrvalue():
+                self.detailedresults += "Rule not enabled so nothing was done\n"
+                self.logger.log(LogPriority.DEBUG, 'Rule was not enabled, so nothing was done')
+                return
+            self.detailedresults = ""
+            success = True
+            if self.environ.getosfamily() == "linux":
+                if self.gnomeInstalled:
+                    if not self.fixGnome():
+                        success = False
+                if self.kdeInstalled:
                     if not self.fixKde():
-                        self.rulesuccess = False
-
+                        success = False
+            elif self.environ.getosfamily() == "darwin":
+                if self.environ.geteuid() == 0:
+                    self.iditerator = 0
+                    eventlist = self.statechglogger.findrulechanges(self.rulenumber)
+                    for event in eventlist:
+                        self.statechglogger.deleteentry(event)
+                success = self.fixMac()
+            self.rulesuccess = success
         except(KeyboardInterrupt, SystemExit):
             raise
         except Exception:
@@ -437,123 +613,207 @@ class ConfigureScreenLocking(RuleKVEditor):
         return self.rulesuccess
 
     def fixKde(self):
-        '''
-
-        @return:
+        '''This method checks if the kde screenlock file is configured
+        properly.  Please note, this rule may fail if the owner and group of
+        configuration file are not that of the user in question but doesn't
+        necessarily mean your system is out of compliance.  If the fix fails
+        Please check the logs to determing the real reason of non rule success.
+        @author: dwalker
+        @param self - essential if you override this definition
+        @return: bool - True if KDE is successfully configured, False if it
+                isn't
         '''
 
         success = True
-        kwriteconfig = ""
-        kwritelocs = ["/usr/bin/kwriteconfig", "/usr/bin/kwriteconfig5"]
-        reloadconfig = "/usr/bin/qdbus org.freedesktop.ScreenSaver /ScreenSaver configure"
-        for loc in kwritelocs:
-            if os.path.exists(loc):
-                kwriteconfig = loc
-                break
-
-        self.logger.log(LogPriority.DEBUG, "Writing kde screen locking configurations")
-
-        try:
-
-            confFile = os.path.expandvars("$HOME") + "/.config/kscreenlockerrc"
-            confDict = {"Autolock": "true",
-                        "LockGrace": "60",
-                        "LockOnResume": "true",
-                        "Timeout": "14"}
-
-            kwritecommands = []
-            for item in confDict:
-                kwritecommands.append(kwriteconfig + " --file " + confFile + " --group Daemon --key " + item + " " + confDict[item])
-
-            for kcmd in kwritecommands:
-                self.detailedresults += "\n\nRunning command:\n" + kcmd
-                self.ch.executeCommand(kcmd)
-                retcode = self.ch.getReturnCode()
-                if retcode != 0:
-                    errstr = self.ch.getErrorString()
-                    self.logger.log(LogPriority.DEBUG, errstr)
-                    self.detailedresults += "\nFailed to configure option " + kcmd.split()[6]
+        if self.environ.geteuid() == 0:
+            self.logdispatch.log(LogPriority.DEBUG,
+                                 'ConfigureScreenLocking.fixKde')
+            if not self.kdefix:
+                return True
+            for user in self.kdefix:
+                homepath = self.kdefix[user]
+                kdefile = os.path.join(homepath, self.rcpath)
+                if not self.correctFile(kdefile, user):
                     success = False
-
-            self.ch.executeCommand(reloadconfig)
-            retcode = self.ch.getReturnCode()
-            if retcode != 0:
-                errstr = self.ch.getErrorString()
+                    self.detailedresults += "Unable to configure " + \
+                                            kdefile + "\n"
+                    self.logger.log(LogPriority.DEBUG, self.detailedresults)
+        else:
+            homepath = self.environ.geteuidhome()
+            kdefile = os.path.join(homepath, self.rcpath)
+            uidnum = int(self.environ.geteuid())
+            passwddata = readFile("/etc/passwd", self.logger)
+            found = False
+            for user in passwddata:
+                user = user.split(':')
+                try:
+                    puidnum = int(user[2])
+                    pdefgid = int(user[3])
+                except(IndexError):
+                    continue
+                if puidnum == uidnum:
+                    homepath = user[5]
+                    found = True
+            if not found:
+                self.detailedresults += "Could not obtain your user id.\n" + \
+                                        "Stonix couldn't proceed with correcting " + kdefile + "\n"
                 success = False
-                self.detailedresults += "\nFailed to load new configuration settings"
-                self.logger.log(LogPriority.DEBUG, errstr)
-
-        except Exception:
-            raise
+            elif not self.correctFile(kdefile, homepath):
+                self.detailedresults += "Stonix couldn't correct the contents " + \
+                                        " of " + kdefile + "\n"
+                success = False
         return success
 
-    def fixgnome2(self):
+    def fixGnome(self):
+        '''ensures gnome is configured to automatically screen lock after
+        15 minutes of inactivity, if gnome is installed
+        @author: dwalker
+        @param self - essential if you override this definition
+        @return: bool - True if gnome is successfully configured, False if it
+                isn't
         '''
-
-        @return:
-        '''
-
+        info = ""
         success = True
         gconf = "/usr/bin/gconftool-2"
-        confDict = {"--type bool --set /apps/gnome-screensaver/idle_activation_enabled": "true",
-                    "--type int --set /apps/gnome-screensaver/idle_delay": "14",
-                    "--type int --set /apps/gnome-screensaver/lock_delay": "1",
-                    "--type bool --set /apps/gnome-screensaver/lock_enabled": "true",
-                    "--type string --set /apps/gnome-screensaver/mode": "blank-only",
-                    "--type int --set /desktop/gnome/session/idle_delay": "15"}
-        gconfcommands = []
-        for item in confDict:
-            gconfcommands.append(gconf + " " + item + " " + confDict[item])
+        gsettings = "/usr/bin/gsettings"
+        if os.path.exists(gconf):
+            #variable self.setcmds still has items left in its dictionary
+            #which was set in the reportGnome method, meaning some values
+            #either were incorrect or didn't have values.  Go through and
+            #set each remaining value that isn't correct
+            if self.setcmds:
+                for item in self.setcmds:
+                    if item == "/apps/gnome-screensaver/idle_activation_enabled":
+                        cmd = gconf + " --type bool --set /apps/gnome-screensaver/idle_activation_enabled true"
+                    elif item == "/apps/gnome-screensaver/lock_enabled":
+                        cmd = gconf + " --type bool --set /apps/gnome-screensaver/lock_enabled true"
+                    elif item == "/apps/gnome-screensaver/mode":
+                        cmd = gconf + ' --type string --set /apps/gnome-screensaver/mode "blank-only"'
+                    elif item == "/desktop/gnome/session/idle_delay":
+                        if self.gconfidletime:
+                            cmd = gconf + " --type int --set /desktop/gnome/session/idle_delay " + \
+                                self.gconfidletime
+                        else:
+                            cmd = gconf + " --type int --set /desktop/gnome/session/idle_delay 15"
+                    if self.cmdhelper.executeCommand(cmd):
+                        if self.cmdhelper.getReturnCode() != 0:
+                            info += "Unable to set value for " + cmd + "\n"
+                            success = False
+                    else:
+                        info += "Unable to set value for " + cmd + "\n"
+                        success = False
 
-        self.logger.log(LogPriority.DEBUG, "Writing gconf screen locking configurations")
-
-        try:
-
-            for gcmd in gconfcommands:
-                self.ch.executeCommand(gcmd)
-                retcode = self.ch.getReturnCode()
-                if retcode != 0:
-                    errstr = self.ch.getErrorString()
-                    self.logger.log(LogPriority.DEBUG, errstr)
-                    self.detailedresults += "\nFailed to configure option " + gcmd.split()[4]
+        if os.path.exists(gsettings):
+            setcmds = [" set org.gnome.desktop.screensaver " +
+                       "idle-activation-enabled true",
+                       " set org.gnome.desktop.screensaver lock-enabled true",
+                       " set org.gnome.desktop.screensaver lock-delay 0",
+                       " set org.gnome.desktop.screensaver picture-opacity 100",
+                       " set org.gnome.desktop.screensaver picture-uri ''",
+                       " set org.gnome.desktop.session idle-delay " + self.gsettingsidletime]
+            for cmd in setcmds:
+                cmd2 = gsettings + cmd
+                self.cmdhelper.executeCommand(cmd2)
+                if self.cmdhelper.getReturnCode() != 0:
                     success = False
+                    info += "Unable to set value for " + cmd + \
+                        "using gsettings\n"
 
-        except Exception:
-            raise
+            # Set gsettings with dconf
+            # Unlock dconf settings
+            # Create dconf settings lock file
+            if self.environ.geteuid() == 0:
+                if not os.path.exists(self.dconfsettingslock):
+                    if not createFile(self.dconfsettingslock, self.logger):
+                        self.rulesuccess = False
+                        self.detailedresults += "Unable to create stonix-settings file\n"
+                        self.formatDetailedResults("fix", self.rulesuccess,
+                                   self.detailedresults)
+                        return False
+                #write correct contents to dconf lock file
+                if os.path.exists(self.dconfsettingslock):
+                    # Write to the lock file
+                    if self.dconflockdata:
+                        contents = ""
+                        tmpfile = self.dconfsettingslock + ".tmp"
+                        for line in self.dconflockdata:
+                            contents += line + "\n"
+                        if not writeFile(tmpfile, contents, self.logger):
+                            self.rulesuccess = False
+                            self.detailedresults += "Unable to write contents to " + \
+                                "stonix-settings file\n"
+                        else:
+                            os.rename(tmpfile, self.dconfsettingslock)
+                            os.chown(self.dconfsettingslock, 0, 0)
+                            os.chmod(self.dconfsettingslock, 493)
+                            resetsecon(self.dconfsettingslock)
+                # Create dconf user profile file
+                if not os.path.exists(self.dconfuserprofile):
+                    if not createFile(self.dconfuserprofile, self.logger):
+                        self.rulesuccess = False
+                        self.detailedresults += "Unable to create dconf " + \
+                                                "user profile file\n"
+                        self.formatDetailedResults("fix", self.rulesuccess,
+                                   self.detailedresults)
+                        return False
+                # Write dconf user profile
+                if os.path.exists(self.dconfuserprofile):
+                    tmpfile = self.dconfuserprofile + ".tmp"
+                    if not writeFile(tmpfile, self.userprofilecontent, self.logger):
+                        self.rulesuccess = False
+                        self.detailedresults += "Unabled to write to dconf user" + \
+                            " profile file\n"
+                        self.formatDetailedResults("fix", self.rulesuccess,
+                                       self.detailedresults)
+                        return False
+                    else:
+                        os.rename(tmpfile, self.dconfuserprofile)
+                        os.chown(self.dconfuserprofile, 0, 0)
+                        os.chmod(self.dconfuserprofile, 493)
+                        resetsecon(self.dconfuserprofile)
+                # Fix dconf settings
+                if not os.path.exists(self.dconfsettings):
+                    if not createFile(self.dconfsettings, self.logger):
+                        self.rulesuccess = False
+                        self.detailedresults += "Unable to create " + self.dconfsettings + " file \n"
+                        self.formatDetailedResults("fix", self.rulesuccess,
+                                   self.detailedresults)
+                        return False
+                    self.dconfdata = {"org/gnome/desktop/screensaver": {
+                                                    "idle-activation-enabled": "true",
+                                                    "lock-enabled": "true",
+                                                    "lock-delay": "0",
+                                                    "picture-opacity": "100",
+                                                    "picture-uri": "\'\'"},
+                                      "org/gnome/desktop/session": {
+                                                    "idle-delay": "uint32 900"}}
+                    self.kveditordconf = KVEditorStonix(self.statechglogger,
+                                                        self.logger,
+                                                        "tagconf",
+                                                        self.dconfsettings,
+                                                        self.dconfsettings + ".tmp",
+                                                        self.dconfdata, "present",
+                                                        "closedeq")
+                    self.kveditordconf.report()
+                if self.kveditordconf.fixables:
+                    if not self.kveditordconf.fix():
+                        success = False
+                        self.detailedresults += "Unable to put correct settings inside " + \
+                            self.dconfsettings + "\n"
+                    elif not self.kveditordconf.commit():
+                        success = False
+                        self.detailedresults += "Unable to put correct settings inside " + \
+                            self.dconfsettings + "\n"
+                #run dconf update command to make dconf changes take effect
+                if os.path.exists("/bin/dconf"):
+                    cmd = "/bin/dconf update"
+                    self.cmdhelper.executeCommand(cmd)
+                elif os.path.exists("/usr/bin/dconf"):
+                    cmd = "/usr/bin/dconf update"
+                    self.cmdhelper.executeCommand(cmd)
+        self.detailedresults += info
         return success
 
-    def fixgnome3(self):
-        '''
-
-        @return:
-        '''
-
-        success = True
-        dconf = "/usr/bin/dconf"
-        confDict = {"/org/gnome/desktop/screensaver/lock-enabled": "true",
-                    "/org/gnome/desktop/screensaver/lock-delay": "60",
-                    "/org/gnome/desktop/session/idle-delay": "840",
-                    "/org/gnome/desktop/screensaver/picture-uri": ""}
-        dconfcommands = []
-        for item in confDict:
-            dconfcommands.append(dconf + " write " + item + " " + confDict[item])
-
-        self.logger.log(LogPriority.DEBUG, "Writing dconf screen locking configurations")
-
-        try:
-
-            for dcmd in dconfcommands:
-                self.ch.executeCommand(dcmd)
-                retcode = self.ch.getReturnCode()
-                if retcode != 0:
-                    errstr = self.ch.getErrorString()
-                    self.logger.log(LogPriority.DEBUG, errstr)
-                    self.detailedresults += "\nFailed to configure option " + dcmd.split()[2]
-                    success = False
-
-        except Exception:
-            raise
-        return success
 
     def fixMac(self):
         '''
@@ -563,6 +823,70 @@ class ConfigureScreenLocking(RuleKVEditor):
         @param self - essential if you override this definition
         @return: bool - True if system is successfully fix, False if it isn't
         '''
-
         success = RuleKVEditor.fix(self, True)
         return success
+
+    def searchFile(self, filehandle):
+        '''temporary method to separate the code to find directives from the
+        rest of the code.  Will put back all in one method eventually
+        @author: dwalker
+        @return: bool
+        @param filehandle: string
+        '''
+        self.editor = ""
+        kvt = "tagconf"
+        intent = "present"
+        tpath = filehandle + ".tmp"
+        conftype = "closedeq"
+        self.editor = KVEditorStonix(self.statechglogger, self.logger, kvt,
+                                     filehandle, tpath, self.kdeprops, intent,
+                                     conftype)
+        if not self.editor.report():
+            return False
+        else:
+            return True
+
+    def correctFile(self, kfile, user):
+        '''separate method to find the correct contents of each file passed in
+        as a parameter.
+        @author: dwalker
+        @return: bool
+        @param filehandle: string
+         '''
+        success = True
+        self.editor = ""
+        debug = ""
+        if not os.path.exists(kfile):
+            if not createFile(kfile, self.logger):
+                self.detailedresults += "Unable to create " + kfile + \
+                    " file for the user\n"
+                self.logger.log(LogPriority.DEBUG, self.detailedresults)
+                return False
+        if not self.searchFile(kfile):
+            if self.editor.fixables:
+                if not self.editor.fix():
+                    debug = "Kveditor fix is failing for file " + \
+                        kfile + "\n"
+                    self.logger.log(LogPriority.DEBUG, debug)
+                    self.detailedresults += "Unable to correct contents for " + \
+                        kfile + "\n"
+                    return False
+                elif not self.editor.commit():
+                    debug = "Kveditor commit is failing for file " + \
+                            kfile + "\n"
+                    self.logger.log(LogPriority.DEBUG, debug)
+                    self.detailedresults += "Unable to correct contents for " + \
+                               kfile + "\n"
+                    return False
+        uid = getpwnam(user)[2]
+        gid = getpwnam(user)[3]
+        os.chmod(kfile, 0600)
+        os.chown(kfile, uid, gid)
+        resetsecon(kfile)
+        return success
+
+    def undo(self):
+        self.detailedresults += "This rule cannot be reverted\n"
+        self.rulesuccess = False
+        self.formatDetailedResults("undo", self.rulesuccess,
+                                   self.detailedresults)
