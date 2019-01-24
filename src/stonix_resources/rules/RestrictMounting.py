@@ -194,7 +194,9 @@ class RestrictMounting(Rule):
                     self.detailedresults += "GNOME automounting is enabled\n"
 
             # reset these directories to be owned by their respective users
-            dirs = os.listdir('/run/user')
+            dirs = ''
+            if os.path.exists('/run/user'):
+                dirs = os.listdir('/run/user')
             if dirs:
                 for d in dirs:
                     # check if the directory is an integer representing a uid
@@ -405,7 +407,9 @@ class RestrictMounting(Rule):
                     self.detailedresults += "Fix failed to disable GNOME automounting\n"
 
             # reset these directories to be owned by their respective users
-            dirs = os.listdir('/run/user')
+            dirs = ''
+            if os.path.exists('/run/user'):
+                dirs = os.listdir('/run/user')
             if dirs:
                 for d in dirs:
                     # check if the directory is an integer representing a uid
