@@ -64,16 +64,67 @@ class zzzTestRuleRemoveSUIDGames(RuleTest):
         @return: boolean - If successful True; If failure False
         @author: Eric Ball
         '''
-        success = True
+        success = False
         ph = Pkghelper(self.logdispatch, self.environ)
-        game = "gnuchess"
-        if ph.checkAvailable(game):
-            success = ph.install(game)
-            if not success:
-                error = "Could not install gnuchess. Please check that the " + \
-                    "package manager cache is updated and that this PC is " + \
-                    "online, and then attempt to run unit test again."
-                self.logdispatch.log(LogPriority.ERROR, error)
+        gamelist = ['atlantik',
+                    'bomber',
+                    'bovo',
+                    'gnuchess',
+                    'kapman',
+                    'kasteroids',
+                    'katomic',
+                    'kbackgammon',
+                    'kbattleship',
+                    'kblackbox',
+                    'kblocks',
+                    'kbounce',
+                    'kbreakout',
+                    'kdiamond',
+                    'kenolaba',
+                    'kfouleggs',
+                    'kfourinline',
+                    'kgoldrunner',
+                    'killbots',
+                    'kiriki',
+                    'kjumpingcube',
+                    'klickety',
+                    'klines',
+                    'kmahjongg',
+                    'kmines',
+                    'knetwalk',
+                    'kolf',
+                    'kollision',
+                    'konquest',
+                    'kpat',
+                    'kpoker',
+                    'kreversi',
+                    'ksame',
+                    'kshisen',
+                    'ksirk',
+                    'ksirkskineditor',
+                    'ksirtet',
+                    'ksmiletris',
+                    'ksnake',
+                    'kspaceduel',
+                    'ksquares',
+                    'ksudoku',
+                    'ktron',
+                    'ktuberling',
+                    'kubrick',
+                    'kwin4',
+                    'kwin4proc',
+                    'lskat',
+                    'lskatproc']
+        for game in gamelist:
+            if ph.checkAvailable(game):
+                if ph.install(game):
+                    success = True
+        if not success:
+            error = "Could not install any games for presetup in unit test. " + \
+                    "Please check that the package manager cache is updated " + \
+                    "and that this PC is online, and then attempt to run " + \
+                    "unit test again."
+            self.logdispatch.log(LogPriority.ERROR, error)
 
         return success
 
