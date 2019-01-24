@@ -66,7 +66,7 @@ class Zypper(object):
         self.searchu = self.zyploc + " --non-interactive search --match-exact -u "
         self.updates = self.zyploc + " lu "
         self.upzypp = self.zyploc + " up "
-        self.rpm = "/bin/rpm -q "
+        self.rpm = "/usr/bin/rpm -q "
         self.pkgtype = "zypper"
 
     def installpackage(self, package):
@@ -378,6 +378,7 @@ class Zypper(object):
                 outputstr = self.ch.getOutputString()
                 if retcode != 0:
                     raise repoError('zypper', retcode, str(errstr))
+                    # return ""
                 else:
                     packagename = outputstr
             except repoError as repoerr:

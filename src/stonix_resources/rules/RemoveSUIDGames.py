@@ -62,66 +62,73 @@ class RemoveSUIDGames(Rule):
         self.iditerator = 0
         self.ph = Pkghelper(self.logger, self.environ)
 
-        self.gamelist = ['/usr/bin/atlantik',
-                         '/usr/bin/bomber',
-                         '/usr/bin/bovo',
-                         '/usr/bin/gnuchess',
-                         '/usr/bin/kapman',
-                         '/usr/bin/kasteroids',
-                         '/usr/bin/katomic',
-                         '/usr/bin/kbackgammon',
-                         '/usr/bin/kbattleship',
-                         '/usr/bin/kblackbox',
-                         '/usr/bin/kblocks',
-                         '/usr/bin/kbounce',
-                         '/usr/bin/kbreakout',
-                         '/usr/bin/kdiamond',
-                         '/usr/bin/kenolaba',
-                         '/usr/bin/kfouleggs',
-                         '/usr/bin/kfourinline',
-                         '/usr/bin/kgoldrunner',
-                         '/usr/bin/killbots',
-                         '/usr/bin/kiriki',
-                         '/usr/bin/kjumpingcube',
-                         '/usr/bin/klickety',
-                         '/usr/bin/klines',
-                         '/usr/bin/kmahjongg',
-                         '/usr/bin/kmines',
-                         '/usr/bin/knetwalk',
-                         '/usr/bin/kolf',
-                         '/usr/bin/kollision',
-                         '/usr/bin/konquest',
-                         '/usr/bin/kpat',
-                         '/usr/bin/kpoker',
-                         '/usr/bin/kreversi',
-                         '/usr/bin/ksame',
-                         '/usr/bin/kshisen',
-                         '/usr/bin/ksirk',
-                         '/usr/bin/ksirkskineditor',
-                         '/usr/bin/ksirtet',
-                         '/usr/bin/ksmiletris',
-                         '/usr/bin/ksnake',
-                         '/usr/bin/kspaceduel',
-                         '/usr/bin/ksquares',
-                         '/usr/bin/ksudoku',
-                         '/usr/bin/ktron',
-                         '/usr/bin/ktuberling',
-                         '/usr/bin/kubrick',
-                         '/usr/bin/kwin4',
-                         '/usr/bin/kwin4proc',
-                         '/usr/bin/lskat',
-                         '/usr/bin/lskatproc']
+        self.gamelist = ['atlantik',
+                        'bomber',
+                        'bovo',
+                        'gnuchess',
+                        'kapman',
+                        'kasteroids',
+                        'katomic',
+                        'kbackgammon',
+                        'kbattleship',
+                        'kblackbox',
+                        'kblocks',
+                        'kbounce',
+                        'kbreakout',
+                        'kdiamond',
+                        'kenolaba',
+                        'kfouleggs',
+                        'kfourinline',
+                        'kgoldrunner',
+                        'killbots',
+                        'kiriki',
+                        'kjumpingcube',
+                        'klickety',
+                        'klines',
+                        'kmahjongg',
+                        'kmines',
+                        'knetwalk',
+                        'kolf',
+                        'kollision',
+                        'konquest',
+                        'kpat',
+                        'kpoker',
+                        'kreversi',
+                        'ksame',
+                        'kshisen',
+                        'ksirk',
+                        'ksirkskineditor',
+                        'ksirtet',
+                        'ksmiletris',
+                        'ksnake',
+                        'kspaceduel',
+                        'ksquares',
+                        'ksudoku',
+                        'ktron',
+                        'ktuberling',
+                        'kubrick',
+                        'kwin4',
+                        'kwin4proc',
+                        'lskat',
+                        'lskatproc',
+                        'gnome-games',
+                        'kdegames']
 
     def report(self):
         try:
             compliant = True
             self.gamesfound = []
+            self.gamedirsfound = []
+
             for game in self.gamelist:
-                if os.path.exists(game):
+                if self.ph.check(game):
                     self.gamesfound.append(game)
                     compliant = False
-                    self.detailedresults += game + " found on system\n"
-
+                    self.detailedresults += game + " installed on system\n"
+                if os.path.exists("/usr/bin/" + game):
+                    self.gamedirsfound.append("/usr/bin/" + game)
+                    compliant = False
+                    self.detailedresults += "/usr/bin/" + game + "path exists\n"
             if(os.path.exists("/usr/games")):
                 usrgames = os.listdir("/usr/games")
                 if len(usrgames) > 0:
@@ -144,44 +151,39 @@ class RemoveSUIDGames(Rule):
             if not self.ci.getcurrvalue():
                 return
             success = True
-            results = ""
+            debug = ""
             self.iditerator = 0
             eventlist = self.statechglogger.findrulechanges(self.rulenumber)
             for event in eventlist:
                 self.statechglogger.deleteentry(event)
 
-            gamePkgs = ["gnome-games", "kdegames"]
-            for pkg in gamePkgs:
-                if self.ph.remove(pkg):
+            for game in self.gamesfound:
+                # pkgName = self.ph.getPackageFromFile(game)
+                # if pkgName is not None and str(pkgName) is not "":
+                if self.ph.remove(game):
                     self.iditerator += 1
                     myid = iterate(self.iditerator, self.rulenumber)
                     event = {"eventtype": "pkghelper",
-                             "pkgname": pkg,
+                             "pkgname": game,
                              "startstate": "installed",
                              "endstate": "removed"}
                     self.statechglogger.recordchgevent(myid, event)
                 else:
-                    self.detailedresults += "Unable to remove " + pkg + "\n"
-
-            for game in self.gamesfound:
-                pkgName = self.ph.getPackageFromFile(game)
-                if pkgName is not None and self.ph.remove(pkgName):
-                    self.iditerator += 1
-                    myid = iterate(self.iditerator, self.rulenumber)
-                    event = {"eventtype": "pkghelper", "pkgname": pkgName,
-                             "startstate": "installed", "endstate": "removed"}
-                    self.statechglogger.recordchgevent(myid, event)
-                else:
                     success = False
-                    results += "Unable to remove " + game + "\n"
-
+                    self.detailedresults += "Unable to remove " + game + "\n"
+            for game in self.gamedirsfound:
+                #did not put state change event recording here due to python
+                #not sending valid return code back for success or failure
+                #with os.remove command therefore not knowing if successful
+                #to record event
+                if os.path.exists(game):
+                    os.remove(game)
             if os.path.exists("/usr/games/"):
                 if not self.__cleandir("/usr/games/"):
                     success = False
-                    results += "Unable to remove all games from /usr/games\n"
+                    self.detailedresults += "Unable to remove all games from /usr/games\n"
 
             self.rulesuccess = success
-            self.detailedresults = results
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
@@ -207,7 +209,6 @@ class RemoveSUIDGames(Rule):
         '''
         success = True
         dirlist = os.listdir(directory)
-
         for path in dirlist:
             path = directory + path
             if os.path.isfile(path):
