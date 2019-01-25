@@ -51,6 +51,8 @@ This class is responsible for securing the Apache webserver configuration.
                 nonessential modules list
 @change: 2018/11/1 Brandon R. Gonzales - Add conditions to prevent using
                 package helper when running on a darwin based system
+@change: 2019/1/25 Brandon R. Gonzales - Add exception handler in
+                locatesslfiles to account for permission errors
 '''
 from __future__ import absolute_import
 
@@ -338,12 +340,18 @@ development but some existing applications may use insecure side effects.'''
                 self.logdispatch.log(LogPriority.DEBUG,
                                      ['',
                                       'Listing directory ' + str(directory)])
-                for filename in os.listdir(directory):
-                    path = os.path.join(directory, filename)
-                    self.logdispatch.log(LogPriority.DEBUG,
+                try:
+                    for filename in os.listdir(directory):
+                        path = os.path.join(directory, filename)
+                        self.logdispatch.log(LogPriority.DEBUG,
                                          ['',
                                           'Adding path ' + str(path)])
-                    filelist.append(path)
+                        filelist.append(path)
+                except OSError:
+                    self.logdispatch.log(LogPriority.WARNING,
+                                         ['',
+                                          'Unable to access ' + directory +
+                                          ', Permission denied'])
             for cpath in filelist:
                 try:
                     rhandle = open(cpath, 'r')
