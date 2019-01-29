@@ -650,17 +650,17 @@ class ConfigureScreenLocking(RuleKVEditor):
                 user = user.split(':')
                 try:
                     puidnum = int(user[2])
-                    pdefgid = int(user[3])
+                    if puidnum == uidnum:
+                        username = user[0]
+                        found = True
                 except(IndexError):
                     continue
-                if puidnum == uidnum:
-                    homepath = user[5]
-                    found = True
+
             if not found:
                 self.detailedresults += "Could not obtain your user id.\n" + \
                                         "Stonix couldn't proceed with correcting " + kdefile + "\n"
                 success = False
-            elif not self.correctFile(kdefile, homepath):
+            elif not self.correctFile(kdefile, username):
                 self.detailedresults += "Stonix couldn't correct the contents " + \
                                         " of " + kdefile + "\n"
                 success = False
