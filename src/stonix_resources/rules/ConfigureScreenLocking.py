@@ -858,6 +858,7 @@ class ConfigureScreenLocking(RuleKVEditor):
         success = True
         self.editor = ""
         debug = ""
+        uid, gid = "", ""
         if not os.path.exists(kfile):
             if not createFile(kfile, self.logger):
                 self.detailedresults += "Unable to create " + kfile + \
@@ -882,9 +883,14 @@ class ConfigureScreenLocking(RuleKVEditor):
                     return False
         uid = getpwnam(user)[2]
         gid = getpwnam(user)[3]
-        os.chmod(kfile, 0600)
-        os.chown(kfile, uid, gid)
-        resetsecon(kfile)
+        if uid and gid:
+            os.chmod(kfile, 0600)
+            os.chown(kfile, uid, gid)
+            resetsecon(kfile)
+        else:
+            success = False
+            self.detailedresults += "Unable to obtain uid and gid of " + user + "\n"
+            self.logger.log(LogPriority.DEBUG, self.detailedresults)
         return success
 
     def undo(self):
