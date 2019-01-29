@@ -57,6 +57,8 @@ Created on Jul 11, 2013
     mutually exclusive and only configured one or the other.  Configuring
     both seems to cause no issues and can easily be converted back if
     need be. Added additional comments for walkthrough of rule.
+@change: 2019/1/28 Brandon R. Gonzales - Move rule enabled ci check from the
+    beginning of fix() to the beginning of the fix linux path
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import createFile
@@ -581,13 +583,13 @@ class ConfigureScreenLocking(RuleKVEditor):
         self.iditerator = 0
 
         try:
-            if not self.ci.getcurrvalue():
-                self.detailedresults += "Rule not enabled so nothing was done\n"
-                self.logger.log(LogPriority.DEBUG, 'Rule was not enabled, so nothing was done')
-                return
             self.detailedresults = ""
             success = True
             if self.environ.getosfamily() == "linux":
+                if not self.ci.getcurrvalue():
+                    self.detailedresults += "Rule not enabled so nothing was done\n"
+                    self.logger.log(LogPriority.DEBUG, 'Rule was not enabled, so nothing was done')
+                    return
                 if self.gnomeInstalled:
                     if not self.fixGnome():
                         success = False
