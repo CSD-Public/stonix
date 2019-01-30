@@ -71,8 +71,6 @@ class NoCoreDumps(Rule):
         self.ci = self.initCi(datatype, key, instructions, default)
 
         self.iditerator = 0
-        self.created1 = False
-        self.created2 = False
         self.sethelptext()
 
 ###############################################################################
@@ -93,14 +91,11 @@ class NoCoreDumps(Rule):
         self.compliant = True
 
         try:
-
             osfam = self.environ.getosfamily()
             ostype = self.environ.getostype()
 
             if osfam == "linux":
-                if not self.reportLinux1():
-                    self.compliant = False
-                if not self.reportLinux2():
+                if not self.reportLinux():
                     self.compliant = False
 
             if osfam == "freebsd":
@@ -127,8 +122,6 @@ class NoCoreDumps(Rule):
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
 
         return self.compliant
-
-###############################################################################
 
     def reportFreebsdMac(self):
         '''
@@ -178,69 +171,60 @@ class NoCoreDumps(Rule):
 
         return compliant
 
-###############################################################################
-
-    def reportLinux1(self):
+    def reportLinux(self):
         '''Sub report method 1 that searches the /etc/security/limits.conf file
         for the following line "* hard core 0"
         @return: bool
         '''
-        match = False
-        lookfor = "(^\*)\s+hard\s+core\s+0?"
-        path = "/etc/security/limits.conf"
-        compliant = True
-        if not os.path.exists(path):
-            compliant = False
-            self.detailedresults += path + " does not exist\n"
-        else:
-            if not checkPerms(path, [0, 0, 0o644], self.logger):
-                compliant = False
-                self.detailedresults += "Permissions incorrect on " + path + \
-                    "\n"
-            contents = readFile(path, self.logger)
-            if not contents:
-                return False
-            for line in contents:
-                if re.match(lookfor, line.strip()):
-                    match = True
-                    break
-        if not match:
-            compliant = False
-            self.detailedresults += "Didn't find desired line in " + \
-                path + "\n"
-        return compliant
-
-###############################################################################
-
-    def reportLinux2(self):
-        '''Sub report method 2 that searches the /etc/sysctl.conf file
-        for the following line "fs.suid_dumpable = 0"
-        @return: bool
-        '''
-        lookfor = {"fs.suid_dumpable": "0"}
-        path = "/etc/sysctl.conf"
+        self.created1 = False
+        self.created2 = False
+        self.editor = ""
+        match1 = False
+        lookfor1 = "(^\*)\s+hard\s+core\s+0?"
+        lookfor2 = {"fs.suid_dumpable": "0"}
+        path1 = "/etc/security/limits.conf"
+        path2 = "/etc/sysctl.conf"
         tmpPath = "/etc/sysctl.conf.tmp"
         kvtype = "conf"
         intent = "present"
         compliant = True
-        if not os.path.exists(path):
+        if not os.path.exists(path1):
             compliant = False
-            self.detailedresults += path + " does not exist\n"
+            self.detailedresults += path1 + " does not exist\n"
         else:
-            if not checkPerms(path, [0, 0, 0o644], self.logger):
+            if not checkPerms(path1, [0, 0, 0o644], self.logger):
                 compliant = False
-                self.detailedresults += "Permissions incorrect on " + path + \
+                self.detailedresults += "Permissions incorrect on " + path1 + \
+                    "\n"
+            contents = readFile(path1, self.logger)
+            if contents:
+                for line in contents:
+                    if re.match(lookfor1, line.strip()):
+                        match1 = True
+                        break
+            else:
+                compliant = False
+                self.detailedresults += "Contents of " + path1 + " file are blank\n"
+        if not match1:
+            compliant = False
+            self.detailedresults += "Didn't find desired line in " + \
+                path1 + "\n"
+        if not os.path.exists(path2):
+            compliant = False
+            self.detailedresults += path2 + " does not exist\n"
+        else:
+            if not checkPerms(path2, [0, 0, 0o644], self.logger):
+                compliant = False
+                self.detailedresults += "Permissions incorrect on " + path2 + \
                     "\n"
             self.editor = KVEditorStonix(self.statechglogger, self.logger,
-                                         kvtype, path, tmpPath, lookfor,
+                                         kvtype, path2, tmpPath, lookfor2,
                                          intent, "openeq")
             if not self.editor.report():
                 compliant = False
                 self.detailedresults += "Correct contents were not found in " + \
-                    path + " file\n"
+                    path2 + " file\n"
         return compliant
-
-###############################################################################
 
     def reportSolaris(self):
         lookfor = {'COREADM_GLOB_CONTENT': 'all'}
@@ -266,8 +250,6 @@ class NoCoreDumps(Rule):
                     path + " file\n"
         return compliant
 
-###############################################################################
-
     def fix(self):
         '''Main parent fix method that calls the sub fix methods fix1
         and fix2
@@ -288,7 +270,7 @@ class NoCoreDumps(Rule):
 
             osfam = self.environ.getosfamily()
             if osfam == "linux":
-                if self.fixLinux1() and self.fixLinux2():
+                if self.fixLinux():
                     ch = CommandHelper(self.logger)
                     cmd = ["/sbin/sysctl", "-p"]
                     ch.executeCommand(cmd)
@@ -316,22 +298,20 @@ class NoCoreDumps(Rule):
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.rulesuccess
 
-###############################################################################
-
-    def fixLinux1(self):
+    def fixLinux(self):
         '''Sub fix method 1 that opens the /etc/security/limits.conf file and a
         adds the following line: "* hard core 0"
         @return: bool
         '''
-        path = "/etc/security/limits.conf"
+        path1 = "/etc/security/limits.conf"
+        path2= "/etc/sysctl.conf"
         lookfor = "(^\*)\s+hard\s+core\s+0?"
         tempstring = ""
         success, found = True, False
-
-        if not os.path.exists(path):
-            createFile(path, self.logger)
+        if not os.path.exists(path1):
+            createFile(path1, self.logger)
             self.created1 = True
-        contents = readFile(path, self.logger)
+        contents = readFile(path1, self.logger)
         for line in contents:
             if re.match(lookfor, line):
                 found = True
@@ -341,7 +321,7 @@ class NoCoreDumps(Rule):
         if not found:
             tempstring += "*\thard\tcore\t0\n"
 
-        tmpfile = path + ".tmp"
+        tmpfile = path1 + ".tmp"
         if not writeFile(tmpfile, tempstring, self.logger):
             self.rulesuccess = False
             return False
@@ -349,49 +329,56 @@ class NoCoreDumps(Rule):
             self.iditerator += 1
             myid = iterate(self.iditerator, self.rulenumber)
             event = {"eventtype": "creation",
-                     "filepath": path}
+                     "filepath": path1}
             self.statechglogger.recordchgevent(myid, event)
-            os.rename(tmpfile, path)
-            setPerms(path, [0, 0, 0o644], self.logger)
+            os.rename(tmpfile, path1)
+            setPerms(path1, [0, 0, 0o644], self.logger)
         else:
             self.iditerator += 1
             myid = iterate(self.iditerator, self.rulenumber)
             event = {'eventtype': "conf",
-                     'filepath': path}
+                     'filepath': path1}
             self.statechglogger.recordchgevent(myid, event)
-            self.statechglogger.recordfilechange(path, tmpfile, myid)
-            os.rename(tmpfile, path)
-            self.iditerator += 1
-            myid = iterate(self.iditerator, self.rulenumber)
-            setPerms(path, [0, 0, 0o644], self.logger, self.statechglogger,
-                     myid)
-        resetsecon(path)
-        return success
+            self.statechglogger.recordfilechange(path1, tmpfile, myid)
+            if not checkPerms(path1, [0, 0, 0o644], self.logger):
+                if self.created1:
+                    if not setPerms(path1, [0, 0, 0o644], self.logger):
+                        success = False
+                else:
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    if not setPerms(path1, [0, 0, 0o644], self.logger,
+                                    self.statechglogger, myid):
+                        success = False
+            os.rename(tmpfile, path1)
 
-###############################################################################
+        resetsecon(path1)
 
-    def fixLinux2(self):
-        '''Sub fix method 2 that searches the /etc/sysctl.conf file
-        for the following line "fs.suid_dumpable = 0"
-        @return: bool
-        @change: bgonz12 - 22/3/2018 - Changed the fix permission logic to not
-                be reliant on self.editor compliance
-        '''
-        path = "/etc/sysctl.conf"
-        success = True
-
-        if not os.path.exists(path):
-            createFile(path, self.logger)
+        if not os.path.exists(path2):
+            createFile(path2, self.logger)
             self.created2 = True
-            setPerms(path, [0, 0, 0o644], self.logger)
-            self.reportLinux2()  # Set up KVEditor
 
         if self.created2:
             self.iditerator += 1
             myid = iterate(self.iditerator, self.rulenumber)
             event = {"eventtype": "creation",
-                     "filepath": path}
+                     "filepath": path2}
             self.statechglogger.recordchgevent(myid, event)
+            self.editor = KVEditorStonix(self.statechglogger, self.logger,
+                                         "conf", path2, path2 + ".tmp",
+                                         {"fs.suid_dumpable": "0"},
+                                         "present", "openeq")
+            self.editor.report()
+        if not checkPerms(path2, [0, 0, 0o644], self.logger):
+            if self.created2:
+                if not setPerms(path2, [0, 0, 0o644], self.logger):
+                    success = False
+            else:
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                if not setPerms(path2, [0, 0, 0o644], self.logger,
+                                self.statechglogger, myid):
+                    success = False
         if self.editor.fixables or self.editor.removeables:
             self.iditerator += 1
             myid = iterate(self.iditerator, self.rulenumber)
@@ -402,17 +389,8 @@ class NoCoreDumps(Rule):
             elif not self.editor.commit():
                 self.rulesuccess = False
                 return False
-        if not checkPerms(path, [0, 0, 0o644], self.logger):
-            self.iditerator += 1
-            myid = iterate(self.iditerator, self.rulenumber)
-            if not setPerms(path, [0, 0, 0o644], self.logger,
-                            self.statechglogger, myid):
-                self.rulesuccess = False
-                return False
-        resetsecon(path)
+        resetsecon(path2)
         return success
-
-###############################################################################
 
     def fixFreebsdMac(self):
         '''
@@ -491,13 +469,9 @@ class NoCoreDumps(Rule):
                     self.detailedresults += "Unable to restart sysctl"
                     self.logger.log(LogPriority.DEBUG, "Unable to restart sysctl.\n" + errmsg)
                     success = False
-
         except Exception:
             raise
-
         return success
-
-###############################################################################
 
     def fixSolaris(self):
         path = "/etc/coreadm.conf"
