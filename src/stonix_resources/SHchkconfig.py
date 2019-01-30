@@ -135,7 +135,14 @@ class SHchkconfig(ServiceHelperTemplate):
                                stdout=subprocess.PIPE,
                                stderr=subprocess.PIPE, shell=True,
                                close_fds=True)
-        proclist = chk.stdout.readlines()
+
+        try:
+            proclist = chk.stdout.readlines()
+        except(OSError, IOError) as e:
+            if e.errno == errno.EINTR:
+                proclist = chk.stdout.readlines()
+            raise
+
         for line in proclist:
             if re.search(service, line) and re.search(':on', line):
                 self.logdispatcher.log(LogPriority.DEBUG,
@@ -159,7 +166,13 @@ class SHchkconfig(ServiceHelperTemplate):
                                stdout=subprocess.PIPE,
                                stderr=subprocess.PIPE, shell=True,
                                close_fds=True)
-        message = chk.stdout.readlines()
+        try:
+            message = chk.stdout.readlines()
+        except(OSError, IOError) as e:
+            if e.errno == errno.EINTR:
+                message = chk.stdout.readlines()
+            raise
+
         if len(message) == 0:
             running = self.auditService(service)
         for line in message:
@@ -206,7 +219,14 @@ class SHchkconfig(ServiceHelperTemplate):
         chk = subprocess.Popen(self.cmd + '--list', stdout=subprocess.PIPE,
                                stderr=subprocess.PIPE, shell=True,
                                close_fds=True)
-        proclist = chk.stdout.readlines()
+        # catch
+        try:
+            proclist = chk.stdout.readlines()
+        except(OSError, IOError) as e:
+            if e.errno == errno.EINTR:
+                proclist = chk.stdout.readlines()
+            raise
+
         for line in proclist:
             line = line.split()
             try:
