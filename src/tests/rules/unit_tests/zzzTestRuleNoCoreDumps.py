@@ -33,11 +33,15 @@ This is a Unit Test for Rule NoCoreDumps
 from __future__ import absolute_import
 import unittest
 import sys
+import os
+import re
 
 sys.path.append("../../../..")
 from src.tests.lib.RuleTestTemplate import RuleTest
 from src.tests.lib.logdispatcher_mock import LogPriority
 from src.stonix_resources.rules.NoCoreDumps import NoCoreDumps
+from src.stonix_resources.stonixutilityfunctions import readFile, writeFile, checkPerms, setPerms
+from src.stonix_resources.KVEditorStonix import KVEditorStonix
 
 
 class zzzTestRuleNoCoreDumps(RuleTest):
@@ -48,6 +52,7 @@ class zzzTestRuleNoCoreDumps(RuleTest):
                                 self.environ,
                                 self.logdispatch,
                                 self.statechglogger)
+        self.logger = self.logdispatch
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
         self.checkUndo = True
@@ -66,6 +71,47 @@ class zzzTestRuleNoCoreDumps(RuleTest):
         @author: ekkehard j. koch
         '''
         success = True
+        lookfor1 = "(^\*)\s+hard\s+core\s+0?"
+        lookfor2 = {"fs.suid_dumpable": "0"}
+        path1 = "/etc/security/limits.conf"
+        path2 = "/etc/sysctl.conf"
+        if os.path.exists(path1):
+            lookfor1 = "(^\*)\s+hard\s+core\s+0?"
+            contents = readFile(path1, self.logger)
+            if contents:
+                tempstring = ""
+                for line in contents:
+                    if not re.search(lookfor1, line.strip()):
+                        tempstring += line
+                if not writeFile(path1, tempstring, self.logger):
+                    debug = "unable to write incorrect contents to " + path1 + "\n"
+                    self.logger.log(LogPriority.DEBUG, debug)
+                    success = False
+            if checkPerms(path1, [0, 0, 0o644], self.logger):
+                if not setPerms(path1, [0, 0, 0o777], self.logger):
+                    debug = "Unable to set permissions on " + path1 + "\n"
+                    self.logger.log(LogPriority.DEBUG, debug)
+                    success = False
+                else:
+                    debug = "successfully set permissions on " + path1 + "\n"
+                    self .logger.log(LogPriority.DEBUG, debug)
+        if os.path.exists(path2):
+            tmppath = path2 + ".tmp"
+            editor = KVEditorStonix(self.statechglogger, self.logger, "conf",
+                                    path2, tmppath, lookfor2, "notpresent", "closedeq")
+            if not editor.report():
+                if not editor.fix():
+                    success = False
+                elif not editor.commit():
+                    success = False
+            if checkPerms(path2, [0, 0, 0o644], self.logger):
+                if not setPerms(path2, [0, 0, 0o777], self.logger):
+                    debug = "Unable to set permissions on " + path2 + "\n"
+                    self.logger.log(LogPriority.DEBUG, debug)
+                    success = False
+                else:
+                    debug = "successfully set permissions on " + path2 + "\n"
+                    self.logger.log(LogPriority.DEBUG, debug)
         return success
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
