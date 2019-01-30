@@ -311,7 +311,7 @@ class KVAConf():
                                 self.logger.log(LogPriority.DEBUG, debug)
                                 if item != "":
                                     debug = "the value we're looking for isn't blank\n"
-                                    self.logger.log(LogPriority.DEBUG, debug) 
+                                    self.logger.log(LogPriority.DEBUG, debug)
                                     temp = line.strip()  # strip off all trailing and leading whitespace
                                 else:
                                     debug = "the value we're looking for is blank\n"
@@ -320,7 +320,7 @@ class KVAConf():
                                 temp = re.sub("\s+", " ", temp)  # replace all whitespace with just one whitespace character
                                 temp = temp.split()  # separate contents into list separated by spaces
                                 if temp[0] == key:  # check to make sure key appears in beginning
-                                    debug = "found the key: " + key + "\n" 
+                                    debug = "found the key: " + key + "\n"
                                     self.logger.log(LogPriority.DEBUG, debug)
                                     try:
                                         if len(temp) > 2:
