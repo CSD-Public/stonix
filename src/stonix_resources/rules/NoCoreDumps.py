@@ -35,6 +35,10 @@ which conflicted with DisableIPV6 and NoCoreDumps which expected 644.
 @change: 2017/07/17 ekkehard - make eligible for macOS High Sierra 10.13
 @change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
 @change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
+@change: 2019/01/30 dwalker - combined linux sub methods into one method.
+    updated fixLinux method to set permissions in correct order so that
+    events for permission corrections are actually recorded to harmonize
+    with unit test.
 '''
 from __future__ import absolute_import
 from ..CommandHelper import CommandHelper

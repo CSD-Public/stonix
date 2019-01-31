@@ -29,6 +29,8 @@ This is a Unit Test for Rule NoCoreDumps
 @change: 2016/02/10 roy Added sys.path.append for being able to unit test this
                         file as well as with the test harness.
 @change: 2016/09/09 eball Added self.checkUndo = True
+@change: 2019/01/30 dwalker - updated setConditionsForRule method to
+    take out desired contents from file and to make permissions incorrect.
 '''
 from __future__ import absolute_import
 import unittest
