@@ -464,7 +464,7 @@ class Environment:
         try:
             self.major_ver = ver.split('.')[0]
         except IndexError:
-            self.major_ver = ver
+            self.major_ver = 0
 
         return self.major_ver
 
@@ -482,7 +482,7 @@ class Environment:
         try:
             self.minor_ver = ver.split('.')[1]
         except IndexError:
-            self.minor_ver = ver
+            self.minor_ver = 0
 
         return self.minor_ver
 
@@ -500,7 +500,7 @@ class Environment:
         try:
             self.trivial_ver = ver.split('.')[2]
         except IndexError:
-            self.trivial_ver = ver
+            self.trivial_ver = 0
 
         return self.trivial_ver
 
