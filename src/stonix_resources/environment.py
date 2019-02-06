@@ -76,6 +76,7 @@ class Environment:
         self.operatingsystem = ''
         self.osreportstring = ''
         self.osfamily = ''
+        self.osname = ''
         self.hostname = ''
         self.ipaddress = ''
         self.macaddress = ''
@@ -272,6 +273,25 @@ class Environment:
         """
         return self.osversion
 
+    def getosname(self):
+        '''
+        Return the OS name as a string.
+        possible return values:
+        Debian
+        CentOS
+        RHEL
+        Fedora
+        openSUSE
+        Ubuntu
+        Mac OS
+
+        @return: self.osname
+        @rtype: string
+        @author: Breen Malmberg
+        '''
+
+        return self.osname
+
     def gethostname(self):
         """
         Return the hostname of the system.
@@ -333,11 +353,9 @@ class Environment:
         @return: void
         @author D. Kennel
         """
-        # print 'Environment Running discoveros'
+
         self.discoveros()
-        # print 'Environment running setosfamily'
         self.setosfamily()
-        # print 'Environment running guessnetwork'
         self.guessnetwork()
         self.collectpaths()
         self.determinefismacat()
@@ -345,6 +363,55 @@ class Environment:
         self.sethostname()
         self.setipaddress()
         self.setmacaddress()
+
+    def setosname(self):
+        '''
+        set the name of the OS (variable self.osname)
+
+        @author: Breen Malmberg
+        '''
+
+        self.osname = "Unknown"
+        namecommand = "/usr/bin/lsb_release -d"
+        osnamedict = {"rhel": "RHEL",
+                      "Red Hat Enterprise": "RHEL",
+                      "CentOS": "CentOS",
+                      "Fedora": "Fedora",
+                      "Debian": "Debian",
+                      "Ubuntu": "Ubuntu",
+                      "openSUSE": "openSUSE"}
+
+        namefile = ""
+        namefiles = ["/etc/redhat-release", "/etc/os-release"]
+        for path in namefiles:
+            if os.path.exists(path):
+                namefile = path
+
+        contentlines = []
+
+        try:
+
+            if not namefile:
+                if os.path.exists("/usr/bin/lsb_release"):
+                    cmdoutput = subprocess.Popen(namecommand, shell=True, stdout=subprocess.PIPE, close_fds=True)
+                    contentlines = cmdoutput.stdout.readlines()
+            else:
+                f = open(namefile, 'r')
+                contentlines = f.readlines()
+                f.close()
+        except Exception:
+            pass
+
+        if contentlines:
+            for line in contentlines:
+                for key in osnamedict:
+                    if re.search(key, line, re.IGNORECASE):
+                        self.osname = osnamedict[key]
+                        break
+
+        if self.osname == "Unknown":
+            if self.getosfamily() == "darwin":
+                self.osname = "Mac OS"
 
     def discoveros(self):
         """
@@ -449,6 +516,7 @@ class Environment:
             build = build.strip()
             opsys = description + ' ' + release + ' ' + build
             self.osreportstring = opsys
+        self.setosname()
 
     def getosmajorver(self):
         '''
