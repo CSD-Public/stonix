@@ -32,6 +32,8 @@ This is a Unit Test for Rule ConfigureAppleSoftwareUpdate
 from __future__ import absolute_import
 import unittest
 import sys
+import os
+import re
 
 sys.path.append("../../../..")
 from src.tests.lib.RuleTestTemplate import RuleTest
@@ -66,6 +68,63 @@ class zzzTestRuleDisableIPV6(RuleTest):
         @author: ekkehard j. koch
         '''
         success = True
+        if self.environ.getosfamily() == "linux":
+            success = self.setLinuxConditions()
+        elif self.environ.getosfamily() == "darwin":
+            success = self.setMacConditions()
+        return success
+
+    def setLinuxConditions(self):
+        self.sysctl = ""
+        debug = ""
+        success = True
+        sysctllocs = ["/sbin/sysctl", "/usr/sbin/sysctl"]
+        for loc in sysctllocs:
+            if os.path.exists(loc):
+                self.sysctl = loc
+        directives = ["net.ipv6.conf.all.disable_ipv6=0",
+                      "net.ipv6.conf.default.disable_ipv6=0"]
+        if self.sysctl:
+            for d in directives:
+                setbadopt = self.sysctl + " -w " + d
+                self.ch.executeCommand(setbadopt)
+                retcode = self.ch.getReturnCode()
+                if retcode != 0:
+                    success = False
+                    debug = "Failed to write configuration change: " + d + "\n"
+                    self.logger.log(LogPriority.DEBUG, debug)
+        else:
+            debug = "sysctl command not found on system\n"
+            self.logger.log(LogPriority.DEBUG, debug)
+            success =  False
+        return success
+
+    def setMacConditions(self):
+        success = True
+        debug = ""
+        networksetup = "/usr/sbin/networksetup"
+        listnetworkservices = networksetup + " -listallnetworkservices"
+        ipv6status = "^IPv6:\s+On"
+        getinfo = networksetup + " -getinfo"
+        self.ch.executeCommand(listnetworkservices)
+        retcode = self.ch.getReturnCode()
+        if retcode != 0:
+            success = False
+            debug = "Failed to get list of network services"
+            self.logger.log(LogPriority.DEBUG, debug)
+        else:
+            networkservices = self.ch.getOutput()
+            for ns in networkservices:
+                # ignore non-network service output lines
+                if re.search("denotes that", ns, re.IGNORECASE):
+                    continue
+                else:
+                    self.ch.executeCommand(networksetup + ' -setv6automatic ' + '"' + ns + '"')
+                    retcode = self.ch.getReturnCode()
+                    if retcode != 0:
+                        success = False
+                        debug = "Failed to get information for network service: " + ns
+                        self.logger.log(LogPriority.DEBUG, debug)
         return success
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
