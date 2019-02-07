@@ -30,7 +30,9 @@ Created on Aug 23, 2016
 @change: 2018/10/25 Breen Malmberg - added support for high sierra and mojave;
         refactored rule
 @change: Derek Walker - 2/7/2019 - updated method to search for a
-            different identifier for security profile on 10.13
+            different identifier for security profile on 10.13. Added
+            testing paths in setvars method which are commented out. DO
+            NOT DELETE THIS SECTION OF COMMENTED CODE.
 '''
 
 from __future__ import absolute_import
@@ -105,7 +107,21 @@ class STIGConfigurePasswordPolicy(Rule):
                                "10.12": baseconfigpath + "U_Apple_macOS_10-12_V1R1_STIG_Security_and_Privacy_Policy.mobileconfig",
                                "10.13": baseconfigpath + "U_Apple_OS_X_10-13_V1R0-1_STIG_Security_and_Privacy_Policy.mobileconfig",
                                "10.14": ""}
-
+        #the following path and dictionaries are for testing on local vm's
+        #without installing stonix package each time.  DO NOT DELETE
+        # basetestpath = "/Users/username/stonix/src/stonix_resources/files/"
+        # self.passprofiledict = {
+        #     "10.10": basetestpath + "U_Apple_OS_X_10-10_Workstation_V1R2_STIG_Passcode_Policy.mobileconfig",
+        #     "10.11": basetestpath + "U_Apple_OS_X_10-11_V1R1_STIG_Passcode_Policy.mobileconfig",
+        #     "10.12": basetestpath + "U_Apple_macOS_10-12_V1R1_STIG_Passcode_Policy.mobileconfig",
+        #     "10.13": basetestpath + "U_Apple_OS_X_10-13_V1R0-1_STIG_Passcode_Policy.mobileconfig",
+        #     "10.14": ""}
+        # self.secprofiledict = {
+        #     "10.10": basetestpath + "U_Apple_OS_X_10-10_Workstation_V1R2_STIG_Security_Privacy_Policy.mobileconfig",
+        #     "10.11": basetestpath + "U_Apple_OS_X_10-11_V1R1_STIG_Security_and_Privacy_Policy.mobileconfig",
+        #     "10.12": basetestpath + "U_Apple_macOS_10-12_V1R1_STIG_Security_and_Privacy_Policy.mobileconfig",
+        #     "10.13": basetestpath + "U_Apple_OS_X_10-13_V1R0-1_STIG_Security_and_Privacy_Policy.mobileconfig",
+        #     "10.14": ""}
         try:
             self.pwprofile = self.passprofiledict[str(self.os_major_ver) + "." + str(self.os_minor_ver)]
         except KeyError:
