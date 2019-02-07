@@ -29,6 +29,8 @@ Created on Aug 23, 2016
 @change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
 @change: 2018/10/25 Breen Malmberg - added support for high sierra and mojave;
         refactored rule
+@change: Derek Walker - 2/7/2019 - updated method to search for a
+            different identifier for security profile on 10.13
 '''
 
 from __future__ import absolute_import
@@ -61,7 +63,7 @@ class STIGConfigurePasswordPolicy(Rule):
         self.sethelptext()
         self.rootrequired = True
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.10.0', 'r', '10.14.10']},
+                           'os': {'Mac OS X': ['10.12.0', 'r', '10.14.10']},
                            'fisma': 'high'}
         datatype = "bool"
         key = "STIGPWPOLICY"
@@ -180,6 +182,8 @@ class STIGConfigurePasswordPolicy(Rule):
 
         @author: Derek Walker
         @change: Breen Malmberg - 10/25/2018 - added doc string; refactor
+        @change: Derek Walker - 2/7/2019 - updated method to search for a
+            different identifier for security profile on 10.13
         '''
 
         self.compliant = True
@@ -217,8 +221,13 @@ class STIGConfigurePasswordPolicy(Rule):
                             break
                         if re.search("mil\.disa\.STIG\.passwordpolicy\.alacarte$", line.strip()):
                             self.pwcompliant = True
-                        if re.search("mil\.disa\.STIG\.Security_Privacy\.alacarte$", line.strip()):
-                            self.secompliant = True
+                        if self.os_minor_ver == "12":
+                            if re.search("mil\.disa\.STIG\.Security_Privacy\.alacarte$", line.strip()):
+                                self.secompliant = True
+                        elif self.os_minor_ver == "13":
+                            if re.search("3C05C7B8\-6DE9\-4162\-96A9\-9A4D0507CD01", line.strip()):
+                                self.secompliant = True
+
 
             if not self.pwcompliant:
                 self.detailedresults += "\nPassword policy profile is not installed"
