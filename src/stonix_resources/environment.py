@@ -356,6 +356,7 @@ class Environment:
 
         self.discoveros()
         self.setosfamily()
+        self.setosname()
         self.guessnetwork()
         self.collectpaths()
         self.determinefismacat()
@@ -516,7 +517,6 @@ class Environment:
             build = build.strip()
             opsys = description + ' ' + release + ' ' + build
             self.osreportstring = opsys
-        self.setosname()
 
     def getosmajorver(self):
         '''
