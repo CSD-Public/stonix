@@ -95,8 +95,6 @@ class DisableUbuntuDataCollection(Rule):
                     self.detailedresults += "\nData collection utility: " + str(pkg) + " is still installed"
                     self.removepkgs.append(pkg)
 
-            print "\nThe following packages are in self.removepkgs:\n" + "\n".join(self.removepkgs)
-
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception:
@@ -132,7 +130,7 @@ class DisableUbuntuDataCollection(Rule):
                     self.statechglogger.deleteentry(event)
 
                 for pkg in self.removepkgs:
-                    print "\nAttempting to remove " + pkg
+
                     if not self.ph.remove(pkg):
                         self.detailedresults += "\nUnable to remove package: " + str(pkg)
                         self.rulesuccess = False
