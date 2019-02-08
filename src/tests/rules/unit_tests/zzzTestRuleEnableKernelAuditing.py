@@ -38,7 +38,6 @@ import sys
 sys.path.append("../../../..")
 from src.tests.lib.RuleTestTemplate import RuleTest
 from src.stonix_resources.CommandHelper import CommandHelper
-from src.stonix_resources.pkghelper import Pkghelper
 from src.tests.lib.logdispatcher_mock import LogPriority
 from src.stonix_resources.rules.EnableKernelAuditing import EnableKernelAuditing
 
@@ -135,7 +134,7 @@ class zzzTestRuleEnableKernelAuditing(RuleTest):
 
         found = False
 
-        self.ch.executeCommand('uname -m')
+        self.ch.executeCommand('/usr/bin/uname -m')
         self.assertEqual(0, self.ch.getReturnCode())
         outputlines = self.ch.getOutput()
         self.assertFalse(outputlines == '')
@@ -153,7 +152,7 @@ class zzzTestRuleEnableKernelAuditing(RuleTest):
         @author: Breen Malmberg
         '''
 
-        self.ch.executeCommand('find / -xdev -type f -perm -4000 -o -type f -perm -2000')
+        self.ch.executeCommand('/usr/bin/find / -xdev -type f -perm -4000 -o -type f -perm -2000')
         self.assertEqual(0, self.ch.getReturnCode())
 
     def test_release_file_exists(self):

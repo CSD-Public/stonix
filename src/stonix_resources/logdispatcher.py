@@ -163,7 +163,13 @@ class LogDispatcher (Observable):
         try:
             if resolvable:
 
-                curlcommand = 'curl -k -s -G -F "file=@' + xmlreport + \
+                curl = "curl"
+                curlpaths = ["/usr/bin/curl", "/bin/curl"]
+                for p in curlpaths:
+                    if os.path.exists(p):
+                        curl = p
+
+                curlcommand = curl + ' -k -s -G -F "file=@' + xmlreport + \
                               ';type=text/xml" https://' + localize.REPORTSERVER + \
                               '/stonix/results.php'
                 if self.debug:

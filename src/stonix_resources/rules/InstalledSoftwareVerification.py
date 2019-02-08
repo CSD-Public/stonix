@@ -84,7 +84,7 @@ default.'
 
         installedpackages = []
 
-        listinstalledcmd = "rpm -qa"
+        listinstalledcmd = "/usr/bin/rpm -qa"
 
         self.ch.executeCommand(listinstalledcmd)
         outputlist = self.ch.getOutput()
@@ -113,7 +113,7 @@ default.'
         self.detailedresults = ""
         self.compliant = True
         self.ch = CommandHelper(self.logger)
-        reportcmd = "rpm -V --nosignature --nolinkto --nofiledigest --nosize --nomtime --nordev --nocaps "
+        reportcmd = "/usr/bin/rpm -V --nosignature --nolinkto --nofiledigest --nosize --nomtime --nordev --nocaps "
         self.badpermfiles = []
         self.badpermpkgs = {}
         self.badgroupfiles = []
@@ -186,7 +186,7 @@ default.'
 
         self.detailedresults = ""
         self.rulesuccess = True
-        fixcmd = "rpm --setperms "
+        fixcmd = "/usr/bin/rpm --setperms "
 
         try:
 

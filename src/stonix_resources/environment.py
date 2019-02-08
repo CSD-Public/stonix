@@ -1182,7 +1182,7 @@ class Environment:
         """
         issnitchactive = False
         if self.osfamily == 'darwin':
-            cmd = 'ps axc -o comm | grep lsd'
+            cmd = '/bin/ps axc -o comm | grep lsd'
             littlesnitch = 'lsd'
             proc = subprocess.Popen(cmd, shell=True,
                                     stdout=subprocess.PIPE, close_fds=True)

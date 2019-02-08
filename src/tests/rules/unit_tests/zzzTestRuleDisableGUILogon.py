@@ -100,10 +100,14 @@ class zzzTestRuleDisableGUILogon(RuleTest):
         self.myos = self.environ.getostype().lower()
         self.logdispatch.log(LogPriority.DEBUG, self.myos)
         if os.path.exists("/bin/systemctl"):
-            cmd = ["systemctl", "set-default", "graphical.target"]
+            cmd = ["/bin/systemctl", "set-default", "graphical.target"]
             if not self.ch.executeCommand(cmd):
                 success = False
-        elif re.search("debian", self.myos):
+        elif os.path.exists("/usr/bin/systemctl"):
+            cmd = ["/usr/bin/systemctl", "set-default", "graphical.target"]
+            if not self.ch.executeCommand(cmd):
+                success = False
+        elif re.search("debian", self.myos, re.IGNORECASE):
             if not self.sh.auditService("gdm3", serviceTarget=self.serviceTarget) and \
                not self.sh.enableService("gdm3", serviceTarget=self.serviceTarget):
                 if not self.sh.auditService("gdm", serviceTarget=self.serviceTarget) and \
@@ -118,7 +122,7 @@ class zzzTestRuleDisableGUILogon(RuleTest):
                                 self.logdispatch.log(LogPriority.DEBUG,
                                                      "Could not find an " +
                                                      "active DM")
-        elif re.search("ubuntu", self.myos):
+        elif re.search("ubuntu", self.myos, re.IGNORECASE):
             ldmover = "/etc/init/lightdm.override"
             grub = "/etc/default/grub"
             if os.path.exists(ldmover):

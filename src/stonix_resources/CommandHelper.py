@@ -451,12 +451,14 @@ class CommandHelper(object):
 
             if command == "":
                 msg = "The given command string parameter was blank!"
-                raise ValueError(msg)
                 self.logdispatcher.log(LogPriority.DEBUG, msg)
+                raise ValueError(msg)
+
             if command == []:
                 msg = "The given command list parameter was empty!"
-                raise ValueError(msg)
                 self.logdispatcher.log(LogPriority.DEBUG, msg)
+                raise ValueError(msg)
+
 
             commandtype = type(command)
 

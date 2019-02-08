@@ -117,7 +117,7 @@ DISABLEPROXY to True."""
                 if not os.path.exists(placesPath):
                     continue
                 ch = CommandHelper(self.logger)
-                command = ["sqlite3", placesPath, ".tables"]
+                command = ["/usr/bin/sqlite3", placesPath, ".tables"]
                 ch.executeCommand(command)
                 if not ch.getReturnCode() == 0:
                     # The version of sqlite3 on RHEL 6 cannot read these dbs.
