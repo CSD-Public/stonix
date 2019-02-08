@@ -67,7 +67,7 @@ class zzzTestRuleSetSSCorners(RuleTest):
         success = True
         self.cmdhelper = CommandHelper(self.logdispatch)
         optdict = {"wvous-tr-corner": 6}
-        cmd = 'defaults write ' + '\"' + self.environ.geteuidhome() + '/Library/Preferences/com.apple.dock.plist\" '
+        cmd = '/usr/bin/defaults write ' + '\"' + self.environ.geteuidhome() + '/Library/Preferences/com.apple.dock.plist\" '
         for item in optdict:
             self.cmdhelper.executeCommand(cmd + item + ' -int ' + str(optdict[item]))
             errout = self.cmdhelper.getErrorString()

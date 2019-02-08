@@ -35,6 +35,7 @@ This is a Unit Test for Rule RestrictMounting
 from __future__ import absolute_import
 import os
 import sys
+import unittest
 
 sys.path.append("../../../..")
 from src.tests.lib.RuleTestTemplate import RuleTest
@@ -102,12 +103,12 @@ class zzzTestRuleRestrictMounting(RuleTest):
                 defaultPermsFile = open(self.path1, "w")
             except IOError:
                 debug = "Could not open file " + self.path1 + "\n"
-                self.logger.log(LogPriority.DEBUG, debug)
+                self.logdispatch.log(LogPriority.DEBUG, debug)
             try:
                 defaultPermsFile.writelines(self.data1)
-            except IOError:
+            except (IOError, UnboundLocalError):
                 debug = "Could not write to file " + self.path1 + "\n"
-                self.logger.log(LogPriority.DEBUG, debug)
+                self.logdispatch.log(LogPriority.DEBUG, debug)
         if os.path.exists(self.path2):
             self.tmpfile2 = self.path2 + ".tmp"
             os.rename(self.path2, self.tmpfile2)
@@ -115,39 +116,39 @@ class zzzTestRuleRestrictMounting(RuleTest):
                 permsFile = open(self.path2, "w")
             except IOError:
                 debug = "Could not open file " + self.path2 + "\n"
-                self.logger.log(LogPriority.DEBUG, debug)
+                self.logdispatch.log(LogPriority.DEBUG, debug)
             try:
                 permsFile.writelines(self.data2)
-            except IOError:
+            except (IOError, UnboundLocalError):
                 debug = "Could not write to file " + self.path2 + "\n"
-                self.logger.log(LogPriority.DEBUG, debug)
+                self.logdispatch.log(LogPriority.DEBUG, debug)
 
         # If autofs is installed, enable and start it. If it is not
         # installed, it will not be tested.
         if self.ph.check("autofs"):
             if not self.sh.enableService("autofs", serviceTarget=self.serviceTarget):
                 debug = "Could not enable autofs\n"
-                self.logger.log(LogPriority.DEBUG, debug)
+                self.logdispatch.log(LogPriority.DEBUG, debug)
 
         cmdSuccess = True
         if os.path.exists("/usr/bin/dbus-launch") and \
            os.path.exists("/usr/bin/gsettings"):
-            cmd = ["dbus-launch", "gsettings", "set",
+            cmd = ["/usr/bin/dbus-launch", "gsettings", "set",
                    "org.gnome.desktop.media-handling",
                    "automount", "true"]
             cmdSuccess = self.ch.executeCommand(cmd)
-            cmd = ["dbus-launch", "gsettings", "set",
+            cmd = ["/usr/bin/dbus-launch", "gsettings", "set",
                    "org.gnome.desktop.media-handling",
                    "autorun-never", "true"]
             cmdSuccess &= self.ch.executeCommand(cmd)
         elif os.path.exists("/usr/bin/gconftool-2"):
-            cmd = ["gconftool-2", "--direct", "--config-source",
+            cmd = ["/usr/bin/gconftool-2", "--direct", "--config-source",
                    "xml:readwrite:/etc/gconf/gconf.xml.mandatory",
                    "--type", "bool", "--set",
                    "/desktop/gnome/volume_manager/automount_media",
                    "true"]
             cmdSuccess = self.ch.executeCommand(cmd)
-            cmd = ["gconftool-2", "--direct", "--config-source",
+            cmd = ["/usr/bin/gconftool-2", "--direct", "--config-source",
                    "xml:readwrite:/etc/gconf/gconf.xml.mandatory",
                    "--type", "bool", "--set",
                    "/desktop/gnome/volume_manager/automount_drives",

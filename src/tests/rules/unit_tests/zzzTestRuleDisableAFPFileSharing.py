@@ -72,13 +72,13 @@ class zzzTestDisableAFPFileSharing(RuleTest):
 
         try:
 
-            cmd = 'launchctl enable system/com.apple.AppleFileServer'
+            cmd = '/bin/launchctl enable system/com.apple.AppleFileServer'
 
             self.cmdhelper.executeCommand(cmd)
             retcode = self.cmdhelper.getReturnCode()
             if retcode != 0:
                 errstr = self.cmdhelper.getErrorString()
-                self.logdispatcher.log(LogPriority.DEBUG, errstr)
+                self.logdispatch.log(LogPriority.DEBUG, errstr)
                 success = False
 
         except Exception:

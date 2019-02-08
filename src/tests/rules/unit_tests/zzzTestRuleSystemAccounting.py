@@ -95,7 +95,7 @@ class zzzTestRuleSystemAccounting(RuleTest):
                 if not re.search("foo.bar", PROXY):
                     os.environ["http_proxy"] = PROXY
                     os.environ["https_proxy"] = PROXY
-                cmd = ["apt-get", "update"]
+                cmd = ["/usr/bin/apt-get", "update"]
                 self.ch.executeCommand(cmd)
             else:
                 path1 = "/etc/rc.conf"

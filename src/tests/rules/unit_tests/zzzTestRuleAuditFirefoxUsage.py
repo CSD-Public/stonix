@@ -72,7 +72,7 @@ class zzzTestRuleAuditFirefoxUsage(RuleTest):
     def runTest(self):
         profilePath = self.profilePath
         if self.ph.check("firefox"):
-            self.browser = "firefox"
+            self.browser = "/usr/bin/firefox"
             self.setConditionsForRule()
             # setConditionsForRule will not work on a remote terminal. If the
             # path doesn't exist, we will skip the test.
@@ -84,7 +84,7 @@ class zzzTestRuleAuditFirefoxUsage(RuleTest):
                                      "Firefox directory was not created. " +
                                      "Skipping test.")
         elif self.ph.check("iceweasel"):
-            self.browser = "iceweasel"
+            self.browser = "/usr/bin/iceweasel"
             self.setConditionsForRule()
             # setConditionsForRule will not work on a remote terminal. If the
             # path doesn't exist, we will skip the test.
@@ -126,7 +126,7 @@ class zzzTestRuleAuditFirefoxUsage(RuleTest):
             sleep(15)
             self.moveMozDir = True
 
-        command = ["killall", "-q", "-u", "root", browser]
+        command = ["/usr/bin/killall", "-q", "-u", "root", browser]
         self.ch.executeCommand(command)
 
         return success
