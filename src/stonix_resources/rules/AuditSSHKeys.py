@@ -40,6 +40,7 @@ from ..rule import Rule
 from ..logdispatcher import LogPriority
 from glob import glob
 from ..CommandHelper import CommandHelper
+from ..stonixutilityfunctions import getOctalPerms
 
 
 class AuditSSHKeys(Rule):
@@ -66,7 +67,11 @@ class AuditSSHKeys(Rule):
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
                            'os': {'Mac OS X': ['10.11', 'r', '10.14.10']}}
-
+        datatype = 'bool'
+        key = 'AUDITSSHKEYS'
+        instructions = "To prevent this rule from modifying permissions on ssh keys, set the value of AUDITSSHKEYS to False."
+        default = True
+        self.ci = self.initCi(datatype, key, instructions, default)
         self.localize()
 
     def localize(self):
@@ -101,7 +106,7 @@ class AuditSSHKeys(Rule):
         '''
 
         searchterm = "Proc-Type:"
-        searchdirs = []
+        self.searchdirs = []
         keylist = []
         self.keydict = {}
         self.compliant = True
@@ -111,9 +116,9 @@ class AuditSSHKeys(Rule):
         try:
 
             self.logger.log(LogPriority.DEBUG, "Getting list of user home directories...")
-            searchdirs = self.get_search_dirs()
+            self.searchdirs = self.get_search_dirs()
             self.logger.log(LogPriority.DEBUG, "Getting list of ssh keys...")
-            keylist = self.get_key_list(searchdirs)
+            keylist = self.get_key_list(self.searchdirs)
 
             if keylist:
                 self.logger.log(LogPriority.DEBUG, "Searching list of ssh keys...")
@@ -130,6 +135,10 @@ class AuditSSHKeys(Rule):
                     if not self.keydict[key]:
                         self.compliant = False
                         self.detailedresults += "\nThe SSH key: " + str(key) + " was made without a password!"
+                    if getOctalPerms(key) != 600:
+                        self.compliant = False
+                        self.detailedresults += "\nThe SSH key: " + str(key) + " has incorrect permissions"
+
                 if self.compliant:
                     self.detailedresults += "\nAll SSH keys on this system are encrypted"
 
@@ -141,10 +150,10 @@ class AuditSSHKeys(Rule):
 
         except (KeyboardInterrupt, SystemExit):
             raise
-        except Exception as err:
-            self.detailedresults = self.detailedresults + "\n" + str(err) + \
-                " - " + str(traceback.format_exc())
-            self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
+        except Exception:
+            self.compliant = False
+            self.detailedresults = str(traceback.format_exc())
+            self.logger.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("report", self.compliant, self.detailedresults)
         return self.compliant
 
@@ -257,22 +266,35 @@ class AuditSSHKeys(Rule):
 
     def fix(self):
         '''
-        set permissions on all insecure keys
+        set permissions on all private keys
         to 600
 
-        @return: void
+        @return: self.rulesuccess
         @author: Breen Malmberg
         '''
 
         fixedkeys = []
+        self.rulesuccess = True
+        self.detailedresults = ""
 
         try:
 
-            for key in self.keydict:
-                if not self.keydict[key]:
-                    self.logger.log(LogPriority.DEBUG, "Setting permissions on: " + str(key) + " to 600...")
-                    os.chmod(key, 0600)
-                    fixedkeys.append(key)
-            self.detailedresults += '\nFixed permissions on ' + str(len(fixedkeys))
-        except Exception:
+            keylist = self.get_key_list(self.searchdirs)
+
+            for key in keylist:
+                self.logger.log(LogPriority.DEBUG, "Setting permissions on file: " + str(key) + " to 600...")
+                os.chmod(key, 0600)
+                fixedkeys.append(key)
+
+            if fixedkeys:
+                self.detailedresults += "\nCorrected permissions on the following files:\n" + "\n".join(fixedkeys)
+            else: self.detailedresults += "\nNo keys were modified."
+
+        except (KeyboardInterrupt, SystemExit):
             raise
+        except Exception:
+            self.rulesuccess = False
+            self.detailedresults = str(traceback.format_exc())
+            self.logger.log(LogPriority.ERROR, self.detailedresults)
+        self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
+        return self.rulesuccess
