@@ -96,11 +96,9 @@ class DisableThumbnailers(Rule):
         self.compliant = True
         self.ch = CommandHelper(self.logger)
         self.ph = Pkghelper(self.logger, self.environ)
+        self.dconf = "/usr/bin/gsettings"
         self.gconf = "/usr/bin/gconftool-2"
-        self.getcmd = self.gconf + " --config-source xml:readwrite:/etc/gconf/gconf.xml.mandatory --get /desktop/gnome/thumbnailers/disable_all"
-        self.setcmd = self.gconf + " --config-source xml:readwrite:/etc/gconf/gconf.xml.mandatory --type bool --set /desktop/gnome/thumbnailers/disable_all true"
         self.detailedresults = ""
-        searchterms = re.compile("(No value set for)|(False)|(false)")
         gnomeinstalled = True
 
         try:
@@ -113,25 +111,20 @@ class DisableThumbnailers(Rule):
                 self.logdispatch.log(LogPriority.INFO, self.detailedresults)
                 return self.compliant
 
-            # if gnome is installed and the configuration tool, that we need, exists,
-            # then get the value of thumbnailers
-            if os.path.exists(self.gconf):
-                self.ch.executeCommand(self.getcmd)
-                retcode = self.ch.getReturnCode()
-                output = self.ch.getOutputString()
-                error = self.ch.getErrorString()
-                sources = [output, error]
-                if retcode == 0:
-                    for s in sources:
-                        if re.search(searchterms, s):
-                            self.detailedresults += "\nThumbnail creation is still enabled."
-                            self.compliant = False
-                else:
-                    self.detailedresults += "\nAn error occurred while attempting to read the configuration value.\n" + str(error)
+            # gnome is installed and system is using dconf/gsettings
+            if os.path.exists(self.dconf) and not os.path.exists(self.gconf):
+                if not self.reportdconf():
+                    self.compliant = False
+            # gnome is installed system is using gconf/gconftool-2
+            elif os.path.exists(self.gconf):
+                if not self.reportgconf():
                     self.compliant = False
             else:
-                self.detailedresults += "\nA required configuration tool could not be found (gconftool-2). Aborting..."
+                self.detailedresults += "\nNo suitable reporting tool could be found (gconftool-2 or gsettings). Could not read configuration value."
                 self.compliant = False
+
+            if not self.compliant:
+                self.detailedresults += "\nThumbnailers is enabled or thumbnailers configuration value could not be read."
 
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
@@ -142,6 +135,58 @@ class DisableThumbnailers(Rule):
         self.formatDetailedResults("report", self.compliant, self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
+
+    def reportdconf(self):
+        '''
+
+        @return:
+        '''
+
+        self.logger.log(LogPriority.DEBUG, "Using gsettings to determine configuration value...")
+
+        retval = False
+        gsettings = "/usr/bin/gsettings"
+        schema = "org.gnome.desktop.thumbnailers"
+        key = "disable-all"
+        value = "true"
+        getthumbnailers = gsettings + " get " + schema + " " + key
+
+        self.ch.executeCommand(getthumbnailers)
+        retcode = self.ch.getReturnCode()
+        if retcode == 0:
+            outputstr = self.ch.getOutputString()
+
+            if re.search(value, outputstr):
+                retval = True
+        else:
+            errmsg = self.ch.getErrorString()
+            self.logger.log(LogPriority.DEBUG, errmsg)
+
+        return retval
+
+    def reportgconf(self):
+        '''
+
+        @return:
+        '''
+
+        self.logger.log(LogPriority.DEBUG, "Using gconftool-2 to determine configuration value...")
+
+        retval = False
+        self.getcmd = self.gconf + " --config-source xml:readwrite:/etc/gconf/gconf.xml.mandatory --get /desktop/gnome/thumbnailers/disable_all"
+        value = "true"
+
+        self.ch.executeCommand(self.getcmd)
+        retcode = self.ch.getReturnCode()
+        if retcode == 0:
+            outputstr = self.ch.getOutputString()
+            if re.search(value, outputstr):
+                retval = True
+        else:
+            errmsg = self.ch.getErrorString()
+            self.logger.log(LogPriority.DEBUG, errmsg)
+
+        return retval
 
     def fix(self):
         '''
@@ -158,7 +203,6 @@ class DisableThumbnailers(Rule):
         self.rulesuccess = True
         self.detailedresults = ""
         self.iditerator = 0
-        undocmd = self.setcmd.replace("true", "false")
 
         try:
 
@@ -172,17 +216,17 @@ class DisableThumbnailers(Rule):
             for event in eventlist:
                 self.statechglogger.deleteentry(event)
 
-            self.ch.executeCommand(self.setcmd)
-            retcode = self.ch.getReturnCode()
-            if retcode != 0:
-                error = self.ch.getErrorString()
-                self.detailedresults += "\nThere was an error while trying to disable thumbnails.\n" + str(error)
-                self.rulesuccess = False
+            # gnome is installed and system is using dconf/gsettings
+            if os.path.exists(self.dconf) and not os.path.exists(self.gconf):
+                if not self.fixdconf():
+                    self.rulesuccess = False
+            # gnome is installed system is using gconf/gconftool-2
+            elif os.path.exists(self.gconf):
+                if not self.fixgconf():
+                    self.rulesuccess = False
             else:
-                event = {"eventtype": "commandstring",
-                         "command": undocmd}
-                myid = iterate(self.iditerator, self.rulenumber)
-                self.statechglogger.recordchgevent(myid, event)
+                self.detailedresults += "\nNo suitable configuration tool could be found (gconftool-2 or gsettings). Could not set configuration value."
+                self.rulesuccess = False
 
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
@@ -194,3 +238,55 @@ class DisableThumbnailers(Rule):
         self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.rulesuccess
+
+    def fixgconf(self):
+        '''
+
+        @return:
+        '''
+
+        self.logger.log(LogPriority.DEBUG, "Using gconftool-2 to set configuration value...")
+
+        retval = True
+        self.gconfcmd = self.gconf + " --config-source xml:readwrite:/etc/gconf/gconf.xml.mandatory --type bool --set /desktop/gnome/thumbnailers/disable_all true"
+        undocmd = self.gconfcmd.replace("true", "false")
+
+        self.ch.executeCommand(self.gconfcmd)
+        retcode = self.ch.getReturnCode()
+        if retcode != 0:
+            error = self.ch.getErrorString()
+            self.detailedresults += "\nRule encountered a problem while trying to disable thumbnailers.\n" + str(error)
+            retval = False
+        else:
+            self.iditerator += 1
+            event = {"eventtype": "commandstring",
+                     "command": undocmd}
+            myid = iterate(self.iditerator, self.rulenumber)
+            self.statechglogger.recordchgevent(myid, event)
+        return retval
+
+    def fixdconf(self):
+        '''
+
+        @return:
+        '''
+
+        self.logger.log(LogPriority.DEBUG, "Using gsettings to set configuration value...")
+
+        retval = True
+        self.dconfcmd = self.dconf + " set org.gnome.desktop.thumbnailers disable-all true"
+        undocmd = self.dconfcmd.replace("true", "false")
+
+        self.ch.executeCommand(self.dconfcmd)
+        retcode = self.ch.getReturnCode()
+        if retcode != 0:
+            error = self.ch.getErrorString()
+            self.detailedresults += "\nRule encountered a problem while trying to disable thumbnailers.\n" + str(error)
+            retval = False
+        else:
+            self.iditerator += 1
+            event = {"eventtype": "commandstring",
+                     "command": undocmd}
+            myid = iterate(self.iditerator, self.rulenumber)
+            self.statechglogger.recordchgevent(myid, event)
+        return retval
