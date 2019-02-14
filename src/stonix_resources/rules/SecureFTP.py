@@ -55,6 +55,7 @@ from ..rule import Rule
 from ..logdispatcher import LogPriority
 from ..pkghelper import Pkghelper
 from ..CommandHelper import CommandHelper
+from ..ServiceHelper import ServiceHelper
 from ..stonixutilityfunctions import iterate
 
 
@@ -127,7 +128,7 @@ of users allowed to access ftp and set the default umask for ftp users.
             if os.path.exists(location):
                 self.conffile = location
 
-        self.packages = ['vsftpd']
+        self.packages = ['vsftpd', 'ftpd', 'tftpd']
 
         self.blockusers = ['root', 'daemon', 'bin', 'sys', 'adm', 'lp', 'uucp',
                            'nuucp', 'smmsp', 'listen', 'nobody', 'noaccess',
@@ -140,6 +141,7 @@ of users allowed to access ftp and set the default umask for ftp users.
         for location in self.usersfilelocations:
             if os.path.exists(location):
                 self.usersfile = location
+        self.sh = ServiceHelper(self.environ, self.logger)
 
 ###############################################################################
     def report(self):
@@ -180,8 +182,11 @@ of users allowed to access ftp and set the default umask for ftp users.
                 if not self.ftpdinstalled:
                     self.detailedresults += '\nftpd not installed. nothing to do.'
                     self.compliant = True
+                    self.formatDetailedResults("report", self.compliant, self.detailedresults)
+                    self.logdispatch.log(LogPriority.INFO, self.detailedresults)
                     return self.compliant
-                self.compliant = self.reportLinux()
+                else:
+                    self.compliant = self.reportLinux()
 
             if not self.reportPart():
                 self.compliant = False
@@ -189,6 +194,7 @@ of users allowed to access ftp and set the default umask for ftp users.
                 self.detailedresults += '\n\nIf ftpd is not being ' + \
                     'used on this system, the administrator can ' + \
                     'disregard this non-compliancy.'
+
         except IOError:
             self.detailedresults += '\n' + traceback.format_exc()
             self.logger.log(LogPriority.ERROR, self.detailedresults)
@@ -207,7 +213,7 @@ of users allowed to access ftp and set the default umask for ftp users.
         check whether the ftp root is mounted on its own partition or not
         return True if mounted on its own partition; False if not
 
-        @return: retval
+        @return: separate
         @rtype: bool
         @author: Breen Malmberg
         '''
@@ -218,9 +224,23 @@ of users allowed to access ftp and set the default umask for ftp users.
         othermounts = []
         df = "/bin/df"
         command1 = "/bin/cat /etc/passwd | grep -i ftp"
+        running = False
+        enabled = False
+        servicenames = ['tftpd', 'vsftpd', 'ftpd']
 
         try:
 
+            # if ftpd not running and not enabled, then ignore this check
+            for sn in servicenames:
+                if self.sh.isRunning(sn):
+                    running = True
+                if self.sh.auditService(sn):
+                    enabled = True
+            if not bool(enabled or running):
+                self.logger.log(LogPriority.DEBUG, "No ftp service is running or enabled so STONIX will ignore the mount point check")
+                return separate
+
+            # check if mounted
             self.cmhelper.executeCommand(command1)
             outlist = self.cmhelper.getOutput()
             for line in outlist:
