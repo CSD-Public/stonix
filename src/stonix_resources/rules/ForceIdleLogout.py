@@ -121,7 +121,8 @@ FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
         self.gnomelockpath = "/etc/dconf/db/local.d/locks/autologout"
         self.undotimeout = ""
         self.undoforcelogout = ""
-        self.kdesddm = self.ph.check("sddm")
+        if self.environ.getosfamily() != 'darwin':
+            self.kdesddm = self.ph.check("sddm")
 
     def report(self):
         """
