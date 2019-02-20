@@ -37,13 +37,19 @@ import re
 import glob
 import shutil
 import traceback
-import sys
 
 from src.stonix_resources.localize import STONIXVERSION
 
-red = ''
-if len(sys.argv) > 1:
-    red = sys.argv[1]
+revision = '1'
+red = False
+color = ''
+
+revision = raw_input("Which package revision is this?")
+red = raw_input("Is this a red package?")
+
+if red.lower() in ["y", "yes", "t", "true"]:
+    color = '-red'
+
 curruserid = os.geteuid()
 
 if curruserid != 0:
@@ -53,7 +59,7 @@ if curruserid != 0:
 # Defaults
 stonixversion = STONIXVERSION
 
-controltext = '''Package: stonix''' + red + '''
+controltext = '''Package: stonix''' + color + '''
 Version: ''' + str(stonixversion) + '''
 Architecture: all
 Maintainer: STONIX Dev's <stonix-dev@lanl.gov>
@@ -92,8 +98,8 @@ copyrighttext = '''#############################################################
 '''
 
 sourcedir = os.path.dirname(os.path.realpath(__file__)) + "/src/"
-builddir = '/stonix-' + str(stonixversion) + red + '-1.noarch'
-pkgname = 'stonix-' + str(stonixversion) + red + '-1.noarch.deb'
+builddir = '/stonix-' + str(stonixversion) + color + '-' + revision + '.noarch'
+pkgname = 'stonix-' + str(stonixversion) + color + '-' + revision + '.noarch.deb'
 debiandir = builddir + '/DEBIAN/'
 bindir = os.path.join(builddir, 'usr/bin/')
 etcdir = os.path.join(builddir, 'etc/')
