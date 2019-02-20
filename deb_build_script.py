@@ -25,6 +25,7 @@
 Created on Feb 28, 2014
 
 build script for stonix package on debian systems
+if building package for red network, call script with argument '-red'
 
 @author Breen Malmberg
 @change: Breen Malmberg - 3/14/2017 - updated controltext and
@@ -36,22 +37,23 @@ import re
 import glob
 import shutil
 import traceback
+import sys
 
 from src.stonix_resources.localize import STONIXVERSION
 
-
+red = ''
+if len(sys.argv) > 1:
+    red = sys.argv[1]
 curruserid = os.geteuid()
 
 if curruserid != 0:
     print "This script must be run as root or with sudo"
-    exit
+    quit()
 
 # Defaults
 stonixversion = STONIXVERSION
 
-# change package name to stonix-red if
-# packaging for the red network
-controltext = '''Package: stonix
+controltext = '''Package: stonix''' + red + '''
 Version: ''' + str(stonixversion) + '''
 Architecture: all
 Maintainer: STONIX Dev's <stonix-dev@lanl.gov>
@@ -89,11 +91,9 @@ copyrighttext = '''#############################################################
 ###############################################################################
 '''
 
-# change the ending of the -1.noarch and -1.noarch.deb strings to
-# -red-1.noarch and -red-1.noarch.deb if packaging for the red network
 sourcedir = os.path.dirname(os.path.realpath(__file__)) + "/src/"
-builddir = '/stonix-' + str(stonixversion) + '-1.noarch'
-pkgname = 'stonix-' + str(stonixversion) + '-1.noarch.deb'
+builddir = '/stonix-' + str(stonixversion) + red + '-1.noarch'
+pkgname = 'stonix-' + str(stonixversion) + red + '-1.noarch.deb'
 debiandir = builddir + '/DEBIAN/'
 bindir = os.path.join(builddir, 'usr/bin/')
 etcdir = os.path.join(builddir, 'etc/')
@@ -121,9 +121,9 @@ try:
                     os.system('rm -f ' + sourcedir +
                               'stonix_resources/rules/' + line)
         else:
-            exit
+            quit()
     else:
-        exit
+        quit()
 
     if not os.path.exists(bindir):
         os.makedirs(bindir, 0o755)
@@ -138,7 +138,7 @@ try:
 
     if not os.path.exists(sourcedir):
         print "Directory " + sourcedir + " not found"
-        exit
+        quit()
 
     for item in filesneeded:
         if not os.path.exists(item):
@@ -190,3 +190,4 @@ try:
 
 except OSError as err:
     print traceback.format_exc()
+    quit()
