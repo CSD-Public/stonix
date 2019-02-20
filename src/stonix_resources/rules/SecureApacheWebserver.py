@@ -1234,14 +1234,15 @@ development but some existing applications may use insecure side effects.'''
             prevchgs = self.statechglogger.findrulechanges(self.rulenumber)
 
             # Set required webserver environment variables
-            if self.ph.check("apache2"):
-                for key in self.apacheenvvars:
-                    if os.environ.get(key) == None or \
-                       os.environ.get(key) == '':
-                        message = "Setting environment variable " + key + \
-                                  "=" + self.apacheenvvars[key]
-                        self.logdispatch.log(LogPriority.DEBUG, message)
-                        os.environ[key]=self.apacheenvvars[key]
+            if self.environ.getosfamily() == "linux":
+                if self.ph.check("apache2"):
+                    for key in self.apacheenvvars:
+                        if os.environ.get(key) == None or \
+                           os.environ.get(key) == '':
+                            message = "Setting environment variable " + key + \
+                                      "=" + self.apacheenvvars[key]
+                            self.logdispatch.log(LogPriority.DEBUG, message)
+                            os.environ[key]=self.apacheenvvars[key]
 
             # Run syntax tests for apache webserver to confirm
             # that the current configurations are valid
