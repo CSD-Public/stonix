@@ -39,19 +39,26 @@ import traceback
 
 from src.stonix_resources.localize import STONIXVERSION
 
+revision = '1'
+red = False
+color = ''
+
+revision = raw_input("Which package revision is this?")
+red = raw_input("Is this a red package?")
+
+if red.lower() in ["y", "yes", "t", "true"]:
+    color = '-red'
 
 curruserid = os.geteuid()
 
 if curruserid != 0:
     print "This script must be run as root or with sudo"
-    exit
+    quit()
 
 # Defaults
 stonixversion = STONIXVERSION
 
-# change package name to stonix-red if
-# packaging for the red network
-controltext = '''Package: stonix
+controltext = '''Package: stonix''' + color + '''
 Version: ''' + str(stonixversion) + '''
 Architecture: all
 Maintainer: STONIX Dev's <stonix-dev@lanl.gov>
@@ -89,11 +96,9 @@ copyrighttext = '''#############################################################
 ###############################################################################
 '''
 
-# change the ending of the -1.noarch and -1.noarch.deb strings to
-# -red-1.noarch and -red-1.noarch.deb if packaging for the red network
 sourcedir = os.path.dirname(os.path.realpath(__file__)) + "/src/"
-builddir = '/stonix-' + str(stonixversion) + '-1.noarch'
-pkgname = 'stonix-' + str(stonixversion) + '-1.noarch.deb'
+builddir = '/stonix-' + str(stonixversion) + color + '-' + revision + '.noarch'
+pkgname = 'stonix-' + str(stonixversion) + color + '-' + revision + '.noarch.deb'
 debiandir = builddir + '/DEBIAN/'
 bindir = os.path.join(builddir, 'usr/bin/')
 etcdir = os.path.join(builddir, 'etc/')
@@ -121,9 +126,9 @@ try:
                     os.system('rm -f ' + sourcedir +
                               'stonix_resources/rules/' + line)
         else:
-            exit
+            quit()
     else:
-        exit
+        quit()
 
     if not os.path.exists(bindir):
         os.makedirs(bindir, 0o755)
@@ -138,7 +143,7 @@ try:
 
     if not os.path.exists(sourcedir):
         print "Directory " + sourcedir + " not found"
-        exit
+        quit()
 
     for item in filesneeded:
         if not os.path.exists(item):
@@ -190,3 +195,4 @@ try:
 
 except OSError as err:
     print traceback.format_exc()
+    quit()
