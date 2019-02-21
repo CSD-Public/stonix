@@ -25,7 +25,6 @@
 Created on Feb 28, 2014
 
 build script for stonix package on debian systems
-if building package for red network, call script with argument '-red'
 
 @author Breen Malmberg
 @change: Breen Malmberg - 3/14/2017 - updated controltext and
@@ -34,7 +33,6 @@ if building package for red network, call script with argument '-red'
 
 import os
 import re
-import glob
 import shutil
 import traceback
 
@@ -44,21 +42,25 @@ revision = '1'
 red = False
 color = ''
 
-revision = raw_input("Which package revision is this?")
-red = raw_input("Is this a red package?")
+# get user input for variables
+revision = raw_input("Which package revision is this?\n")
+red = raw_input("Is this a red package?\n")
 
 if red.lower() in ["y", "yes", "t", "true"]:
     color = '-red'
 
 curruserid = os.geteuid()
 
+# make sure user is running script with elevated privileges
 if curruserid != 0:
     print "This script must be run as root or with sudo"
     quit()
 
-# Defaults
+print "\ncorrect uid detected\n"
+
 stonixversion = STONIXVERSION
 
+# specify package details for dpkg build process
 controltext = '''Package: stonix''' + color + '''
 Version: ''' + str(stonixversion) + '''
 Architecture: all
@@ -69,16 +71,23 @@ Priority: extra
 Description: ''' + str(stonixversion) + ''' release of STONIX hardening tool for Ubuntu
 '''
 
+print '\ncontroltext set\n'
+
 changelogtext = str(stonixversion) + ''' BETA release notes:
 http://trac.lanl.gov/cgi-bin/external/trac.cgi/wiki/STONIXreleaseNotes
 '''
 
+print '\nchangelogtext set\n'
+
+# configuration file(s) which will be deployed by the package
 conffilestext = '''/etc/stonix.conf
 '''
 
+print '\nconffilestext set\n'
+
 copyrighttext = '''###############################################################################
 #                                                                             #
-# Copyright, 2008-2018, Los Alamos National Security, LLC.                    #
+# Copyright, 2008-2019, Los Alamos National Security, LLC.                    #
 #                                                                             #
 # This software was produced under a U.S. Government contract by Los Alamos   #
 # National Laboratory, which is operated by Los Alamos National Security,     #
@@ -97,6 +106,9 @@ copyrighttext = '''#############################################################
 ###############################################################################
 '''
 
+print '\ncopyrighttext set\n'
+
+# dynamically set path variables for build directory structure for STONIX
 sourcedir = os.path.dirname(os.path.realpath(__file__)) + "/src/"
 builddir = '/stonix-' + str(stonixversion) + color + '-' + revision + '.noarch'
 pkgname = 'stonix-' + str(stonixversion) + color + '-' + revision + '.noarch.deb'
@@ -104,33 +116,19 @@ debiandir = builddir + '/DEBIAN/'
 bindir = os.path.join(builddir, 'usr/bin/')
 etcdir = os.path.join(builddir, 'etc/')
 
+print '\ndirectory variables set\n'
+
+# specify dpkg build directory structure for STONIX
 filesneeded = {debiandir + 'control': controltext,
                debiandir + 'changelog': changelogtext,
                debiandir + 'copyright': copyrighttext,
                debiandir + 'conffiles' : conffilestext}
 
+print '\nfilesneeded set\n'
+
 try:
 
-    if os.path.exists(sourcedir + 'stonix_resources/rules'):
-        listofdirs = glob.glob(sourcedir + 'stonix_resources/rules/*.py')
-        listoffiles = []
-        for item in listofdirs:
-            listoffiles.append(os.path.basename(item))
-        discardfiles = []
-        if os.path.exists('/discardfiles'):
-            f = open('/discardfiles', 'r')
-            contentlines = f.readlines()
-            f.close()
-            for line in contentlines:
-                line = line.strip()
-                if line in listoffiles:
-                    os.system('rm -f ' + sourcedir +
-                              'stonix_resources/rules/' + line)
-        else:
-            quit()
-    else:
-        quit()
-
+    # verify / create dpkg build directory structure for STONIX
     if not os.path.exists(bindir):
         os.makedirs(bindir, 0o755)
         os.chown(os.path.join(builddir, '/usr'), 0, 0)
@@ -142,10 +140,12 @@ try:
         os.makedirs(etcdir, 0o755)
         os.chown(etcdir, 0, 0)
 
+    # verify source directory for stonix files exists
     if not os.path.exists(sourcedir):
         print "Directory " + sourcedir + " not found"
         quit()
 
+    # verify / create all files needed by dpkg to build the package
     for item in filesneeded:
         if not os.path.exists(item):
             f = open(item, 'w')
@@ -162,20 +162,22 @@ try:
                 f.close()
                 os.chmod(item, 0o644)
 
+    # create stonix.conf in the build directory
     f = open(etcdir + 'stonix.conf', 'w')
     f.write('')
     f.close()
     os.chmod(etcdir + 'stonix.conf', 0o644)
     os.chown(etcdir + 'stonix.conf', 0, 0)
 
+    # copy files to the build directory
     if not os.path.exists(bindir + 'stonix_resources'):
         shutil.copytree(sourcedir + 'stonix_resources',
                         bindir + 'stonix_resources')
-
     if not os.path.exists(builddir + 'usr/share/man/man8/stonix.8'):
         shutil.copytree(sourcedir + 'usr/share', builddir + '/usr/share')
         os.chmod(builddir + '/usr/share', 0o644)
 
+    # ensure all directories and files have correct permissions
     for dirName, _, fileList in os.walk(bindir):
         fullDirName = os.path.join(os.path.abspath(bindir), dirName)
         os.chmod(fullDirName, 0o755)
@@ -185,15 +187,17 @@ try:
             if os.path.isfile(fullFName):
                 os.chmod(fullFName, 0o644)
                 os.chown(fullFName, 0, 0)
-
     if not os.path.exists(bindir + 'stonix.py'):
         shutil.copy2(sourcedir + 'stonix.py', bindir + 'stonix.py')
     os.chmod(bindir + 'stonix.py', 0o755)
 
+    # create binary symlink to STONIX controller
     os.system('ln -s /usr/bin/stonix.py ' + bindir + 'stonix')
 
+    # build package with dpkg utility
     os.system('dpkg-deb -b ' + builddir)
 
 except OSError as err:
     print traceback.format_exc()
     quit()
+print "\n\n ==== Finished building package. Located at: " + builddir + ".deb ====\n\n"
