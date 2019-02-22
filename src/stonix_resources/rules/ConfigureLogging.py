@@ -38,7 +38,6 @@ Created on May 20, 2013
 @change: 2017/10/23 rsn - change to new service helper interface
 @change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
 @change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
-@change: 2019/02/21 Brandon R. Gonzales - Remove Solaris and Free BSD code
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import iterate, resetsecon, createFile, getUserGroupName
@@ -71,7 +70,7 @@ class ConfigureLogging(RuleKVEditor):
         self.sethelptext()
         self.guidance = ["2.6.1.1", "2.6.1.2", "2.6.1.3"]
         self.applicable = {'type': 'white',
-                           'family': ['linux'],
+                           'family': ['linux', 'freebsd'],
                            'os': {'Mac OS X': ['10.11', 'r', '10.14.10']}}
 
         datatype = 'bool'
@@ -122,6 +121,12 @@ class ConfigureLogging(RuleKVEditor):
             if self.environ.getosfamily() == "linux":
                 self.ph = Pkghelper(self.logger, self.environ)
                 self.compliant = self.reportSysRSyslog()
+            elif self.environ.getosfamily() == "freebsd":
+                if self.path:
+                    self.compliant = self.reportFreebsd(self.path[0],
+                                                        self.path[1])
+                else:
+                    self.detailedresults = "no log daemons exist\n"
             elif self.environ.getostype() == "Mac OS X":
                 self.compliant = self.reportMac()
         except(KeyboardInterrupt, SystemExit):
@@ -154,6 +159,15 @@ class ConfigureLogging(RuleKVEditor):
 
             if self.environ.getosfamily() == "linux":
                 status = self.fixSysRsyslog()
+            if self.environ.getosfamily() == "freebsd":
+                if not self.path:
+                    self.detailedresults += "report previously found no log \
+daemon, will not attempt to install one, unable to proceed with fix\n"
+                    self.formatDetailedResults("fix", False,
+                                               self.detailedresults)
+                    self.logger.log(LogPriority.DEBUG, self.detailedresults)
+                    return
+                status = self.fixFreebsd(self.path[0], self.path[1])
             if self.environ.getostype() == "Mac OS X":
                 status = self.fixMac()
             self.rulesuccess = status
@@ -712,6 +726,7 @@ daemon config file: " + self.logpath
                     resetsecon(self.logpath)
 
         # correct log rotate file
+
         #if logrotation file doesn't exist, create it, record createfile event
         if not os.path.exists(self.logrotpath):
             if not createFile(self.logrotpath, self.logger):
@@ -815,6 +830,313 @@ rotation config file: " + self.logrotpath + "\n"
         if not self.ch.getReturnCode() != "0":
             debug = "Unable to restart the log daemon part 2\n"
             self.logger.log(LogPriority.DEBUG, debug)
+        return success
+
+    def reportFreebsd(self, logpath, logrotpath):
+        compliant = True
+        self.missinglogrot = False
+        debug = ""
+
+        # check if all necessary dirs are present and correct perms
+        for item in self.directories:
+            if not os.path.exists(item):
+                self.detailedresults += item + " doesn\'t exist\n"
+                compliant = False
+            else:
+                if not checkPerms(item, [0, 0, 384], self.logger):
+                    compliant = False
+
+        # check if correct contents of syslog.conf file
+        if os.path.exists(logpath):
+            if not checkPerms(logpath, [0, 0, 420], self.logger):
+                compliant = False
+            contents = readFile(logpath, self.logger)
+            if contents:
+                for key in self.logfiles:
+                    found = False
+                    for item in contents:
+                        if re.search("^\#", item) or re.match('^\s*$', item):
+                            continue
+                        else:
+                            line = item.strip()
+                            line = re.sub('(\s)+', " ", line)
+                            temp = line.split()
+                            if temp[0].strip() == key:
+                                if self.logfiles[key] == temp[1].strip():
+                                    found = True
+                                    break
+                    if not found:
+                        self.config.append(key + "\t\t\t" + self.logfiles[key] + "\n")
+                        compliant = False
+        else:
+            self.detailedresults += logpath + "doesn\'t exist\n"
+            for key in self.logfiles:
+                self.config.append(key + "\t\t\t" + self.logfiles[key] + "\n")
+            compliant = False
+
+        # check /etc/newsyslog.conf file
+        if os.path.exists(logrotpath):
+            if not checkPerms(logrotpath, [0, 0, 420], self.logger):
+                compliant = False
+            contents = readFile(logrotpath, self.logger)
+            if contents:
+                for directory in self.directories:
+                    found = False
+                    for line in contents:
+                        if re.match('^#', line.strip()) or re.match('^\s*$', line):
+                            continue
+                        if re.search('^' + directory, line.strip()):
+                            found = True
+                            line = re.sub('(\s)+', " ", line)
+                            temp = line.split()
+                            temp.pop(0)
+                            try:
+                                if re.search(':', temp[0]):
+                                    temp.pop(0)
+                                # if re.match('[1-7][0-7]{2}', temp[0]):#for the mode
+                                if re.match("[0-7][0-7][0-7]", temp[0]):
+                                    if temp[0] != "600":
+                                        self.missinglogrot = True
+                                        compliant = False
+                                    temp.pop(0)
+                                else:
+                                    self.missinglogrot = True
+                                if re.match('[0-9]{1,4}', temp[0]):  # for the count
+                                    if temp[0] != "4":
+                                        self.missinglogrot = True
+                                        compliant = False
+                                    temp.pop(0)
+                                else:
+                                    self.missinglogrot = True
+                                if re.match('[*]{1}|[0-9]{1,4}', temp[0]):
+                                    if temp[0] != "*":
+                                        self.missinglogrot = True
+                                        compliant = False
+                                    temp.pop(0)
+                                else:
+                                    self.missinglogrot = True
+                                if re.match('^[@$*]{1}([A-Z]|[0-9])*', temp[0]):
+                                    if temp[0] != "$W0D23":
+                                        self.missinglogrot = True
+                                        compliant = False
+                                else:
+                                    self.missinglogrot = True
+                            except IndexError:
+                                raise
+                            except Exception:
+                                debug += traceback.format_exc() + "\n"
+                                debug += "Index out of range\n"
+                    if not found:
+                        self.missinglogrot = True
+                        compliant = False
+        else:
+            self.missinglogrot = True
+            self.detailedresults += logrotpath + " doesn\'t exist"
+            compliant = False
+        return compliant
+
+    def fixFreebsd(self, logpath, logrotpath):
+        '''Assumptions: for logrotate file, we assume newsyslog.conf doesn't
+        contain duplicate entries for files to be logrotated and that the 5
+        mandatory fields are actually present(filename,mode,count,size,when)
+        If either of these cases apply to the system, the user must delete or
+        correct the line in question'''
+        universal = "\n#The following lines were added by stonix\n"
+        success = True
+        debug = ""
+        # create and/or correct perms on missing log files
+        for item in self.directories:
+            if os.path.exists(item):
+                if not checkPerms(item, [0, 0, 384], self.logger):
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    if not setPerms(item, [0, 0, 384], self.logger,
+                                    self.statechglogger, myid):
+                        success = False
+            else:
+                if not createFile(item, self.logger):
+                    self.detailedresults += "Unable to create necessary log \
+file: " + item + "\n"
+                    success = False
+                else:
+                    self.detailedresults += "Successfully created log file: \
+" + item + "\n"
+                    os.chown(item, 0, 0)
+                    os.chmod(item, 384)
+                    resetsecon(item)
+
+        if self.config:
+            tempstring = ""
+            tmpfile = logpath + '.tmp'
+            if not os.path.exists(logpath):
+                if not createFile(logpath, self.logger):
+                    self.detailedresults += "unable to create the log file: \
+" + logpath + "\n"
+                elif not checkPerms(logpath, [0, 0, 420], self.logger):
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    if not setPerms(logpath, [0, 0, 420], self.logger,
+                                    self.statechglogger, myid):
+                        success = False
+            else:
+                if not checkPerms(logpath, [0, 0, 420], self.logger):
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    if not setPerms(logpath, [0, 0, 420], self.logger,
+                                    self.statechglogger, myid):
+                        success = False
+            if os.path.exists(logpath):
+                contents = readFile(logpath, self.logger)
+                if contents:
+                    for item in contents:
+                        tempstring += item
+                    tempstring += universal
+                    for item in self.config:
+                        tempstring += item
+                    if not writeFile(tmpfile, tempstring, self.logger):
+                        return False
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    event = {"eventtype": "conf",
+                             "filepath": logpath}
+                    self.statechglogger.recordchgevent(myid, event)
+                    self.statechglogger.recordfilechange(logpath, tmpfile,
+                                                         myid)
+                    os.rename(tmpfile, logpath)
+                    os.chown(logpath, 0, 0)
+                    os.chmod(logpath, 420)
+                    resetsecon(logpath)
+
+        if self.missinglogrot:
+            tempstring = ""
+            tmpfile = logrotpath + '.tmp'
+            if not os.path.exists(logrotpath):
+                if not createFile(logrotpath, self.logger):
+                    self.detailedresults += "unable to create log rotation \
+file: " + logrotpath + "\n"
+                elif not checkPerms(logrotpath, [0, 0, 420], self.logger):
+                    if not setPerms(logrotpath, [0, 0, 420], self.logger):
+                        success = False
+            else:
+                if not checkPerms(logrotpath, [0, 0, 420], self.logger):
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    if not setPerms(logrotpath, [0, 0, 420], self.logger,
+                                    self.statechglogger, myid):
+                        success = False
+            found = False
+            if os.path.exists(logrotpath):
+                contents = readFile(logrotpath, self.logger)
+                if contents:
+                    for line in contents:
+                        if re.match('^#', line.strip()) or re.match('^\s*$',
+                                                                    line):
+                            tempstring += line
+                            continue
+                        for directory in self.directories:
+                            badformat = False
+                            found = False
+                            if re.match('^' + directory, line.strip()):
+                                found = True
+                                string = ""
+                                self.directories.remove(directory)
+                                line = re.sub('(\s)+', " ", line)
+                                temp = line.split()
+                                string += temp.pop(0) + " "
+                                try:
+                                    if re.search(':', temp[0]):
+                                        string += temp.pop(0) + " "
+                                    else:
+                                        string += '\t\t\t'
+                                    # if re.match('[1-7][0-7]{2}',temp[0]):
+                                    if re.match("[0-7][0-7][0-7]", temp[0]):
+                                        if temp[0] != "600":
+                                            string += "600  "
+                                            temp.pop(0)
+                                        else:
+                                            string += temp.pop(0) + "  "
+                                    else:
+                                        badformat = True
+                                        break
+                                    if re.match('[0-9]{1,3}', temp[0]):
+                                        if temp[0] != "4":
+                                            string += "4     "
+                                            temp.pop(0)
+                                        else:
+                                            string += temp.pop(0) + "    "
+
+                                    else:
+                                        badformat = True
+                                        break
+                                    if re.match('[*]{1}|[0-9]{1,3}', temp[0]):
+                                        if temp[0] != "*":
+                                            string += "*    "
+                                            temp.pop(0)
+                                        else:
+                                            string += temp.pop(0) + "    "
+                                    else:
+                                        badformat = True
+                                        break
+                                    if re.match('^[@$*]{1}([A-Z]|[0-9])*',
+                                                temp[0]):
+                                        if temp[0] != "$W0D23":
+                                            string += "$W0D23 "
+                                            temp.pop(0)
+                                        else:
+                                            string += temp.pop(0) + " "
+                                    else:
+                                        badformat = True
+                                        break
+                                except IndexError:
+                                    debug += traceback.format_exc() + "\n"
+                                    debug += " Index out of range\n"
+                                    self.logger.log(LogPriority.DEBUG, debug)
+                                    raise
+                                try:
+                                    if temp[0]:  # if flags value exists
+                                        string += temp.pop(0) + " "
+                                    if temp[0]:  # if /pid_file exists
+                                        string += temp.pop(0) + " "
+                                    if temp[0]:  # if sig_num exists
+                                        string += temp.pop(0) + " "
+                                except IndexError:
+                                    debug += traceback.format_exc() + "\n"
+                                    debug += "Index out of range but that's ok \
+because these values are optional\n"
+                                    self.logger.log(LogPriority.DEBUG, debug)
+                                    break
+                                tempstring += string + "\n"
+                                badformat = False
+                                found = True
+                        if badformat:
+                            tempstring += directory + "\t\t\t\t" + "600  " + "4     " + "*    " + "$W0D23" + "\n"
+                        elif not found:
+                            tempstring += line
+                if self.directories:
+                    for directory in self.directories:
+                        tempstring += directory + "\t\t\t\t" + "600  " + "4     " + "*    " + "$W0D23" + "\n"
+                if not writeFile(tmpfile, tempstring, self.logger):
+                    return False
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                event = {"eventtype": "conf",
+                         "filepath": logrotpath}
+                self.statechglogger.recordchgevent(myid, event)
+                self.statechglogger.recordfilechange(logrotpath, tmpfile, myid)
+                os.rename(tmpfile, logrotpath)
+                os.chown(logrotpath, 0, 0)
+                os.chmod(logrotpath, 420)
+                resetsecon(logrotpath)
+        self.missinglogrot = {}
+
+        if not self.checkSysRsyslogOn():
+            message = Popen([self.service, "restart"], stdout=PIPE,
+                            stderr=PIPE, shell=False)
+            while message.poll() is None:
+                continue
+            if message.poll() != 0:
+                self.detailedresults += "Couldn\'t'\ restart syslog daemon\n"
+                success = False
         return success
 
     def reportMac(self):
@@ -936,8 +1258,6 @@ rotation config file: " + self.logrotpath + "\n"
         else:
             compliant = False
             self.detailedresults += self.logpath + " doesn't exist\n"
-
-        # Check asl.conf file
         bad = False
         exist = []
         missing = []
@@ -964,7 +1284,6 @@ rotation config file: " + self.logrotpath + "\n"
                 aslfile + ":\n"
             for item in missing:
                 self.detailedresults += str(item) + "\n"
-
         # check newsyslog.conf file
         if os.path.exists(newsyslog):
             contents = readFile(newsyslog, self.logger)

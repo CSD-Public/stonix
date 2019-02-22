@@ -55,7 +55,6 @@ This class is responsible for securing the Apache webserver configuration.
                 locatesslfiles to account for permission errors
 @change: 2019/2/14 Brandon R. Gonzales - Set apache2 environment variables
                 at beginning of fix if they are not already set
-@change: 2019/2/20 Brandon R. Gonzales - Remove Solaris and Free BSD code
 '''
 from __future__ import absolute_import
 
@@ -97,7 +96,7 @@ class SecureApacheWebserver(Rule):
         self.sethelptext()
         self.rootrequired = True
         self.applicable = {'type': 'white',
-                           'family': ['linux'],
+                           'family': ['linux', 'freebsd'],
                            'os': {'Mac OS X': ['10.11', 'r', '10.14.10']}}
         self.comment = re.compile('^#|^;')
         self.ch = CommandHelper(self.logdispatch)
@@ -769,7 +768,6 @@ development but some existing applications may use insecure side effects.'''
                       'myfile': conffile}
             self.statechglogger.recordchgevent(myid1, event1)
             os.rename(tempfile, conffile)
-
             if owner != 0 or group != 0 or mode != 416:
                 myend2 = [0, 0, 416]  # TODO: change 416 value to be whatever the current file perm is
                 mytype2 = 'perm'
@@ -920,6 +918,7 @@ development but some existing applications may use insecure side effects.'''
         disablefile = False
         tempfile = conffile + '.stonixtmp'
         tempfile2 = conffile + '.stonixtmp2'
+        changecomplete = True
         owneronly = 448  # Integer representation of 0700
 
         # This is the code path for Apache laid out ubuntu 14.04 style
@@ -986,6 +985,7 @@ development but some existing applications may use insecure side effects.'''
             rhandle = open(conffile, 'r+')
             localconf = rhandle.read()
             rhandle.close()
+            undoconf = localconf
             modconf = ''
             for module in self.nonessentialmods:
                 self.logdispatch.log(LogPriority.DEBUG,
