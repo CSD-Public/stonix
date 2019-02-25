@@ -81,8 +81,18 @@ class Pkghelper(object):
             self.pckgr = None
 
     def determineMgr(self):
-        '''determines the package manager for the current os'''
+        '''
+        determines the package manager for the current os
+
+        @author: ???
+        @change: Breen Malmberg - Feb 25 2019 - added "packageMgr" return variable
+                initialization; added doc string
+        '''
+
+        packageMgr = None
+
         try:
+
             if self.enviro.getosfamily() == "linux":
                 currentIterator = 0
                 for key in self.osDictionary:
@@ -95,7 +105,7 @@ class Pkghelper(object):
                         currentIterator += 1
                         continue
                     else:
-                        return None
+                        return packageMgr
             else:
                 currentIterator = 0
                 for key in self.osDictionary:
@@ -109,7 +119,9 @@ class Pkghelper(object):
                         continue
                     else:
                         return None
+
             return packageMgr
+
         except(KeyboardInterrupt, SystemExit):
             raise
         except Exception:
@@ -118,13 +130,16 @@ class Pkghelper(object):
             raise
 
     def install(self, package):
-        '''Install the named package. Return a bool indicating installation
+        '''
+        Install the named package. Return a bool indicating installation
         success or failure.
 
         @param string package : Name of the package to be installed, must be
             recognizable to the underlying package manager.
         @return bool :
-        @author: Derek T Walker July 2012'''
+        @author: Derek T Walker July 2012
+        @change: Breen Malmberg - Feb 25 2019 - Removed unreachable code line 146
+        '''
 
         try:
             if self.enviro.geteuid() is 0 and self.pckgr:
@@ -132,7 +147,6 @@ class Pkghelper(object):
                     return True
                 else:
                     return False
-                return False
             else:
                 msg = "Not running as root, only root can use the pkghelper \
 install command"
@@ -145,12 +159,15 @@ install command"
             raise
 
     def remove(self, package):
-        '''Remove a package. Return a bool indicating success or failure.
+        '''
+        Remove a package. Return a bool indicating success or failure.
 
         @param string package : Name of the package to be removed, must be
             recognizable to the underlying package manager.
         @return bool :
-        @author Derek T Walker July 2012'''
+        @author Derek T Walker July 2012
+        '''
+
         try:
             if self.enviro.geteuid() == 0:
                 if self.pckgr.removepackage(package):
@@ -169,14 +186,17 @@ remove command"
             raise
 
     def check(self, package):
-        '''Check for the existence of a package in the package manager.
+        '''
+        Check for the existence of a package in the package manager.
         Return a bool; True if found.
 
         @param string package : Name of the package whose installation status
             is to be checked. Must be recognizable to the underlying package
             manager.
         @return bool :
-        @author Derek T Walker July 2012'''
+        @author Derek T Walker July 2012
+        '''
+
         try:
             if self.pckgr.checkInstall(package):
                 return True
@@ -190,6 +210,18 @@ remove command"
             raise
 
     def checkAvailable(self, package):
+        '''
+        check the reachable repositories to see if the specified package
+        is available to install or not
+
+        @param package: string; name of package to check
+        @return: True/False
+        @rtype: bool
+        @author: ???
+        @change: Breen Malmberg - Feb 25 2019 - added doc string; moved
+                unreachable logging call to before call to raise, on line 228
+        '''
+
         try:
             if self.pckgr.checkAvailable(package):
                 return True
@@ -199,8 +231,8 @@ remove command"
             raise
         except Exception:
             info = traceback.format_exc()
-            raise
             self.logger.log(LogPriority.ERROR, info)
+            raise
 
     def checkUpdate(self, package=""):
         '''
@@ -216,7 +248,6 @@ remove command"
         @author: Breen Malmberg
         '''
 
-        # defaults
         updatesavail = False
 
         try:
@@ -227,8 +258,12 @@ remove command"
                     self.logger.log(LogPriority.DEBUG, "Parameter: package must be of type string. Got: " + str(type(package)))
                     return updatesavail
 
-            if self.pckgr.checkUpdate(package):
-                updatesavail = True
+            try:
+                if self.pckgr.checkUpdate(package):
+                    updatesavail = True
+            except AttributeError:
+                self.logger.log(LogPriority.DEBUG, "checkUpdate function not supported on this system.")
+                return updatesavail
 
         except Exception:
             raise
@@ -252,7 +287,8 @@ remove command"
 
         try:
 
-            updatesavail = self.pckgr.checkUpdates(package)
+            updatesavail = self.checkUpdate(package)
+
             if updatesavail:
                 self.logger.log(LogPriority.DEBUG, "Updates are available to install")
                 if not self.pckgr.Update(package):
@@ -266,16 +302,17 @@ remove command"
         except Exception:
             raise
         return updated
-            
 
     def getPackageFromFile(self, filename):
-        '''Returns the name of the package that provides the given
+        '''
+        Returns the name of the package that provides the given
         filename/path.
 
         @param: string filename : The name or path of the file to resolve
         @return: string name of package if found, None otherwise
         @author: Eric Ball
         '''
+
         try:
             return self.pckgr.getPackageFromFile(filename)
         except(KeyboardInterrupt, SystemExit):
@@ -286,7 +323,37 @@ remove command"
             raise(self.detailedresults)
 
     def getInstall(self):
-        return self.pckgr.getInstall()
+        '''
+        return the commandline command for installing a package
+        with the current, detected package manager
+
+        @return:
+        @rtype: string
+        @author: ???
+        @change: Breen Malmberg - Feb 25 2019 - added doc string; added try/except;
+                added logging
+        '''
+
+        try:
+            return self.pckgr.getInstall()
+        except AttributeError:
+            self.logger.log(LogPriority.DEBUG, "getInstall function not supported on this system.")
+            return ""
 
     def getRemove(self):
-        return self.pckgr.getRemove()
+        '''
+        return the commandline command for removing a package
+        with the current, detected package manager
+
+        @return:
+        @rtype: string
+        @author: ???
+        @change: Breen Malmberg - Feb 25 2019 - added doc string; added try/except;
+                added logging
+        '''
+
+        try:
+            return self.pckgr.getRemove()
+        except AttributeError:
+            self.logger.log(LogPriority.DEBUG, "getRemove function not supported on this system.")
+            return ""
