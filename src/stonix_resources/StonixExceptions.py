@@ -194,7 +194,7 @@ class repoError(Exception):
         msg = "No further information available"
 
         codeDict = {0: "Success",
-                    1: "An error occurred",
+                    1: "yum: An error occurred. (Note: this could simply mean the package was not found.)",
                     100: "There are packages available for update"}
 
         try:
@@ -217,8 +217,8 @@ class repoError(Exception):
         msg = "No further information available"
 
         codeDict = {0: "Success",
-                    1: "An error occurred",
-                    2: "Unrecoverable fatal error",
+                    1: "apt-get: An error occurred. (Note: this could simply mean the package was not found.)",
+                    2: "apt-get: Unrecoverable fatal error",
                     100: "apt-get was unavailable due to process lock / busy"}
 
         try:
@@ -241,8 +241,8 @@ class repoError(Exception):
         msg = "No further information available"
 
         codeDict = {0: "Operation was successful",
-                    1: "An error occurred which was handled by dnf",
-                    3: "An unknown unhandled error occurred during operation",
+                    1: "dnf: An error occurred which was handled by dnf",
+                    3: "dnf: An unknown, unhandled error occurred during operation",
                     100: "There are packages available for update",
                     200: "There was a problem with acquiring or releasing of locks"}
 
