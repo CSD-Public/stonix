@@ -367,13 +367,13 @@ class ConfigureScreenLocking(RuleKVEditor):
                             if int(num) > 900:
                                 compliant = False
                                 self.detailedresults += "Idle delay value " + \
-                                    "is not 900 seconds or lower (value: " +\
+                                    "is not 900 seconds (value: " +\
                                     num + ")\n"
                             #if they have a value less than 900 secs this is ok
                             #and we set the self.gsettingsidletime variable which is
                             #used during setting gsettings values in the fixGnome method
-                            elif int(num) < 900:
-                                self.gsettingsidletime = num
+                            # elif int(num) < 900:
+                            #     self.gsettingsidletime = num
                             elif int(num) == 0:
                                 compliant = False
                                 self.detailedresults += "Idle delay set  " + \
@@ -715,7 +715,8 @@ class ConfigureScreenLocking(RuleKVEditor):
                        " set org.gnome.desktop.screensaver lock-delay 0",
                        " set org.gnome.desktop.screensaver picture-opacity 100",
                        " set org.gnome.desktop.screensaver picture-uri ''",
-                       " set org.gnome.desktop.session idle-delay " + self.gsettingsidletime]
+                       " set org.gnome.desktop.session idle-delay 900"]
+                       # " set org.gnome.desktop.session idle-delay " + self.gsettingsidletime]
             for cmd in setcmds:
                 cmd2 = gsettings + cmd
                 self.cmdhelper.executeCommand(cmd2)
