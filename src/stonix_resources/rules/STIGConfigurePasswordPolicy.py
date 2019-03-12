@@ -106,7 +106,7 @@ class STIGConfigurePasswordPolicy(Rule):
                                "10.11": baseconfigpath + "U_Apple_OS_X_10-11_V1R1_STIG_Security_and_Privacy_Policy.mobileconfig",
                                "10.12": baseconfigpath + "U_Apple_macOS_10-12_V1R1_STIG_Security_and_Privacy_Policy.mobileconfig",
                                "10.13": baseconfigpath + "U_Apple_OS_X_10-13_V1R0-1_STIG_Security_and_Privacy_Policy.mobileconfig",
-                               "10.14": baseconfigpath + "stonix4macSecurity&PrivacymacOSMojave10.14.mobileconfig"}
+                               "10.14": baseconfigpath + "stonix4macSecurity\&PrivacymacOSMojave10.14.mobileconfig"}
         #the following path and dictionaries are for testing on local vm's
         #without installing stonix package each time.  DO NOT DELETE
         # basetestpath = "/Users/username/stonix/src/stonix_resources/files/"
