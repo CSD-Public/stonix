@@ -55,6 +55,7 @@ This class is responsible for securing the Apache webserver configuration.
                 locatesslfiles to account for permission errors
 @change: 2019/2/14 Brandon R. Gonzales - Set apache2 environment variables
                 at beginning of fix if they are not already set
+@change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
 '''
 from __future__ import absolute_import
 
@@ -97,7 +98,7 @@ class SecureApacheWebserver(Rule):
         self.rootrequired = True
         self.applicable = {'type': 'white',
                            'family': ['linux', 'freebsd'],
-                           'os': {'Mac OS X': ['10.11', 'r', '10.14.10']}}
+                           'os': {'Mac OS X': ['10.12', 'r', '10.14.10']}}
         self.comment = re.compile('^#|^;')
         self.ch = CommandHelper(self.logdispatch)
         self.ph = Pkghelper(self.logdispatch, self.environ)

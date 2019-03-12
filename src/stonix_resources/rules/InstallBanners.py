@@ -42,6 +42,7 @@ Install and configure warning banners, to be displayed at startup.
 @change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
 @change: 1/17/2019 dwalker  - hotfix to correct issue with configuration
     file changes in the reportcommon and fixcommon methods
+@change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
 '''
 
 from __future__ import absolute_import
@@ -90,7 +91,7 @@ class InstallBanners(RuleKVEditor):
         self.iditerator = 0
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.11', 'r', '10.14.10']}}
+                           'os': {'Mac OS X': ['10.12', 'r', '10.14.10']}}
         # init CIs
         datatype = 'bool'
         key = 'INSTALLBANNERS'

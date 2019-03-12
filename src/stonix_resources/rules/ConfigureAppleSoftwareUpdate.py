@@ -44,6 +44,7 @@ dictionary
             detailed results when the system requires software updates
 @change: 2018/11/16 Brandon R. Gonzales - ConfigureCatalogURL is now fixed
             through command helper.
+@change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
 '''
 from __future__ import absolute_import
 import re
@@ -109,7 +110,7 @@ class ConfigureAppleSoftwareUpdate(RuleKVEditor):
         self.guidance = ['CCE 14813-0', 'CCE 14914-6', 'CCE 4218-4',
                          'CCE 14440-2']
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.11', 'r', '10.14.10']}}
+                           'os': {'Mac OS X': ['10.12', 'r', '10.14.10']}}
 
         if self.environ.getostype() == "Mac OS X":
             self.ccurlci = None
