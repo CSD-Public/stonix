@@ -54,6 +54,7 @@ that access the version variable to use this copy.
 @change: 2018/08/21 - Brandon - changed CRACKLIB_HIGH_REGEX minlen and
                                 PWQUALITY_HIGH_REGEX minlen from 12 to 14
 @change: 2018/11/14 - Breen Malmberg - incremented STONIXVERSION = '0.9.28'
+@change: 2019/03/12 - ekkehard - incremented STONIXVERSION = '0.9.28'
 '''
 
 FISMACAT = 'med'
@@ -64,7 +65,7 @@ FISMACAT = 'med'
 # arbitrary values are fine. A recommended local version might look like this:
 # 1.2.2-local3 or just 1.2.2-3 or 1.2.2.3
 # Variable Type: String
-STONIXVERSION = '0.9.28'
+STONIXVERSION = '0.9.29'
 
 # The report server should be a string containing a valid FQDN or IP address
 # for the host that STONIX should upload it's run report XML data to.
