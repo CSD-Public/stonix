@@ -54,7 +54,7 @@ that access the version variable to use this copy.
 @change: 2018/08/21 - Brandon - changed CRACKLIB_HIGH_REGEX minlen and
                                 PWQUALITY_HIGH_REGEX minlen from 12 to 14
 @change: 2018/11/14 - Breen Malmberg - incremented STONIXVERSION = '0.9.28'
-@change: 2019/03/12 - ekkehard - incremented STONIXVERSION = '0.9.28'
+@change: 2019/03/12 - ekkehard - incremented STONIXVERSION = '0.9.29'
 '''
 
 FISMACAT = 'med'
