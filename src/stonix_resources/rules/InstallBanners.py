@@ -42,6 +42,9 @@ Install and configure warning banners, to be displayed at startup.
 @change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
 @change: 1/17/2019 dwalker  - hotfix to correct issue with configuration
     file changes in the reportcommon and fixcommon methods
+@change: 3/12/2019 dwalker - hotfix to fixlinux method to correct all available
+    desktop managers if installed.  Previous implementation was only correcting
+    the first desktop manager found.
 '''
 
 from __future__ import absolute_import
@@ -1001,7 +1004,7 @@ class InstallBanners(RuleKVEditor):
                             greetlines.append(line)
                         if bannerlines != greetlines:
                             retval = False
-                            self.detailedresults += "\nDid not find correct " + \
+                            self.detailedresults += "\nDid not find " + \
                                 "correct warning banner in " + self.kdefile
                             debug = "Current GreetString: " + "".join(greetlines) \
                                 + "\nBanner wanted: " + "".join(bannerlines)
@@ -1122,10 +1125,10 @@ class InstallBanners(RuleKVEditor):
             elif self.gnome3:
                 if not self.fixgnome3():
                     success = False
-            elif self.lightdm:
+            if self.lightdm:
                 if not self.fixlightdm():
                     success = False
-            elif self.kde:
+            if self.kde:
                 if not self.fixkde():
                     success = False
 
