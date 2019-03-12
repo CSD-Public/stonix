@@ -37,6 +37,7 @@ Created on Dec 10, 2013
 @change 2017/08/28 Breen Malmberg Fixing to use new help text methods
 @change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
 @change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
+@change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
 '''
 
 from __future__ import absolute_import
@@ -64,7 +65,7 @@ class DisableCamera(Rule):
         self.rootrequired = True
         self.guidance = ["CIS 1.2.6"]
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.11', 'r', '10.14.10']}}
+                           'os': {'Mac OS X': ['10.12', 'r', '10.14.10']}}
         self.logger = logger
         self.iditerator = 0
         datatype = 'bool'

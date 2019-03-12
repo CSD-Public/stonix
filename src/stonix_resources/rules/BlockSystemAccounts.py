@@ -46,6 +46,7 @@ mac os x functionality; refactored code for readability; fixed pep8 violations
 @change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
 @change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
 @change: 2018/10/50 Breen Malmberg - refactor of rule
+@change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
 '''
 
 from __future__ import absolute_import
@@ -86,7 +87,7 @@ shells set the value of this to False, or No.'''
         default = True
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.11', 'r', '10.14.10']}}
+                           'os': {'Mac OS X': ['10.12', 'r', '10.14.10']}}
         self.ci = self.initCi(datatype, key, instructions,
                                                default)
         self.guidance = ['CIS', 'NSA(2.3.1.4)', 'cce-3987-5', '4525-2',

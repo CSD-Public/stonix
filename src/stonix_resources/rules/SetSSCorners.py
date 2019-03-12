@@ -32,6 +32,7 @@ to disable the screen saver.
 @change: 2017/07/17 ekkehard - make eligible for macOS High Sierra 10.13
 @change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
 @change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
+@change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
 '''
 
 from __future__ import absolute_import
@@ -63,7 +64,7 @@ class SetSSCorners(Rule):
         self.sethelptext()
         self.guidance = ['CIS', '1.4.8.1', '1.4.8.2']
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.11', 'r', '10.14.10']},
+                           'os': {'Mac OS X': ['10.12', 'r', '10.14.10']},
                            'noroot': True}
 
         # set up configuration items for this rule

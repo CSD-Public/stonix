@@ -43,6 +43,7 @@ that occurs when system sound card(s) is missing firmware
 @change: 2018/12/07 dwalker - updated rule with more debugging, more recorded
     state change events, removed overriding of undo method, implemented pre-
     written methods for reading file, writing to file, and creating file.
+@change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
 '''
 from __future__ import absolute_import
 import traceback
@@ -84,7 +85,7 @@ class MuteMic(Rule):
         self.guidance = ['CIS']
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.11', 'r', '10.14.10']}}
+                           'os': {'Mac OS X': ['10.12', 'r', '10.14.10']}}
         self.root = True
         if self.environ.geteuid() != 0:
             self.root = False

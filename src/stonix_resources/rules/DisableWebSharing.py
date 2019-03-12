@@ -36,6 +36,7 @@ well-managed web server is recommended.
 @change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
 @change: 2018/02/16 bgonz12 - Fix function call to disableService
 @change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
+@change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
 '''
 
 from __future__ import absolute_import
@@ -71,7 +72,7 @@ well-managed web server is recommended.
         self.rootrequired = True
         self.guidance = ['CIS 1.4.14.6']
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.11', 'r', '10.14.10']}}
+                           'os': {'Mac OS X': ['10.12', 'r', '10.14.10']}}
         self.logger = logger
         # set up CIs
         datatype = 'bool'

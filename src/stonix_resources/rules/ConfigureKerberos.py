@@ -38,6 +38,7 @@ dictionary
 @change: 2017/10/24 rsn - removed unused service helper
 @change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
 @change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
+@change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
 '''
 from __future__ import absolute_import
 import os
@@ -69,7 +70,7 @@ class ConfigureKerberos(Rule):
         self.rootrequired = True
         self.guidance = []
         self.applicable = {'type': 'white', 'family': 'linux',
-                           'os': {'Mac OS X': ['10.11', 'r', '10.14.10']}}
+                           'os': {'Mac OS X': ['10.12', 'r', '10.14.10']}}
         # This if/else statement fixes a bug in Configure Kerberos that
         # occurs on Debian systems due to the fact that Debian has no wheel
         # group by default.

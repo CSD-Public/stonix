@@ -36,6 +36,7 @@ Created on May 31, 2016
 @change: 2018/02/27 bgonz12 - Added tag to geditor in fixgnome3
 @change: 2018/12/12 dwalker - Updating rule to properly record change events
     and not override the undo method.
+@change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
 '''
 from __future__ import absolute_import
 
@@ -91,7 +92,7 @@ managers will not save work in progress when the logout occurs.
         self.rootrequired = True
         self.applicable = {'type': 'white',
                            'family': ['linux'],
-                           'os': {'Mac OS X': ['10.11', 'r', '10.11.10']},
+                           'os': {'Mac OS X': ['10.12', 'r', '10.11.10']},
                            'fisma': 'high'}
         self.cmdhelper = CommandHelper(self.logger)
         self.guidance = ['NIST 800-53 AC-2(5)']

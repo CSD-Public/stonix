@@ -39,6 +39,7 @@ which conflicted with DisableIPV6 and NoCoreDumps which expected 644.
     updated fixLinux method to set permissions in correct order so that
     events for permission corrections are actually recorded to harmonize
     with unit test.
+@change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
 '''
 from __future__ import absolute_import
 from ..CommandHelper import CommandHelper
@@ -65,7 +66,7 @@ class NoCoreDumps(Rule):
         self.guidance = ["NSA 2.2.4.2"]
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.11', 'r', '10.14.10']}}
+                           'os': {'Mac OS X': ['10.12', 'r', '10.14.10']}}
 
         datatype = 'bool'
         key = 'NOCOREDUMPS'

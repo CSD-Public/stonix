@@ -43,6 +43,7 @@ Created on Apr 9, 2013
 @change: 2018/06/08 Ekkehard - make eligible for macOS Mojave 10.14
 @change: 2018/11/15 Breen Malmberg - change to location configurations are being placed
 @change: 11/20/2018 Breen Malmberg - rule refactor
+@change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
 '''
 
 from __future__ import absolute_import
@@ -68,7 +69,7 @@ class DisableIPV6(Rule):
         self.guidance = ["NSA 2.5.3.1"]
         self.applicable = {'type': 'white',
                            'family': ['linux'],
-                           'os': {'Mac OS X': ['10.11', 'r', '10.14.10']}}
+                           'os': {'Mac OS X': ['10.12', 'r', '10.14.10']}}
 
         datatype = 'bool'
         key = 'DISABLEIPV6'

@@ -43,6 +43,7 @@ the Fix method.
 @change: 2018/05/04 bgonz12 - Added detailed results message to ignore 
         non-compliancy if ftp is not on it's own partition
 @change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
+@change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
 '''
 
 from __future__ import absolute_import
@@ -89,7 +90,7 @@ of users allowed to access ftp and set the default umask for ftp users.
                          'CCE 4549-2', 'CCE 4554-2', 'CCE 4443-8']
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.11', 'r', '10.14.10']}}
+                           'os': {'Mac OS X': ['10.12', 'r', '10.14.10']}}
 
         # init CI(s)
         datatype = 'bool'

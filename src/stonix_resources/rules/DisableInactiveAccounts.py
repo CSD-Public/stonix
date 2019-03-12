@@ -34,6 +34,7 @@ password, will be disabled.
 @change: 2017/08/28 Breen Malmberg Fixing to use new help text methods
 @change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
 @change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
+@change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
 '''
 
 from __future__ import absolute_import
@@ -80,7 +81,7 @@ class DisableInactiveAccounts(Rule):
         self.ci = self.initCi(datatype, key, instructions, default)
 
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.11', 'r', '10.14.10']},
+                           'os': {'Mac OS X': ['10.12', 'r', '10.14.10']},
                            'fisma': 'high'}
 
         self.initobjs()

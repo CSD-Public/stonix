@@ -35,6 +35,7 @@ dictionary
 @change: 2017/08/28 ekkehard - Added self.sethelptext()
 @change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
 @change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
+@change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
 '''
 
 from __future__ import absolute_import
@@ -74,7 +75,7 @@ class ConfigurePowerManagement(Rule):
         self.rootrequired = True
         self.guidance = []
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.11', 'r', '10.14.10']}}
+                           'os': {'Mac OS X': ['10.12', 'r', '10.14.10']}}
         self.psconfiguration = \
         {"ACDisableSystemSleep":
          {"HelpText": "Sets the Mac to stay awake if power is plugged-in. Default(AC Power, sleep, 0).",
