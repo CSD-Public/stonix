@@ -101,12 +101,12 @@ class STIGConfigurePasswordPolicy(Rule):
                              "10.11": baseconfigpath + "U_Apple_OS_X_10-11_V1R1_STIG_Passcode_Policy.mobileconfig",
                              "10.12": baseconfigpath + "U_Apple_macOS_10-12_V1R1_STIG_Passcode_Policy.mobileconfig",
                              "10.13": baseconfigpath + "U_Apple_OS_X_10-13_V1R0-1_STIG_Passcode_Policy.mobileconfig",
-                             "10.14": ""}
+                             "10.14": baseconfigpath + "stonix4macPasscodeConfigurationProfilemacOSMojave10.14.mobileconfig"}
         self.secprofiledict = {"10.10": baseconfigpath + "U_Apple_OS_X_10-10_Workstation_V1R2_STIG_Security_Privacy_Policy.mobileconfig",
                                "10.11": baseconfigpath + "U_Apple_OS_X_10-11_V1R1_STIG_Security_and_Privacy_Policy.mobileconfig",
                                "10.12": baseconfigpath + "U_Apple_macOS_10-12_V1R1_STIG_Security_and_Privacy_Policy.mobileconfig",
                                "10.13": baseconfigpath + "U_Apple_OS_X_10-13_V1R0-1_STIG_Security_and_Privacy_Policy.mobileconfig",
-                               "10.14": ""}
+                               "10.14": baseconfigpath + "stonix4macSecurity&PrivacymacOSMojave10.14.mobileconfig"}
         #the following path and dictionaries are for testing on local vm's
         #without installing stonix package each time.  DO NOT DELETE
         # basetestpath = "/Users/username/stonix/src/stonix_resources/files/"
@@ -115,13 +115,13 @@ class STIGConfigurePasswordPolicy(Rule):
         #     "10.11": basetestpath + "U_Apple_OS_X_10-11_V1R1_STIG_Passcode_Policy.mobileconfig",
         #     "10.12": basetestpath + "U_Apple_macOS_10-12_V1R1_STIG_Passcode_Policy.mobileconfig",
         #     "10.13": basetestpath + "U_Apple_OS_X_10-13_V1R0-1_STIG_Passcode_Policy.mobileconfig",
-        #     "10.14": ""}
+        #     "10.14": basetestpath + "stonix4macPasscodeConfigurationProfilemacOSMojave10.14.mobileconfig"}
         # self.secprofiledict = {
         #     "10.10": basetestpath + "U_Apple_OS_X_10-10_Workstation_V1R2_STIG_Security_Privacy_Policy.mobileconfig",
         #     "10.11": basetestpath + "U_Apple_OS_X_10-11_V1R1_STIG_Security_and_Privacy_Policy.mobileconfig",
         #     "10.12": basetestpath + "U_Apple_macOS_10-12_V1R1_STIG_Security_and_Privacy_Policy.mobileconfig",
         #     "10.13": basetestpath + "U_Apple_OS_X_10-13_V1R0-1_STIG_Security_and_Privacy_Policy.mobileconfig",
-        #     "10.14": ""}
+        #     "10.14": basetestpath + "stonix4macSecurity&PrivacymacOSMojave10.14.mobileconfig"}
         try:
             self.pwprofile = self.passprofiledict[str(self.os_major_ver) + "." + str(self.os_minor_ver)]
         except KeyError:
@@ -232,10 +232,12 @@ class STIGConfigurePasswordPolicy(Rule):
                 if output:
                     for line in output:
                         if re.search("^There are no configuration profiles installed", line.strip()):
-                            self.compliant = False
                             self.detailedresults += "There are no configuration profiles installed\n"
                             break
-                        if re.search("mil\.disa\.STIG\.passwordpolicy\.alacarte$", line.strip()):
+                        if self.os_minor_ver == "14":
+                            if re.search("31208FA5-819D-4311-96BF-A88B953876F9", line.strip()):
+                                self.pwcompliant = True
+                        elif re.search("mil\.disa\.STIG\.passwordpolicy\.alacarte$", line.strip()):
                             self.pwcompliant = True
                         if self.os_minor_ver == "12":
                             if re.search("mil\.disa\.STIG\.Security_Privacy\.alacarte$", line.strip()):
@@ -243,7 +245,9 @@ class STIGConfigurePasswordPolicy(Rule):
                         elif self.os_minor_ver == "13":
                             if re.search("3C05C7B8\-6DE9\-4162\-96A9\-9A4D0507CD01", line.strip()):
                                 self.secompliant = True
-
+                        elif self.os_minor_ver == "14":
+                            if re.search("A4BF53F7-4060-4BDA-A438-4550CBCB23D2", line.strip()):
+                                self.secompliant = True
 
             if not self.pwcompliant:
                 self.detailedresults += "\nPassword policy profile is not installed"
