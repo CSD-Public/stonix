@@ -43,6 +43,9 @@ Install and configure warning banners, to be displayed at startup.
 @change: 1/17/2019 dwalker  - hotfix to correct issue with configuration
     file changes in the reportcommon and fixcommon methods
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
+@change: 3/12/2019 dwalker - hotfix to fixlinux method to correct all available
+    desktop managers if installed.  Previous implementation was only correcting
+    the first desktop manager found.
 '''
 
 from __future__ import absolute_import
@@ -143,7 +146,7 @@ class InstallBanners(RuleKVEditor):
         '''
 
         self.gnome2 = True
-        self.bannertext = GDMWARNINGBANNER
+        self.gnome2bannertext = GDMWARNINGBANNER
 
     def forcelightdm(self):
         '''
@@ -211,7 +214,7 @@ class InstallBanners(RuleKVEditor):
         '''
 
         self.gnome3 = True
-        self.bannertext = GDM3WARNINGBANNER
+        self.gnome3bannertext = GDM3WARNINGBANNER
 
     def setkde(self):
         '''
@@ -221,7 +224,7 @@ class InstallBanners(RuleKVEditor):
         '''
 
         self.kde = True
-        self.bannertext = ALTWARNINGBANNER
+        self.kdebannertext = ALTWARNINGBANNER
         self.kdelocs = ['/etc/kde/kdm/kdmrc',
                         '/etc/kde3/kdm/kdmrc',
                         '/etc/kde4/kdm/kdmrc',
@@ -234,7 +237,7 @@ class InstallBanners(RuleKVEditor):
         tmpfile = self.kdefile + '.stonixtmp'
 
         key1 = 'GreetString'
-        val1 = '"' + self.bannertext + '"'
+        val1 = '"' + self.kdebannertext + '"'
         self.greetbanner = [key1, val1]
         key2 = 'UserList'
         val2 = 'false'
@@ -279,7 +282,7 @@ class InstallBanners(RuleKVEditor):
         '''
 
         self.lightdm = True
-        self.bannertext = ALTWARNINGBANNER
+        self.ldmbannertext = ALTWARNINGBANNER
         key1 = '/usr/share/lightdm/lightdm.conf.d/50-ubuntu.conf'
         val1 = ['[SeatDefaults]',
                 'allow-guest=false',
@@ -770,10 +773,10 @@ class InstallBanners(RuleKVEditor):
             elif self.gnome3:
                 if not self.reportgnome3():
                     compliant = False
-            elif self.lightdm:
+            if self.lightdm:
                 if not self.reportlightdm():
                     compliant = False
-            elif self.kde:
+            if self.kde:
                 if not self.reportkde():
                     compliant = False
 
@@ -962,51 +965,51 @@ class InstallBanners(RuleKVEditor):
                         self.detailedresults += '\nThe following required options are missing from ' + \
                             str(self.kdefile) + ':\n' + '\n'.join(str(f) for f in self.kdeditor.fixables) \
                             + '\n'
-                else:
-                    # Since the warning banner spans multiple lines in the
-                    # config file, the KVEditor does not properly detect it.
-                    # This is a modified version of the KVATaggedConf algorithm
-                    # to find a multi-line value
-                    conflines = open(self.kdefile, "r").readlines()
-                    tagstart = -1
-                    greetlinestart = -1
-                    for ind, line in enumerate(conflines):
-                        if re.search("^\[X-\*-Greeter\]", line):
-                            tagstart = ind + 1
-                            break
-                    if tagstart > 0:
-                        for ind, line in enumerate(conflines[tagstart:]):
-                            if re.search("^#", line) or \
-                               re.search("^\s*$", line):
-                                continue
-                            elif re.search("^\[.*?\]\s*$", line):  # New tag
-                                retval = False
-                                self.detailedresults += "\nCould not find " + \
-                                    "required banner in " + self.kdefile
-                                break
-                            elif re.search("^" + self.greetbanner[0] + "=",
-                                           line):
-                                greetlinestart = ind
-                                break
-                    if greetlinestart > 0:
-                        banner = self.bannertext
-                        bannerlines = banner.splitlines(True)
-                        greetlines = []
-                        startline = conflines[greetlinestart +
-                                              tagstart].replace(self.greetbanner[0]
-                                                                + '="', '')
-                        greetlines.append(startline)
-                        for line in conflines[greetlinestart + tagstart + 1:]:
-                            if re.search('^"\s*', line):
-                                break
-                            greetlines.append(line)
-                        if bannerlines != greetlines:
-                            retval = False
-                            self.detailedresults += "\nDid not find correct " + \
-                                "correct warning banner in " + self.kdefile
-                            debug = "Current GreetString: " + "".join(greetlines) \
-                                + "\nBanner wanted: " + "".join(bannerlines)
-                            self.logger.log(LogPriority.DEBUG, debug)
+                # else:
+                #     # Since the warning banner spans multiple lines in the
+                #     # config file, the KVEditor does not properly detect it.
+                #     # This is a modified version of the KVATaggedConf algorithm
+                #     # to find a multi-line value
+                #     conflines = open(self.kdefile, "r").readlines()
+                #     tagstart = -1
+                #     greetlinestart = -1
+                #     for ind, line in enumerate(conflines):
+                #         if re.search("^\[X-\*-Greeter\]", line):
+                #             tagstart = ind + 1
+                #             break
+                #     if tagstart > 0:
+                #         for ind, line in enumerate(conflines[tagstart:]):
+                #             if re.search("^#", line) or \
+                #                re.search("^\s*$", line):
+                #                 continue
+                #             elif re.search("^\[.*?\]\s*$", line):  # New tag
+                #                 retval = False
+                #                 self.detailedresults += "\nCould not find " + \
+                #                     "required banner in " + self.kdefile
+                #                 break
+                #             elif re.search("^" + self.greetbanner[0] + "=",
+                #                            line):
+                #                 greetlinestart = ind
+                #                 break
+                #     if greetlinestart > 0:
+                #         banner = self.bannertext
+                #         bannerlines = banner.splitlines(True)
+                #         greetlines = []
+                #         startline = conflines[greetlinestart +
+                #                               tagstart].replace(self.greetbanner[0]
+                #                                                 + '="', '')
+                #         greetlines.append(startline)
+                #         for line in conflines[greetlinestart + tagstart + 1:]:
+                #             if re.search('^"\s*', line):
+                #                 break
+                #             greetlines.append(line)
+                #         if bannerlines != greetlines:
+                #             retval = False
+                #             self.detailedresults += "\nDid not find " + \
+                #                 "correct warning banner in " + self.kdefile
+                #             debug = "Current GreetString: " + "".join(greetlines) \
+                #                 + "\nBanner wanted: " + "".join(bannerlines)
+                #             self.logger.log(LogPriority.DEBUG, debug)
         except Exception:
             raise
         return retval
@@ -1123,10 +1126,10 @@ class InstallBanners(RuleKVEditor):
             elif self.gnome3:
                 if not self.fixgnome3():
                     success = False
-            elif self.lightdm:
+            if self.lightdm:
                 if not self.fixlightdm():
                     success = False
-            elif self.kde:
+            if self.kde:
                 if not self.fixkde():
                     success = False
 
