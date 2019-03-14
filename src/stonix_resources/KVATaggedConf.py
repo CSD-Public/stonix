@@ -84,19 +84,27 @@ class KVATaggedConf():
 ###############################################################################
     def getIntent(self):
         return self.intent
-###############################################################################
+
     def getValue(self, tag, dict1):
-        '''will either return True, False, or a blank dictionary {}'''
-        if self.configType == "openeq":
+        '''
+        will either return True, False, or a blank dictionary {}
+
+        '''
+        if self.configType in ["openeq", "closedeq"]:
             return self.getOpenClosedValue(tag, dict1)
-        if self.configType == "closedeq":
-            return self.getOpenClosedValue(tag, dict1)
-        if self.configType == "space":
+        elif self.configType == "space":
             return self.getSpaceValue(tag, dict1)
-        if self.configType == "spaceeq":
+        elif self.configType == "spaceeq":
             return self.getSpaceEqValue(tag, dict1)
-###############################################################################
+
     def getOpenClosedValue(self, tag, dict1):
+        '''
+
+        :param tag:
+        :param dict1:
+        :return:
+        '''
+
         if self.contents:
             contents = self.contents
             contents2 = ""
@@ -185,6 +193,13 @@ class KVATaggedConf():
                 return True
 ###############################################################################
     def getSpaceValue(self, tag, dict1):
+        '''
+
+        :param tag:
+        :param dict1:
+        :return:
+        '''
+
         if self.contents:
             contents = self.contents
             foundtag = False
