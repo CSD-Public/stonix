@@ -299,6 +299,7 @@ class MinimizeServices(Rule):
                                'crond.service', 'cups', 'cups.service',
                                'debian-fixup.service',
                                'dbus.service', 'dbus',
+                               'dbus-daemon.service',
                                'display-manager.service',
                                'dm-event.service',
                                'dmraid-activation.service',

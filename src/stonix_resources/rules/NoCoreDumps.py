@@ -412,7 +412,7 @@ class NoCoreDumps(Rule):
         success = True
 
         try:
-
+            self.created1 = False
             self.cmdhelper = CommandHelper(self.logger)
 
             if self.environ.getostype() == "Mac OS X":
