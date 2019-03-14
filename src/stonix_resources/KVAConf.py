@@ -23,8 +23,9 @@
 ###############################################################################
 Created on May 6, 2013
 
-@author: dwalker
+@author: Derek Walker
 '''
+
 from logdispatcher import LogPriority
 from stonixutilityfunctions import writeFile
 import os
@@ -32,7 +33,8 @@ import traceback
 import re
 
 class KVAConf():
-    '''This class checks files for correctness that consist of key:value pairs
+    '''
+    This class checks files for correctness that consist of key:value pairs
     either in the form of closed equal separated (k=v), open separated (k = v),
     or space separated (k v).  To implement this class, the calling KVEditor 
     class must have already had the path set and the intent set.  The intent 
@@ -52,12 +54,21 @@ class KVAConf():
     in which the dictionary would be in the form of: 
     {"blacklist:["bluetooth",
                  "rivafb",
-                 "hisax"]}'''
-###############################################################################
+                 "hisax"]}
+    '''
+
     def __init__(self, path, tmpPath, intent, configType, logger):
+        '''
+
+        :param path:
+        :param tmpPath:
+        :param intent:
+        :param configType:
+        :param logger:
+        '''
+
         self.fixables = {}
         self.removeables = {}
-        self.contents = []
         self.logger = logger
         self.path = path
         self.tmpPath = tmpPath
@@ -67,86 +78,102 @@ class KVAConf():
         self.tempstring = ""
         self.intent = intent
         self.detailedresults = ""
-###############################################################################
+
     def setPath(self, path):
         '''
         Private method to set the path of the configuration file
-        @author: dwalker
+        @author: Derek Walker
         @param path: the path to file to be handled
         '''
         self.path = path
         self.storeContents(self.path)
-###############################################################################
+
     def getPath(self):
         '''
         Private method to retrieve the path of the configuration file
-        @author: dwalker
+
+        @author: Derek Walker
         @return: Bool
         '''
         return self.path
-###############################################################################
+
     def setTmpPath(self, tmpPath):
         '''
         Private method to set the temporary path of the configuration file
         for writing before renaming to original file again
-        @author: dwalker
+
+        @author: Derek Walker
         @param tmpPath: the path to the temporary file to be written to
         '''
         self.tmpPath = tmpPath
-###############################################################################
+
     def getTmpPath(self):
         '''
         Private method to retrieve the temporary path of the configuration
         file to be written to before renaming to original file again
-        @author: dwalker
+
+        @author: Derek Walker
         @return: Bool
         '''
         return self.tmpPath
-###############################################################################
+
     def setIntent(self, intent):
         '''Private method to set the intent of self.data.  Should either be a
         value of "present" or "notpresent" to indicate whether key value pairs
         in self.data are desired or not desired in the configuration file
         respectively.  The point of this variable is to change from present 
         to notpresent when needed to set desirable and non desireable key 
-        value pairs back and forth until update method is run. 
-        @author: dwalker
+        value pairs back and forth until update method is run.
+
+        @author: Derek Walker
         @param intent: present | notpresent
         '''
         self.intent = intent
-###############################################################################
+
     def getIntent(self):
         '''
         Private method to retrieve the current intent
-        @author: dwalker
+
+        @author: Derek Walker
         @return: present|notpresent
         '''
         return self.intent
-###############################################################################
+
     def setConfigType(self, configType):
+        '''
+
+        :param configType:
+        :return:
+        '''
+
         self.configType = configType
         return True
-###############################################################################
+
     def getConfigType(self):
+        '''
+
+        :return:
+        '''
+
         return self.configType
-###############################################################################
+
     def validate(self, key, val):
-        '''Private outer method to call submethod getOpenClosedValue() or
+        '''
+        Private outer method to call submethod getOpenClosedValue() or
         getSpaceValue() depending on the value of self.configType.
-        @author: dwalker
+
+        @author: Derek Walker
         @param key: key in a dictionary passed from calling class
         @param val: value part in dictionary passed from calling class
         @return: Bool
         '''
-        if self.configType == 'openeq':
-            return self.getOpenClosedValue(key, val)
-        if self.configType == 'closedeq':
+        if self.configType in ['openeq', 'closedeq']:
             return self.getOpenClosedValue(key, val)
         if self.configType == 'space':
             return self.getSpaceValue(key, val)
         else:
             return "invalid"
-###############################################################################
+
     def getOpenClosedValue(self, key, value):
         '''
         Private inner method called by validate that populates self.fixables
@@ -158,7 +185,8 @@ class KVAConf():
         keys is irrelevant since the key shouldn't be there at all.  This 
         method specifcally handles files with an equal sign separating the key 
         and the val, both open and closed type
-        @author: dwalker
+
+        @author: Derek Walker
         @param key: key in a dictionary passed from calling class
         @param val: value part in dictionary passed from calling class
         @return: Bool
@@ -193,7 +221,6 @@ class KVAConf():
                             found = True  # no need to check value, it's irrelevant
                             break
                 return found
-###############################################################################
 
     def getSpaceValue(self, key, value):
         '''
@@ -205,13 +232,15 @@ class KVAConf():
         configuration file has keys that are not desired.This method
         specifcally handles files where a space separates key value pairs
         within the same line.
-        @author: dwalker
+
+        @author: Derek Walker
         @param key: key in a dictionary passed from calling class
         @param val: value part in dictionary passed from calling class
         @return: Bool
         '''
         fixables = []
         removeables = []
+
         if self.contents:
             if self.intent == "present":  #self.data contains key val pairs we want in the file
                 if isinstance(value, list):  # value can be a list in cases, see init pydoc
@@ -222,7 +251,9 @@ class KVAConf():
                         for line in self.contents:
                             if re.match('^#', line) or re.match(r'^\s*$', line):  # ignore if comment or blank line
                                 continue
-                            elif re.search("^" + key + "\s+", line):  # we found the key, which in this case can be repeatable
+                            # changed by Breen Malmberg 03/14/2019; re escaped keys so re.py will not crash if the key
+                            # has any special regex characters in it
+                            elif re.search("^" + re.escape(key) + "\s+", line):  # we found the key, which in this case can be repeatable
                                 debug = "found the key: " + key + "\n"
                                 self.logger.log(LogPriority.DEBUG, debug)
                                 if item != "":
@@ -244,7 +275,7 @@ class KVAConf():
                                         foundalready = True
                                         continue
                                 except IndexError:
-                                    #vlaue is blank but key is repeatable so not a problem
+                                    #value is blank but key is repeatable so not a problem
                                     if item == "":
                                         debug = "there is no value for key but we want no value\n"
                                         self.logger.log(LogPriority.DEBUG, debug)
@@ -264,7 +295,9 @@ class KVAConf():
                     for line in self.contents:
                         if re.match('^#', line) or re.match(r'^\s*$', line):  # ignore if comment or blank line
                             continue
-                        elif re.search("^" + key + "\s+", line):  # the key is in this line
+                        # changed by Breen Malmberg 03/14/2019; re escaped keys so re.py will not crash if the key
+                        # has any special regex characters in it
+                        elif re.search("^" + re.escape(key) + "\s+", line):  # the key is in this line
                             debug = "found the key: " + key + "\n"
                             self.logger.log(LogPriority.DEBUG, debug)
                             if value != "":
@@ -278,7 +311,14 @@ class KVAConf():
                             temp = re.sub("\s+", " ", temp)  # replace all whitespace with just one whitespace character
                             temp = temp.split()  # separate contents into list separated by spaces
                             try:
-                                if temp[1] == value:  # the value is correct
+                                # added by Breen Malmberg 03/14/2019; will now look at the correct index, for the value,
+                                # if the key has spaces in it and the key-value delimiter is also a space
+                                if len(temp) > 2:
+                                    index = len(temp) - 1
+                                else:
+                                    index = 1
+
+                                if temp[index] == value:  # the value is correct
                                     debug = "the value is correct\n"
                                     self.logger.log(LogPriority.DEBUG, debug)
                                     foundalready = True  # however we continue to make sure the key doesn't appear later in the file and have the wrong value
@@ -379,36 +419,37 @@ class KVAConf():
                         return True
                     else:
                         return False
-###############################################################################
 
     def update(self, fixables, removeables):
         '''
         Private outer method to call submethod setOpenClosedValue() or
         setSpaceValue() depending on the value of self.configType.
-        @author: dwalker
+
+        @author: Derek Walker
         @param fixables: a dictionary of key val pairs desired in file
         @param removeables: a dictionary of key val pairs not desired in file
         @return: Bool
         '''
-        if self.configType == 'openeq':
+
+        # changed by Breen Malmberg 03/14/2019; condensed repeated code
+        if self.configType in ['openeq', 'closedeq']:
             return self.setOpenClosedValue(fixables, removeables)
-        if self.configType == 'closedeq':
-            return self.setOpenClosedValue(fixables, removeables)
-        if self.configType == 'space':
+        elif self.configType == 'space':
             return self.setSpaceValue(fixables, removeables)
         else:
-            return "invalid"
-###############################################################################
+            # changed by Breen Malmberg 03/14/2019; data type return consistency (bool)
+            return False
 
     def setOpenClosedValue(self, fixables, removeables):
         '''
         Private inner method called by update that makes a list to conform
         to desireable (fixables) key val pairs and undesireable (removeables)
         key val pairs in the config file while also keeping any other
-        contents intact that aren't affected.  This method specifcally handles
+        contents intact that aren't affected.  This method specifically handles
         files with an equal sign separating the key and the val, both open
         and closed
-        @author: dwalker
+
+        @author: Derek Walker
         @param fixables: a dictionary of key val paris desired in file
         @param removeables: a dictionary of key val paris not desired in file
         @return: Bool
@@ -453,7 +494,6 @@ class KVAConf():
                     temp = key + "=" + fixables[key] + "\n"
                     self.contents.append(temp)
         return True
-###############################################################################
 
     def setSpaceValue(self, fixables, removeables):
         '''
@@ -462,18 +502,19 @@ class KVAConf():
         key val pairs in the config file while also keeping any other
         contents intact that aren't affected.  This method specifcally handles
         files where a space separates key value pairs within the same line
-        @author: dwalker
+
+        @author: Derek Walker
         @param fixables: a dictionary of key val paris desired in file
         @param removeables: a dictionary of key val pairs not desired in file
         @return: Bool
         '''
-#       re-read the contents of the desired file
+        # re-read the contents of the desired file
         self.storeContents(self.path)
         contents = self.contents
         if removeables:  # we have items that need to be removed from file
             poplist = []
             for key, val in removeables.iteritems():
-#               we have a list where the key can repeat itself
+                # we have a list where the key can repeat itself
                 if isinstance(val, list):
                     for item in val:
                         for line in contents:
@@ -556,7 +597,6 @@ class KVAConf():
 #                         self.contents.append(temp)
 #                 return True
         return True
-###############################################################################
 
     def commit(self):
         '''
@@ -564,41 +604,35 @@ class KVAConf():
         including fixables and removing desireables.  This method is called
         in the calling class that instantiated the object after the update
         methods have been called.
-        @author: dwalker
+
+        @author: Derek Walker
         @return: Bool
         '''
         for line in self.contents:
             self.tempstring += line
         success = writeFile(self.tmpPath, self.tempstring, self.logger)
         return success
-###############################################################################
 
     def storeContents(self, path):
         '''
         Private method that reads in the self.path variable's contents and
-        stores in private variable self.contents.
-        @author: dwalker
+        stores in public variable self.contents
+
+        @author: Derek Walker
         @param path: The path which contents need to be read
-        @change bgonz12 - 2018/1/18 - added handing for 'path' not existing
+        @change bgonz12 - 2018/1/18 - added handling for 'path' not existing
         '''
-        if not os.path.exists(path):
-            detailedresults = "KVAConf: Unable to open specified file: " + \
-                path + ". File does not exist."
-            self.logger.log(LogPriority.DEBUG, detailedresults)
-        else:
-            try:
-                f = open(path, 'r')
-            except IOError:
-                self.detailedresults = "KVAConf: unable to open the" \
-                    "specified file"
-                self.detailedresults += traceback.format_exc()
-                self.logger.log(LogPriority.DEBUG, self.detailedresults)
-                return False
-            self.contents = []
-            for line in f:
-                self.contents.append(line)
+
+        self.contents = []
+
+        try:
+
+            f = open(path, 'r')
+            self.contents = f.readlines()
             f.close()
-###############################################################################
+
+        except IOError:
+            self.logger.log(LogPriority.DEBUG, "Failed to retrieve contents of file: " + str(path))
 
     def getValue(self):
         '''
@@ -607,8 +641,10 @@ class KVAConf():
         (removeables) in string form for retrieving.  This method is more for
         debugging to make sure KVAConf is doing the right thing during when
         reporting (validate)
-        @author: dwalker
-        @return: str'''
+
+        @author: Derek Walker
+        @return: str
+        '''
         output = ""
         if self.fixables:
             output += "Keys that have incorrect values:\n" + \
