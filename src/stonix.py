@@ -798,14 +798,14 @@ class Controller(Observable):
         """
         rulename = self.getrulenamebynum(ruleid)
         self.logger.log(LogPriority.DEBUG, "****************** RULE START: " + str(rulename) + " ******************")
-        message = "Controller:runruleaudit: Entering with rule id " + \
+        message = "Controller:runruleaudit: Entering rule with id " + \
         str(ruleid)
         self.logger.log(LogPriority.DEBUG, message)
         self.numrulesrunning = 1
         self.numrulescomplete = 0
         for rule in self.installedrules:
             if ruleid == rule.getrulenum():
-                message = "Controller:runruleaudit: Matched ruleid"
+                message = "Controller:runruleaudit: Matched rule id"
                 self.logger.log(LogPriority.DEBUG, message)
                 if rule.getisrootrequired() and self.environ.geteuid() != 0:
                     self.numrulescomplete = self.numrulescomplete + 1

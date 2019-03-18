@@ -642,9 +642,9 @@ class xmlReport:
         @author: dkennel
         '''
         ET.SubElement(self.findings, entry.Tag, val=entry.Detail)
-        if self.debug:
-            print 'xmlReport.writeFinding: Added entry ' + entry.Tag + \
-            ' ' + entry.Detail
+        #if self.debug:
+            #print 'xmlReport.writeFinding: Added entry ' + entry.Tag + \
+            #' ' + entry.Detail
 
     def closeReport(self):
         '''
