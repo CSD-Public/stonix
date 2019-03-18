@@ -20,27 +20,27 @@
 # See the GNU General Public License for more details.                        #
 #                                                                             #
 ###############################################################################
-'''
+"""
 Created on Aug 9, 2012
 
-@author: dkennel
-@change: dkennel 04/18/2014 Replaced old-style CI invocation
-@change: 06/02/2014 dkennel: Added services to linuxdefault set based on .deb
-@change: 2014/07/23 dkennel: Added additional services to systemd list based on
-RHEL 7
-@change: 2015/04/15 dkennel: updated for new isApplicable
-@change: 2015/10/07 eball Help text cleanup
-@change: 2015/10/30 dwalker: added additional services to allowed list.
-@change: 2016/04/26 ekkehard Results Formatting
-@change: 2016/04/09 eball Updated service lists per RHEL 7 STIG
-@change: 2016/10/06 dkennel Updates service lists and minor hacking to support
-ubuntu 16.04.
-@change: 2016/10/19 eball Added ssh and ssh.service for Deb8 compatibility
-@change: 2016/12/16 eball Added lvm2-activation{.,-early.}service to whitelist
-@change: 2017/10/24 rsn changing to use service helper, second gen
-@change: 2018/1/17 Brandon R. Gonzales Add sddm.service and sddm to the
-systemd whitelist
-'''
+@author: Dave Kennel
+@change: Dave Kennel 04/18/2014 Replaced old-style CI invocation
+@change: 06/02/2014 Dave Kennel: Added services to linuxdefault set based on .deb
+@change: 2014/07/23 Dave Kennel: Added additional services to systemd list based on
+        RHEL 7
+@change: 2015/04/15 Dave Kennel: updated for new isApplicable
+@change: 2015/10/07 Eric Ball Help text cleanup
+@change: 2015/10/30 Derek Walker: added additional services to allowed list.
+@change: 2016/04/26 Ekkehard Results Formatting
+@change: 2016/04/09 Eric Ball Updated service lists per RHEL 7 STIG
+@change: 2016/10/06 Dave Kennel Updates service lists and minor hacking to support
+        ubuntu 16.04.
+@change: 2016/10/19 Eric Ball Added ssh and ssh.service for Deb8 compatibility
+@change: 2016/12/16 Eric Ball Added lvm2-activation{.,-early.}service to whitelist
+@change: 2017/10/24 Roy Nielsen changing to use service helper, second gen
+@change: 2018/1/17 Brandon Gonzales Add sddm.service and sddm to the
+        systemd whitelist
+"""
 
 from __future__ import absolute_import
 
@@ -53,15 +53,15 @@ from ..logdispatcher import LogPriority
 
 
 class MinimizeServices(Rule):
-    '''
+    """
     The MinimizeServices class sets the system so that only approved services
     are running at any given time.
-    '''
+    """
 
     def __init__(self, config, environ, logger, statechglogger):
-        '''
+        """
         Constructor
-        '''
+        """
         Rule.__init__(self, config, environ, logger, statechglogger)
         self.config = config
         self.environ = environ
@@ -472,32 +472,30 @@ class MinimizeServices(Rule):
 
         datatype = 'bool'
         key = 'MINIMIZESVCS'
-        instructions = '''To disable this rule set the value of MINIMIZESVCS to
-False.'''
+        instructions = "To prevent STONIX from disabling all non-white-listed services, set the value of MINIMIZESVCS to False."
         default = True
         self.minimizeci = self.initCi(datatype, key, instructions, default)
 
-        # self.svcslistci = self.__initializeenablelist()
         datatype2 = 'list'
         key2 = 'SERVICEENABLE'
-        instructions2 = '''This list contains services that are permitted to \
+        instructions2 = """This list contains services that are permitted to \
 run on this platform. If you need to run a service not currently in this \
 list, add the service to the list and STONIX will not disable it. List \
-elements should be space separated.'''
+elements should be space separated."""
 
         self.serviceTarget = ""
 
-        self.logger.log(LogPriority.DEBUG, ['MinimizeServices.__init__', "Starting platform detection"])
+        self.logger.log(LogPriority.DEBUG, "Starting platform detection")
 
         self.environ.setsystemtype()
         systemtype = self.environ.getsystemtype()
 
         if systemtype == "systemd":
-            self.logger.log(LogPriority.DEBUG, ['MinimizeServices.__init__', "systemctl found. Using systemd list"])
+            self.logger.log(LogPriority.DEBUG, ['MinimizeServices.__init__', "systemctl found. Using systemd white list"])
             self.svcslistci = self.initCi(datatype2, key2, instructions2, self.systemddefault)
 
         elif self.environ.getosfamily() == 'linux':
-            self.logger.log(LogPriority.DEBUG, ['MinimizeServices.__init__', "Linux OS found. Using Linux default list"])
+            self.logger.log(LogPriority.DEBUG, ['MinimizeServices.__init__', "Linux OS found. Using Linux default white list"])
             self.svcslistci = self.initCi(datatype2, key2, instructions2, self.linuxdefault)
 
         elif self.environ.getosfamily() == 'solaris':
@@ -505,7 +503,7 @@ elements should be space separated.'''
             self.svcslistci = self.initCi(datatype2, key2, instructions2, self.soldefault)
 
         elif self.environ.getosfamily() == 'freebsd':
-            self.logger.log(LogPriority.DEBUG, ['MinimizeServices.__init__', "FreeBSD OS found. Using BSD list"])
+            self.logger.log(LogPriority.DEBUG, ['MinimizeServices.__init__', "FreeBSD OS found. Using BSD white list"])
             self.svcslistci = self.initCi(datatype2, key2, instructions2, self.bsddefault)
 
         else:
@@ -517,83 +515,70 @@ elements should be space separated.'''
         Report on whether any services not in the baseline or configured set
         are running.
 
-        @return: bool
-        @author: D.Kennel
+        @return: self.compliant
+        @rtype: bool
+        @author: Dave Kennel
         """
 
-        compliant = True
-        myresults = "Unauthorized running services detected: "
         running = False # default init var
+        self.compliant = True
+        self.detailedresults = ""
+        unauthorizedservices = []
+        authorizedservices = []
 
         try:
 
-            self.detailedresults = ""
             servicelist = self.servicehelper.listServices()
             allowedlist = self.svcslistci.getcurrvalue()
             corelist = self.svcslistci.getdefvalue()
-            self.logger.log(LogPriority.DEBUG,
-                            ['MinimizeServices.report',
-                             "ServiceList: " + str(servicelist)])
-            self.logger.log(LogPriority.DEBUG,
-                            ['MinimizeServices.report',
-                             "AllowedList: " + str(allowedlist)])
+
+            self.logger.log(LogPriority.DEBUG, "AllowedList: " + str(allowedlist))
+
             for service in servicelist:
                 running = False # re-init var for new service
-                if service in allowedlist or re.search('user@[0-9]*.service',
-                                                       service):
+                if service in allowedlist or re.search('user@[0-9]*.service', service):
                     if service in allowedlist:
-                        self.logger.log(LogPriority.INFO, """\nWhite-listed service found. Will not disable: """ + str(service) + """\n""")
+                        authorizedservices.append(str(service))
                         # user@foo.service are user managers started by PAM
                         # on Linux. They are GRAS (generally regarded as safe)
                     if service not in corelist and \
                     not re.search('user@[0-9]*.service', service):
-                        self.logger.log(LogPriority.WARNING,
-                                        ['MinimizeServices',
-                                         'Non-core service running: ' +
-                                         service])
+                        self.logger.log(LogPriority.DEBUG, 'Non-core service running: ' + service)
                 else:
                     if self.servicehelper.auditService(service, serviceTarget = self.serviceTarget):
-                        running = True
-                    self.logger.log(LogPriority.DEBUG,
-                                    ['MinimizeServices.report',
-                                     "Audit: " + service + str(running)])
-                    if running:
-                        compliant = False
-                        myresults = myresults + service + ' '
-            if compliant:
-                self.detailedresults = 'No unauthorized services were detected'
+                        self.compliant = False
+                        unauthorizedservices.append(str(service))
+
+            self.logger.log(LogPriority.DEBUG, "The following white-listed services were found and will NOT be disabled:\n+ " + "\n+ ".join(authorizedservices) + "\n")
+
+            if self.compliant:
+                self.detailedresults += 'No unauthorized services were detected'
                 self.targetstate = 'configured'
             else:
-                self.detailedresults = myresults
-            self.logger.log(LogPriority.DEBUG,
-                            ['MinimizeServices.report',
-                             "Compliant: " + str(compliant)])
-            self.compliant = compliant
+                self.detailedresults += "Unauthorized running services detected:\n- " + "\n- ".join(unauthorizedservices) + "\n"
             self.targetstate = 'notconfigured'
+
         except (KeyboardInterrupt, SystemExit):
-            # User initiated exit
             raise
         except Exception:
-            self.detailedresults = 'MinimizeServices: '
-            self.detailedresults = self.detailedresults + \
-                traceback.format_exc()
-            self.rulesuccess = False
-            self.logger.log(LogPriority.ERROR,
-                            self.detailedresults)
-        self.formatDetailedResults("report", self.compliant,
-                                   self.detailedresults)
-        self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+            self.compliant = False
+            self.detailedresults += traceback.format_exc()
+            self.logger.log(LogPriority.ERROR, self.detailedresults)
+        self.formatDetailedResults("report", self.compliant, self.detailedresults)
+        self.logger.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
 
     def fix(self):
         """
         Disable all services not in the 'enable services' list.
 
-        @author: D. Kennel
+        @author: Dave Kennel
         """
+
         self.detailedresults = ""
+        self.rulesuccess = True
         changes = []
-        fixed = True
+
         if self.minimizeci.getcurrvalue():
             try:
                 servicelist = self.servicehelper.listServices()
@@ -613,12 +598,10 @@ elements should be space separated.'''
                         continue
                     else:
                         running = self.servicehelper.auditService(service, serviceTarget=self.serviceTarget)
-                        self.logger.log(LogPriority.DEBUG,
-                                        ['MinimizeServices.fix',
-                                         "Audit: " + service + str(running)])
                         if running and service not in self.specials:
                             changes.append(service)
                             self.servicehelper.disableService(service, serviceTarget=self.serviceTarget)
+
                 mytype = 'command'
                 mystart = []
                 myend = changes
@@ -628,21 +611,14 @@ elements should be space separated.'''
                          'endstate': myend}
                 self.statechglogger.recordchgevent(myid, event)
 
-                self.rulesuccess = fixed
             except (KeyboardInterrupt, SystemExit):
-                # User initiated exit
                 raise
             except Exception:
                 self.rulesuccess = False
-                self.detailedresults = 'MinimizeServices: '
-                self.detailedresults = self.detailedresults + \
-                    traceback.format_exc()
-                self.rulesuccess = False
-                self.logger.log(LogPriority.ERROR,
-                                self.detailedresults)
-        self.formatDetailedResults("fix", self.rulesuccess,
-                                   self.detailedresults)
-        self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+                self.detailedresults += traceback.format_exc()
+                self.logger.log(LogPriority.ERROR, self.detailedresults)
+        self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
+        self.logger.log(LogPriority.INFO, self.detailedresults)
         return self.rulesuccess
 
     def undo(self):
@@ -650,7 +626,7 @@ elements should be space separated.'''
         Attempt to reset the service state for all the services that we changed
         back to their original states.
 
-        @author: dkennel
+        @author: Dave Kennel
         """
         self.targetstate = 'notconfigured'
         try:
