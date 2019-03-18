@@ -1,4 +1,4 @@
-'''
+"""
 ###############################################################################
 #                                                                             #
 # Copyright 2015-2019.  Los Alamos National Security, LLC. This material was       #
@@ -23,19 +23,19 @@
 ###############################################################################
 Created on Aug 9, 2012
 
-@author: dkennel
-@change: 2015/10/15 eball Added method names to debug output
-@change: 2015/10/15 eball disableservice now checks audit and isrunning
-@change: 2016/06/10 dkennel wrapped audit in try catch in case service is not
+@author: Dave Kennel
+@change: 2015/10/15 Eric Ball Added method names to debug output
+@change: 2015/10/15 Eric Ball disableservice now checks audit and isrunning
+@change: 2016/06/10 Dave Kennel wrapped audit in try catch in case service is not
 installed.
-@change: 2016/11/03 rsn upgrading the interface to allow for more flexibility.
+@change: 2016/11/03 Roy Nielsen upgrading the interface to allow for more flexibility.
 @change: 2017/01/31 Breen Malmberg clarified the difference between auditservice
         and isrunning methods in the documentation; clarified the nature of the
         two parameters in each of those methods in the doc strings as well
-@author: 2017-23-2017 rsn modified/simplified to second generation 
+@author: 2017-23-2017 Roy Nielsen modified/simplified to second generation 
         service helper with **kwargs concept
-@change: 2018/02/27 bgonz12 Fixed Traceback caused by using self.logger
-'''
+@change: 2018/02/27 Brandon Gonzales Fixed Traceback caused by using self.logger
+"""
 import os
 import re
 import inspect
@@ -54,7 +54,7 @@ from get_libc import getLibc
 
 
 class ServiceHelper(object):
-    '''
+    """
     The ServiceHelper class serves as an abstraction layer between rules that
     need to manipulate services and the actual implementation of changing
     service status on various operating systems.
@@ -63,11 +63,11 @@ class ServiceHelper(object):
            lists for different helpers.  This moves the requirement for 
            input validation the the concrete helpers.
 
-    @author: dkennel
-    '''
+    @author: Dave Kennel
+    """
 
     def __init__(self, environ, logger):
-        '''
+        """
         The ServiceHelper needs to receive the STONIX environment and
         logdispatcher objects as parameters to init.
 
@@ -78,7 +78,8 @@ class ServiceHelper(object):
         @change: Breen Malmberg - 2/27/2018 - added libc object instantiation and
                 call to libc function .sync() to fix an issue with mac os x cacheing
                 related to diable and enable service functions
-        '''
+        """
+
         self.environ = environ
         self.logdispatcher = logger
         self.isHybrid = False
@@ -91,7 +92,7 @@ class ServiceHelper(object):
         try:
             self.lc = getLibc()
         except Exception as err:
-            self.logdispatcher.log(LogPriority.ERROR, "Unable to instantiate libc object reference, through getLibc helper\n" + str(err))
+            self.logdispatcher.log(LogPriority.ERROR, str(err))
             raise
 
         # Red Hat, CentOS, SUSE
@@ -136,10 +137,9 @@ class ServiceHelper(object):
         for svctype in [ischkconfig, isrcupdate, isupdaterc,
                         issystemctl, issvcadm, isrcconf, islaunchd]:
             if svctype:
-                truecount = truecount + 1
+                truecount += 1
         if truecount == 0:
-            raise RuntimeError("Could not identify service management " + \
-                               "programs")
+            raise RuntimeError("Could not identify service management programs")
         elif truecount == 1:
             if ischkconfig:
                 self.svchelper = SHchkconfig.SHchkconfig(self.environ,
@@ -167,8 +167,7 @@ class ServiceHelper(object):
                     self.svchelper = SHlaunchdTwo.SHlaunchdTwo(self.environ,
                                                      self.logdispatcher)
             else:
-                raise RuntimeError("Could not identify service management " +
-                                   "programs")
+                raise RuntimeError("Could not identify service management programs")
         elif truecount > 1:
             self.isHybrid = True
             count = 0
@@ -222,65 +221,50 @@ class ServiceHelper(object):
                 count = 1
 
         self.logdispatcher.log(LogPriority.DEBUG,
-                               'ischkconfig:' + str(ischkconfig))
+                               'ischkconfig: ' + str(ischkconfig))
         self.logdispatcher.log(LogPriority.DEBUG,
-                               'isrcupdate:' + str(isrcupdate))
+                               'isrcupdate: ' + str(isrcupdate))
         self.logdispatcher.log(LogPriority.DEBUG,
-                               'isupdaterc:' + str(isupdaterc))
+                               'isupdaterc: ' + str(isupdaterc))
         self.logdispatcher.log(LogPriority.DEBUG,
-                               'issystemctl:' + str(issystemctl))
+                               'issystemctl: ' + str(issystemctl))
         self.logdispatcher.log(LogPriority.DEBUG,
-                               'issvcadm:' + str(issvcadm))
+                               'issvcadm: ' + str(issvcadm))
         self.logdispatcher.log(LogPriority.DEBUG,
-                               'isrcconf:' + str(isrcconf))
+                               'isrcconf: ' + str(isrcconf))
         self.logdispatcher.log(LogPriority.DEBUG,
-                               'ishybrid:' + str(self.isHybrid))
+                               'ishybrid: ' + str(self.isHybrid))
         self.logdispatcher.log(LogPriority.DEBUG,
-                               'isdualparameterservice:' +
+                               'isdualparameterservice: ' +
                                str(self.isdualparameterservice))
 
-    #----------------------------------------------------------------------
-    # helper Methods
-    #----------------------------------------------------------------------
-
     def getService(self):
+        """
+
+        @return:
+        """
         return self.service
 
-    #----------------------------------------------------------------------
-
     def getServiceName(self):
+        """
+
+        @return:
+        """
         return self.servicename
-
-    #----------------------------------------------------------------------
-
-    def __calledBy(self):
-        """
-        Log the caller of the method that calls this method
-
-        @author: Roy Nielsen
-        """
-        try:
-            filename = inspect.stack()[2][1]
-            functionName = str(inspect.stack()[2][3])
-            lineNumber = str(inspect.stack()[2][2])
-        except Exception, err:
-            raise err
-        else:
-            self.logdispatcher.log(LogPriority.DEBUG, "called by: " + \
-                                      filename + ": " + \
-                                      functionName + " (" + \
-                                      lineNumber + ")")
-
-    #----------------------------------------------------------------------
 
     def isServiceVarValid(self, service):
         """
         Input validator for the service variable
 
         @author: Roy Nielsen
+        @return: serviceValid
+        @rtype: bool
         """
+
         serviceValid = False
+
         try:
+
             #####
             # Generic factory input validation, only for "service", the
             # rest of the parameters need to be validated by the concrete
@@ -295,19 +279,17 @@ class ServiceHelper(object):
                 serviceValid = False
             elif service : # service is a string of one or more characters
                 self.logdispatcher.log(LogPriority.DEBUG,
-                                   '-- self.service set to: ' + service)
+                                   'Service name set to: ' + service)
                 serviceValid = True
 
-        except Exception, err:
-            self.__calledBy()
-            raise err
+        except Exception as err:
+            self.logdispatcher.log(LogPriority.DEBUG, str(err))
+            raise
 
         return serviceValid
 
-    #----------------------------------------------------------------------
-
     def setService(self, service, **kwargs):
-        '''
+        """
         Update the name of the service being worked with.
 
         @param: service - Name of the service being audited or modified
@@ -337,35 +319,27 @@ class ServiceHelper(object):
                 and service-target is gui/501/com.apple.example.
 
         @return: Bool indicating success status
-        '''
-        self.logdispatcher.log(LogPriority.DEBUG,
-                               '--START SET(' + service + ')')
+        """
+
+        self.logdispatcher.log(LogPriority.DEBUG, 'Setting service name')
 
         setServiceSuccess = False
+        servicenames = ["servicename", "serviceName"]
+        self.servicename = ""
 
         if self.isServiceVarValid(service):
             self.service = service
             setServiceSuccess = True
 
-        if "serviceName" in kwargs:
-            self.servicename = kwargs.get("serviceName")
-        elif "servicename" in kwargs:
-            self.servicename = kwargs.get("servicename")
-        else:
-            self.servicename = ""
-
-        self.logdispatcher.log(LogPriority.DEBUG,
-                               '-- END SET(' + service + \
-                               ') = ' + str(setServiceSuccess))
+        for sn in servicenames:
+            if sn in kwargs:
+                self.servicename = kwargs.get(sn)
+                break
 
         return setServiceSuccess
 
-    #----------------------------------------------------------------------
-    # Standard interface to the service helper.
-    #----------------------------------------------------------------------
-
     def disableService(self, service, **kwargs):
-        '''
+        """
         Disables the service and terminates it if it is running.
 
         @param service string: Name of the service to be disabled
@@ -395,9 +369,7 @@ class ServiceHelper(object):
                 and service-target is gui/501/com.apple.example.
 
         @return: Bool indicating success status
-        '''
-        self.logdispatcher.log(LogPriority.DEBUG,
-                               '--START DISABLE(' + service + ')')
+        """
 
         disabled = False
 
@@ -405,18 +377,16 @@ class ServiceHelper(object):
             chkSingle = False
             chkSecond = False
 
-            chkSingle = self.svchelper.disableService(self.getService(), **kwargs)
+            service = self.getService()
+
+            self.logdispatcher.log(LogPriority.DEBUG, 'Disabling service ' + str(service))
+
+            chkSingle = self.svchelper.disableService(service, **kwargs)
             if self.isHybrid:
-                chkSecond = self.secondary.disableService(self.getService(), **kwargs)
+                chkSecond = self.secondary.disableService(service, **kwargs)
 
             if chkSingle or chkSecond:
                 disabled = True
-            else:
-                disabled=False
-
-        self.logdispatcher.log(LogPriority.DEBUG,
-                               '-- END DISABLE(' + service + \
-                               ') = ' + str(disabled))
 
         # sync OS cache to filesystem (force write)
         # this was added to eliminate the delay on mac between
@@ -427,12 +397,14 @@ class ServiceHelper(object):
         except Exception:
             raise
 
+        if self.auditService(service, **kwargs):
+            disabled = False
+            self.logdispatcher.log(LogPriority.DEBUG, "Audit after disable and sync indicates service still enabled")
+
         return disabled
 
-    #----------------------------------------------------------------------
-
     def enableService(self, service, **kwargs):
-        '''
+        """
         Enables a service and starts it if it is not running as long as we are
         not in install mode
 
@@ -462,10 +434,10 @@ class ServiceHelper(object):
                 domain-target is gui/501/, service-name is com.apple.example,
                 and service-target is gui/501/com.apple.example.
 
-        @return: Bool indicating success status
-        '''
-        self.logdispatcher.log(LogPriority.DEBUG,
-                               '--START ENABLE(' + service + ')')
+        @return: enabledSuccess
+        @rtype: bool
+        @author: Roy Nielsen
+        """
 
         enabledSuccess = False
 
@@ -473,21 +445,21 @@ class ServiceHelper(object):
             enabledSingle = False
             enabledSecondary = False
 
-            if not self.auditService(self.getService(), **kwargs):
-                if self.svchelper.enableService(self.getService(), **kwargs):
+            service = self.getService()
+
+            self.logdispatcher.log(LogPriority.DEBUG, 'Enabling service ' + str(service))
+
+            if not self.auditService(service, **kwargs):
+                if self.svchelper.enableService(service, **kwargs):
                     enabledSingle = True
 
                 if self.isHybrid:
-                    if self.secondary.enableService(self.getService(), **kwargs):
+                    if self.secondary.enableService(service, **kwargs):
                         enabledSecondary = True
             else:
                 enabledSingle = True
 
-            enabledSuccess = enabledSingle or enabledSecondary
-
-        self.logdispatcher.log(LogPriority.DEBUG,
-                               '-- END ENABLE(' + service + \
-                               ') = ' + str(enabledSuccess))
+            enabledSuccess = bool(enabledSingle or enabledSecondary)
 
         # sync OS cache to filesystem (force write)
         # this was added to eliminate the delay on mac between
@@ -498,12 +470,14 @@ class ServiceHelper(object):
         except Exception:
             raise
 
+        if not self.auditService(service, **kwargs):
+            enabledSuccess = False
+            self.logdispatcher.log(LogPriority.DEBUG, "Audit after enable and sync indicates service still not running.")
+
         return enabledSuccess
 
-    #----------------------------------------------------------------------
-
     def auditService(self, service, **kwargs):
-        '''
+        """
         Checks the status of a service and returns a bool indicating whether or
         not the service is configured to run or not.
 
@@ -533,39 +507,39 @@ class ServiceHelper(object):
                 domain-target is gui/501/, service-name is com.apple.example,
                 and service-target is gui/501/com.apple.example.
 
-        @return: Bool, True if the service is configured to run
-        '''
-        self.logdispatcher.log(LogPriority.DEBUG,
-                               '--START AUDIT(' + service + ')')
+        @return: isloaded
+        @rtype: bool
+        @author: Roy Nielsen
+        """
 
-        auditSuccess = False
+        isloaded = False
+
         if self.setService(service):
             singleSuccess = False
             secondarySuccess = False
 
+            service = self.getService()
+
+            self.logdispatcher.log(LogPriority.DEBUG, 'Auditing service ' + str(service))
+
             try:
-                singleSuccess = self.svchelper.auditService(self.getService(), **kwargs)
+                singleSuccess = self.svchelper.auditService(service, **kwargs)
             except OSError:
                 singleSuccess = False
 
             if self.isHybrid:
                 try:
-                    secondarySuccess = self.secondary.auditService(self.getService(), **kwargs)
+                    secondarySuccess = self.secondary.auditService(service, **kwargs)
                 except OSError:
                     secondarySuccess = False
 
-            if singleSuccess or secondarySuccess:
-                auditSuccess = True
+            if bool(singleSuccess or secondarySuccess):
+                isloaded = True
 
-        self.logdispatcher.log(LogPriority.DEBUG,
-                               '-- END AUDIT(' + service + \
-                               ') = ' + str(auditSuccess))
-        return auditSuccess
-
-    #----------------------------------------------------------------------
+        return isloaded
 
     def isRunning(self, service, **kwargs):
-        '''
+        """
         Check to see if a service is currently running. The enable service uses
         this so that we're not trying to start a service that is already
         running.
@@ -596,24 +570,30 @@ class ServiceHelper(object):
                 domain-target is gui/501/, service-name is com.apple.example,
                 and service-target is gui/501/com.apple.example.
 
-        @return: bool, True if the service is already running
-        '''
-        self.logdispatcher.log(LogPriority.DEBUG,
-                               '--START ISRUNNING(' + service + ')')
+        @return: isRunning
+        @rtype: bool
+        @author: Roy Nielsen
+        """
+
         isRunning = False
+
         if self.setService(service):
             singleSuccess = False
             secondarySuccess = False
 
+            service = self.getService()
+
+            self.logdispatcher.log(LogPriority.DEBUG, 'Checking if service ' + str(service) + ' is running')
+
             try:
-                singleSuccess = self.svchelper.isRunning(self.getService(), **kwargs)
+                singleSuccess = self.svchelper.isRunning(service, **kwargs)
                 if self.isHybrid:
-                    secondarySuccess = self.secondary.isRunning(self.getService(), **kwargs)
-            except:
-                self.__calledBy()
+                    secondarySuccess = self.secondary.isRunning(service, **kwargs)
+            except Exception as err:
+                self.logdispatcher.log(LogPriority.DEBUG, str(err))
                 raise
 
-            if singleSuccess or secondarySuccess:
+            if bool(singleSuccess or secondarySuccess):
                 isRunning = True
 
         if isRunning:
@@ -621,15 +601,10 @@ class ServiceHelper(object):
         else:
             self.logdispatcher.log(LogPriority.DEBUG, "Service: " + str(service) + " is NOT running")
 
-        self.logdispatcher.log(LogPriority.DEBUG,
-                               '-- END ISRUNNING(' + service + \
-                               ') = ' + str(isRunning))
         return isRunning
 
-    #----------------------------------------------------------------------
-
     def reloadService(self, service, **kwargs):
-        '''
+        """
         Reload (HUP) a service so that it re-reads it's config files. Called
         by rules that are configuring a service to make the new configuration
         active. This method ignores services that do not return true when
@@ -663,60 +638,71 @@ class ServiceHelper(object):
                 domain-target is gui/501/, service-name is com.apple.example,
                 and service-target is gui/501/com.apple.example.
 
-        @return: bool indicating success status
-        '''
+        @return: reloadSuccess
+        @rtype: bool
+        @author: Roy Nielsen
+        """
 
-        self.logdispatcher.log(LogPriority.DEBUG,
-                               '--START RELOAD(' + service + ')')
-
-        if "serviceName" in kwargs:
-            self.servicename = kwargs.get("serviceName")
-        elif "servicename" in kwargs:
-            self.servicename = kwargs.get("servicename")
-        else:
-            self.servicename = ""
-
+        servicenames = ["serviceName", "servicename"]
+        self.servicename = ""
         reloadSuccess = False
+
+        for sn in servicenames:
+            if sn in kwargs:
+                self.servicename = kwargs.get(sn)
+                break
+
         if self.setService(service, servicename=self.servicename):
             singleSuccess = False
             secondarySuccess = False
 
+            service = self.getService()
+
+            self.logdispatcher.log(LogPriority.DEBUG, 'Reloading service ' + str(service))
+
             try:
-                if self.isRunning(self.getService(), **kwargs):
-                    singleSuccess = self.svchelper.reloadService(self.getService(), **kwargs)
+                if self.isRunning(service, **kwargs):
+                    singleSuccess = self.svchelper.reloadService(service, **kwargs)
                     if self.isHybrid:
-                        secondarySuccess = self.secondary.reloadService(self.getService(), **kwargs)
+                        secondarySuccess = self.secondary.reloadService(service, **kwargs)
                     else:
                         secondarySuccess = True
-            except Exception, err:
-                self.__calledBy()
-                raise err
+            except Exception as err:
+                self.logdispatcher.log(LogPriority.DEBUG, str(err))
+                raise
 
-            if singleSuccess and secondarySuccess:
+            if bool(singleSuccess and secondarySuccess):
                 reloadSuccess = True
         else:
             raise ValueError("Problem with setService in the Factory...")
 
-        self.logdispatcher.log(LogPriority.DEBUG,
-                               '-- END RELOAD(' + service + \
-                               ') = ' + str(reloadSuccess))
+        try:
+            self.lc.sync()
+        except Exception:
+            raise
+
+        if not self.auditService(service, **kwargs):
+            reloadSuccess = False
+            self.logdispatcher.log(LogPriority.DEBUG, "Audit after reload and sync indicates service still not enabled")
+
         return reloadSuccess
 
-    #----------------------------------------------------------------------
-
     def listServices(self):
-        '''
+        """
         List the services installed on the system.
 
-        @param:
+        @return: serviceList
+        @rtype: list
+        @author: Roy Nielsen
+        """
 
-        @return: list of strings
-        '''
-        self.logdispatcher.log(LogPriority.DEBUG, '--START')
+        self.logdispatcher.log(LogPriority.DEBUG, 'Getting list of services')
 
         serviceList = []
         secondaryList = []
+
         try:
+
             serviceList = self.svchelper.listServices()
 
             if self.isHybrid:
@@ -724,11 +710,8 @@ class ServiceHelper(object):
                 if secondaryList:
                     serviceList += secondaryList
 
-        except:
-            self.logdispatcher.log(LogPriority.DEBUG, str(self.__calledBy()))
-            self.logdispatcher.log(LogPriority.DEBUG, "Sorry, exception raised, " +
-                                   "we cannot acquire a sercideList.")
+        except Exception as err:
+            self.logdispatcher.log(LogPriority.DEBUG, str(err))
+            raise
 
-        self.logdispatcher.log(LogPriority.DEBUG,
-                               '-- END = ' + str(serviceList))
         return serviceList
