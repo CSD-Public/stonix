@@ -149,6 +149,7 @@ from stonix_resources.StateChgLogger import StateChgLogger
 from stonix_resources.logdispatcher import LogPriority, LogDispatcher
 from stonix_resources.program_arguments import ProgramArguments
 from stonix_resources.CheckApplicable import CheckApplicable
+from stonix_resources.CommandHelper import CommandHelper
 #import stonix_resources.fixFrozen
 
 from stonix_resources.cli import Cli
@@ -210,8 +211,19 @@ class Controller(Observable):
         self.currulename = ''
         self.currulenum = 0
         self.logger = LogDispatcher(self.environ)
-        self.logger.log(LogPriority.DEBUG,
-                        'Logging Started')
+        self.logger.log(LogPriority.DEBUG, 'Logging Started')
+
+        # set session variables needed by stonix which may not normally get
+        # set when running under a root context
+        self.ch = CommandHelper(self.logger)
+        session_vars_dict = {"DBUS_SESION_BUS_ADDRESS": "export $(dbus-launch)"}
+        try:
+            for sv in session_vars_dict:
+                self.set_session_var(sv, session_vars_dict[sv])
+        except:
+            self.logger.log(LogPriority.WARNING, "Unable to set " + sv + " session variable")
+            pass
+
         self.tryacquirelock()
 
         if self.mode == 'gui':
@@ -332,6 +344,26 @@ class Controller(Observable):
             sys.exit(app.exec_())
         elif self.mode == 'test':
             pass
+
+    def set_session_var(self, session_var, set_command):
+        """
+
+        @param session_var: session variable to set
+        @param set_command: the command to run to set the given session variable
+        """
+
+        session_var_value = ""
+
+        try:
+            session_var_value = os.environ[session_var]
+        except KeyError:
+            pass
+
+        try:
+            if not session_var_value:
+                self.ch.executeCommand(set_command)
+        except:
+            raise
 
     def getrules(self, config, environ):
         """
