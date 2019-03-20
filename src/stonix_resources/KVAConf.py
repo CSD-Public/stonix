@@ -527,7 +527,7 @@ class KVAConf():
                                 try:
                                     if len(temp) > 2:
                                         continue
-                                    elif re.search("^" + key + "$", temp[0]):
+                                    elif re.search("^" + re.escape(key) + "$", temp[0]):
                                         if re.search("^" + item + "$", temp[1]):
                                             poplist.append(line)
                                 except IndexError:
@@ -541,11 +541,11 @@ class KVAConf():
                     for line in contents:
                         if re.search("^#", line) or re.match("^\s*$", line):
                             continue
-                        elif re.search("^" + key + "\s+", line.strip()):
+                        elif re.search("^" + re.escape(key) + "\s+", line.strip()):
                             temp = line.strip()
                             temp = re.sub("\s+", " ", temp)
                             temp= temp.split()
-                            if re.match("^" + key + "$", temp[0]):
+                            if re.match("^" + re.escape(key) + "$", temp[0]):
                                 poplist.append(line)
             if poplist:
                 for item in poplist:
@@ -564,11 +564,11 @@ class KVAConf():
                     for line in contents:
                         if re.search("^#", line) or re.match("^\s*$", line):
                             continue
-                        elif re.search("^" + key + "\s+", line): #we found the key in the file
+                        elif re.search("^" + re.escape(key) + "\s+", line): #we found the key in the file
                             temp = line.strip() #remove all beginning and trailing whitespace
                             temp = re.sub("\s+", " ", temp) #replace all whitespace with just one space
                             temp = line.split()
-                            if re.match("^" + key + "$", temp[0].strip()):
+                            if re.match("^" + re.escape(key) + "$", temp[0].strip()):
                                 poplist.append(line)
             if poplist:
                 for item in poplist:
