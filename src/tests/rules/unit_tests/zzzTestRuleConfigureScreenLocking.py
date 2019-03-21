@@ -256,8 +256,8 @@ directory, invalid form of /etc/passwd"
                                                     "picture-uri": "\'\'"},
                                       "org/gnome/desktop/session": {
                                                     "idle-delay": "uint32 900"}}
-        self.dconfuserprofile = "/etc/dconf/profile/user"
-        self.userprofilecontent = "user-db:user\n" + \
+        dconfuserprofile = "/etc/dconf/profile/user"
+        userprofilecontent = "user-db:user\n" + \
                                           "system-db:local"
         if os.path.exists(gconf):
             setcmds1 = ["/apps/gnome-screensaver/idle_activation_enabled false",
@@ -305,7 +305,7 @@ directory, invalid form of /etc/passwd"
                     os.chmod(dconfsettingslock, 493)
                     resetsecon(dconfsettingslock)
             #write correct contents to dconf lock file
-            if os.path.exists(self.dconfsettings):
+            if os.path.exists(dconfsettings):
                 self.kveditor = KVEditorStonix(self.statechglogger,
                                                self.logger,
                                                "tagconf",
