@@ -94,9 +94,11 @@ class AuditNetworkSniffing(Rule):
         """
 
         self.osname = self.environ.getosname()
-        tools = ["/usr/sbin/ifconfig", "/usr/sbin/ip"]
+        tools = ["/usr/sbin/ifconfig", "/usr/sbin/ip", "/sbin/ifconfig", "/sbin/ip"]
         commands = {"/usr/sbin/ifconfig": "/usr/sbin/ifconfig",
-                    "/usr/sbin/ip": "/usr/sbin/ip -4 a"}
+                    "/usr/sbin/ip": "/usr/sbin/ip -4 a",
+                    "/sbin/ifconifg": "/sbin/ifconfig",
+                    "/sbin/ip": "/sbin/ip -4 a"}
         self.tool = ""
         for t in tools:
             if os.path.exists(t):
@@ -127,6 +129,12 @@ class AuditNetworkSniffing(Rule):
 
         try:
 
+            if not self.command:
+                self.compliant = False
+                self.logger.log(LogPriority.DEBUG, "Unable to identify the correct command line network utility location on this system")
+                self.formatDetailedResults("report", self.compliant, self.detailedresults)
+                return self.compliant
+
             promisc_interfaces = []
 
             self.ch.executeCommand(self.command)
@@ -150,6 +158,6 @@ class AuditNetworkSniffing(Rule):
             self.detailedresults += "\n" + traceback.format_exc()
             self.logger.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("report", self.compliant, self.detailedresults)
-        self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+        self.logger.log(LogPriority.INFO, self.detailedresults)
 
         return self.compliant
