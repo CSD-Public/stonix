@@ -21,12 +21,12 @@
 # See the GNU General Public License for more details.                        #
 #                                                                             #
 ###############################################################################
-'''
-This is a Unit Test for Rule DisableInactiveAccounts
+"""
+This is a Unit Test for Rule AuditNetworkSniffing
 
 @author: Breen Malmberg
-@change: 04/11/2016 original implementation
-'''
+@change: Breen Malmberg - 03/21/2019 - updated unit tests to match updated rule code
+"""
 
 from __future__ import absolute_import
 import sys
@@ -58,64 +58,48 @@ class zzzTestRuleAuditNetworkSniffing(RuleTest):
         self.simpleRuleTest()
 
     def setConditionsForRule(self):
-        '''
+        """
         Configure system for the unit test
         @param self: essential if you override this definition
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
-        '''
+        """
 
         success = True
         return success
 
     def test_initobjs(self):
-        '''
+        """
         test the validity of the class objects
 
         @author: Breen Malmberg
-        '''
+        """
 
         self.rule.initobjs()
-        self.assertTrue(self.rule.cmdhelper)
-
-    def test_searchOutput(self):
-        '''
-        test the functionality of the searchOutput method
-
-        @author: Breen Malmberg
-        '''
-
-        testlist = ['stuff', 'otherstuff']
-        self.assertFalse(self.rule.searchOutput(testlist, 'searchterm'))
-        self.assertTrue(self.rule.searchOutput(testlist, 'stuff'))
-        self.assertFalse(self.rule.searchOutput('notalist', 'whatever'))
-        self.assertFalse(self.rule.searchOutput(testlist, testlist))
+        self.assertTrue(self.rule.ch)
 
     def test_vars_initd(self):
-        '''
+        """
         test the functionality of the appendiName method
 
         @author: Breen Malmberg
-        '''
+        """
 
-        self.rule.setup()
+        self.rule.localize()
 
         self.assertTrue(self.rule.command, "The self.command variable was not properly initialized")
         self.assertTrue(self.rule.searchterm, "The self.searchterm variable was not properly initialized")
         self.assertTrue(isinstance(self.rule.searchterm, basestring))
-        self.assertTrue(self.rule.cmdlinetool, "The self.cmdlinetool variable was not properly initialized")
-        self.assertTrue(isinstance(self.rule.cmdlinetool, basestring))
-        self.assertTrue(isinstance(self.rule.lisl, int))
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
-        '''
+        """
         check on whether report was correct
         @param self: essential if you override this definition
         @param pCompliance: the self.iscompliant value of rule
         @param pRuleSuccess: did report run successfully
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
-        '''
+        """
         self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " + \
                              str(pCompliance) + ".")
         self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
@@ -124,31 +108,30 @@ class zzzTestRuleAuditNetworkSniffing(RuleTest):
         return success
 
     def checkFixForRule(self, pRuleSuccess):
-        '''
+        """
         check on whether fix was correct
         @param self: essential if you override this definition
         @param pRuleSuccess: did report run successfully
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
-        '''
+        """
         self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
                              str(pRuleSuccess) + ".")
         success = True
         return success
 
     def checkUndoForRule(self, pRuleSuccess):
-        '''
+        """
         check on whether undo was correct
         @param self: essential if you override this definition
         @param pRuleSuccess: did report run successfully
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
-        '''
+        """
         self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
                              str(pRuleSuccess) + ".")
         success = True
         return success
 
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()
