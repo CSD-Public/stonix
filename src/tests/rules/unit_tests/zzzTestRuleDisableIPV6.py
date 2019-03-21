@@ -50,6 +50,7 @@ class zzzTestRuleDisableIPV6(RuleTest):
                                 self.environ,
                                 self.logdispatch,
                                 self.statechglogger)
+        self.logger = self.logdispatch
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
         self.ch = CommandHelper(self.logdispatch)
