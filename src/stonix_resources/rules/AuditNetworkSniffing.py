@@ -97,7 +97,7 @@ class AuditNetworkSniffing(Rule):
         tools = ["/usr/sbin/ifconfig", "/usr/sbin/ip", "/sbin/ifconfig", "/sbin/ip"]
         commands = {"/usr/sbin/ifconfig": "/usr/sbin/ifconfig",
                     "/usr/sbin/ip": "/usr/sbin/ip -4 a",
-                    "/sbin/ifconifg": "/sbin/ifconfig",
+                    "/sbin/ifconfig": "/sbin/ifconfig",
                     "/sbin/ip": "/sbin/ip -4 a"}
         self.tool = ""
         for t in tools:
