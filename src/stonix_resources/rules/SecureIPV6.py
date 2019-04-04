@@ -192,7 +192,7 @@ False.'''
                    "net.ipv6.conf.default.dad_transmits": "0",
                    "net.ipv6.conf.default.max_addresses": "1",
                    "net.ipv6.conf.default.accept_ra": "0",
-                   "net.ipv6.conf.default.accept_redirect": "0"}
+                   "net.ipv6.conf.default.accept_redirects": "0"}
         self.ph = Pkghelper(self.logger, self.environ)
         if self.ph.manager == "yum":
             ifacefile = "/etc/sysconfig/network-scripts/"
