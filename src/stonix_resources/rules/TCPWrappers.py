@@ -110,7 +110,7 @@ class TCPWrappers(Rule):
         """
 
         self.hosts_allow_contents = []
-        subnets = self.allownetCI.getcurrvalue().split()
+        subnets = self.allownetCI.getcurrvalue()
 
         if self.environ.getosname().lower() in ["rhel", "centos"]:
             if self.environ.getosmajorver() == 6:
