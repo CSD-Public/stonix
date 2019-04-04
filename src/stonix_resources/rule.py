@@ -2,7 +2,7 @@
 
 ###############################################################################
 #                                                                             #
-# Copyright 2015-2019.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2019.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -630,7 +630,8 @@ LANL-stonix."""
                 if v == None:
                     retval = False
 
-            self.logdispatch.log(LogPriority.DEBUG, "One or more constants defined in localize.py, which are required for " + self.rulename + " to run, are missing or undefined")
+            if not retval:
+                self.logdispatch.log(LogPriority.DEBUG, "\nOne or more constants, in localize.py, required by this rule were either not found or not configured.")
 
         except Exception:
             raise
