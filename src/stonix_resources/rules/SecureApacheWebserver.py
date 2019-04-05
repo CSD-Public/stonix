@@ -596,7 +596,7 @@ development but some existing applications may use insecure side effects.'''
         @return: bool - False if the method died during execution
         '''
         compliant = True
-        #self.detailedresults = ""
+        self.detailedresults = ""
 
         self.apacheinstalled = False
         try:
@@ -606,6 +606,22 @@ development but some existing applications may use insecure side effects.'''
                 self.apacheinstalled = self.ph.check("httpd") or self.ph.check("apache2")
 
             if self.apacheinstalled:
+                # Validate apache configurations
+                for path in self.binpaths:
+                    if os.path.exists(path):
+                        configtest = path + ' -t'
+                        self.ch.executeCommand(configtest)
+                        if self.ch.getReturnCode() != 0:
+                            # Check if httpd configurations are valid
+                            compliant = False
+                            self.detailedresults = "\nOne or more Apache web " + \
+                                                   "server configurations " + \
+                                                   "are invalid. The " + \
+                                                   "following errors may " + \
+                                                   "need to be fixed manually: \n" + \
+                                                   "\n".join(self.ch.getErrorOutput()) + \
+                                                   "\n\n"
+
                 for filename in self.conffiles:
                     if os.path.exists(filename):
                         rhandle = open(filename, 'r')
@@ -1215,7 +1231,6 @@ development but some existing applications may use insecure side effects.'''
         self.detailedresults = ""
         self.rulesuccess = True
 
-        self.configsvalid = True
         try:
             prevchgs = self.statechglogger.findrulechanges(self.rulenumber)
 
@@ -1230,115 +1245,95 @@ development but some existing applications may use insecure side effects.'''
                             self.logdispatch.log(LogPriority.DEBUG, message)
                             os.environ[key]=self.apacheenvvars[key]
 
-            # Run syntax tests for apache webserver to confirm
-            # that the current configurations are valid
-            for path in self.binpaths:
-                if os.path.exists(path):
-                    configtest = path + ' -t'
-                    self.ch.executeCommand(configtest)
-                    if self.ch.getReturnCode() != 0:
-                        # Check if httpd configurations are valid
-                        self.rulesuccess = False
-                        self.configsvalid = False
-                        self.detailedresults = "\nApache web server is not" + \
-                                               "configured to run properly. " + \
-                                               "This rule will not " + \
-                                               "run fix until these " + \
-                                               "configuration errors have " + \
-                                               "been fixed manually: \n" + \
-                                               "\n".join(self.ch.getErrorOutput()) + \
-                                               "\n\n"
+            myidbase = 100
+            if self.secureapache.getcurrvalue() and not self.httpcompliant:
+                rangebase = str(self.rulenumber).zfill(4) + '1'
+                self.logdispatch.log(LogPriority.DEBUG,
+                                     'Deleting change events from ' + rangebase)
+                for change in prevchgs:
+                    if change[:5] == rangebase:
+                        self.statechglogger.deleteentry(change)
+                        self.logdispatch.log(LogPriority.DEBUG,
+                                             'Deleting change event ' + change)
+                for apacheconf in self.conffiles:
+                    myidbase = myidbase + 1
+                    changeid = self.makeEventId(myidbase)
+                    myidbase = myidbase + 1
+                    permid = self.makeEventId(myidbase)
+                    self.__fixapacheglobals(apacheconf, changeid, permid)
 
-            if self.configsvalid:
-                myidbase = 100
-                if self.secureapache.getcurrvalue() and not self.httpcompliant:
-                    rangebase = str(self.rulenumber).zfill(4) + '1'
-                    self.logdispatch.log(LogPriority.DEBUG,
-                                         'Deleting change events from ' + rangebase)
-                    for change in prevchgs:
-                        if change[:5] == rangebase:
-                            self.statechglogger.deleteentry(change)
-                            self.logdispatch.log(LogPriority.DEBUG,
-                                                 'Deleting change event ' + change)
-                    for apacheconf in self.conffiles:
-                        myidbase = myidbase + 1
-                        changeid = self.makeEventId(myidbase)
-                        myidbase = myidbase + 1
-                        permid = self.makeEventId(myidbase)
-                        self.__fixapacheglobals(apacheconf, changeid, permid)
+            if self.secureapache.getcurrvalue() and self.securewebdirs.getcurrvalue() and not self.webdircompliant:
+                self.logdispatch.log(LogPriority.DEBUG, 'Fixing web directory configurations')
+                for conf in self.conffiles:
+                    if os.path.exists(conf):
+                        self.__fixwebdirs(conf)
 
-                if self.secureapache.getcurrvalue() and self.securewebdirs.getcurrvalue() and not self.webdircompliant:
-                    self.logdispatch.log(LogPriority.DEBUG, 'Fixing web directory configurations')
-                    for conf in self.conffiles:
-                        if os.path.exists(conf):
-                            self.__fixwebdirs(conf)
+            if self.secureapache.getcurrvalue() and not self.permissionscompliant:
+                self.logdispatch.log(LogPriority.DEBUG, 'Fixing file/directory permissions')
+                self.__fixpermissions()
 
-                if self.secureapache.getcurrvalue() and not self.permissionscompliant:
-                    self.logdispatch.log(LogPriority.DEBUG, 'Fixing file/directory permissions')
-                    self.__fixpermissions()
+            if not self.secmodulescompliant:
+                self.__fixsecuritymod()
 
-                if not self.secmodulescompliant:
-                    self.__fixsecuritymod()
+            myidbase = 200
+            if self.domodules.getcurrvalue() and not self.modulescompliant:
+                rangebase = str(self.rulenumber).zfill(4) + '2'
+                self.logdispatch.log(LogPriority.DEBUG,
+                                     'Deleting change events from ' + rangebase)
+                for change in prevchgs:
+                    if change[:5] == rangebase:
+                        self.statechglogger.deleteentry(change)
+                        self.logdispatch.log(LogPriority.DEBUG,
+                                             'Deleting change event ' + \
+                                             change)
+                modulesd = '/etc/httpd/conf.modules.d'
+                enabled = '/etc/apache2/mods-enabled'
+                filesToCheck = []
 
-                myidbase = 200
-                if self.domodules.getcurrvalue() and not self.modulescompliant:
-                    rangebase = str(self.rulenumber).zfill(4) + '2'
-                    self.logdispatch.log(LogPriority.DEBUG,
-                                         'Deleting change events from ' + rangebase)
-                    for change in prevchgs:
-                        if change[:5] == rangebase:
-                            self.statechglogger.deleteentry(change)
-                            self.logdispatch.log(LogPriority.DEBUG,
-                                                 'Deleting change event ' + \
-                                                 change)
-                    modulesd = '/etc/httpd/conf.modules.d'
-                    enabled = '/etc/apache2/mods-enabled'
-                    filesToCheck = []
-
-                    if os.path.exists(modulesd) or os.path.exists(enabled):
-                        if os.path.exists(modulesd):
-                            modulesdirpath = modulesd
-                        elif os.path.exists(enabled):
-                            modulesdirpath = enabled
-                        # TODO need control statement here to switch for moving files on ubuntu
-                        for filename in os.listdir(modulesdirpath):
-                            filepath = os.path.join(modulesdirpath, filename)
-                            filesToCheck.append(filepath)
-                    for filename in self.conffiles:
-                        if os.path.exists(filename):
-                            filesToCheck.append(filename)
+                if os.path.exists(modulesd) or os.path.exists(enabled):
+                    if os.path.exists(modulesd):
+                        modulesdirpath = modulesd
+                    elif os.path.exists(enabled):
+                        modulesdirpath = enabled
                     # TODO need control statement here to switch for moving files on ubuntu
-                    for apacheconf in filesToCheck:
-                        # Although paths were checked before, it is possible for a file
-                        # to be removed in its partner's self.__fixapachemodules call
-                        if not os.path.exists(apacheconf):
-                            continue
-                        myidbase = myidbase + 1
-                        changeid = self.makeEventId(myidbase)
-                        myidbase = myidbase + 1
-                        permid = self.makeEventId(myidbase)
-                        self.__fixminimizemod(apacheconf, changeid, permid)
+                    for filename in os.listdir(modulesdirpath):
+                        filepath = os.path.join(modulesdirpath, filename)
+                        filesToCheck.append(filepath)
+                for filename in self.conffiles:
+                    if os.path.exists(filename):
+                        filesToCheck.append(filename)
+                # TODO need control statement here to switch for moving files on ubuntu
+                for apacheconf in filesToCheck:
+                    # Although paths were checked before, it is possible for a file
+                    # to be removed in its partner's self.__fixapachemodules call
+                    if not os.path.exists(apacheconf):
+                        continue
+                    myidbase = myidbase + 1
+                    changeid = self.makeEventId(myidbase)
+                    myidbase = myidbase + 1
+                    permid = self.makeEventId(myidbase)
+                    self.__fixminimizemod(apacheconf, changeid, permid)
 
-                myidbase = 300
-                if self.dossl.getcurrvalue() and not self.sslcompliant:
-                    rangebase = str(self.rulenumber).zfill(4) + '3'
-                    self.logdispatch.log(LogPriority.DEBUG,
-                                         'Deleting change events from ' + rangebase)
-                    for change in prevchgs:
-                        if change[:5] == rangebase:
-                            self.statechglogger.deleteentry(change)
-                            self.logdispatch.log(LogPriority.DEBUG,
-                                                 'Deleting change event ' + change)
-                        self.rulesuccess = False
-                        self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
-                    for sslfile in self.sslfiles:
-                        myidbase = myidbase + 1
-                        changeid = self.makeEventId(myidbase)
-                        myidbase = myidbase + 1
-                        permid = self.makeEventId(myidbase)
-                        self.__fixsslconfig(sslfile, changeid, permid)
-                if self.dophp.getcurrvalue():
-                    self.__fixphpconfig()
+            myidbase = 300
+            if self.dossl.getcurrvalue() and not self.sslcompliant:
+                rangebase = str(self.rulenumber).zfill(4) + '3'
+                self.logdispatch.log(LogPriority.DEBUG,
+                                     'Deleting change events from ' + rangebase)
+                for change in prevchgs:
+                    if change[:5] == rangebase:
+                        self.statechglogger.deleteentry(change)
+                        self.logdispatch.log(LogPriority.DEBUG,
+                                             'Deleting change event ' + change)
+                    self.rulesuccess = False
+                    self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
+                for sslfile in self.sslfiles:
+                    myidbase = myidbase + 1
+                    changeid = self.makeEventId(myidbase)
+                    myidbase = myidbase + 1
+                    permid = self.makeEventId(myidbase)
+                    self.__fixsslconfig(sslfile, changeid, permid)
+            if self.dophp.getcurrvalue():
+                self.__fixphpconfig()
 
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
