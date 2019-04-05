@@ -102,6 +102,9 @@ class TCPWrappers(Rule):
 
         self.allownetCI = self.initCi(datatype, key, instructions, default)
 
+        self.osname = self.environ.getosname()
+        self.osmajorver = self.environ.getosmajorver()
+
     def configure_allow_text(self):
         """
         Set up hosts.allow content for later output to file
@@ -109,13 +112,20 @@ class TCPWrappers(Rule):
         @author: Breen Malmberg
         """
 
+        self.logger.log(LogPriority.DEBUG, "configuring hosts.allow text")
+
         self.hosts_allow_contents = []
         subnets = self.allownetCI.getcurrvalue()
+
+        self.logger.log(LogPriority.DEBUG, "host os name = " + str(self.osname))
+        self.logger.log(LogPriority.DEBUG, "host os major version = " + str(self.osmajorver))
+        self.logger.log(LogPriority.DEBUG, "subnets before conversion = " + str(subnets))
 
         if self.environ.getosname().lower() in ["rhel", "centos"]:
             if self.environ.getosmajorver() == 6:
                 # convert all subnet formats to legacy format
                 subnets = [self.convert_to_legacy(subnet) for subnet in subnets]
+        self.logger.log(LogPriority.DEBUG, "subnets after conversion = " + str(subnets))
 
         # build the hosts.allow content by modifying the default content with
         # either the default ranges in localize.py or the user-specified ranges
@@ -149,6 +159,7 @@ class TCPWrappers(Rule):
             socket.inet_aton(re.sub("/.*", "", subnet))
         except:
             # will not try to manipulate anything that is not a valid ip subnet spec
+            self.logger.log(LogPriority.DEBUG, "subnet provided not a valid ip subnet format. will not attempt to convert to legacy format")
             return subnet
 
         self.logger.log(LogPriority.DEBUG, "Converting " + str(subnet) + " from x.x.x.x/CIDR to legacy x.x.x.x/y.y.y.y format...")
@@ -164,6 +175,7 @@ class TCPWrappers(Rule):
             subnet = re.sub(case, conversion_matrix[case], subnet)
             break
 
+        self.logger.log(LogPriority.DEBUG, "subnet re-formatted to fit legacy format: " + str(subnet))
         return subnet
 
     def report(self):
@@ -195,9 +207,11 @@ class TCPWrappers(Rule):
 
             if not self.reportAllow():
                 self.compliant = False
+                self.logger.log(LogPriority.DEBUG, "reportAllow returned False")
 
             if not self.reportDeny():
                 self.compliant = False
+                self.logger.log(LogPriority.DEBUG, "reportDeny returned False")
 
         except (KeyboardInterrupt, SystemExit):
             raise
@@ -211,6 +225,7 @@ class TCPWrappers(Rule):
 
     def reportAllow(self):
         """
+        check contents of hosts.allow file
 
         @return: compliant
         @rtype: bool
@@ -237,6 +252,7 @@ class TCPWrappers(Rule):
 
     def reportDeny(self):
         """
+        check contents of hosts.deny file
 
         @return: compliant
         @rtype: bool
@@ -298,8 +314,11 @@ class TCPWrappers(Rule):
 
     def fixAllow(self):
         """
+        fix contents for hosts.allow file
 
-        @return:
+        @return: success
+        @rtype: bool
+        @author: Breen Malmberg
         """
 
         success = True
@@ -316,6 +335,7 @@ class TCPWrappers(Rule):
             myid = iterate(self.iditerator, self.rulenumber)
             event = {"eventtype": "conf",
                      "filepath": allowfile}
+
             self.statechglogger.recordchgevent(myid, event)
             self.statechglogger.recordfilechange(allowfile, allowtmp, myid)
 
@@ -323,15 +343,18 @@ class TCPWrappers(Rule):
             os.chmod(allowfile, 0644)
             os.chown(allowfile, 0, 0)
 
-        except IOError:
-            success = False
+        except Exception:
+            raise
 
         return success
 
     def fixDeny(self):
         """
+        fix contents for hosts.deny file
 
-        @return:
+        @return: success
+        @rtype: bool
+        @author: Breen Malmberg
         """
 
         success = True
@@ -348,6 +371,7 @@ class TCPWrappers(Rule):
             myid = iterate(self.iditerator, self.rulenumber)
             event = {"eventtype": "conf",
                      "filepath": denyfile}
+
             self.statechglogger.recordchgevent(myid, event)
             self.statechglogger.recordfilechange(denyfile, denytmp, myid)
 
@@ -355,7 +379,7 @@ class TCPWrappers(Rule):
             os.chmod(denyfile, 0644)
             os.chown(denyfile, 0, 0)
 
-        except IOError:
-            success = False
+        except Exception:
+            raise
 
         return success
