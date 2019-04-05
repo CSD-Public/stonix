@@ -137,6 +137,7 @@ class TCPWrappers(Rule):
 
         @return: subnet
         @rtype: string
+        @author: Breen Malmberg
         """
 
         subnet = str(subnet)
@@ -145,7 +146,7 @@ class TCPWrappers(Rule):
         # (other things can be used in tcp wrappers like hostname, domain, etc.
         # and we don't want to try to do this manipulation on those types)
         try:
-            socket.inet_aton(subnet)
+            socket.inet_aton(re.sub("/.*", "", subnet))
         except:
             # will not try to manipulate anything that is not a valid ip subnet spec
             return subnet
@@ -180,6 +181,7 @@ class TCPWrappers(Rule):
         constlist = [ALLOWNETS, HOSTSALLOWDEFAULT, HOSTSDENYDEFAULT]
         if not self.checkConsts(constlist):
             self.compliant = False
+            self.detailedresults += "\nRule did not run due to one or more required constants in localize.py not being defined"
             self.formatDetailedResults("report", self.compliant, self.detailedresults)
             self.logdispatch.log(LogPriority.INFO, self.detailedresults)
             return self.compliant
@@ -210,7 +212,9 @@ class TCPWrappers(Rule):
     def reportAllow(self):
         """
 
-        @return:
+        @return: compliant
+        @rtype: bool
+        @author: Breen Malmberg
         """
 
         compliant = True
@@ -234,7 +238,9 @@ class TCPWrappers(Rule):
     def reportDeny(self):
         """
 
-        @return:
+        @return: compliant
+        @rtype: bool
+        @author: Breen Malmberg
         """
 
         compliant = False
@@ -284,8 +290,7 @@ class TCPWrappers(Rule):
             raise
         except Exception as err:
             self.rulesuccess = False
-            self.detailedresults = self.detailedresults + "\n" + str(err) + \
-                " - " + str(traceback.format_exc())
+            self.detailedresults += "\n"  + str(traceback.format_exc())
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
@@ -317,8 +322,6 @@ class TCPWrappers(Rule):
             os.rename(allowtmp, allowfile)
             os.chmod(allowfile, 0644)
             os.chown(allowfile, 0, 0)
-
-            return success
 
         except IOError:
             success = False
