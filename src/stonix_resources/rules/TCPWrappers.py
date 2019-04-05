@@ -122,7 +122,7 @@ class TCPWrappers(Rule):
         self.logger.log(LogPriority.DEBUG, "subnets before conversion = " + str(subnets))
 
         if self.environ.getosname().lower() in ["rhel", "centos"]:
-            if self.environ.getosmajorver() == 6:
+            if self.environ.getosmajorver() == "6":
                 # convert all subnet formats to legacy format
                 subnets = [self.convert_to_legacy(subnet) for subnet in subnets]
         self.logger.log(LogPriority.DEBUG, "subnets after conversion = " + str(subnets))
@@ -173,7 +173,6 @@ class TCPWrappers(Rule):
         # replace the cidr number with the subnet mask equivalent
         for case in conversion_matrix:
             subnet = re.sub(case, conversion_matrix[case], subnet)
-            break
 
         self.logger.log(LogPriority.DEBUG, "subnet re-formatted to fit legacy format: " + str(subnet))
         return subnet
@@ -248,6 +247,9 @@ class TCPWrappers(Rule):
             self.detailedresults += "\ncontents of hosts.allow are not correct"
             compliant = False
 
+        if compliant:
+            self.logger.log(LogPriority.DEBUG, "hosts.allow file contents are correct")
+
         return compliant
 
     def reportDeny(self):
@@ -259,7 +261,7 @@ class TCPWrappers(Rule):
         @author: Breen Malmberg
         """
 
-        compliant = False
+        compliant = True
         denyfile = "/etc/hosts.deny"
 
         if not os.path.exists(denyfile):
@@ -268,12 +270,15 @@ class TCPWrappers(Rule):
             return compliant
 
         f = open(denyfile, "r")
-        contentlines = f.readlines()
+        contents = f.read()
         f.close()
 
-        if contentlines != HOSTSDENYDEFAULT.splitlines(True):
+        if contents != HOSTSDENYDEFAULT:
             self.detailedresults += "\ncontents of hosts.deny are not correct"
             compliant = False
+
+        if compliant:
+            self.logger.log(LogPriority.DEBUG, "hosts.deny file contents are correct")
 
         return compliant
 
