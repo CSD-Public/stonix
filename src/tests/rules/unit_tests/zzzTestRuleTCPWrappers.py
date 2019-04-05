@@ -21,21 +21,21 @@
 # See the GNU General Public License for more details.                        #
 #                                                                             #
 ###############################################################################
-'''
-This is a Unit Test for Rule ConfigureAppleSoftwareUpdate
+"""
+This is a Unit Test for Rule TCPWrappers
 
 @author: ekkehard j. koch
 @change: 03/18/2013 Original Implementation
 @change: 2016/02/10 roy Added sys.path.append for being able to unit test this
                         file as well as with the test harness.
-'''
+"""
+
 from __future__ import absolute_import
 import unittest
 import sys
 
 sys.path.append("../../../..")
 from src.tests.lib.RuleTestTemplate import RuleTest
-from src.stonix_resources.CommandHelper import CommandHelper
 from src.tests.lib.logdispatcher_mock import LogPriority
 from src.stonix_resources.rules.TCPWrappers import TCPWrappers
 
@@ -43,73 +43,112 @@ from src.stonix_resources.rules.TCPWrappers import TCPWrappers
 class zzzTestRuleTCPWrappers(RuleTest):
 
     def setUp(self):
+        """
+
+        @return: 
+        """
+
         RuleTest.setUp(self)
-        self.rule = TCPWrappers(self.config,
-                                self.environ,
-                                self.logdispatch,
-                                self.statechglogger)
+        self.rule = TCPWrappers(self.config, self.environ, self.logdispatch, self.statechglogger)
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
-        self.ch = CommandHelper(self.logdispatch)
 
     def tearDown(self):
+        """
+
+        @return: 
+        """
+
         pass
 
     def runTest(self):
+        """
+
+        @return: 
+        """
+
         self.simpleRuleTest()
 
     def setConditionsForRule(self):
-        '''
+        """
         Configure system for the unit test
-        @param self: essential if you override this definition
+
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
-        '''
+        """
+
         success = True
         return success
 
+    def test_convert(self):
+        """
+        test the convert method in tcpwrappers
+
+        @return:
+        """
+
+        self.assertEqual("", self.rule.convert_to_legacy(""))
+        self.assertEqual("name.domain", self.rule.convert_to_legacy("name.domain"))
+        self.assertEqual("129.175.0.0/255.255.0.0", self.rule.convert_to_legacy("129.175.0.0/16"))
+        self.assertEqual("129.175.1.0/255.255.255.0", self.rule.convert_to_legacy("129.175.1.0/24"))
+        self.assertEqual("129.0.0.0/255.0.0.0", self.rule.convert_to_legacy("129.0.0.0/8"))
+
+    def test_init(self):
+        """
+        test whether parameters in init are set correctly
+
+        @return:
+        """
+
+        self.assertIsNotNone(self.rule.osname)
+        self.assertIsNotNone(self.rule.osmajorver)
+        self.assertTrue(isinstance(self.rule.osname, basestring))
+        self.assertTrue(isinstance(self.rule.osmajorver, basestring))
+        self.assertIsNotNone(self.rule.ci)
+        self.assertIsNotNone(self.rule.ci.getcurrvalue())
+        self.assertIsNotNone(self.rule.allownetCI)
+        self.assertIsNotNone(self.rule.allownetCI.getcurrvalue())
+
     def checkReportForRule(self, pCompliance, pRuleSuccess):
-        '''
-        check on whether report was correct
-        @param self: essential if you override this definition
+        """
+        check whether report was correct
+
         @param pCompliance: the self.iscompliant value of rule
         @param pRuleSuccess: did report run successfully
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
-        '''
-        self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " + \
-                             str(pCompliance) + ".")
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
-                             str(pRuleSuccess) + ".")
+        """
+
+        self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " + str(pCompliance) + ".")
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + str(pRuleSuccess) + ".")
         success = True
         return success
 
     def checkFixForRule(self, pRuleSuccess):
-        '''
-        check on whether fix was correct
-        @param self: essential if you override this definition
+        """
+        check whether fix was correct
+
         @param pRuleSuccess: did report run successfully
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
-        '''
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
-                             str(pRuleSuccess) + ".")
+        """
+
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + str(pRuleSuccess) + ".")
         success = True
         return success
 
     def checkUndoForRule(self, pRuleSuccess):
-        '''
-        check on whether undo was correct
-        @param self: essential if you override this definition
+        """
+        check whether undo was correct
+
         @param pRuleSuccess: did report run successfully
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
-        '''
-        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
-                             str(pRuleSuccess) + ".")
+        """
+
+        self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + str(pRuleSuccess) + ".")
         success = True
         return success
 
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()
