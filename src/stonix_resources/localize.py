@@ -1,27 +1,5 @@
-'''
+"""
 Created on Oct 18, 2012
-###############################################################################
-#                                                                             #
-# Copyright 2012-2018.  Los Alamos National Security, LLC. This material was  #
-# produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
-# National Laboratory (LANL), which is operated by Los Alamos National        #
-# Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
-# rights to use, reproduce, and distribute this software.  NEITHER THE        #
-# GOVERNMENT NOR LOS ALAMOS NATIONAL SECURITY, LLC MAKES ANY WARRANTY,        #
-# EXPRESS OR IMPLIED, OR ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.  #
-# If software is modified to produce derivative works, such modified software #
-# should be clearly marked, so as not to confuse it with the version          #
-# available from LANL.                                                        #
-#                                                                             #
-# Additionally, this program is free software; you can redistribute it and/or #
-# modify it under the terms of the GNU General Public License as published by #
-# the Free Software Foundation; either version 2 of the License, or (at your  #
-# option) any later version. Accordingly, this program is distributed in the  #
-# hope that it will be useful, but WITHOUT ANY WARRANTY; without even the     #
-# implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.    #
-# See the GNU General Public License for more details.                        #
-#                                                                             #
-###############################################################################
 
 This module contains variables used to localize STONIX behavior for a given
 site. It is intended to be edited by the personnel packaging STONIX for use and
@@ -32,30 +10,36 @@ checks. Mistakes made in this file may lead to errors in STONIX behavior or
 run-time failures. Pay attention to comments documenting both the content and
 format of entries.
 
-@author: dkennel
-@change: 2014/07/14 - ekkehard - added foo.bar.com = FOO.BAR.COM to
+@author: David Kennel
+@change: 2014/07/14 - Ekkehard - added eia-ecs-p-f5.lanl.gov = WIN.LANL.GOV to
 KERB5
 @change: 2014/08/20 - Added version variable to here and updated all locations
 that access the version variable to use this copy.
-@change: 2015/03/01 - ekkehard - incremented STONIXVERSION = '0.9.30'
-@change: 2015/04/07 - ekkehard - incremented STONIXVERSION = '0.9.30'
-@change: 2015/12/07 - eball Renamed KERB5 to MACKRB5 and KRB5 to LINUXKRB5
-@change: 2016/02/03 - ekkehard - incremented STONIXVERSION = '0.9.30'
-@change: 2016/05/05 - eball Add LOCALDOMAINS for AuditFirefoxUsage(84)
-@change: 2017/03/07 - dkennel add FISMACAT for FISMA/FIPS 199 risk category
-@change: 2017/07/07 - ekkehard - incremented STONIXVERSION = '0.9.30'
-@change: 2017/10/10 - ekkehard - incremented STONIXVERSION = '0.9.30'
-@change: 2017/11/13 - ekkehard - incremented STONIXVERSION = '0.9.30'
-@change: 2018/02/06 - ekkehard - incremented STONIXVERSION = '0.9.30'
-@change: 2018/02/06 - ekkehard - incremented STONIXVERSION = '0.9.30'
-@change: 2018/04/11 - ekkehard - incremented STONIXVERSION = '0.9.30'
-@change: 2018/05/08 - ekkehard - incremented STONIXVERSION = '0.9.30'
-@change: 2018/06/08 - ekkehard - incremented STONIXVERSION = '0.9.30'
+@change: 2015/03/01 - Ekkehard - incremented STONIXVERSION to '0.8.15'
+@change: 2015/04/07 - Ekkehard - incremented STONIXVERSION to '0.8.16'
+@change: 2015/08/20 - Eric Ball - Added KRB5 for Linux Kerberos setup
+@change: 2015/12/07 - Eric Ball Renamed KERB5 to MACKRB5 and KRB5 to LINUXKRB5
+@change: 2015/12/14 - Ekkehard update os x kerberos option & stonixversion
+@change: 2016/01/13 - Roy Nielsen Added MACREPOROOT
+@change: 2016/02/03 - Ekkehard - incremented STONIXVERSION to '0.9.5'
+@change: 2016/05/05 - Eric Ball Add LOCALDOMAINS for AuditFirefoxUsage(84)
+@change: 2017/03/07 - David Kennel add FISMACAT for FISMA/FIPS 199 risk category
+@change: 2017/07/07 - Ekkehard - incremented STONIXVERSION to '0.9.10'
+@change: 2017/10/10 - Ekkehard - incremented STONIXVERSION to '0.9.13'
+@change: 2017/11/13 - Ekkehard - incremented STONIXVERSION to '0.9.14'
+@change: 2018/02/06 - Ekkehard - incremented STONIXVERSION to '0.9.16'
+@change: 2018/02/06 - Ekkehard - incremented STONIXVERSION to '0.9.17'
+@change: 2018/04/11 - Ekkehard - incremented STONIXVERSION to '0.9.18' and krb5.conf
+@change: 2018/05/08 - Ekkehard - incremented STONIXVERSION to '0.9.19'
+@change: 2018/06/08 - Ekkehard - incremented STONIXVERSION to '0.9.20'
+@change: 2018/07/12 - Ekkehard - jfile001.lanl.gov update
 @change: 2018/08/21 - Brandon - changed CRACKLIB_HIGH_REGEX minlen and
                                 PWQUALITY_HIGH_REGEX minlen from 12 to 14
-@change: 2018/11/14 - Breen Malmberg - incremented STONIXVERSION = '0.9.30'
-@change: 2019/03/12 - ekkehard - incremented STONIXVERSION = '0.9.30'
-'''
+@change: 2018/11/14 - Breen Malmberg - incremented STONIXVERSION to '0.9.26'
+@change: 2019/02/05 - Breen Malmberg - incremented STONIXVERSION to '0.9.28'
+@change: 2019/03/12 - Ekkehard - incremented STONIXVERSION to '0.9.29'
+@change: 2019/04/08 - Breen Malmberg - incremented STONIXVERSION to '0.9.30'
+"""
 
 FISMACAT = 'med'
 
