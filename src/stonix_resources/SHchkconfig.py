@@ -30,6 +30,7 @@ Created on Aug 9, 2012
 import subprocess
 import os
 import re
+import errno
 from . logdispatcher import LogPriority
 from ServiceHelperTemplate import ServiceHelperTemplate
 

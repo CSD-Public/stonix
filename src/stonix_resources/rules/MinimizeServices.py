@@ -433,6 +433,8 @@ class MinimizeServices(Rule):
                                'systemd-journald.service',
                                'systemd-logind.service',
                                'systemd-modules-load.service',
+                               'systemd-networkd-wait-online.service',
+                               'systemd-networkd.service',
                                'systemd-random-seed-load.service',
                                'systemd-random-seed-save.service',
                                'systemd-readahead-collect.service',
