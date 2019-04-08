@@ -21,19 +21,21 @@
 #                                                                             #
 ###############################################################################
 
-'''
+"""
 This rule restricts mounting rights and options.
 
 @author: Eric Ball
-@change: 2015/07/06 eball Original implementation
-@change: 2016/04/22 eball Added GNOME 3 method for disabling GNOME mounting
-@change: 2016/08/01 eball Added "dbus-launch" before all gsettings commands,
+@change: 2015/07/06 Eric Ball Original implementation
+@change: 2016/04/22 Eric Ball Added GNOME 3 method for disabling GNOME mounting
+@change: 2016/08/01 Eric Ball Added "dbus-launch" before all gsettings commands,
     and fixed undos that were the same as the fix commands
-@change: 2017/10/23 rsn - change to new service helper interface
-@change: 2018/2/9   bgonz12 - changed fix make sure dbus-x11 is installed
+@change: 2017/10/23 Roy Nielsen - change to new service helper interface
+@change: 2018/2/9   Brandon Gonzales - changed fix make sure dbus-x11 is installed
     before disabling gnome automount in gsettings
-@change: 2018/4/6   bgonz12 - Initialized variable 'success' in fix
-'''
+@change: 2018/4/6   Brandon Gonzales - Initialized variable 'success' in fix
+@TODO candidate for rule re-write with focus on modularity, readability, code re-use, command-based approach
+@TODO difficult to create good unit tests for this rule as written
+"""
 
 from __future__ import absolute_import
 
@@ -52,14 +54,14 @@ from ..ServiceHelper import ServiceHelper
 
 
 class RestrictMounting(Rule):
-    '''
+    """
     Class help text
-    '''
+    """
 
     def __init__(self, config, enviro, logger, statechglogger):
-        '''
+        """
         Constructor
-        '''
+        """
 
         Rule.__init__(self, config, enviro, logger, statechglogger)
         self.logger = logger
@@ -103,8 +105,10 @@ class RestrictMounting(Rule):
         self.dbuslaunch = "/usr/bin/dbus-launch"
 
     def report(self):
-        '''
-        '''
+        """
+
+        @return: 
+        """
 
         self.automountMedia = True
         self.automountDrives = True
@@ -214,17 +218,19 @@ class RestrictMounting(Rule):
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception:
-            self.rulesuccess = False
+            self.compliant = False
             self.detailedresults += "\n" + traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("report", self.compliant,
-                                   self.detailedresults)
+        self.formatDetailedResults("report", self.compliant, self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+
         return self.compliant
 
     def fix(self):
-        '''
-        '''
+        """
+
+        @return:
+        """
 
         self.detailedresults = ""
         self.iditerator = 0
@@ -426,8 +432,8 @@ class RestrictMounting(Rule):
                 self.logger.log(LogPriority.DEBUG, "no directories in /run/user")
 
             self.rulesuccess = success
+
         except (KeyboardInterrupt, SystemExit):
-            # User initiated exit
             raise
         except Exception:
             self.rulesuccess = False
