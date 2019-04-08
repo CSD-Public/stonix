@@ -2,7 +2,7 @@
 
 ###############################################################################
 #                                                                             #
-# Copyright 2015-2019.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2019.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -75,7 +75,7 @@
 # 2010-08-23
 # - Revision 1.0
 
-'''%prog [options]
+"""%prog [options]
 
 Apply security hardening settings according to LANL guidelines.
 
@@ -117,16 +117,16 @@ Created on Aug 23, 2010
 @author: David Kennel
 @change: 2017/03/07 - David Kennel - Added support for FISMA categorization.
 @change: 2017/06/19 - David Kennel - Added safeties to rule loading for redundant
-rule names and numbers.
+        rule names and numbers.
 @change: 2017/07/12 - Breen Malmberg - added method getruleauditonly();
-        added todo notes; changed author name formats to be consistent;
+        added to do notes; changed author name formats to be consistent;
         fixed some typo's in the class doc string; updated group name (CSD -> NIE)
-@todo: There are some methods that require fixing / completing / re-working
-        (search FIX ME)
-@todo: All methods need a once-over done on their doc strings
-@todo: improve logging/debugging on all methods
-@todo: look at adding try/except to all methods missing them
-'''
+@TODO There are some methods that require fixing / completing / re-working (search FIXME)
+@TODO All methods need a once-over done on their doc strings
+@TODO improve logging/debugging on all methods
+@TODO look at adding try/except to all methods missing them
+@change: 2019/04/08 - Breen Malmberg - removed unused import 'imp'; fixed unreachable logging calls
+"""
 
 # Std Library imports
 import sys
@@ -135,7 +135,6 @@ import re
 import traceback
 import time
 import subprocess
-import imp
 from pkgutil import extend_path
 
 # Local imports
@@ -150,16 +149,21 @@ from stonix_resources.logdispatcher import LogPriority, LogDispatcher
 from stonix_resources.program_arguments import ProgramArguments
 from stonix_resources.CheckApplicable import CheckApplicable
 from stonix_resources.CommandHelper import CommandHelper
-#import stonix_resources.fixFrozen
 
 from stonix_resources.cli import Cli
 
 
 class Controller(Observable):
-    """This is the main worker object for stonix. It handles the
+    """
+    This is the main worker object for stonix. It handles the
     stand up and tear down of the rest of the program.
     """
+
     def __init__(self):
+        """
+
+        """
+
         Observable.__init__(self)
         self.environ = Environment()
         self.mode = "gui"
@@ -170,6 +174,7 @@ class Controller(Observable):
         self.pcf = False
         self.pcs = False
         self.list = False
+
         if not self.safetycheck():
             self.logger.log(LogPriority.CRITICAL,
                             ['SafetyCheck',
@@ -395,7 +400,7 @@ class Controller(Observable):
                             ['Sys Path Element:', str(path)])
 
         rulefiles = os.listdir(str(rulesPath))
-        # print str(rulefiles)
+
 
         #####
         # Check if stonix has been 'frozen' with pyinstaller, py2app, etc and
@@ -430,7 +435,7 @@ class Controller(Observable):
             # rule class names.
             for module in modulenames:
                 module = module.split("/")[-1]
-                # print module
+
                 classname = 'stonix_resources.rules.' + module + '.' + module
                 rulewalklist.append(classname)
 
@@ -495,13 +500,11 @@ class Controller(Observable):
                 self.logger.log(LogPriority.DEBUG,
                                 'Checking Rule Name: ' + str(rulename))
                 if rulenum in rulenumbers:
+                    self.logger.log(LogPriority.DEBUG, 'Rule Numbers List: ' + str(rulenumbers))
                     raise ValueError('ERROR: Rule Number ' + str(rulenum) + ' already instantiated! Not loading rule: ' + rulename)
-                    self.logger.log(LogPriority.DEBUG,
-                                    'Rule Numbers List: ' + str(rulenumbers))
                 elif rulename in rulenames:
+                    self.logger.log(LogPriority.DEBUG, 'Rule Numbers List: ' + str(rulenames))
                     raise ValueError('ERROR: Rule ' + rulename + ' already instantiated! Not loading rule: ' + str(rulenum))
-                    self.logger.log(LogPriority.DEBUG,
-                                    'Rule Numbers List: ' + str(rulenames))
                 else:
                     rulenumbers.append(rulenum)
                     rulenames.append(rulename)
@@ -517,7 +520,7 @@ class Controller(Observable):
                 self.logger.log(LogPriority.ERROR,
                                 "Error instantiating rule: " + str(trace))
                 continue
-        # print instruleclasses
+
         return instruleclasses
 
     def findapplicable(self, rules):
@@ -1131,7 +1134,7 @@ class Controller(Observable):
         return percent
 
     def set_rule_detailedresults(self, ruleid, mode, result, msg):
-        '''
+        """
         update the specified rule's (ruleid) detailedresults with the msg from
         the caller; (used to bridge the observable gap between other classes and
         the running rule)
@@ -1141,14 +1144,14 @@ class Controller(Observable):
         @param result: bool; (see rule.py formatDetailedResults())
         @param msg: string; message to update detailedresults with
         @author: Breen Malmberg
-        '''
+        """
 
         for rule in self.installedrules:
             if ruleid == rule.getrulenum():
                 rule.formatDetailedResults(mode, result, msg)
 
     def getruleauditonly(self, ruleid):
-        '''
+        """
         This method returns the audit only status boolean
         from the rule with a given <ruleid>.
 
@@ -1156,7 +1159,7 @@ class Controller(Observable):
         @return: auditonly
         @rtype: bool
         @author: Breen Malmberg
-        '''
+        """
 
         auditonly = False
 
@@ -1305,7 +1308,7 @@ ABORTING EXECUTION!"""
         This method calls the prog_args instance to process the command line
         args and then jumps to the appropriate execution mode.
 
-        @author: R. Nielsen, David Kennel
+        @author: Roy Nielsen, David Kennel
         @return: void
         """
         self.environ.setverbosemode(self.prog_args.get_verbose())
@@ -1349,7 +1352,7 @@ ABORTING EXECUTION!"""
 
         if self.prog_args.get_gui():
             self.mode = 'gui'
-            # print "Launching UI"
+
             # uiinstance = view.View(uimode)
 
         if self.prog_args.get_cli():
@@ -1360,7 +1363,7 @@ ABORTING EXECUTION!"""
         this method is called when the environment object determins that the
         controller is in test mode - e.g. running from a unittest.
 
-        @author: ekkehard j. Koch
+        @author: Ekkehard J. Koch
         @return: void
         """
         self.environ.setverbosemode(True)
