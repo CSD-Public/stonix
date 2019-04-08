@@ -23,7 +23,7 @@
 
 Name: stonix
 Summary: Cross platform hardening tool for *NIX platforms
-Version: 0.9.28
+Version: 0.9.30
 Release: 0%{dist}
 License: GPL v. 2.0
 Group: System administration tools
