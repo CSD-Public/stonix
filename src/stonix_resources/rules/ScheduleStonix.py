@@ -881,28 +881,31 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
 
                     # compare contents of plist script
                     i = 0
-                    for i in range(len(contents)):
-                        if not re.search('<integer>', contents[i]):
-                            if contents[i].strip() != scrptcontents[i].strip():
-                                retval = False
-                                self.detailedresults += "line not correct: " + str(contents[i]) + " in file: " + str(path) + "\n"
-                                if re.search('report', path, re.IGNORECASE):
-                                    self.macadminreportjob = False
-                                if re.search('fix', path, re.IGNORECASE):
-                                    self.macadminfixjob = False
-                                if re.search('user', path, re.IGNORECASE):
-                                    self.macuserjob = False
+                    try:
+                        for i in range(len(contents)):
+                            if not re.search('<integer>', contents[i]):
+                                if contents[i].strip() != scrptcontents[i].strip():
+                                    retval = False
+                                    self.detailedresults += "line not correct: " + str(contents[i]) + " in file: " + str(path) + "\n"
+                                    if re.search('report', path, re.IGNORECASE):
+                                        self.macadminreportjob = False
+                                    if re.search('fix', path, re.IGNORECASE):
+                                        self.macadminfixjob = False
+                                    if re.search('user', path, re.IGNORECASE):
+                                        self.macuserjob = False
 
-                        else:
-                            if not re.search('<integer>[0-9][0-9]{0,1}<\/integer>', contents[i]):
-                                retval = False
-                                self.detailedresults += "integer line wrong: " + str(contents[i]) + " in file: " + str(path) + "\n"
-                                if re.search('report', path, re.IGNORECASE):
-                                    self.macadminreportjob = False
-                                if re.search('fix', path, re.IGNORECASE):
-                                    self.macadminfixjob = False
-                                if re.search('user', path, re.IGNORECASE):
-                                    self.macuserjob = False
+                            else:
+                                if not re.search('<integer>[0-9][0-9]{0,1}<\/integer>', contents[i]):
+                                    retval = False
+                                    self.detailedresults += "integer line wrong: " + str(contents[i]) + " in file: " + str(path) + "\n"
+                                    if re.search('report', path, re.IGNORECASE):
+                                        self.macadminreportjob = False
+                                    if re.search('fix', path, re.IGNORECASE):
+                                        self.macadminfixjob = False
+                                    if re.search('user', path, re.IGNORECASE):
+                                        self.macuserjob = False
+                    except IndexError:
+                        pass
 
             # This part needs to be changed to work with re-designed servicehelperTwo
             self.ch.executeCommand("/bin/launchctl print-disabled system/")
