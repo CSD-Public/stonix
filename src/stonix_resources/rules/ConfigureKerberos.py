@@ -20,29 +20,32 @@
 # See the GNU General Public License for more details.                        #
 #                                                                             #
 ###############################################################################
-'''
+"""
 This method runs all the report methods for RuleKVEditors in defined in the
 dictionary
 
-@author: ekkehard j. koch
-@change: 04/21/2014 ekkehard - Original Implementation
-@change: 2014/06/17 dkennel - Fixed traceback on Debian
-@change: 2014/07/14 ekkehard - Fixed report to self.fh.evaluateFiles()
-@change: 2015/04/14 dkennel updated for new isApplicable
-@change: 2015/08/17 eball - Updated to work with Linux
-@change: 2015/10/07 eball - Help text cleanup
-@change: 2015/11/02 eball - Added undo events to package installation
-@change: 2015/11/09 ekkehard - make eligible for OS X El Capitan
-@change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
-@change: 2017/08/28 ekkehard - Added self.sethelptext()
-@change: 2017/10/24 rsn - removed unused service helper
-@change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
-@change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
-@change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
-'''
+@author: Ekkehard J. Koch
+@change: 04/21/2014 Ekkehard - Original Implementation
+@change: 2014/06/17 David Kennel - Fixed traceback on Debian
+@change: 2014/07/14 Ekkehard - Fixed report to self.fh.evaluateFiles()
+@change: 2015/04/14 David Kennel updated for new isApplicable
+@change: 2015/08/17 Eric Ball - Updated to work with Linux
+@change: 2015/10/07 Eric Ball - Help text cleanup
+@change: 2015/11/02 Eric Ball - Added undo events to package installation
+@change: 2015/11/09 Ekkehard - make eligible for OS X El Capitan
+@change: 2017/07/07 Ekkehard - make eligible for macOS High Sierra 10.13
+@change: 2017/08/28 Ekkehard - Added self.sethelptext()
+@change: 2017/10/24 Roy Nielsen - removed unused service helper
+@change: 2017/11/13 Ekkehard - make eligible for OS X El Capitan 10.11+
+@change: 2018/06/08 Ekkehard - make eligible for macOS Mojave 10.14
+@change: 2019/03/12 Ekkehard - make eligible for macOS Sierra 10.12+
+"""
+
 from __future__ import absolute_import
+
 import os
 import traceback
+
 from ..rule import Rule
 from ..logdispatcher import LogPriority
 from ..filehelper import FileHelper
@@ -53,13 +56,19 @@ from ..localize import MACKRB5, LINUXKRB5
 
 
 class ConfigureKerberos(Rule):
-    '''
-    @author: ekkehard j. koch
-    '''
-
-###############################################################################
+    """
+    @author: Ekkehard J. Koch
+    """
 
     def __init__(self, config, environ, logdispatcher, statechglogger):
+        """
+
+        @param config:
+        @param environ:
+        @param logdispatcher:
+        @param statechglogger:
+        """
+
         Rule.__init__(self, config, environ, logdispatcher,
                               statechglogger)
         self.rulenumber = 255
@@ -157,7 +166,7 @@ class ConfigureKerberos(Rule):
         self.ci = self.initCi(datatype, key, instructions, default)
 
     def report(self):
-        '''
+        """
         run report actions for configure kerberos
         determine compliance status of the current system
         return True if compliant, False if non-compliant
@@ -166,7 +175,10 @@ class ConfigureKerberos(Rule):
         @rtype: bool
         @author: ???
         @change: Breen Malmberg - 2/23/2017 - added doc string; added const checks preamble to report and fix methods
-        '''
+        """
+
+        self.compliant = True
+        self.detailedresults = ""
 
         # UPDATE THIS SECTION IF YOU CHANGE THE CONSTANTS BEING USED IN THE RULE
         constlist = [MACKRB5, LINUXKRB5]
@@ -177,8 +189,7 @@ class ConfigureKerberos(Rule):
             return self.compliant
 
         try:
-            compliant = True
-            self.detailedresults = ""
+
             if self.environ.getosfamily() == 'linux':
                 packagesRpm = ["pam_krb5", "krb5-libs", "krb5-workstation",
                                "sssd-krb5", "sssd-krb5-common"]
@@ -192,39 +203,37 @@ class ConfigureKerberos(Rule):
                 else:
                     self.packages = packagesRpm
                 for package in self.packages:
-                    if not self.ph.check(package) and \
-                       self.ph.checkAvailable(package):
-                        compliant = False
+                    if not self.ph.check(package) and self.ph.checkAvailable(package):
+                        self.compliant = False
                         self.detailedresults += package + " is not installed\n"
             if not self.fh.evaluateFiles():
-                compliant = False
+                self.compliant = False
                 self.detailedresults += self.fh.getFileMessage()
-            self.compliant = compliant
+
         except (KeyboardInterrupt, SystemExit):
-            # User initiated exit
             raise
-        except Exception, err:
-            self.rulesuccess = False
-            self.detailedresults = self.detailedresults + "\n" + str(err) + \
-                " - " + str(traceback.format_exc())
+        except Exception:
+            self.compliant = False
+            self.detailedresults += str(traceback.format_exc())
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("report", self.compliant,
-                                   self.detailedresults)
+        self.formatDetailedResults("report", self.compliant, self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
 
-###############################################################################
-
     def fix(self):
-        '''
+        """
         run fix actions
 
-        @return: fixsuccess
+        @return: self.rulesuccess
         @rtype: bool
         @author: ???
         @change: Breen Malmberg - 2/23/2017 - added doc string; added checkconsts preamble to ensure
                 the rule does not attempt to run without requied information (from localize.py)
-        '''
+        """
+
+        self.rulesuccess = True
+        self.detailedresults = ""
+        self.iditerator = 0
 
         # UPDATE THIS SECTION IF YOU CHANGE THE CONSTANTS BEING USED IN THE RULE
         constlist = [MACKRB5, LINUXKRB5]
@@ -234,9 +243,7 @@ class ConfigureKerberos(Rule):
             return fixsuccess
 
         try:
-            fixsuccess = True
-            self.detailedresults = ""
-            self.iditerator = 0
+
             eventlist = self.statechglogger.findrulechanges(self.rulenumber)
             for event in eventlist:
                 self.statechglogger.deleteentry(event)
@@ -257,29 +264,23 @@ class ConfigureKerberos(Rule):
                                      "pkgname": package,
                                      "startstate": "removed",
                                      "endstate": "installed"}
-                            self.statechglogger.recordchgevent(myid,
-                                                               event)
+                            self.statechglogger.recordchgevent(myid, event)
                         else:
-                            fixsuccess = False
-                            self.detailedresults += "Installation of " + \
-                                package + " did not succeed.\n"
+                            self.rulesuccess = False
+                            self.detailedresults += "Installation of " + package + " did not succeed.\n"
                 if not self.fh.fixFiles():
-                    fixsuccess = False
+                    self.rulesuccess = False
                     self.detailedresults += self.fh.getFileMessage()
             else:
-                fixsuccess = False
-                self.detailedresults = str(self.ci.getkey()) + \
-                    " was disabled. No action was taken!"
+                self.rulesuccess = False
+                self.detailedresults = str(self.ci.getkey()) + " was disabled. No action was taken!"
+
         except (KeyboardInterrupt, SystemExit):
-            # User initiated exit
             raise
-        except Exception, err:
+        except Exception:
             self.rulesuccess = False
-            fixsuccess = False
-            self.detailedresults = self.detailedresults + "\n" + str(err) + \
-                " - " + str(traceback.format_exc())
+            self.detailedresults += str(traceback.format_exc())
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("fix", fixsuccess,
-                                   self.detailedresults)
+        self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.rulesuccess
