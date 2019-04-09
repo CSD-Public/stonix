@@ -20,18 +20,19 @@
 # See the GNU General Public License for more details.                        #
 #                                                                             #
 ###############################################################################
-'''
+"""
 This rule will enable process accounting, using the acct/psacct service.
 
 @author: Eric Ball
 @change: 2015/04/18 eball Original implementation
 @change: 2017/08/28 ekkehard - Added self.sethelptext()
 @change: 2017/10/23 rsn - change to new service helper interface
-'''
+"""
+
 from __future__ import absolute_import
 
-import re
 import traceback
+
 from ..stonixutilityfunctions import iterate
 from ..rule import Rule
 from ..logdispatcher import LogPriority
@@ -40,15 +41,27 @@ from ..ServiceHelper import ServiceHelper
 
 
 class ConfigureProcessAccounting(Rule):
+    """
+    Class docs
+    """
 
-    def __init__(self, config, enviro, logger, statechglogger):
-        Rule.__init__(self, config, enviro, logger, statechglogger)
+    def __init__(self, config, environ, logger, statechglogger):
+        """
+
+        @param config:
+        @param environ:
+        @param logger:
+        @param statechglogger:
+        """
+
+        Rule.__init__(self, config, environ, logger, statechglogger)
         self.logger = logger
         self.rulenumber = 97
         self.rulename = "ConfigureProcessAccounting"
         self.formatDetailedResults("initialize")
         self.mandatory = True
         self.sethelptext()
+        self.guidance = ["CCE-RHEL7-CCE-TBD 3.2.15"]
         self.applicable = {"type": "white",
                            "family": ["linux"]}
 
@@ -60,90 +73,95 @@ class ConfigureProcessAccounting(Rule):
         default = True
         self.ci = self.initCi(datatype, key, instructions, default)
 
-        self.guidance = ["CCE-RHEL7-CCE-TBD 3.2.15"]
-        self.iditerator = 0
+        self.ph = Pkghelper(self.logger, self.environ)
+        self.sh = ServiceHelper(self.environ, self.logger)
 
     def report(self):
+        """
+
+        @return: self.compliant
+        @rtype: bool
+        @author: Eric Ball
+        @change: Breen Malmberg - 04/09/2019 - doc string added; method refactor;
+                added debug logging
+        """
+
+        self.compliant = True
+        self.detailedresults = ""
+        self.packages = ["psacct", "acct"]
+
         try:
-            compliant = True
-            self.detailedresults = ""
-            self.ph = Pkghelper(self.logger, self.environ)
-            self.sh = ServiceHelper(self.environ, self.logger)
-            myos = self.environ.getostype().lower()
 
-            if re.search("red hat|fedora|centos", myos):
-                package = "psacct"
-            else:
-                package = "acct"
-            self.package = package
+            if not any(self.ph.check(p) for p in self.packages):
+                self.compliant = False
+                self.detailedresults += "\nsystem accounting package is not installed"
 
-            if not self.ph.check(package):
-                compliant = False
-                if self.ph.checkAvailable(package):
-                    self.detailedresults += package + " is not installed\n"
-                else:
-                    self.detailedresults += package + " is not available " + \
-                        "for installation\n"
-            elif not self.sh.auditService(package, _="_"):
-                compliant = False
-                self.detailedresults += package + " service is not enabled\n"
-
-            self.compliant = compliant
+            if not any(self.sh.auditService(p) for p in self.packages):
+                self.compliant = False
+                self.detailedresults += "\nsystem accounting service is not enabled"
 
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception:
-            self.rulesuccess = False
+            self.compliant = False
             self.detailedresults += "\n" + traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("report", self.compliant,
-                                   self.detailedresults)
+        self.formatDetailedResults("report", self.compliant, self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
 
     def fix(self):
-        try:
-            if not self.ci.getcurrvalue():
-                return
-            success = True
-            self.detailedresults = ""
-            package = self.package
+        """
 
-            self.iditerator = 0
+        @return: self.rulesuccess
+        @rtype: bool
+        @author: Eric Ball
+        @change: Breen Malmberg - 04/09/2019 - doc string added; method refactor;
+                added debug logging
+        """
+
+        self.rulesuccess = True
+        self.detailedresults = ""
+        self.iditerator = 0
+
+        try:
+
+            if not self.ci.getcurrvalue():
+                self.rulesuccess = False
+                self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
+                self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+                return self.rulesuccess
+
             eventlist = self.statechglogger.findrulechanges(self.rulenumber)
             for event in eventlist:
                 self.statechglogger.deleteentry(event)
 
-            if not self.ph.check(package):
-                if self.ph.checkAvailable(package):
-                    self.ph.install(package)
+            for p in self.packages:
+                if self.ph.install(p):
                     self.iditerator += 1
                     myid = iterate(self.iditerator, self.rulenumber)
-                    event = {"eventtype": "pkghelper", "pkgname": package,
+                    event = {"eventtype": "pkghelper", "pkgname": p,
                              "startstate": "removed", "endstate": "installed"}
                     self.statechglogger.recordchgevent(myid, event)
-                else:
-                    success = False
-                    self.detailedresults += package + " is not available " + \
-                        "for installation\n"
+            if self.iditerator == 0:
+                self.rulesuccess = False
+                self.detailedresults += "\nFailed to install system accounting package"
 
-            if self.ph.check(package) and not self.sh.auditService(package, _="_"):
-                self.sh.enableService(package, _="_")
-                self.iditerator += 1
-                myid = iterate(self.iditerator, self.rulenumber)
-                event = {"eventtype": "servicehelper", "servicename": package,
-                         "startstate": "disabled", "endstate": "enabled"}
-                self.statechglogger.recordchgevent(myid, event)
+            for p in self.packages:
+                if self.ph.check(p):
+                    self.sh.enableService(p)
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    event = {"eventtype": "servicehelper", "servicename": p,
+                             "startstate": "disabled", "endstate": "enabled"}
+                    self.statechglogger.recordchgevent(myid, event)
 
-            self.rulesuccess = success
         except (KeyboardInterrupt, SystemExit):
-            # User initiated exit
             raise
         except Exception:
             self.rulesuccess = False
             self.detailedresults += "\n" + traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("fix", self.rulesuccess,
-                                   self.detailedresults)
+        self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.rulesuccess
