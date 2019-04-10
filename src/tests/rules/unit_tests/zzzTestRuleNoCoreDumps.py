@@ -43,7 +43,7 @@ from src.tests.lib.RuleTestTemplate import RuleTest
 from src.tests.lib.logdispatcher_mock import LogPriority
 from src.stonix_resources.rules.NoCoreDumps import NoCoreDumps
 from src.stonix_resources.stonixutilityfunctions import readFile, writeFile, checkPerms, setPerms
-from src.stonix_resources.KVEditorStonix import KVEditorStonix
+from src.stonix_resources.CommandHelper import CommandHelper
 
 
 class zzzTestRuleNoCoreDumps(RuleTest):
@@ -58,7 +58,7 @@ class zzzTestRuleNoCoreDumps(RuleTest):
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
         self.checkUndo = True
-
+        self.ch = CommandHelper(self.logger)
     def tearDown(self):
         pass
 
@@ -73,10 +73,31 @@ class zzzTestRuleNoCoreDumps(RuleTest):
         @author: ekkehard j. koch
         '''
         success = True
-        lookfor1 = "(^\*)\s+hard\s+core\s+0?"
-        lookfor2 = {"fs.suid_dumpable": "0"}
+        if self.environ.getosfamily() == "linux":
+            if not self.setLinuxConditions():
+                success = False
+        elif self.environ.getostype() == "mac":
+            if not self.setMacConditions():
+                success = False
+        return success
+
+    def setMacConditions(self):
+        success = True
+        self.ch.executeCommand("/usr/bin/launchctl limit core")
+        retcode = self.ch.getReturnCode()
+        if retcode != 0:
+            self.detailedresults += "\nFailed to run launchctl command to get current value of core dumps configuration"
+            errmsg = self.ch.getErrorString()
+            self.logger.log(LogPriority.DEBUG, errmsg)
+        else:
+            output = self.ch.getOutputString()
+            if output:
+                if not re.search("1", output):
+                    self.ch.executeCommand("/usr/bin/launchctl limit core 1 1")
+
+    def setLinuxConditions(self):
+        success = True
         path1 = "/etc/security/limits.conf"
-        path2 = "/etc/sysctl.conf"
         if os.path.exists(path1):
             lookfor1 = "(^\*)\s+hard\s+core\s+0?"
             contents = readFile(path1, self.logger)
@@ -91,29 +112,54 @@ class zzzTestRuleNoCoreDumps(RuleTest):
                     success = False
             if checkPerms(path1, [0, 0, 0o644], self.logger):
                 if not setPerms(path1, [0, 0, 0o777], self.logger):
-                    debug = "Unable to set permissions on " + path1 + "\n"
+                    debug = "Unable to set incorrect permissions on " + path1 + "\n"
                     self.logger.log(LogPriority.DEBUG, debug)
                     success = False
                 else:
-                    debug = "successfully set permissions on " + path1 + "\n"
-                    self .logger.log(LogPriority.DEBUG, debug)
-        if os.path.exists(path2):
-            tmppath = path2 + ".tmp"
-            editor = KVEditorStonix(self.statechglogger, self.logger, "conf",
-                                    path2, tmppath, lookfor2, "notpresent", "closedeq")
-            if not editor.report():
-                if not editor.fix():
-                    success = False
-                elif not editor.commit():
-                    success = False
-            if checkPerms(path2, [0, 0, 0o644], self.logger):
-                if not setPerms(path2, [0, 0, 0o777], self.logger):
-                    debug = "Unable to set permissions on " + path2 + "\n"
+                    debug = "successfully set incorrect permissions on " + path1 + "\n"
+                    self.logger.log(LogPriority.DEBUG, debug)
+
+        self.ch.executeCommand("/sbin/sysctl fs.suid_dumpable")
+        retcode = self.ch.getReturnCode()
+
+        if retcode != 0:
+            self.detailedresults += "Failed to get value of core dumps configuration with sysctl command\n"
+            errmsg = self.ch.getErrorString()
+            self.logger.log(LogPriority.DEBUG, errmsg)
+            success = False
+        else:
+            output = self.ch.getOutputString()
+            if output.strip() != "fs.suid_dumpable = 1":
+                if not self.ch.executeCommand("/sbin/sysctl -w fs.suid_dumpable=1"):
+                    debug = "Unable to set incorrect value for fs.suid_dumpable"
                     self.logger.log(LogPriority.DEBUG, debug)
                     success = False
+                elif not self.ch.executeCommand("/sbin/sysctl -p"):
+                    debug = "Unable to set incorrect value for fs.suid_dumpable"
+                    self.logger.log(LogPriority.DEBUG, debug)
+                    success = False
+        profile = ""
+        if os.path.exists("/etc/profile.d"):
+            profile = "/etc/profile.d/stonix_no_core_dumps.sh"
+            if not os.path.exists(profile):
+                profile = ""
+        elif os.path.exists("/etc/profile"):
+            profile = "/etc/profile"
+        if profile:
+            contents = readFile(profile, self.logger)
+            tempstring = ""
+            found = False
+            for line in contents:
+                if not re.search("^ulimit\s+\-S\s+\-c\s+1", line.strip()):
+                    tempstring += line
                 else:
-                    debug = "successfully set permissions on " + path2 + "\n"
+                    found = True
+            if found:
+                tempstring += "ulimit -S -c 0\n"
+                if not writeFile(profile, tempstring, self.logger):
+                    debug = "Unable to write incorrect contents to " + profile + "\n"
                     self.logger.log(LogPriority.DEBUG, debug)
+                    success = False
         return success
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
