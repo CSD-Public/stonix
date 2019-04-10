@@ -270,13 +270,15 @@ class ServiceHelper(object):
             # rest of the parameters need to be validated by the concrete
             # service helper instance.
             if not isinstance(service, basestring):
+                serviceValid = False
                 raise TypeError("Service: " + str(service) +
                                 " is not a string as expected.")
-                serviceValid = False
+
             elif not service:  # if service is an empty string
+                serviceValid = False
                 raise ValueError('service specified is blank. ' +
                                 'No action will be taken!')
-                serviceValid = False
+
             elif service : # service is a string of one or more characters
                 self.logdispatcher.log(LogPriority.DEBUG,
                                    'Service name set to: ' + service)
@@ -323,18 +325,27 @@ class ServiceHelper(object):
 
         self.logdispatcher.log(LogPriority.DEBUG, 'Setting service name')
 
-        setServiceSuccess = False
+        setServiceSuccess = True
         servicenames = ["servicename", "serviceName"]
         self.servicename = ""
 
         if self.isServiceVarValid(service):
             self.service = service
-            setServiceSuccess = True
+        else:
+            setServiceSuccess = False
+            self.service = ""
 
         for sn in servicenames:
             if sn in kwargs:
-                self.servicename = kwargs.get(sn)
+                try:
+                    self.servicename = kwargs.get(sn)
+                except Exception as err:
+                    setServiceSuccess = False
+                    self.logdispatcher.log(LogPriority.DEBUG, str(err))
                 break
+
+        if not setServiceSuccess:
+            self.logdispatcher.log(LogPriority.DEBUG, "setService failed")
 
         return setServiceSuccess
 
@@ -399,7 +410,11 @@ class ServiceHelper(object):
 
         if self.auditService(service, **kwargs):
             disabled = False
-            self.logdispatcher.log(LogPriority.DEBUG, "Audit after disable and sync indicates service still enabled")
+
+        if disabled:
+            self.logdispatcher.log(LogPriority.DEBUG, "Successfully disabled service: " + service)
+        else:
+            self.logdispatcher.log(LogPriority.DEBUG, "Failed to disable service: " + service)
 
         return disabled
 
@@ -472,7 +487,11 @@ class ServiceHelper(object):
 
         if not self.auditService(service, **kwargs):
             enabledSuccess = False
-            self.logdispatcher.log(LogPriority.DEBUG, "Audit after enable and sync indicates service still not running.")
+
+        if enabledSuccess:
+            self.logdispatcher.log(LogPriority.DEBUG, "Successfully enabled service: " + service)
+        else:
+            self.logdispatcher.log(LogPriority.DEBUG, "Failed to enable service: " + service)
 
         return enabledSuccess
 
@@ -507,40 +526,36 @@ class ServiceHelper(object):
                 domain-target is gui/501/, service-name is com.apple.example,
                 and service-target is gui/501/com.apple.example.
 
-        @return: isloaded
+        @return: enabled
         @rtype: bool
         @author: Roy Nielsen
         """
 
-        isloaded = False
+        enabled = True
 
         if self.setService(service):
-            singleSuccess = False
-            secondarySuccess = False
 
             service = self.getService()
 
-            self.logdispatcher.log(LogPriority.DEBUG, 'Auditing service ' + str(service))
-
-            try:
-                singleSuccess = self.svchelper.auditService(service, **kwargs)
-            except OSError:
-                singleSuccess = False
+            self.logdispatcher.log(LogPriority.DEBUG, "Checking configuration status of service: " + service)
 
             if self.isHybrid:
-                try:
-                    secondarySuccess = self.secondary.auditService(service, **kwargs)
-                except OSError:
-                    secondarySuccess = False
-
-            if self.isHybrid:
-                if bool(singleSuccess or secondarySuccess):
-                    isloaded = True
+                if not self.svchelper.auditService(service, **kwargs):
+                    enabled = False
+                if not self.secondary.auditService(service, **kwargs):
+                    enabled = False
             else:
-                if singleSuccess:
-                    isloaded = True
+                if not self.svchelper.auditService(service, **kwargs):
+                    enabled = False
+        else:
+            enabled = False
 
-        return isloaded
+        if enabled:
+            self.logdispatcher.log(LogPriority.DEBUG, "Service: " + service + " is ENABLED")
+        else:
+            self.logdispatcher.log(LogPriority.DEBUG, "Service: " + service + " is DISABLED")
+
+        return enabled
 
     def isRunning(self, service, **kwargs):
         """
@@ -579,33 +594,34 @@ class ServiceHelper(object):
         @author: Roy Nielsen
         """
 
-        isRunning = False
+        isrunning = True
 
         if self.setService(service):
-            singleSuccess = False
-            secondarySuccess = False
-
             service = self.getService()
 
-            self.logdispatcher.log(LogPriority.DEBUG, 'Checking if service ' + str(service) + ' is running')
+            self.logdispatcher.log(LogPriority.DEBUG, "Checking run status of service: " + service)
 
             try:
-                singleSuccess = self.svchelper.isRunning(service, **kwargs)
+
                 if self.isHybrid:
-                    secondarySuccess = self.secondary.isRunning(service, **kwargs)
+                    if not self.svchelper.isRunning(service, **kwargs):
+                        isrunning = False
+                    if not self.secondary.isRunning(service, **kwargs):
+                        isrunning = False
+                else:
+                    if not self.svchelper.isRunning(service, **kwargs):
+                        isrunning = False
+
             except Exception as err:
                 self.logdispatcher.log(LogPriority.DEBUG, str(err))
                 raise
 
-            if bool(singleSuccess or secondarySuccess):
-                isRunning = True
-
-        if isRunning:
-            self.logdispatcher.log(LogPriority.DEBUG, "Service: " + str(service) + " is running")
+        if isrunning:
+            self.logdispatcher.log(LogPriority.DEBUG, "Service: " + service + " IS running")
         else:
-            self.logdispatcher.log(LogPriority.DEBUG, "Service: " + str(service) + " is NOT running")
+            self.logdispatcher.log(LogPriority.DEBUG, "Service: " + service + " is NOT running")
 
-        return isRunning
+        return isrunning
 
     def reloadService(self, service, **kwargs):
         """
@@ -720,3 +736,79 @@ class ServiceHelper(object):
             raise
 
         return serviceList
+
+    def startService(self, service, **kwargs):
+        """
+
+        @param service:
+        @param kwargs:
+        @return: started
+        @rtype: bool
+        @author: Breen Malmberg
+        """
+
+        self.logdispatcher.log(LogPriority.DEBUG, "Starting service: " + service)
+
+        started = True
+
+        try:
+
+            if self.isHybrid:
+                if not self.svchelper.startService(service, **kwargs):
+                    started = False
+                if not self.secondary.startService(service, **kwargs):
+                    started = False
+            else:
+                if not self.svchelper.startService(service, **kwargs):
+                    started = False
+
+        # if the helper does not have the start method then we can't start
+        # aka start failed. set started to false and return
+        except AttributeError:
+            started = False
+        except:
+            raise
+
+        if started:
+            self.logdispatcher.log(LogPriority.DEBUG, "Successfully started service: " + service)
+        else:
+            self.logdispatcher.log(LogPriority.DEBUG, "Failed to start service: " + service)
+
+        return started
+
+    def stopService(self, service, **kwargs):
+        """
+
+        @param service:
+        @param kwargs:
+        @return:
+        """
+
+        self.logdispatcher.log(LogPriority.DEBUG, "Stopping service: " + service)
+
+        stopped = True
+
+        try:
+
+            if self.isHybrid:
+                if not self.svchelper.stopService(service, **kwargs):
+                    stopped = False
+                if not self.secondary.stopService(service, **kwargs):
+                    stopped = False
+            else:
+                if not self.svchelper.stopService(service, **kwargs):
+                    stopped = False
+
+        # if the helper does not have the stop method then we can't stop
+        # aka stop failed. set stopped to false and return
+        except AttributeError:
+            stopped = False
+        except:
+            raise
+
+        if stopped:
+            self.logdispatcher.log(LogPriority.DEBUG, "Successfully stopped service: " + service)
+        else:
+            self.logdispatcher.log(LogPriority.DEBUG, "Failed to stop service: " + service)
+
+        return stopped

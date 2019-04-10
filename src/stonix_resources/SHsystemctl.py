@@ -26,9 +26,12 @@ Created on Sep 19, 2012
 @author: David Kennel
 @change: 2016/05/09 Eric Ball Changed auditservice to check output for "enabled"
         rather than just checking the return code.
+@change: 2019/04/10 Breen Malmberg refactored every method; fixed command syntax;
+        added start and stop service methods; fixed doc strings; added error logging;
+        removed unused imports; methods now use commandhelper instead of subprocess;
+        fixed typo in license
 """
 
-import subprocess
 import os
 
 from CommandHelper import CommandHelper
@@ -61,66 +64,51 @@ class SHsystemctl(ServiceHelperTemplate):
         """
         Disables the service and terminates it if it is running.
 
-        @param string: Name of the service to be disabled
-        @return: Bool indicating success status
+        @param service: string; Name of the service to be disabled
+        @return: disabled
+        @rtype: bool
+        @author: ???
+        @change: Breen Malmberg - 04/10/2019 - method refactor;
+                doc string edit; logging edit
         """
-        ret2 = 0
-        self.logdispatcher.log(LogPriority.DEBUG,
-                               'SHsystemctl.disable ' + service)
-        confsuccess = True
-        svcoff = True
-        ret = subprocess.call(self.cmd + '-q disable ' + service,
-                              shell=True, close_fds=True,
-                              stdout=subprocess.PIPE,
-                              stderr=subprocess.PIPE)
-        if ret != 0:
-            confsuccess = False
-        if self.isRunning(service):
-            ret2 = subprocess.call(self.cmd + 'stop ' + service,
-                                   shell=True, close_fds=True,
-                                   stdout=subprocess.PIPE,
-                                   stderr=subprocess.PIPE)
-            if ret2 != 0:
-                svcoff = False
-        self.logdispatcher.log(LogPriority.DEBUG,
-                               'SHsystemctl.disable ' + service + ' ' + str(confsuccess) + str(svcoff))
-        if confsuccess and svcoff:
-            return True
-        else:
-            return False
+
+        disabled = True
+    
+        self.ch.executeCommand(self.cmd + " disable " + service)
+        retcode = self.ch.getReturnCode()
+        if retcode != 0:
+            disabled = False
+            errmsg = self.ch.getErrorString()
+            self.logdispatcher.log(LogPriority.DEBUG, str(errmsg))
+
+        if not self.stopService(service):
+            disabled = False
+
+        return disabled
 
     def enableService(self, service, **kwargs):
         """
         Enables a service and starts it if it is not running as long as we are
         not in install mode
 
-        @param string: Name of the service to be enabled
-        @return: Bool indicating success status
+        @param service: string; Name of the service to be disabled
+        @return: enabled
+        @rtype: bool
+        @author: ???
+        @change: Breen Malmberg - 04/10/2019 - method refactor;
+                doc string edit; logging edit
         """
-        ret2 = 0
-        self.logdispatcher.log(LogPriority.DEBUG,
-                               'SHsystemctl.enable ' + service)
-        confsuccess = True
-        svcon = True
-        ret = subprocess.call(self.cmd + '-q enable ' + service,
-                              shell=True, close_fds=True,
-                              stdout=subprocess.PIPE,
-                              stderr=subprocess.PIPE)
-        if ret != 0:
-            confsuccess = False
-        if not self.environment.getinstallmode():
-            ret2 = subprocess.call(self.cmd + 'start ' + service,
-                                   shell=True, close_fds=True,
-                                   stdout=subprocess.PIPE,
-                                   stderr=subprocess.PIPE)
-            if ret2 != 0:
-                svcon = False
-        self.logdispatcher.log(LogPriority.DEBUG,
-                               'SHsystemctl.enable ' + service + ' ' + str(confsuccess) + str(svcon))
-        if confsuccess and svcon:
-            return True
-        else:
-            return False
+
+        enabled = True
+
+        self.ch.executeCommand(self.cmd + " enable " + service)
+        retcode = self.ch.getReturnCode()
+        if retcode != 0:
+            enabled = False
+            errmsg = self.ch.getErrorString()
+            self.logdispatcher.log(LogPriority.DEBUG, str(errmsg))
+
+        return enabled
 
     def auditService(self, service, **kwargs):
         """
@@ -131,18 +119,16 @@ class SHsystemctl(ServiceHelperTemplate):
         @return: Bool, True if the service is configured to run
         """
 
-        self.logdispatcher.log(LogPriority.DEBUG, "Checking if service " + service + " is enabled")
-
         running = False
 
         self.ch.executeCommand(self.cmd + " is-enabled " + service)
+        retcode = self.ch.getReturnCode()
+        if retcode != 0:
+            running = False
+            errmsg = self.ch.getErrorString()
+            self.logdispatcher.log(LogPriority.DEBUG, str(errmsg))
         if self.ch.findInOutput("enabled"):
             running = True
-
-        if running:
-            self.logdispatcher.log(LogPriority.DEBUG, "Service: " + service + " is ENABLED")
-        else:
-            self.logdispatcher.log(LogPriority.DEBUG, "Service: " + service + " is DISABLED")
 
         return running
 
@@ -160,8 +146,6 @@ class SHsystemctl(ServiceHelperTemplate):
                 debug logging edit
         """
 
-        self.logdispatcher.log(LogPriority.DEBUG, "Checking if " + service + " is running")
-
         running = True
         inactive_keys = ["inactive", "unknown"]
 
@@ -169,11 +153,6 @@ class SHsystemctl(ServiceHelperTemplate):
         for k in inactive_keys:
             if self.ch.findInOutput(k):
                 running = False
-
-        if running:
-            self.logdispatcher.log(LogPriority.DEBUG, "Service: " + service + " IS running")
-        else:
-            self.logdispatcher.log(LogPriority.DEBUG, "Service: " + service + " is NOT running")
 
         return running
 
@@ -193,21 +172,14 @@ class SHsystemctl(ServiceHelperTemplate):
 
         success = True
 
-        self.logdispatcher.log(LogPriority.DEBUG, "Reloading service " + service)
-
         self.ch.executeCommand(self.cmd + " reload-or-restart " + service)
         retcode = self.ch.getReturnCode()
         if retcode != 0:
             success = False
             errmsg = self.ch.getErrorString()
+            self.logdispatcher.log(LogPriority.DEBUG, str(errmsg))
         if not self.isRunning(service):
             success = False
-            errmsg = "Service not running after reload"
-
-        if success:
-            self.logdispatcher.log(LogPriority.DEBUG, "Successfully reloaded service " + service)
-        else:
-            self.logdispatcher.log(LogPriority.DEBUG, "Failed to reload service " + service + "\n" + str(errmsg))
 
         return success
 
@@ -222,8 +194,6 @@ class SHsystemctl(ServiceHelperTemplate):
                 edit; doc string edit
         """
 
-        self.logdispatcher.log(LogPriority.DEBUG, "Getting list of services")
-
         service_list = []
 
         self.ch.executeCommand(self.cmd + " -a -t service --no-pager list-unit-files")
@@ -234,5 +204,60 @@ class SHsystemctl(ServiceHelperTemplate):
                 service_list.append(line.split()[0])
             except IndexError:
                 pass
+            except:
+                raise
+
+        if not service_list:
+            errmsg = self.ch.getErrorString()
+            if errmsg:
+                self.logdispatcher.log(LogPriority.DEBUG, str(errmsg))
 
         return service_list
+
+    def startService(self, service, **kwargs):
+        """
+        start given service
+
+        @param service:
+        @param kwargs:
+        @return: started
+        @rtype: bool
+        @author: Breen Malmberg
+        """
+
+        started = True
+
+        self.ch.executeCommand(self.cmd + " start " + service)
+        retcode = self.ch.getReturnCode()
+        if retcode != 0:
+            started = False
+            errmsg = self.ch.getErrorString()
+            self.logdispatcher.log(LogPriority.DEBUG, str(errmsg))
+
+        return started
+
+    def stopService(self, service, **kwargs):
+        """
+        stop given service
+
+        @param service:
+        @param kwargs:
+        @return: stopped
+        @rtype: bool
+        @author: Breen Malmberg
+        """
+
+        stopped = True
+
+        if not self.isRunning(service):
+            return stopped # nothing to do
+
+        else:
+            self.ch.executeCommand(self.cmd + " stop " + service)
+            retcode = self.ch.getReturnCode()
+            if retcode != 0:
+                stopped = False
+                errmsg = self.ch.getErrorString()
+                self.logdispatcher.log(LogPriority.DEBUG, str(errmsg))
+
+        return stopped
