@@ -1,7 +1,6 @@
-'''
 ###############################################################################
 #                                                                             #
-# Copyright 2015-2019.  Los Alamos National Security, LLC. This material was       #
+# Copyright 2015-2019.  Los Alamos National Security, LLC. This material was  #
 # produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
 # National Laboratory (LANL), which is operated by Los Alamos National        #
 # Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
@@ -21,29 +20,32 @@
 # See the GNU General Public License for more details.                        #
 #                                                                             #
 ###############################################################################
+"""
 Created on Sep 19, 2012
 
-@author: dkennel
-@change: 2016/05/09 eball Changed auditservice to check output for "enabled"
-    rather than just checking the return code.
-'''
+@author: David Kennel
+@change: 2016/05/09 Eric Ball Changed auditservice to check output for "enabled"
+        rather than just checking the return code.
+"""
+
 import subprocess
-import re
 import os
+
 from CommandHelper import CommandHelper
 from logdispatcher import LogPriority
 from ServiceHelperTemplate import ServiceHelperTemplate
 
+
 class SHsystemctl(ServiceHelperTemplate):
-    '''
+    """
     SHsystemctl is the Service Helper for systems using the systemctl command to
     configure services. (Fedora and future RHEL and variants)
-    '''
+    """
 
     def __init__(self, environment, logdispatcher):
-        '''
+        """
         Constructor
-        '''
+        """
         super(SHsystemctl, self).__init__(environment, logdispatcher)
         self.environment = environment
         self.logdispatcher = logdispatcher
@@ -56,12 +58,12 @@ class SHsystemctl(ServiceHelperTemplate):
             raise IOError('Cannot find systemctl command')
 
     def disableService(self, service, **kwargs):
-        '''
+        """
         Disables the service and terminates it if it is running.
 
         @param string: Name of the service to be disabled
         @return: Bool indicating success status
-        '''
+        """
         ret2 = 0
         self.logdispatcher.log(LogPriority.DEBUG,
                                'SHsystemctl.disable ' + service)
@@ -88,13 +90,13 @@ class SHsystemctl(ServiceHelperTemplate):
             return False
 
     def enableService(self, service, **kwargs):
-        '''
+        """
         Enables a service and starts it if it is not running as long as we are
         not in install mode
 
         @param string: Name of the service to be enabled
         @return: Bool indicating success status
-        '''
+        """
         ret2 = 0
         self.logdispatcher.log(LogPriority.DEBUG,
                                'SHsystemctl.enable ' + service)
@@ -121,101 +123,116 @@ class SHsystemctl(ServiceHelperTemplate):
             return False
 
     def auditService(self, service, **kwargs):
-        '''
+        """
         Checks the status of a service and returns a bool indicating whether or
         not the service is configured to run or not.
 
         @param string: Name of the service to audit
         @return: Bool, True if the service is configured to run
-        '''
-        self.logdispatcher.log(LogPriority.DEBUG,
-                               'SHsystemctl.audit ' + service)
+        """
+
+        self.logdispatcher.log(LogPriority.DEBUG, "Checking if service " + service + " is enabled")
+
         running = False
-        command = [self.cmd, "is-enabled", service]
-        self.ch.executeCommand(command)
-        output = self.ch.getOutputString()
-        if re.search("enabled", output):
+
+        self.ch.executeCommand(self.cmd + " is-enabled " + service)
+        if self.ch.findInOutput("enabled"):
             running = True
-        self.logdispatcher.log(LogPriority.DEBUG,
-                               'SHsystemctl.audit ' + service + ' '
-                               + str(running) + ' ' + str(output))
+
+        if running:
+            self.logdispatcher.log(LogPriority.DEBUG, "Service: " + service + " is ENABLED")
+        else:
+            self.logdispatcher.log(LogPriority.DEBUG, "Service: " + service + " is DISABLED")
+
         return running
 
     def isRunning(self, service, **kwargs):
-        '''
+        """
         Check to see if a service is currently running. The enable service uses
         this so that we're not trying to start a service that is already
         running.
 
-        @param sting: Name of the service to check
-        @return: bool, True if the service is already running
-        '''
-        self.logdispatcher.log(LogPriority.DEBUG,
-                               'SHsystemctl.isrunning ' + service)
-        running = False
-        chk = subprocess.Popen(self.cmd + '--no-pager show ' + service,
-                               stdout=subprocess.PIPE,
-                               stderr=subprocess.PIPE, shell=True,
-                               close_fds=True)
-        message = chk.stdout.readlines()
-        for line in message:
-            if re.search('SubState', line):
-                line = line.split('=')
-                if re.search('running', line[1]):
-                    running = True
-        self.logdispatcher.log(LogPriority.DEBUG,
-                               'SHsystemctl.isrunning ' + service + ' ' + str(running))
+        @param service: string; name of service to check
+        @return: running
+        @rtype: bool
+        @author: ???
+        @change: Breen Malmberg - 04/10/2019 - method refactor; doc string edit;
+                debug logging edit
+        """
+
+        self.logdispatcher.log(LogPriority.DEBUG, "Checking if " + service + " is running")
+
+        running = True
+        inactive_keys = ["inactive", "unknown"]
+
+        self.ch.executeCommand(self.cmd + " is-active " + service)
+        for k in inactive_keys:
+            if self.ch.findInOutput(k):
+                running = False
+
+        if running:
+            self.logdispatcher.log(LogPriority.DEBUG, "Service: " + service + " IS running")
+        else:
+            self.logdispatcher.log(LogPriority.DEBUG, "Service: " + service + " is NOT running")
+
         return running
 
     def reloadService(self, service, **kwargs):
-        '''
+        """
         Reload (HUP) a service so that it re-reads it's config files. Called
         by rules that are configuring a service to make the new configuration
         active.
 
-        @param string: Name of the service to reload
-        @return: bool indicating success status
-        '''
-        self.logdispatcher.log(LogPriority.DEBUG,
-                               'SHsystemctl.reload ' + service)
-        if not self.environment.getinstallmode():
-            ret = subprocess.call(self.cmd + 'reload-or-restart ' + service,
-                                  shell=True, close_fds=True,
-                                  stdout=subprocess.PIPE,
-                                  stderr=subprocess.PIPE)
-            self.logdispatcher.log(LogPriority.DEBUG,
-                               'SHsystemctl.reload ' + service + str(ret))
-        return True
+        @param service: string; Name of the service to reload
+        @return: success
+        @rtype: bool
+        @author: ???
+        @change: Breen Malmberg - 04/10/2019 - method refactor; doc string edit;
+                debug logging edit
+        """
+
+        success = True
+
+        self.logdispatcher.log(LogPriority.DEBUG, "Reloading service " + service)
+
+        self.ch.executeCommand(self.cmd + " reload-or-restart " + service)
+        retcode = self.ch.getReturnCode()
+        if retcode != 0:
+            success = False
+            errmsg = self.ch.getErrorString()
+        if not self.isRunning(service):
+            success = False
+            errmsg = "Service not running after reload"
+
+        if success:
+            self.logdispatcher.log(LogPriority.DEBUG, "Successfully reloaded service " + service)
+        else:
+            self.logdispatcher.log(LogPriority.DEBUG, "Failed to reload service " + service + "\n" + str(errmsg))
+
+        return success
 
     def listServices(self, **kwargs):
-        '''
+        """
         Return a list containing strings that are service names.
 
-        @return: list
-        '''
-        self.logdispatcher.log(LogPriority.DEBUG,
-                               'SHsystemctl.listservices')
-        svclist = []
-        chk = subprocess.Popen(self.cmd + '--no-pager --full -t service -a --no-legend',
-                               stdout=subprocess.PIPE,
-                               stderr=subprocess.PIPE, shell=True,
-                               close_fds=True)
-        proclist = chk.stdout.readlines()
-        for line in proclist:
-            if re.search('units listed', line):
-                continue
-            if re.search('^fsck', line):
-                continue
-            line = line.split()
+        @return: service_list
+        @rtype: bool
+        @author: ???
+        @change: Breen Malmberg - 04/10/2019 - method refactor; debug logging
+                edit; doc string edit
+        """
+
+        self.logdispatcher.log(LogPriority.DEBUG, "Getting list of services")
+
+        service_list = []
+
+        self.ch.executeCommand(self.cmd + " -a -t service --no-pager list-unit-files")
+        output = self.ch.getOutput()
+
+        for line in output:
             try:
-                svclist.append(line[0])
-            except(IndexError):
-                # we hit an empty line, don't worry about it
+                service_list.append(line.split()[0])
+            except IndexError:
                 pass
-        metaentries = ['LOAD', 'ACTIVE', 'SUB', 'JOB', 'UNIT']
-        # This list comprehension will filter out entries listed
-        # in metaentries which are just chatter from systemctl.
-        svclist = [service for service in svclist if service not in metaentries]
-        self.logdispatcher.log(LogPriority.DEBUG,
-                               'SHsystemctl.listservices ' + str(svclist))
-        return svclist
+
+        return service_list
