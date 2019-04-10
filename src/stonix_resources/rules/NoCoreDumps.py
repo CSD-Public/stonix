@@ -43,11 +43,11 @@ which conflicted with DisableIPV6 and NoCoreDumps which expected 644.
 '''
 
 from __future__ import absolute_import
-
 from ..CommandHelper import CommandHelper
 from ..rule import Rule
 from ..logdispatcher import LogPriority
 from ..KVEditorStonix import KVEditorStonix
+from ..stonixutilityfunctions import iterate, readFile, checkPerms, createFile, setPerms, writeFile, resetsecon
 
 import os
 import traceback
@@ -84,32 +84,8 @@ class NoCoreDumps(Rule):
         instructions = "To prevent the disabling of core dumps on your system, set the value of NOCOREDUMPS to False."
         default = True
         self.ci = self.initCi(datatype, key, instructions, default)
-
-        self.sethelptext()
-        self.initObjs()
-        self.determineOS()
-
-    def determineOS(self):
-        '''
-
-        :return:
-        '''
-
-        self.os = "unknown"
-
-        if self.environ.getosfamily() == "linux":
-            self.os = "linux"
-        else:
-            if self.environ.getostype() == "Mac OS X":
-                self.os = "mac"
-
-    def initObjs(self):
-        '''
-
-        :return:
-        '''
-
         self.ch = CommandHelper(self.logger)
+        self.sethelptext()
 
     def report(self):
         '''
@@ -127,11 +103,10 @@ class NoCoreDumps(Rule):
         self.compliant = True
 
         try:
-
-            if self.os == "linux":
+            if self.environ.getosfamily() == "linux":
                 if not self.reportLinux():
                     self.compliant = False
-            elif self.os == "mac":
+            elif self.environ.getostype()== "mac":
                 if not self.reportMac():
                     self.compliant = False
 
@@ -158,25 +133,19 @@ class NoCoreDumps(Rule):
 
         self.logger.log(LogPriority.DEBUG, "System has been detected as Mac OS X, running reportMac()...")
         compliant = True
-
-        try:
-
-            self.ch.executeCommand("/usr/bin/launchctl limit core")
-            retcode = self.ch.getReturnCode()
-            if retcode != 0:
-                self.detailedresults += "\nFailed to run launchctl command to get current value of core dumps configuration"
-                errmsg = self.ch.getErrorString()
-                self.logger.log(LogPriority.DEBUG, errmsg)
-            else:
-                output = self.ch.getOutputString()
-                if output:
-                    if not re.search("0", output):
-                        compliant = False
-                else:
+        self.ch.executeCommand("/usr/bin/launchctl limit core")
+        retcode = self.ch.getReturnCode()
+        if retcode != 0:
+            self.detailedresults += "\nFailed to run launchctl command to get current value of core dumps configuration"
+            errmsg = self.ch.getErrorString()
+            self.logger.log(LogPriority.DEBUG, errmsg)
+        else:
+            output = self.ch.getOutputString()
+            if output:
+                if not re.search("0", output):
                     compliant = False
-
-        except Exception:
-            raise
+            else:
+                compliant = False
         return compliant
 
     def reportLinux(self):
@@ -188,46 +157,41 @@ class NoCoreDumps(Rule):
         '''
 
         compliant = True
+        if not self.check_security_limits():
+            compliant = False
 
-        try:
+        if not self.check_sysctl():
+            compliant = False
 
-            if not self.check_security_limits():
-                compliant = False
-
-            if not self.check_sysctl():
-                compliant = False
-
-            if not self.check_profile():
-                compliant = False
-
-        except Exception:
-            raise
+        if not self.check_profile():
+            compliant = False
         return compliant
 
-    def check_profile(self):
+    def check_security_limits(self):
         '''
 
         :return:
         '''
 
         compliant = True
-
-        kvtype = "conf"
-        if os.path.exists("/etc/profile.d"):
-            path = "/etc/profile.d/stonix_no_core_dumps.sh"
+        path1 = "/etc/security/limits.conf"
+        lookfor1 = "(^\*)\s+hard\s+core\s+0?"
+        if os.path.exists(path1):
+            if not checkPerms(path1, [0, 0, 0o644], self.logger):
+                self.detailedresults += "Permissions incorrect on " + path1 + "\n"
+                compliant = False
+            contents = readFile(path1, self.logger)
+            if contents:
+                found = False
+                for line in contents:
+                    if re.search(lookfor1, line.strip()):
+                        found = True
+                if not found:
+                    self.detailedresults += "Correct configuration line * hard core 0 " + \
+                        "not found in /etc/security/limits.conf\n"
+                    compliant = False
         else:
-            path = "/etc/profile"
-        tmppath = path + ".stonixtmp"
-        opts = {"ulimit -S -c": "0"}
-        intent = "present"
-        delimiter = "space"
-        self.profile_editor = KVEditorStonix(self.statechglogger, self.logger,
-                                            kvtype, path, tmppath, opts,
-                                            intent, delimiter)
-        if not self.profile_editor.report():
-            compliant = False
-            self.detailedresults += "\nCorrect configuration line not found in " + path + ":\nulimit -S -c 0"
-
+            self.detailedresults += path1 + " file doesn't exist\n"
         return compliant
 
     def check_sysctl(self):
@@ -242,39 +206,45 @@ class NoCoreDumps(Rule):
         retcode = self.ch.getReturnCode()
 
         if retcode != 0:
-            self.detailedresults += "\nFailed to get value of core dumps configuration with sysctl command"
+            self.detailedresults += "Failed to get value of core dumps configuration with sysctl command\n"
             errmsg = self.ch.getErrorString()
             self.logger.log(LogPriority.DEBUG, errmsg)
+            compliant = False
         else:
             output = self.ch.getOutputString()
             if output.strip() != "fs.suid_dumpable = 0":
                 compliant = False
-                self.detailedresults += "\nCore dumps are currently enabled"
-
+                self.detailedresults += "Core dumps are currently enabled\n"
         return compliant
 
-    def check_security_limits(self):
+    def check_profile(self):
         '''
 
         :return:
         '''
 
         compliant = True
-
-        kvtype = "conf"
-        path = "/etc/security/limits.conf"
-        tmppath = path + ".stonixtmp"
-        opts = {"* hard core": "0"}
-        intent = "present"
-        delimiter = "space"
-
-        self.seclimits_editor = KVEditorStonix(self.statechglogger, self.logger,
-                                            kvtype, path, tmppath, opts,
-                                            intent, delimiter)
-        if not self.seclimits_editor.report():
+        profile = ""
+        if os.path.exists("/etc/profile.d"):
+            profile = "/etc/profile.d/stonix_no_core_dumps.sh"
+            if not os.path.exists(profile):
+                profile = ""
+        elif os.path.exists("/etc/profile"):
+            profile = "/etc/profile"
+        if profile:
+            contents = readFile(profile, self.logger)
+            tempstring = ""
+            found = False
+            for line in contents:
+                if re.search("^ulimit\s+\-S\s+\-c\s+1", line.strip()):
+                    found = True
+            if not found:
+                compliant = False
+                self.detailedresults += "Didn't find the line ulimit -S -c 1 " + \
+                    "in user's profile\n"
+        else:
             compliant = False
-            self.detailedresults += "\nCorrect configuration line not found in " + path + ":\n*    hard    core    0"
-
+            self.detailedresults += "User profile file doesn't exist\n"
         return compliant
 
     def fix(self):
@@ -299,11 +269,11 @@ class NoCoreDumps(Rule):
             for event in eventlist:
                 self.statechglogger.deleteentry(event)
 
-            if self.os == "linux":
+            if self.environ.getosfamily() == "linux":
                 if not self.fixLinux():
                     self.rulesuccess = False
 
-            elif self.os == "mac":
+            elif self.environ.getostype() == "mac":
                 if not self.fixMac():
                     self.rulesuccess = False
 
@@ -319,27 +289,18 @@ class NoCoreDumps(Rule):
 
     def fixLinux(self):
         '''
-        Sub fix method 1 that opens the /etc/security/limits.conf file and a
-        adds the following line: "* hard core 0"
-
         @return: bool
         '''
 
         success = True
+        if not self.fix_security_limits():
+            success = False
 
-        try:
+        if not self.fix_sysctl():
+            success = False
 
-            if not self.fix_security_limits():
-                success = False
-
-            if not self.fix_sysctl():
-                success = False
-
-            if not self.fix_profile():
-                success = False
-
-        except Exception:
-            raise
+        if not self.fix_profile():
+            success = False
         return success
 
     def fix_sysctl(self):
@@ -367,6 +328,13 @@ class NoCoreDumps(Rule):
                 self.detailedresults += "\nFailed to load new sysctl configuration from config file"
                 errmsg2 = self.ch.getErrorString()
                 self.logger.log(LogPriority.DEBUG, errmsg2)
+            else:
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                command = "/sbin/sysctl -w fs.suid_dumpable=1"
+                event = {"eventtype": "commandstring",
+                         "command": command}
+                self.statechglogger.recordchgevent(myid, event)
         return success
 
     def fix_security_limits(self):
@@ -376,15 +344,56 @@ class NoCoreDumps(Rule):
         '''
 
         success = True
-
-        self.logger.log(LogPriority.DEBUG, "Configuring /etc/security/limits.conf core directive")
-
-        if not self.seclimits_editor.fix():
-            success = False
-        else:
-            if not self.seclimits_editor.commit():
+        path1 = "/etc/security/limits.conf"
+        lookfor1 = "(^\*)\s+hard\s+core\s+0?"
+        created = False
+        if not os.path.exists(path1):
+            if not createFile(path1, self.logger):
                 success = False
-
+                self.detailedresults += "Unable to create " + path1 + " file\n"
+            else:
+                created = True
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                event = {"eventtype": "creation",
+                         "filepath": "path1"}
+                self.statechglogger.recordchgevent(myid, event)
+        if os.path.exists(path1):
+            if not checkPerms(path1, [0, 0, 0o644], self.logger):
+                if not created:
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    if not setPerms(path1, [0, 0, 0o644], self.logger, self.statechglogger, myid):
+                        success = False
+                        self.detailedresults += "Unable to correct permissions on " + path1 + "\n"
+            contents = readFile(path1, self.logger)
+            found = False
+            tempstring = ""
+            if contents:
+                for line in contents:
+                    if re.search(lookfor1, line.strip()):
+                        found = True
+                    else:
+                        tempstring += line
+            else:
+                found = False
+            if not found:
+                tempstring += "* hard core 0\n"
+                tempfile = path1 + ".tmp"
+                if not writeFile(tempfile, tempstring, self.logger):
+                    success = False
+                    self.detailedresults += "Unable to write contents to " + path1 + "\n"
+                else:
+                    if not created:
+                        self.iditerator += 1
+                        myid = iterate(self.iditerator, self.rulenumber)
+                        event = {"eventtype": "conf",
+                                 "filepath": path1}
+                        self.statechglogger.recordchgevent(myid, event)
+                        self.statechglogger.recordfilechange(path1, tempfile, myid)
+                    os.rename(tempfile, path1)
+                    setPerms(path1, [0, 0, 0o644], self.logger)
+                    resetsecon(path1)
         return success
 
     def fix_profile(self):
@@ -394,14 +403,113 @@ class NoCoreDumps(Rule):
         '''
 
         success = True
-
-        self.logger.log(LogPriority.DEBUG, "Configuring /etc/profile ulimit directive")
-
-        if not self.profile_editor.fix():
-            success = False
+        created = True
+        lookfor = "^ulimit\s+\-S\s+\-c\s+1"
+        if os.path.exists("/etc/profile.d"):
+            profile = "/etc/profile.d/stonix_no_core_dumps.sh"
+            if not os.path.exists(profile):
+                if not createFile(profile, self.logger):
+                    success = False
+                    self.detailedresults += "Unable to create " + profile + "\n"
+                else:
+                    created = True
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    event = {"eventtype": "creation",
+                             "filepath": profile}
+                    self.statechglogger.recordchgevent(myid, event)
+            if os.path.exists(profile):
+                if not checkPerms(profile, [0, 0, 0o755], self.logger):
+                    if not created:
+                        self.iditerator += 1
+                        myid = iterate(self.iditerator, self.rulenumber)
+                        if not setPerms(profile, [0, 0, 0o755], self.logger, self.statechglogger, myid):
+                            success = False
+                            self.detailedresults += "Unable to correct permissions on " + profile + "\n"
+                contents = readFile(profile, self.logger)
+                found = False
+                tempstring = ""
+                if contents:
+                    for line in contents:
+                        if re.search(lookfor, line.strip()):
+                            found = True
+                        else:
+                            tempstring += line
+                else:
+                    found = False
+                if not found:
+                    tempstring += "ulimit -S -c 1\n"
+                    tempfile = profile + ".tmp"
+                    if not writeFile(tempfile, tempstring, self.logger):
+                        success = False
+                        self.detailedresults += "Unable to write contents to " + profile + "\n"
+                    else:
+                        if not created:
+                            self.iditerator += 1
+                            myid = iterate(self.iditerator, self.rulenumber)
+                            event = {"eventtype": "conf",
+                                     "filepath": profile}
+                            self.statechglogger.recordchgevent(myid, event)
+                            self.statechglogger.recordfilechange(profile, tempfile, myid)
+                        os.rename(tempfile, profile)
+                        setPerms(profile, [0, 0, 0o755], self.logger)
+                        resetsecon(profile)
+        elif os.path.exists("/etc/profile"):
+            profile = "/etc/profile"
+            if not checkPerms(profile, [0, 0, 0o755], self.logger):
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                if not setPerms(profile, [0, 0, 0o755], self.logger, self.statechglogger, myid):
+                    success = False
+                    self.detailedresults += "Unable to correct permissions on " + profile + "\n"
+            contents = readFile(profile, self.logger)
+            found = False
+            tempstring = ""
+            if contents:
+                for line in contents:
+                    if re.search(lookfor, line.strip()):
+                        found = True
+                    else:
+                        tempstring += line
+            else:
+                found = False
+            if not found:
+                tempstring += "ulimit -S -c 1\n"
+                tempfile = profile + ".tmp"
+                if not writeFile(tempfile, tempstring, self.logger):
+                    success = False
+                    self.detailedresults += "Unable to write contents to " + profile + "\n"
+                else:
+                    if not created:
+                        self.iditerator += 1
+                        myid = iterate(self.iditerator, self.rulenumber)
+                        event = {"eventtype": "conf",
+                                 "filepath": profile}
+                        self.statechglogger.recordchgevent(myid, event)
+                        self.statechglogger.recordfilechange(profile, tempfile, myid)
+                    os.rename(tempfile, profile)
+                    setPerms(profile, [0, 0, 0o755], self.logger)
+                    resetsecon(profile)
         else:
-            if not self.profile_editor.commit():
+            profile = "/etc/profile"
+            if not createFile(profile, self.logger):
                 success = False
+                self.detailedresults += "Unable not create " + profile + "\n"
+            else:
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                event = {"eventtype": "creation",
+                         "filepath": profile}
+                self.statechglogger.recordchgevent(myid, event)
+                tempstring = "ulimit -S -c 1\n"
+                tempfile = profile + ".tmp"
+                if not writeFile(tempfile, tempstring, self.logger):
+                    success = False
+                    self.detailedresults += "Unable to write contents to /etc/profile\n"
+                else:
+                    os.rename(tempfile, profile)
+                    setPerms(profile, [0, 0, 0o755], self.logger)
+                    resetsecon(profile)
 
         return success
 
@@ -418,18 +526,12 @@ class NoCoreDumps(Rule):
 
         self.logger.log(LogPriority.DEBUG, "System detected as Mac OS X. Running fixMac()...")
         success = True
-
-        try:
-
-            self.logger.log(LogPriority.DEBUG, "Configuring launchctl limit core directive")
-            self.ch.executeCommand("/usr/bin/launchctl limit core 0 0")
-            retcode = self.ch.getReturnCode()
-            if retcode != 0:
-                success = False
-                errmsg = self.ch.getErrorString()
-                self.detailedresults += "\nFailed to run launchctl command to configure core dumps"
-                self.logger.log(LogPriority.DEBUG, errmsg)
-
-        except Exception:
-            raise
+        self.logger.log(LogPriority.DEBUG, "Configuring launchctl limit core directive")
+        self.ch.executeCommand("/usr/bin/launchctl limit core 0 0")
+        retcode = self.ch.getReturnCode()
+        if retcode != 0:
+            success = False
+            errmsg = self.ch.getErrorString()
+            self.detailedresults += "\nFailed to run launchctl command to configure core dumps"
+            self.logger.log(LogPriority.DEBUG, errmsg)
         return success
