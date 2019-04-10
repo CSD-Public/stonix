@@ -57,7 +57,6 @@ class zzzTestFrameworkServiceHelper(unittest.TestCase):
         """
         initialize and set class variables and objects
 
-        @return:
         """
 
         self.environ = Environment()
@@ -96,7 +95,6 @@ class zzzTestFrameworkServiceHelper(unittest.TestCase):
         """
         restore system initial state
 
-        @return:
         """
 
         if self.orig_enabled:
@@ -108,7 +106,6 @@ class zzzTestFrameworkServiceHelper(unittest.TestCase):
         """
         test listing of services
 
-        @return:
         """
 
         services = self.mysh.listServices()
@@ -121,7 +118,6 @@ class zzzTestFrameworkServiceHelper(unittest.TestCase):
         test disabling a service from initial state:
         enabled
 
-        @return:
         """
 
         # make sure service is started, so stopping it will be a valid test of the function
@@ -136,7 +132,6 @@ class zzzTestFrameworkServiceHelper(unittest.TestCase):
         test enabling a service from initial state:
         disabled
 
-        @return:
         """
 
         # make sure service is stopped, so starting it will be a valid test of the function
@@ -152,7 +147,6 @@ class zzzTestFrameworkServiceHelper(unittest.TestCase):
         enabled
         disabled
 
-        @return:
         """
 
         self.mysh.disableService(*self.service)
@@ -162,6 +156,20 @@ class zzzTestFrameworkServiceHelper(unittest.TestCase):
         self.mysh.enableService(*self.service)
         reloaded2 = self.mysh.reloadService(*self.service)
         self.assertTrue(reloaded2)
+
+    def testIsRunning(self):
+        """
+        test status checking to see if a service
+        is running
+        (start and stop not implemented in all helpers)
+
+        """
+
+        if self.mysh.startService(*self.service):
+            self.assertTrue(self.mysh.isRunning(*self.service))
+
+        if self.mysh.stopService(*self.service):
+            self.assertFalse(self.mysh.isRunning(*self.service))
 
 if __name__ == "__main__":
     unittest.main()
