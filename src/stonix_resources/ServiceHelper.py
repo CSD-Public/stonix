@@ -36,9 +36,9 @@ installed.
         service helper with **kwargs concept
 @change: 2018/02/27 Brandon Gonzales Fixed Traceback caused by using self.logger
 """
+
 import os
 import re
-import inspect
 
 import SHchkconfig
 import SHrcupdate
@@ -533,8 +533,12 @@ class ServiceHelper(object):
                 except OSError:
                     secondarySuccess = False
 
-            if bool(singleSuccess or secondarySuccess):
-                isloaded = True
+            if self.isHybrid:
+                if bool(singleSuccess or secondarySuccess):
+                    isloaded = True
+            else:
+                if singleSuccess:
+                    isloaded = True
 
         return isloaded
 
@@ -661,18 +665,23 @@ class ServiceHelper(object):
             self.logdispatcher.log(LogPriority.DEBUG, 'Reloading service ' + str(service))
 
             try:
-                if self.isRunning(service, **kwargs):
-                    singleSuccess = self.svchelper.reloadService(service, **kwargs)
-                    if self.isHybrid:
-                        secondarySuccess = self.secondary.reloadService(service, **kwargs)
-                    else:
-                        secondarySuccess = True
+
+                singleSuccess = self.svchelper.reloadService(service, **kwargs)
+                if self.isHybrid:
+                    secondarySuccess = self.secondary.reloadService(service, **kwargs)
+                else:
+                    secondarySuccess = True
             except Exception as err:
                 self.logdispatcher.log(LogPriority.DEBUG, str(err))
                 raise
 
-            if bool(singleSuccess and secondarySuccess):
-                reloadSuccess = True
+            if self.isHybrid:
+                if bool(singleSuccess and secondarySuccess):
+                    reloadSuccess = True
+            else:
+                if singleSuccess:
+                    reloadSuccess = True
+
         else:
             raise ValueError("Problem with setService in the Factory...")
 
@@ -680,10 +689,6 @@ class ServiceHelper(object):
             self.lc.sync()
         except Exception:
             raise
-
-        if not self.auditService(service, **kwargs):
-            reloadSuccess = False
-            self.logdispatcher.log(LogPriority.DEBUG, "Audit after reload and sync indicates service still not enabled")
 
         return reloadSuccess
 
@@ -707,8 +712,8 @@ class ServiceHelper(object):
 
             if self.isHybrid:
                 secondaryList = self.secondary.listServices()
-                if secondaryList:
-                    serviceList += secondaryList
+            if secondaryList:
+                serviceList += secondaryList
 
         except Exception as err:
             self.logdispatcher.log(LogPriority.DEBUG, str(err))
