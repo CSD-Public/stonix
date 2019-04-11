@@ -27,14 +27,13 @@ Created on Aug 9, 2012
 @change: ??? - ??? - Added try/except in list services to handle blank lines in output
 """
 
-import subprocess
 import os
 import re
-import errno
 
 from logdispatcher import LogPriority
 from ServiceHelperTemplate import ServiceHelperTemplate
 from CommandHelper import CommandHelper
+
 
 class SHchkconfig(ServiceHelperTemplate):
     """
@@ -83,6 +82,11 @@ class SHchkconfig(ServiceHelperTemplate):
             if os.path.exists(sp):
                 self.svc = sp
                 break
+
+        if not self.svc:
+            raise IOError("Could not locate the service utility on this system")
+        if not self.chk:
+            raise IOError("Could not locate the chkconfig utility on this system")
 
     def startService(self, service, **kwargs):
         """
@@ -198,22 +202,9 @@ class SHchkconfig(ServiceHelperTemplate):
         """
 
         enabled = True
-        systemctl_locations = ["/usr/bin/systemctl", "/bin/systemctl"]
 
-        if os.path.exists("/etc/init.d/" + service):
-            if not self.audit_chkconfig_service(service):
-                enabled = False
-        else:
-            # if this is a systemd (systemctl) system then we do not want to
-            # set enabled to false just because we couldn't find it in /etc/init.d
-            # but if it is not a systemd system, then we do want to set enabled to false
-            if not any(os.path.exists(sl) for sl in systemctl_locations):
-                enabled = False
-            else:
-                # on a systemd (systemctl) system, service command will redirect
-                # to systemctl command so we can still check it this way
-                if not self.audit_sysctl_service(service):
-                    enabled = False
+        if not self.audit_chkconfig_service(service):
+            enabled = False
 
         return enabled
 
@@ -242,31 +233,6 @@ class SHchkconfig(ServiceHelperTemplate):
 
         return enabled
 
-    def audit_sysctl_service(self, service):
-        """
-        uses the service command to check if a given
-        service is enabled or not
-
-        @return:
-        """
-
-        enabled = True
-        searchterm = "Loaded:.*;\s+disabled"
-
-        self.ch.executeCommand(self.svc + " " + service + " status")
-        retcode = self.ch.getReturnCode()
-        if retcode != 0:
-            enabled = False
-            self.logger.log(LogPriority.DEBUG, "Command error while getting status of service: " + service)
-            return enabled
-
-        outputlines = self.ch.getOutput()
-        for line in outputlines:
-            if re.search(searchterm, line):
-                enabled = False
-
-        return enabled
-
     def isRunning(self, service, **kwargs):
         """
         Check to see if a service is currently running.
@@ -280,10 +246,12 @@ class SHchkconfig(ServiceHelperTemplate):
         """
 
         running = True
+        # see: http://refspecs.linuxbase.org/LSB_3.1.0/LSB-generic/LSB-generic/iniscrptact.html
+        success_codes = [0, 1, 2, 3]
 
         self.ch.executeCommand(self.svc + " " + service + " status")
         retcode = self.ch.getReturnCode()
-        if retcode != 0:
+        if retcode not in success_codes:
             running = False
             self.logger.log(LogPriority.DEBUG, "Command error while getting run status of service: " + service)
             return running
