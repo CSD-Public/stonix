@@ -105,11 +105,6 @@ class SHchkconfig(ServiceHelperTemplate):
         if not self.isRunning(service):
             success = False
 
-        if success:
-            self.logger.log(LogPriority.DEBUG, "Successfully started service: " + service)
-        else:
-            self.logger.log(LogPriority.DEBUG, "Failed to start service: " + service)
-
         return success
 
     def stopService(self, service, **kwargs):
@@ -133,11 +128,6 @@ class SHchkconfig(ServiceHelperTemplate):
         if self.isRunning(service):
             success = False
 
-        if success:
-            self.logger.log(LogPriority.DEBUG, "Successfully stopped service: " + service)
-        else:
-            self.logger.log(LogPriority.DEBUG, "Failed to stop service: " + service)
-
         return success
 
     def disableService(self, service, **kwargs):
@@ -154,8 +144,6 @@ class SHchkconfig(ServiceHelperTemplate):
 
         disabled = True
 
-        self.logger.log(LogPriority.DEBUG, "Disabling service " + service)
-
         self.ch.executeCommand(self.chk + " " + service + " off")
         retcode = self.ch.getReturnCode()
         if retcode != 0:
@@ -166,11 +154,6 @@ class SHchkconfig(ServiceHelperTemplate):
 
         if not self.stopService(service):
             disabled = False
-
-        if disabled:
-            self.logger.log(LogPriority.DEBUG, "Successfully disabled service: " + service)
-        else:
-            self.logger.log(LogPriority.DEBUG, "Failed to disable service: " + service)
 
         return disabled
 
@@ -188,8 +171,6 @@ class SHchkconfig(ServiceHelperTemplate):
 
         enabled = True
 
-        self.logger.log(LogPriority.DEBUG, "Enabling service " + service)
-
         self.ch.executeCommand(self.chk + " " + service + " on")
         retcode = self.ch.getReturnCode()
         if retcode != 0:
@@ -200,11 +181,6 @@ class SHchkconfig(ServiceHelperTemplate):
 
         if not self.startService(service):
             enabled = False
-
-        if enabled:
-            self.logger.log(LogPriority.DEBUG, "Successfully enabled service: " + service)
-        else:
-            self.logger.log(LogPriority.DEBUG, "Failed to enable service: " + service)
 
         return enabled
 
@@ -224,8 +200,6 @@ class SHchkconfig(ServiceHelperTemplate):
         enabled = True
         systemctl_locations = ["/usr/bin/systemctl", "/bin/systemctl"]
 
-        self.logger.log(LogPriority.DEBUG, "Checking if service: " + service + " is enabled")
-
         if os.path.exists("/etc/init.d/" + service):
             if not self.audit_chkconfig_service(service):
                 enabled = False
@@ -240,11 +214,6 @@ class SHchkconfig(ServiceHelperTemplate):
                 # to systemctl command so we can still check it this way
                 if not self.audit_sysctl_service(service):
                     enabled = False
-
-        if enabled:
-            self.logger.log(LogPriority.DEBUG, "Service: " + service + " is ENABLED")
-        else:
-            self.logger.log(LogPriority.DEBUG, "Service: " + service + " is DISABLED")
 
         return enabled
 
@@ -264,7 +233,6 @@ class SHchkconfig(ServiceHelperTemplate):
         retcode = self.ch.getReturnCode()
         if retcode != 0:
             enabled = False
-
             self.logger.log(LogPriority.DEBUG, "Failed to get status of service: " + service)
             return enabled
 
@@ -288,12 +256,9 @@ class SHchkconfig(ServiceHelperTemplate):
         self.ch.executeCommand(self.svc + " " + service + " status")
         retcode = self.ch.getReturnCode()
         if retcode != 0:
-            # don't set enabled to false because service won't always
-            # redirect to systemctl so we might get an error when trying
-            # to run this command on a systemctl system and that wouldn't
-            # necessarily indicate that the service wasn't enabled
-
+            enabled = False
             self.logger.log(LogPriority.DEBUG, "Command error while getting status of service: " + service)
+            return enabled
 
         outputlines = self.ch.getOutput()
         for line in outputlines:
@@ -314,21 +279,19 @@ class SHchkconfig(ServiceHelperTemplate):
                 logging edit
         """
 
-        self.logger.log(LogPriority.DEBUG, "Checking if service: " + service + " is running")
-
         running = True
 
         self.ch.executeCommand(self.svc + " " + service + " status")
-        outputlines = self.ch.getOutput()
+        retcode = self.ch.getReturnCode()
+        if retcode != 0:
+            running = False
+            self.logger.log(LogPriority.DEBUG, "Command error while getting run status of service: " + service)
+            return running
 
+        outputlines = self.ch.getOutput()
         # need to parse for either sysv or systemd output
         if not self.parse_running(outputlines):
             running = False
-
-        if running:
-            self.logger.log(LogPriority.DEBUG, "Service: " + service + " IS running")
-        else:
-            self.logger.log(LogPriority.DEBUG, "Service: " + service + " is NOT running")
 
         return running
 
@@ -372,8 +335,6 @@ class SHchkconfig(ServiceHelperTemplate):
                 logging edit
         """
 
-        self.logger.log(LogPriority.DEBUG, "Reloading service: " + service)
-
         reloaded = True
 
         # force-reload: cause the configuration to be reloaded if the service supports this,
@@ -382,11 +343,6 @@ class SHchkconfig(ServiceHelperTemplate):
         retcode = self.ch.getReturnCode()
         if retcode != 0:
             reloaded = False
-            self.logger.log(LogPriority.DEBUG, "Failed to reload service: " + service)
-
-        if reloaded:
-            self.logger.log(LogPriority.DEBUG, "Successfully reloaded service: " + service)
-        else:
             self.logger.log(LogPriority.DEBUG, "Failed to reload service: " + service)
 
         return reloaded
@@ -402,8 +358,6 @@ class SHchkconfig(ServiceHelperTemplate):
                 logging edit
         """
 
-        self.logger.log(LogPriority.DEBUG, "Getting list of services")
-
         service_list = []
 
         self.ch.executeCommand(self.chk + " --list")
@@ -413,8 +367,5 @@ class SHchkconfig(ServiceHelperTemplate):
                 service_list.append(line.split()[0])
             except IndexError:
                 pass
-
-        if not service_list:
-            self.logger.log(LogPriority.DEBUG, "Failed to get service list")
 
         return service_list

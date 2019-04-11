@@ -270,12 +270,10 @@ class ServiceHelper(object):
             # rest of the parameters need to be validated by the concrete
             # service helper instance.
             if not isinstance(service, basestring):
-                serviceValid = False
                 raise TypeError("Service: " + str(service) +
                                 " is not a string as expected.")
 
             elif not service:  # if service is an empty string
-                serviceValid = False
                 raise ValueError('service specified is blank. ' +
                                 'No action will be taken!')
 
@@ -320,10 +318,12 @@ class ServiceHelper(object):
                 domain-target is gui/501/, service-name is com.apple.example,
                 and service-target is gui/501/com.apple.example.
 
-        @return: Bool indicating success status
+        @return: setServiceSuccess
+        @rtype: bool
+        @author: Roy Nielsen
         """
 
-        self.logdispatcher.log(LogPriority.DEBUG, 'Setting service name')
+        self.logdispatcher.log(LogPriority.DEBUG, "Setting service name")
 
         setServiceSuccess = True
         servicenames = ["servicename", "serviceName"]
@@ -345,7 +345,7 @@ class ServiceHelper(object):
                 break
 
         if not setServiceSuccess:
-            self.logdispatcher.log(LogPriority.DEBUG, "setService failed")
+            self.logdispatcher.log(LogPriority.DEBUG, "Failed to set service name")
 
         return setServiceSuccess
 
@@ -382,22 +382,25 @@ class ServiceHelper(object):
         @return: Bool indicating success status
         """
 
-        disabled = False
+        disabled = True
+        systemctl_disabled = False
+        chkconfig_disabled = False
 
         if self.setService(service):
-            chkSingle = False
-            chkSecond = False
 
             service = self.getService()
 
-            self.logdispatcher.log(LogPriority.DEBUG, 'Disabling service ' + str(service))
+            self.logdispatcher.log(LogPriority.DEBUG, "Disabling service: " + service)
 
-            chkSingle = self.svchelper.disableService(service, **kwargs)
             if self.isHybrid:
-                chkSecond = self.secondary.disableService(service, **kwargs)
+                systemctl_disabled = self.svchelper.disableService(service, **kwargs)
+                chkconfig_disabled = self.secondary.disableService(service, **kwargs)
+                disabled = bool(systemctl_disabled or chkconfig_disabled)
+            else:
+                disabled = self.svchelper.disableService(service, **kwargs)
 
-            if chkSingle or chkSecond:
-                disabled = True
+        else:
+            disabled = False
 
         # sync OS cache to filesystem (force write)
         # this was added to eliminate the delay on mac between
@@ -454,27 +457,25 @@ class ServiceHelper(object):
         @author: Roy Nielsen
         """
 
-        enabledSuccess = False
+        enabledSuccess = True
+        systemctl_enabled = False
+        chkconfig_enabled = False
 
         if self.setService(service):
-            enabledSingle = False
-            enabledSecondary = False
 
             service = self.getService()
 
-            self.logdispatcher.log(LogPriority.DEBUG, 'Enabling service ' + str(service))
+            self.logdispatcher.log(LogPriority.DEBUG, "Enabling service: " + service)
 
-            if not self.auditService(service, **kwargs):
-                if self.svchelper.enableService(service, **kwargs):
-                    enabledSingle = True
-
-                if self.isHybrid:
-                    if self.secondary.enableService(service, **kwargs):
-                        enabledSecondary = True
+            if self.isHybrid:
+                systemctl_enabled = self.svchelper.enableService(service, **kwargs)
+                chkconfig_enabled = self.secondary.enableService(service, **kwargs)
+                enabledSuccess = bool(systemctl_enabled or chkconfig_enabled)
             else:
-                enabledSingle = True
+                enabledSuccess = self.svchelper.enableService(service, **kwargs)
 
-            enabledSuccess = bool(enabledSingle or enabledSecondary)
+        else:
+            enabledSuccess = False
 
         # sync OS cache to filesystem (force write)
         # this was added to eliminate the delay on mac between
@@ -532,6 +533,8 @@ class ServiceHelper(object):
         """
 
         enabled = True
+        systemctl_audit = False
+        chkconfig_audit = False
 
         if self.setService(service):
 
@@ -540,13 +543,12 @@ class ServiceHelper(object):
             self.logdispatcher.log(LogPriority.DEBUG, "Checking configuration status of service: " + service)
 
             if self.isHybrid:
-                if not self.svchelper.auditService(service, **kwargs):
-                    enabled = False
-                if not self.secondary.auditService(service, **kwargs):
-                    enabled = False
+                systemctl_audit = self.svchelper.auditService(service, **kwargs)
+                chkconfig_audit = self.secondary.auditService(service, **kwargs)
+                enabled = bool(systemctl_audit or chkconfig_audit)
             else:
-                if not self.svchelper.auditService(service, **kwargs):
-                    enabled = False
+                enabled = self.svchelper.auditService(service, **kwargs)
+
         else:
             enabled = False
 
@@ -595,26 +597,24 @@ class ServiceHelper(object):
         """
 
         isrunning = True
+        systemctl_running = False
+        chkconfig_running = False
 
         if self.setService(service):
+
             service = self.getService()
 
             self.logdispatcher.log(LogPriority.DEBUG, "Checking run status of service: " + service)
 
-            try:
+            if self.isHybrid:
+                systemctl_running = self.svchelper.isRunning(service, **kwargs)
+                chkconfig_running = self.secondary.isRunning(service, **kwargs)
+                isrunning = bool(systemctl_running or chkconfig_running)
+            else:
+                isrunning = self.svchelper.isRunning(service, **kwargs)
 
-                if self.isHybrid:
-                    if not self.svchelper.isRunning(service, **kwargs):
-                        isrunning = False
-                    if not self.secondary.isRunning(service, **kwargs):
-                        isrunning = False
-                else:
-                    if not self.svchelper.isRunning(service, **kwargs):
-                        isrunning = False
-
-            except Exception as err:
-                self.logdispatcher.log(LogPriority.DEBUG, str(err))
-                raise
+        else:
+            isrunning = False
 
         if isrunning:
             self.logdispatcher.log(LogPriority.DEBUG, "Service: " + service + " IS running")
@@ -665,7 +665,9 @@ class ServiceHelper(object):
 
         servicenames = ["serviceName", "servicename"]
         self.servicename = ""
-        reloadSuccess = False
+        reloadSuccess = True
+        systemctl_reload = False
+        chkconfig_reload = False
 
         for sn in servicenames:
             if sn in kwargs:
@@ -673,38 +675,29 @@ class ServiceHelper(object):
                 break
 
         if self.setService(service, servicename=self.servicename):
-            singleSuccess = False
-            secondarySuccess = False
 
             service = self.getService()
 
             self.logdispatcher.log(LogPriority.DEBUG, 'Reloading service ' + str(service))
 
-            try:
-
-                singleSuccess = self.svchelper.reloadService(service, **kwargs)
-                if self.isHybrid:
-                    secondarySuccess = self.secondary.reloadService(service, **kwargs)
-                else:
-                    secondarySuccess = True
-            except Exception as err:
-                self.logdispatcher.log(LogPriority.DEBUG, str(err))
-                raise
-
             if self.isHybrid:
-                if bool(singleSuccess and secondarySuccess):
-                    reloadSuccess = True
+                systemctl_reload = self.svchelper.reloadService(service, **kwargs)
+                chkconfig_reload = self.secondary.reloadService(service, **kwargs)
+                reloadSuccess = bool(systemctl_reload or chkconfig_reload)
             else:
-                if singleSuccess:
-                    reloadSuccess = True
+                reloadSuccess = self.svchelper.reloadService(service, **kwargs)
 
         else:
-            raise ValueError("Problem with setService in the Factory...")
+            reloadSuccess = False
 
-        try:
-            self.lc.sync()
-        except Exception:
-            raise
+        if reloadSuccess:
+            try:
+                self.lc.sync()
+            except Exception:
+                raise
+            self.logdispatcher.log(LogPriority.DEBUG, "Successfully reloaded service: " + service)
+        else:
+            self.logdispatcher.log(LogPriority.DEBUG, "Failed to reload service: " + service)
 
         return reloadSuccess
 
@@ -720,27 +713,31 @@ class ServiceHelper(object):
         self.logdispatcher.log(LogPriority.DEBUG, 'Getting list of services')
 
         serviceList = []
-        secondaryList = []
+        errmsg = ""
 
         try:
 
-            serviceList = self.svchelper.listServices()
-
             if self.isHybrid:
-                secondaryList = self.secondary.listServices()
-            if secondaryList:
-                serviceList += secondaryList
+                serviceList = self.svchelper.listServices() + self.secondary.listServices()
+            else:
+                serviceList = self.svchelper.listServices()
 
         except Exception as err:
-            self.logdispatcher.log(LogPriority.DEBUG, str(err))
-            raise
+            serviceList = []
+            errmsg = str(err)
+
+        if not serviceList:
+            self.logdispatcher.log(LogPriority.DEBUG, "Failed to get service list")
+            if errmsg:
+                self.logdispatcher.log(LogPriority.DEBUG, errmsg)
 
         return serviceList
 
     def startService(self, service, **kwargs):
         """
+        start the given service
 
-        @param service:
+        @param service: string; name of service
         @param kwargs:
         @return: started
         @rtype: bool
@@ -763,9 +760,10 @@ class ServiceHelper(object):
                     started = False
 
         # if the helper does not have the start method then we can't start
-        # aka start failed. set started to false and return
+        # aka start failed. set started to false
         except AttributeError:
             started = False
+        # any other exception, raise
         except:
             raise
 
@@ -778,8 +776,9 @@ class ServiceHelper(object):
 
     def stopService(self, service, **kwargs):
         """
+        stop the given service
 
-        @param service:
+        @param service: string; name of service
         @param kwargs:
         @return:
         """
@@ -800,9 +799,10 @@ class ServiceHelper(object):
                     stopped = False
 
         # if the helper does not have the stop method then we can't stop
-        # aka stop failed. set stopped to false and return
+        # aka stop failed. set stopped to false
         except AttributeError:
             stopped = False
+        # any other exception, raise
         except:
             raise
 
