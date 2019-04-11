@@ -450,7 +450,7 @@ the correct contents\n"
                     os.chmod(sysctl, 420)
                     resetsecon(sysctl)
                     cmdhelper = CommandHelper(self.logger)
-                    cmd = ["/sbin/sysctl", "-q", "-e", "-p"]
+                    cmd = "/sbin/sysctl -p"
                     if not cmdhelper.executeCommand(cmd):
                         success = False
         if netwrkfile:
