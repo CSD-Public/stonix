@@ -73,6 +73,9 @@ class SHsystemctl(ServiceHelperTemplate):
         if not self.sysctl:
             raise IOError("Cannot find systemctl utility on this system!")
 
+        # do not attempt to manipulate any service which has a status in this list
+        self.handsoff = ["static", "transient", "generated", "masked", "masked-runtime"]
+
     def disableService(self, service, **kwargs):
         """
         Disables the service and terminates it if it is running.
@@ -92,7 +95,7 @@ class SHsystemctl(ServiceHelperTemplate):
         if retcode != 0:
             disabled = False
             errmsg = self.ch.getErrorString()
-            self.logdispatcher.log(LogPriority.DEBUG, str(errmsg))
+            self.logdispatcher.log(LogPriority.DEBUG, errmsg)
 
         if not self.stopService(service):
             disabled = False
@@ -114,12 +117,16 @@ class SHsystemctl(ServiceHelperTemplate):
 
         enabled = True
 
+        if self.getServiceStatus(service, **kwargs) in self.handsoff:
+            enabled = False
+            return enabled
+
         self.ch.executeCommand(self.sysctl + " enable " + service)
         retcode = self.ch.getReturnCode()
         if retcode != 0:
             enabled = False
             errmsg = self.ch.getErrorString()
-            self.logdispatcher.log(LogPriority.DEBUG, str(errmsg))
+            self.logdispatcher.log(LogPriority.DEBUG, errmsg)
 
         return enabled
 
@@ -128,18 +135,15 @@ class SHsystemctl(ServiceHelperTemplate):
         Checks the status of a service and returns a bool indicating whether or
         not the service is configured to run or not.
 
-        @param string: Name of the service to audit
-        @return: Bool, True if the service is configured to run
+        @param service: string; Name of the service to audit
+        @return: enabled
+        @rtype: bool
         """
 
         enabled = False
 
         self.ch.executeCommand(self.sysctl + " is-enabled " + service)
-        retcode = self.ch.getReturnCode()
-        if retcode != 0:
-            enabled = False
-            errmsg = self.ch.getErrorString()
-            self.logdispatcher.log(LogPriority.DEBUG, str(errmsg))
+
         if self.ch.findInOutput("enabled"):
             enabled = True
         elif self.ch.findInOutput("not a native service"):
@@ -187,12 +191,16 @@ class SHsystemctl(ServiceHelperTemplate):
 
         success = True
 
+        if self.getServiceStatus(service, **kwargs) in self.handsoff:
+            success = False
+            return success
+
         self.ch.executeCommand(self.sysctl + " reload-or-restart " + service)
         retcode = self.ch.getReturnCode()
         if retcode != 0:
             success = False
             errmsg = self.ch.getErrorString()
-            self.logdispatcher.log(LogPriority.DEBUG, str(errmsg))
+            self.logdispatcher.log(LogPriority.DEBUG, errmsg)
         if not self.isRunning(service):
             success = False
 
@@ -211,6 +219,7 @@ class SHsystemctl(ServiceHelperTemplate):
 
         service_list = []
 
+        # list all installed, service-type service units on the system
         self.ch.executeCommand(self.sysctl + " -a -t service --no-pager list-unit-files")
         output = self.ch.getOutput()
 
@@ -225,7 +234,7 @@ class SHsystemctl(ServiceHelperTemplate):
         if not service_list:
             errmsg = self.ch.getErrorString()
             if errmsg:
-                self.logdispatcher.log(LogPriority.DEBUG, str(errmsg))
+                self.logdispatcher.log(LogPriority.DEBUG, errmsg)
 
         return service_list
 
@@ -242,12 +251,16 @@ class SHsystemctl(ServiceHelperTemplate):
 
         started = True
 
+        if self.getServiceStatus(service, **kwargs) in self.handsoff:
+            started = False
+            return started
+
         self.ch.executeCommand(self.sysctl + " start " + service)
         retcode = self.ch.getReturnCode()
         if retcode != 0:
             started = False
             errmsg = self.ch.getErrorString()
-            self.logdispatcher.log(LogPriority.DEBUG, str(errmsg))
+            self.logdispatcher.log(LogPriority.DEBUG, errmsg)
 
         return started
 
@@ -267,12 +280,69 @@ class SHsystemctl(ServiceHelperTemplate):
         if not self.isRunning(service):
             return stopped # nothing to do
 
+        if self.getServiceStatus(service, **kwargs) in self.handsoff:
+            stopped = False
+            return stopped
+
         else:
             self.ch.executeCommand(self.sysctl + " stop " + service)
             retcode = self.ch.getReturnCode()
             if retcode != 0:
                 stopped = False
                 errmsg = self.ch.getErrorString()
-                self.logdispatcher.log(LogPriority.DEBUG, str(errmsg))
+                self.logdispatcher.log(LogPriority.DEBUG, errmsg)
 
         return stopped
+
+    def getServiceStatus(self, service, **kwargs):
+        """
+        return is-enabled status output
+        possible return values:
+
+        enabled
+        enabled-runtime
+        linked
+        linked-runtime
+        masked
+        masked-runtime
+        static
+        indirect
+        disabled
+        generated
+        transient
+        unknown (custom status defined in STONIX; not generated by systemctl)
+
+        @param service:
+        @param kwargs:
+        @return: status
+        @rtype: string
+        @author: Breen Malmberg
+        """
+
+        status = ""
+        known_statuses = ["enabled", "enabled-runtime", "linked", "linked-runtime",
+                          "masked", "masked-runtime", "static", "indirect", "disabled",
+                          "generated", "transient"]
+
+        self.ch.executeCommand(self.sysctl + " is-enabled " + service)
+        output = self.ch.getOutputString()
+
+        try:
+            if len(output.split()) == 1:
+                status = str(output)
+            else:
+                status = str(output.split()[0])
+        except IndexError:
+            pass
+        except:
+            raise
+
+        if status not in known_statuses:
+            status = "unknown"
+        elif not isinstance(status, basestring):
+            status = "unknown"
+
+        if status in self.handsoff:
+            self.logdispatcher.log(LogPriority.DEBUG, "Status of service: " + service + " indicates it is either protected, required or immutable. Will not perform operation on this service!")
+
+        return status
