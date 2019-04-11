@@ -74,7 +74,6 @@ False.'''
                            'family': ['linux'],
                            'os': {'Mac OS X': ['10.12', 'r', '10.14.10']}}
         self.iditerator = 0
-        self.created = False
 
     def report(self):
         try:
@@ -180,11 +179,9 @@ False.'''
         sysctl = "/etc/sysctl.conf"
         self.editor1, self.editor2 = "", ""
         compliant = True
-        interface = {"IPV6_AUTOCONF": "no"}
-        interface2 = {"IPV6_PRIVACY": "rfc3041"}
-#                       "IPV6_DEFAULTGW": self.gateway,
-#                       "IPV6ADDR":self.ipaddr}
-        sysctls = {"net.ipv6.conf.default.router_solicitations": "0",
+        self.interface1 = {"IPV6_AUTOCONF": "no"}
+        self.interface2 = {"IPV6_PRIVACY": "rfc3041"}
+        self.sysctls = {"net.ipv6.conf.default.router_solicitations": "0",
                    "net.ipv6.conf.default.accept_ra_rtr_pref": "0",
                    "net.ipv6.conf.default.accept_ra_pinfo": "0",
                    "net.ipv6.conf.default.accept_ra_defrtr": "0",
@@ -206,30 +203,16 @@ False.'''
             if not os.path.exists(ifacefile):
                 ifacefile = ""
 
-        tmpfile = sysctl + ".tmp"
         # check if sysctl file is present
         if not os.path.exists(sysctl):
-            # if not, create it
-            if createFile(sysctl, self.logger):
-                self.created = True
-                setPerms(sysctl, [0, 0, 420], self.logger)
-                tmpfile = sysctl + ".tmp"
-                # create an editor to check file
-                self.editor1 = KVEditorStonix(self.statechglogger, self.logger,
-                                              "conf", sysctl, tmpfile, sysctls,
-                                              "present", "openeq")
-                if not self.editor1.report():
-                    self.detailedresults += "/etc/sysctl file doesn't " + \
-                        "contain the correct contents\n"
-                    compliant = False
-            else:
-                compliant = False
+            compliant = False
+            self.detailedresults += sysctl + " file doesn't exist\n"
         else:
             if not checkPerms(sysctl, [0, 0, 420], self.logger):
                 compliant = False
             tmpfile = sysctl + ".tmp"
             self.editor1 = KVEditorStonix(self.statechglogger, self.logger,
-                                          "conf", sysctl, tmpfile, sysctls,
+                                          "conf", sysctl, tmpfile, self.sysctls,
                                           "present", "openeq")
             if not self.editor1.report():
                 self.detailedresults += "/etc/sysctl file doesn't contain \
@@ -242,7 +225,7 @@ the correct contents\n"
                 tmpfile = netwrkfile + ".tmp"
                 self.editor2 = KVEditorStonix(self.statechglogger, self.logger,
                                               "conf", netwrkfile, tmpfile,
-                                              interface, "present", "closedeq")
+                                              self.interface1, "present", "closedeq")
                 if not self.editor2.report():
                     self.detailedresults += netwrkfile + " doesn't contain \
 the correct contents\n"
@@ -260,7 +243,7 @@ the correct contents\n"
                         compliant = False
                     contents = readFile(loc, self.logger)
                     if contents:
-                        for key in interface2:
+                        for key in self.interface2:
                             found = False
                             iterator = 0
                             for line in contents:
@@ -270,7 +253,7 @@ the correct contents\n"
                                 if re.search("^" + key, line):
                                     if re.search("=", line):
                                         temp = line.split("=")
-                                        if temp[1].strip() == interface2[key]:
+                                        if temp[1].strip() == self.interface2[key]:
                                             found = True
                                             continue
                                         else:
@@ -290,16 +273,7 @@ the correct contents\n"
                     else:
                         compliant = False
         return compliant
-###############################################################################
 
-    def reportFree(self):
-        pass
-# freebsd 9.0 or later
-# "net.inet6.ip6.redirect":"0",
-# ipv6_activate_all_interfaces="NO"
-# ipv6_defaultrouter="2607:f2f8:100:999::1"
-# ifconfig_em0_ipv6="inet6 2607:f2f8:100:999::2 prefixlen 64"
-# ip6addrctl_policy="ipv4_prefer"
 ###############################################################################
 
     def fix(self):
@@ -423,11 +397,10 @@ the correct contents\n"
     def fixLinux(self):
         universal = "#The following lines were added by stonix\n"
         debug = ""
+        created1, created2 = False, False
         success = True
         ifacefile = ""
         netwrkfile = ""
-        tempstring1 = ""
-        tempstring2 = ""
         sysctl = "/etc/sysctl.conf"
         interface = {"IPV6_AUTOCONF": "no"}
         interface2 = {"IPV6_PRIVACY": "rfc3041"}
@@ -438,23 +411,35 @@ the correct contents\n"
             netwrkfile = "/etc/sysconfig/network"
         elif self.ph.manager == "zypper":
             ifacefile = "/etc/sysconfig/network/"
-        if self.created:
-            self.iditerator += 1
-            myid = iterate(self.iditerator, self.rulenumber)
-            event = {"eventtype": "creation",
-                     "filepath": self.editor1.getPath()}
-            self.statechglogger.recordchgevent(myid, event)
-        if os.path.exists(sysctl):
-            if not checkPerms(sysctl, [0, 0, 420], self.logger):
+        if not os.path.exists(sysctl):
+            if not createFile(sysctl, self.logger):
+                success = False
+                debug = "Unable to create " + sysctl + " file\n"
+                self.logger.log(LogPriority.DEBUG, debug)
+            else:
+                created1 = True
                 self.iditerator += 1
                 myid = iterate(self.iditerator, self.rulenumber)
-                if not setPerms(sysctl, [0, 0, 420], self.logger,
-                                self.statechglogger, myid):
-                    success = False
+                event = {"eventtype": "creation",
+                         "filepath": sysctl}
+                self.statechglogger.recordchgevent(myid, event)
+                tmpfile = sysctl + ".tmp"
+                self.editor1 = KVEditorStonix(self.statechglogger, self.logger,
+                                              "conf", sysctl, tmpfile, self.sysctls,
+                                              "present", "openeq")
+                self.editor1.report()
+        if os.path.exists(sysctl):
+            if not checkPerms(sysctl, [0, 0, 420], self.logger):
+                if not created1:
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    if not setPerms(sysctl, [0, 0, 420], self.logger,
+                                    self.statechglogger, myid):
+                        success = False
             if self.editor1:
                 if self.editor1.fixables:
                     self.iditerator += 1
-                    if not self.created:
+                    if not created1:
                         myid = iterate(self.iditerator, self.rulenumber)
                         self.editor1.setEventID(myid)
                     if not self.editor1.fix():
@@ -472,34 +457,40 @@ the correct contents\n"
             if not os.path.exists(netwrkfile):
                 if not createFile(netwrkfile, self.logger):
                     success = False
+                    debug = "Unable to create " + netwrkfile + " file\n"
+                    self.logger.log(LogPriority.DEBUG, debug)
                 else:
-                    if not checkPerms(netwrkfile, [0, 0, 420], self.logger):
+                    created2 = True
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    event = {"eventtype": "creation",
+                             "filepath": netwrkfile}
+                    self.statechglogger.recordchgevent(myid, event)
+                    tmpfile = netwrkfile + ".tmp"
+                    self.editor2 = KVEditorStonix(self.statechglogger, self.logger,
+                                                  "conf", netwrkfile, tmpfile,
+                                                  self.interface1, "present", "closedeq")
+                    self.editor2.report()
+            if os.path.exists(netwrkfile):
+                if not checkPerms(netwrkfile, [0, 0, 420], self.logger):
+                    if not created2:
                         self.iditerator += 1
                         myid = iterate(self.iditerator, self.rulenumber)
                         if not setPerms(netwrkfile, [0, 0, 420], self.logger,
                                         self.statechglogger, myid):
                             success = False
-                    tmpfile = netwrkfile + ".tmp"
-                    self.editor2 = KVEditorStonix(self.statechglogger,
-                                                  self.logger, "conf",
-                                                  netwrkfile, tmpfile,
-                                                  interface, "present",
-                                                  "closedeq")
-                    if not self.editor2.report():
-                        self.detailedresults += netwrkfile + " doesn't contain \
-the correct contents\n"
-            if self.editor2:
-                if self.editor2.fixables:
-                    self.iditerator += 1
-                    myid = iterate(self.iditerator, self.rulenumber)
-                    self.editor2.setEventID(myid)
-                    if not self.editor2.fix():
-                        success = False
-                    elif not self.editor2.commit():
-                        success = False
-                    os.chown(netwrkfile, 0, 0)
-                    os.chmod(netwrkfile, 420)
-                    resetsecon(netwrkfile)
+                if self.editor2:
+                    if self.editor2.fixables:
+                        self.iditerator += 1
+                        myid = iterate(self.iditerator, self.rulenumber)
+                        self.editor2.setEventID(myid)
+                        if not self.editor2.fix():
+                            success = False
+                        elif not self.editor2.commit():
+                            success = False
+                        os.chown(netwrkfile, 0, 0)
+                        os.chmod(netwrkfile, 420)
+                        resetsecon(netwrkfile)
         if ifacefile:
             if os.path.exists(ifacefile):
                 dirs = glob.glob(ifacefile + "*")
@@ -565,8 +556,8 @@ the correct contents\n"
                             resetsecon(filename)
             elif not os.path.exists(ifacefile) and ifacefile != "":
                 # will not attempt to create the interface files
-                debug += "interface directory which holds interface \
-                files, doesn't exist, stonix will not attempt to make this \
-                directory or the files contained therein"
+                self.detailedresults += "Interface directory which holds interface \
+                files, doesn't exist. Stonix will not attempt to make this \
+                directory or the files contained therein."
                 success = False
         return success
