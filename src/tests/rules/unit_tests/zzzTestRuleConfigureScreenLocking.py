@@ -342,7 +342,7 @@ directory, invalid form of /etc/passwd"
                         debug += "Unable to set incorrect contents " + \
                         "for " + dconfuserprofile + "\n"
                     else:
-                        os.rename(tmpfile, dconfuserprofile)
+                        os.rename(tempfile, dconfuserprofile)
                         os.chown(dconfuserprofile, 0, 0)
                         os.chmod(dconfuserprofile, 493)
                         resetsecon(dconfuserprofile)
