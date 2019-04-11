@@ -95,6 +95,8 @@ class ServiceHelper(object):
             self.logdispatcher.log(LogPriority.ERROR, str(err))
             raise
 
+        systemctl_paths = ["/usr/bin/systemctl", "/bin/systemctl"]
+
         # Red Hat, CentOS, SUSE
         if os.path.exists('/sbin/chkconfig'):
             ischkconfig = True
@@ -111,7 +113,7 @@ class ServiceHelper(object):
         else:
             isupdaterc = False
         # Fedora, RHEL 7
-        if os.path.exists('/bin/systemctl'):
+        if any(os.path.exists(p) for p in systemctl_paths):
             issystemctl = True
         else:
             issystemctl = False
@@ -241,15 +243,21 @@ class ServiceHelper(object):
     def getService(self):
         """
 
-        @return:
+        @return: self.service
+        @rtype: string
+        @author: Roy Nielsen
         """
+
         return self.service
 
     def getServiceName(self):
         """
 
-        @return:
+        @return: self.servicename
+        @rtype: string
+        @author: Roy Nielsen
         """
+
         return self.servicename
 
     def isServiceVarValid(self, service):
@@ -262,6 +270,8 @@ class ServiceHelper(object):
         """
 
         serviceValid = False
+
+        self.logdispatcher.log(LogPriority.DEBUG, "Validating service name")
 
         try:
 
@@ -678,7 +688,7 @@ class ServiceHelper(object):
 
             service = self.getService()
 
-            self.logdispatcher.log(LogPriority.DEBUG, 'Reloading service ' + str(service))
+            self.logdispatcher.log(LogPriority.DEBUG, "Reloading service: " + service)
 
             if self.isHybrid:
                 systemctl_reload = self.svchelper.reloadService(service, **kwargs)
@@ -710,17 +720,19 @@ class ServiceHelper(object):
         @author: Roy Nielsen
         """
 
-        self.logdispatcher.log(LogPriority.DEBUG, 'Getting list of services')
+        self.logdispatcher.log(LogPriority.DEBUG, "Getting list of services")
 
-        serviceList = []
         errmsg = ""
 
         try:
 
             if self.isHybrid:
-                serviceList = self.svchelper.listServices() + self.secondary.listServices()
+                self.svchelper_services = self.svchelper.listServices()
+                self.secondary_services = self.secondary.listServices()
+                serviceList = self.svchelper_services + self.secondary_services
             else:
-                serviceList = self.svchelper.listServices()
+                self.svchelper_services = self.svchelper.listServices()
+                serviceList = self.svchelper_services
 
         except Exception as err:
             serviceList = []
@@ -747,22 +759,21 @@ class ServiceHelper(object):
         self.logdispatcher.log(LogPriority.DEBUG, "Starting service: " + service)
 
         started = True
+        primstart = False
 
         try:
 
             if self.isHybrid:
-                if not self.svchelper.startService(service, **kwargs):
-                    started = False
-                if not self.secondary.startService(service, **kwargs):
-                    started = False
+                primstart = self.svchelper.startService(service, **kwargs)
+                secondstart = self.secondary.startService(service, **kwargs)
+                started = bool(primstart or secondstart)
             else:
                 if not self.svchelper.startService(service, **kwargs):
                     started = False
 
-        # if the helper does not have the start method then we can't start
-        # aka start failed. set started to false
+        # if one helper does not have the start method then rely on the other one
         except AttributeError:
-            started = False
+            started = primstart
         # any other exception, raise
         except:
             raise
@@ -780,28 +791,29 @@ class ServiceHelper(object):
 
         @param service: string; name of service
         @param kwargs:
-        @return:
+        @return: stopped
+        @rtype: bool
+        @author: Breen Malmberg
         """
 
         self.logdispatcher.log(LogPriority.DEBUG, "Stopping service: " + service)
 
         stopped = True
+        primstop = False
 
         try:
 
             if self.isHybrid:
-                if not self.svchelper.stopService(service, **kwargs):
-                    stopped = False
-                if not self.secondary.stopService(service, **kwargs):
-                    stopped = False
+                primstop = self.svchelper.stopService(service, **kwargs)
+                secondstop = self.secondary.stopService(service, **kwargs)
+                stopped = bool(primstop or secondstop)
             else:
                 if not self.svchelper.stopService(service, **kwargs):
                     stopped = False
 
-        # if the helper does not have the stop method then we can't stop
-        # aka stop failed. set stopped to false
+        # if one helper does not have the stop method then rely on the other one
         except AttributeError:
-            stopped = False
+            stopped = primstop
         # any other exception, raise
         except:
             raise
