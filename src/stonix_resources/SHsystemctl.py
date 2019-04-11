@@ -144,10 +144,11 @@ class SHsystemctl(ServiceHelperTemplate):
 
         self.ch.executeCommand(self.sysctl + " is-enabled " + service)
 
-        if self.ch.findInOutput("enabled"):
-            enabled = True
-        elif self.ch.findInOutput("not a native service"):
+        if self.ch.findInOutput("not a native service"):
             self.logdispatcher.log(LogPriority.DEBUG, "Attempted to audit a non-systemd service with systemctl commands")
+            return enabled
+        elif self.ch.findInOutput("enabled"):
+            enabled = True
 
         return enabled
 

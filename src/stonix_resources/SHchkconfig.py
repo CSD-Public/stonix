@@ -278,7 +278,7 @@ class SHchkconfig(ServiceHelperTemplate):
         running = True
         systemctl_locations = ["/usr/bin/systemctl", "/bin/systemctl"]
         if any(os.path.exists(sl) for sl in systemctl_locations):
-            searchterms = ["^Active:\s+inactive"]
+            searchterms = ["Active:\s+inactive", "Active:\s+unknown"]
         else:
             searchterms = ["is stopped", "hook is not installed"]
 
