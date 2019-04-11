@@ -53,12 +53,25 @@ class SHsystemctl(ServiceHelperTemplate):
         self.environment = environment
         self.logdispatcher = logdispatcher
         self.ch = CommandHelper(self.logdispatcher)
-        if os.path.exists('/bin/systemctl'):
-            self.cmd = '/bin/systemctl '
-        elif os.path.exists('/usr/bin/systemctl'):
-            self.cmd = '/usr/bin/systemctl '
-        else:
-            raise IOError('Cannot find systemctl command')
+
+        self.localize()
+
+    def localize(self):
+        """
+
+        @return:
+        """
+
+        systemctl_paths = ["/usr/bin/systemctl", "/bin/systemctl"]
+        self.sysctl = ""
+
+        for sp in systemctl_paths:
+            if os.path.exists(sp):
+                self.sysctl = sp
+                break
+
+        if not self.sysctl:
+            raise IOError("Cannot find systemctl utility on this system!")
 
     def disableService(self, service, **kwargs):
         """
@@ -74,7 +87,7 @@ class SHsystemctl(ServiceHelperTemplate):
 
         disabled = True
     
-        self.ch.executeCommand(self.cmd + " disable " + service)
+        self.ch.executeCommand(self.sysctl + " disable " + service)
         retcode = self.ch.getReturnCode()
         if retcode != 0:
             disabled = False
@@ -101,7 +114,7 @@ class SHsystemctl(ServiceHelperTemplate):
 
         enabled = True
 
-        self.ch.executeCommand(self.cmd + " enable " + service)
+        self.ch.executeCommand(self.sysctl + " enable " + service)
         retcode = self.ch.getReturnCode()
         if retcode != 0:
             enabled = False
@@ -119,18 +132,20 @@ class SHsystemctl(ServiceHelperTemplate):
         @return: Bool, True if the service is configured to run
         """
 
-        running = False
+        enabled = False
 
-        self.ch.executeCommand(self.cmd + " is-enabled " + service)
+        self.ch.executeCommand(self.sysctl + " is-enabled " + service)
         retcode = self.ch.getReturnCode()
         if retcode != 0:
-            running = False
+            enabled = False
             errmsg = self.ch.getErrorString()
             self.logdispatcher.log(LogPriority.DEBUG, str(errmsg))
         if self.ch.findInOutput("enabled"):
-            running = True
+            enabled = True
+        elif self.ch.findInOutput("not a native service"):
+            self.logdispatcher.log(LogPriority.DEBUG, "Attempted to audit a non-systemd service with systemctl commands")
 
-        return running
+        return enabled
 
     def isRunning(self, service, **kwargs):
         """
@@ -149,7 +164,7 @@ class SHsystemctl(ServiceHelperTemplate):
         running = True
         inactive_keys = ["inactive", "unknown"]
 
-        self.ch.executeCommand(self.cmd + " is-active " + service)
+        self.ch.executeCommand(self.sysctl + " is-active " + service)
         for k in inactive_keys:
             if self.ch.findInOutput(k):
                 running = False
@@ -172,7 +187,7 @@ class SHsystemctl(ServiceHelperTemplate):
 
         success = True
 
-        self.ch.executeCommand(self.cmd + " reload-or-restart " + service)
+        self.ch.executeCommand(self.sysctl + " reload-or-restart " + service)
         retcode = self.ch.getReturnCode()
         if retcode != 0:
             success = False
@@ -196,7 +211,7 @@ class SHsystemctl(ServiceHelperTemplate):
 
         service_list = []
 
-        self.ch.executeCommand(self.cmd + " -a -t service --no-pager list-unit-files")
+        self.ch.executeCommand(self.sysctl + " -a -t service --no-pager list-unit-files")
         output = self.ch.getOutput()
 
         for line in output:
@@ -227,7 +242,7 @@ class SHsystemctl(ServiceHelperTemplate):
 
         started = True
 
-        self.ch.executeCommand(self.cmd + " start " + service)
+        self.ch.executeCommand(self.sysctl + " start " + service)
         retcode = self.ch.getReturnCode()
         if retcode != 0:
             started = False
@@ -253,7 +268,7 @@ class SHsystemctl(ServiceHelperTemplate):
             return stopped # nothing to do
 
         else:
-            self.ch.executeCommand(self.cmd + " stop " + service)
+            self.ch.executeCommand(self.sysctl + " stop " + service)
             retcode = self.ch.getReturnCode()
             if retcode != 0:
                 stopped = False
