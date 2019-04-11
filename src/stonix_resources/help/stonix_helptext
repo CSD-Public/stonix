@@ -546,3 +546,5 @@ Users should keep in mind, while setting this number, that login sessions can in
 <311>       "New data collection and reporting utilities have been added to the stable LTS Ubuntu release cycle and enabled by default. This rule will disable or remove these new utilities so no information is collected or reported to Ubuntu."
 
 <263>       "This rule will enable automatic updates for apps installed and managed through the Apple app store. Keeping applications up-to-date with the latest patches is a basic cornerstone of computer security."
+
+<106>       "This rule will configure a number of settings related to password policy, to ensure that only strong passwords are allowed on the system. Settings such as: maximum failed attempts, grace period, minimum length, number of classes of characters needed, and maximum password age will be configured by this rule."
