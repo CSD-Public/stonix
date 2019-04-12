@@ -616,8 +616,7 @@ def isThisMountainLion(environ):
 
 def readFile(filepath, logger):
     '''
-    Read and return the contents of <filepath>, in list format.
-
+    Read a file's contents and return in a list format
     @author: Derek Walker
     @param filepath: string; path to file to read
     @param logger: logging object
@@ -642,10 +641,35 @@ def readFile(filepath, logger):
             contents = f.readlines()
             f.close()
         except IOError:
-            detailedresults = "Unable to open the specified file: " + \
+            debug = "Unable to open the specified file: " + \
                 filepath + ". " + traceback.format_exc()
-            logger.log(LogPriority.DEBUG, detailedresults)
-            contents = []
+            logger.log(LogPriority.DEBUG, debug)
+            raise
+    return contents
+
+def readFileString(filepath, logger):
+    '''
+    Read a file's contents and return in a string format
+    @author: Derek Walker
+    :param filepath: string
+    :param logger: logger object
+    :return: contents - string of file's contents
+    '''
+    contents = ""
+    if not os.path.exists(filepath):
+        detailedresults = "Unable to open specified file: " + filepath + \
+            ". File does not exist."
+        logger.log(LogPriority.DEBUG, detailedresults)
+    else:
+        try:
+            f = open(filepath, 'r')
+            contents = f.read()
+            f.close()
+        except IOError:
+            debug = "Unable to open the specified file: " + \
+                filepath + ". " + traceback.format_exc()
+            logger.log(LogPriority.DEBUG, debug)
+            raise
     return contents
 
 def writeFile(tmpfile, contents, logger):
