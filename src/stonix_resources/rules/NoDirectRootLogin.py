@@ -32,14 +32,13 @@ through non-tty connections or by escalating privileges using sudo.
 
 from __future__ import absolute_import
 import os
-import re
 import traceback
 
 from ..rule import Rule
-from ..KVEditorStonix import KVEditorStonix
 from ..logdispatcher import LogPriority
 from ..CommandHelper import CommandHelper
-from ..stonixutilityfunctions import createFile
+from ..stonixutilityfunctions import createFile, writeFile, readFileString,\
+    iterate, checkPerms, setPerms, resetsecon
 
 class NoDirectRootLogin(Rule):
     '''
@@ -74,6 +73,8 @@ class NoDirectRootLogin(Rule):
         
         self.ch = CommandHelper(self.logger)
         self.securettypath = "/etc/securetty"
+        self.iditerator = 0
+        self.isblank = False
 
     def report(self):
         '''
@@ -95,9 +96,15 @@ class NoDirectRootLogin(Rule):
                 compliant = False
                 self.detailedresults += self.securettypath + " is missing\n"
             else:
-                if os.stat(self.securettypath).st_size != 0:
+                if not checkPerms(self.securettypath, [0, 0, 0o600], self.logger):
+                    compliant = False
+                    self.detailedresults += "Permissions incorrect on " + self.securettypath + "\n"
+                contents = readFileString(self.securettypath, self.logger)
+                if contents != "":
                     compliant = False
                     self.detailedresults += self.securettypath + " should be empty\n"
+                else:
+                    self.isblank = True
             self.compliant = compliant
             
         except (OSError):
@@ -129,24 +136,60 @@ class NoDirectRootLogin(Rule):
         @author bgonz12
         '''
         try:
+            self.iditerator = 0
             self.detailedresults = ""
             if not self.ci.getcurrvalue():
                 return
             success = True
-
             if not os.path.exists(self.securettypath):
                 if not createFile(self.securettypath, self.logger):
                     success = False
                     self.detailedresults += "Unable to create " + \
                                             self.securettypath + "\n"
-            
-            if os.stat(self.securettypath).st_size != 0:
-                cmd = "echo -n > " + self.securettypath
-                if not self.ch.executeCommand(cmd):
+                else:
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    event = {"eventtype": "creation",
+                             "filepath": self.securettypath}
+                    self.statechglogger.recordchgevent(myid, event)
+                    if not setPerms(self.securettypath, [0, 0, 0o600], self.logger):
+                        success = False
+                        self.detailedresults += "Unable to correct permissions on " + \
+                                                self.securettypath + "\n"
+            elif not self.isblank:
+                tempfile = self.securettypath + ".tmp"
+                if not checkPerms(self.securettypath, [0, 0, 0o600], self.logger):
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    if not setPerms(self.securettypath, [0, 0, 0o600], self.logger,
+                                    self.statechglogger, myid):
+                        success = False
+                        self.detailedresults += "Unable to correct permissions on " + \
+                            self.securettypath + "\n"
+                if not writeFile(tempfile, "", self.logger):
                     success = False
-                    self.detailedresults += "Unable to write to " + \
-                                            self.securettypath + "\n"
-
+                    self.detailedresults += "Unable to write blank contents " + \
+                        "to " + self.securettypath + "\n"
+                else:
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    event = {"eventtype": "conf",
+                             "filepath": self.securettypath}
+                    self.statechglogger.recordchgevent(myid, event)
+                    self.statechglogger.recordfilechange(self.securettypath, tempfile, myid)
+                    os.rename(tempfile, self.securettypath)
+                    os.chmod(self.securettypath, 0o600)
+                    os.chown(self.securettypath, 0, 0)
+                    resetsecon(self.securettypath)
+            else:
+                if not checkPerms(self.securettypath, [0, 0, 0o600], self.logger):
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    if not setPerms(self.securettypath, [0, 0, 0o600], self.logger,
+                                    self.statechglogger, myid):
+                        success = False
+                        self.detailedresults += "Unable to correct permissions on " + \
+                                                self.securettypath + "\n"
             self.rulesuccess = success
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
