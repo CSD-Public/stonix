@@ -31,11 +31,14 @@ This is a Unit Test for Rule ConfigureLinuxFirewall
 from __future__ import absolute_import
 import unittest
 import sys
+import os
+import re
 
 sys.path.append("../../../..")
 from src.tests.lib.RuleTestTemplate import RuleTest
 from src.stonix_resources.CommandHelper import CommandHelper
 from src.tests.lib.logdispatcher_mock import LogPriority
+from src.stonix_resources.ServiceHelper import ServiceHelper
 from src.stonix_resources.rules.ConfigureLinuxFirewall import ConfigureLinuxFirewall
 
 
@@ -49,8 +52,30 @@ class zzzTestRuleConfigureLinuxFirewall(RuleTest):
                                            self.statechglogger)
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
-        self.ch = CommandHelper(self.logdispatch)
+        self.logger = self.logdispatch
+        self.ch = CommandHelper(self.logger)
+        self.servicehelper = ServiceHelper(self.environ, self.logger)
         self.checkUndo = True
+        self.isfirewalld = False
+        self.isufw = False
+        if os.path.exists('/bin/firewall-cmd'):
+            self.isfirewalld = True
+        if os.path.exists('/usr/sbin/ufw'):
+            self.isufw = True
+
+        # mostly pertains to RHEL6, Centos6
+        self.iptables = "/usr/sbin/iptables"
+        if not os.path.exists(self.iptables):
+            self.iptables = '/sbin/iptables'
+        self.ip6tables = "/usr/sbin/ip6tables"
+        if not os.path.exists(self.ip6tables):
+            self.ip6tables = '/sbin/ip6tables'
+        self.iprestore = "/sbin/iptables-restore"
+        self.ip6restore = "/sbin/ip6tables-restore"
+        if not os.path.exists(self.iprestore):
+            self.iprestore = "/usr/sbin/iptables-restore"
+            self.ip6restore = "/usr/sbin/ip6tables-restore"
+        self.scriptType = ""
 
     def tearDown(self):
         pass
@@ -66,6 +91,64 @@ class zzzTestRuleConfigureLinuxFirewall(RuleTest):
         @author: ekkehard j. koch
         '''
         success = True
+        iptablesrunning = False
+        ip6tablesrunning = False
+        catchall = False
+        catchall6 = False
+        self.detailedresults = ""
+        self.iptScriptPath = ""
+        scriptExists = ""
+        debug = ""
+        if self.isfirewalld:
+            if self.servicehelper.auditService('firewalld.service', serviceTarget=self.serviceTarget):
+                if not self.servicehelper.disableService('firewalld.service'):
+                    success = False
+        elif self.isufw:
+            cmdufw = '/usr/sbin/ufw status'
+            if not self.cmdhelper.executeCommand(cmdufw):
+                debug = "Unable to run ufw status command in unit test\n"
+                self.logger.log(LogPriority.DEBUG, debug)
+                success = False
+            else:
+                outputufw = self.cmdhelper.getOutputString()
+                if re.search('Status: active', outputufw):
+                    ufwcmd = '/usr/sbin/ufw --force disable'
+                    if not self.ch.executeCommand(ufwcmd):
+                        debug = "Unable to disable firewall for unit test\n"
+                        self.logger.log(LogPriority.DEBUG, debug)
+                        success = False
+        elif os.path.exists('/usr/bin/system-config-firewall') or \
+            os.path.exists('/usr/bin/system-config-firewall-tui'):
+            fwpath = '/etc/sysconfig/system-config-firewall'
+            iptpath = '/etc/sysconfig/iptables'
+            ip6tpath = '/etc/sysconfig/ip6tables'
+            if os.path.exists(fwpath):
+                os.remove(fwpath)
+            if os.path.exists(iptpath):
+                os.remove(iptpath)
+            if os.path.exists(ip6tpath):
+                os.remove(ip6tpath)
+            if not self.servicehelper.disableService('iptables'):
+                success = False
+                debug = "Could not disable iptables in unit test\n"
+                self.logger.log(LogPriority.DEBUG, debug)
+            if not self.servicehelper.disableService('ipv6ables'):
+                success = False
+                debug = "Could not disable ip6tables in unit test\n"
+                self.logger.log(LogPriority.DEBUG, debug)
+            cmd = "/sbin/service iptables stop"
+            if not self.ch.executeCommand(cmd):
+                success = False
+                debug = "Unable to stop iptables in unit test\n"
+                self.logger.log(LogPriority.DEBUG, debug)
+            cmd = "/sbin/service ip6tables stop"
+            if not self.ch.executeCommand(cmd):
+                success = False
+                debug = "Unable to stop ip6tables in unit test\n"
+                self.logger.log(LogPriority.DEBUG, debug)
+        elif os.path.exists(self.iprestore) and \
+                os.path.exists(self.ip6restore):
+            
         return success
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
@@ -110,6 +193,112 @@ class zzzTestRuleConfigureLinuxFirewall(RuleTest):
         success = True
         return success
 
+    def getScriptValues(self, scriptname):
+        if scriptname == "iptscript":
+            iptScript = '''fw_custom_after_chain_creation() {
+*filter
+:INPUT ACCEPT [0:0]
+:FORWARD ACCEPT [0:0]
+:OUTPUT ACCEPT [0:0]
+-A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+-A INPUT -p icmp -j ACCEPT
+-A INPUT -i lo -j ACCEPT
+-A INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT
+-A INPUT -j REJECT --reject-with icmp-host-prohibited
+-A FORWARD -j REJECT --reject-with icmp-host-prohibited
+-A INPUT -p ipv6-icmp -j ACCEPT
+-A INPUT -m state --state NEW -m udp -p udp --dport 546 -d fe80::/64 -j ACCEPT
+-A INPUT -j REJECT --reject-with icmp6-adm-prohibited
+-A FORWARD -j REJECT --reject-with icmp6-adm-prohibited
+    true
+}
+
+fw_custom_before_port_handling() {
+    true
+}
+
+fw_custom_before_masq() {
+    true
+}
+
+fw_custom_before_denyall() {
+    true
+}
+
+fw_custom_after_finished() {
+    true
+}
+'''
+            return iptScript
+        elif scriptname == "iptables":
+            iptables = '''*filter
+:INPUT ACCEPT [0:0]
+:FORWARD ACCEPT [0:0]
+:OUTPUT ACCEPT [0:0]
+-A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+-A INPUT -p icmp -j ACCEPT
+-A INPUT -i lo -j ACCEPT
+-A INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT
+-A INPUT -j REJECT --reject-with icmp-host-prohibited
+-A FORWARD -j REJECT --reject-with icmp-host-prohibited
+COMMIT
+'''
+            return iptables
+        elif scriptname == "ip6tables":
+            ip6tables = '''*filter
+:INPUT ACCEPT [0:0]
+:FORWARD ACCEPT [0:0]
+:OUTPUT ACCEPT [0:0]
+-A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+-A INPUT -p ipv6-icmp -j ACCEPT
+-A INPUT -i lo -j ACCEPT
+-A INPUT -m state --state NEW -m udp -p udp --dport 546 -d fe80::/64 -j ACCEPT
+-A INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT
+-A INPUT -j REJECT --reject-with icmp6-adm-prohibited
+-A FORWARD -j REJECT --reject-with icmp6-adm-prohibited
+COMMIT
+'''
+            return ip6tables
+        elif scriptname == "systemconfigurefirewall":
+            systemconfigfirewall = '''# Configuration file for system-config-firewall
+
+--enabled
+--service=ssh
+'''
+            return systemconfigfirewall
+        elif scriptname == "sysconfigiptables":
+            sysconfigiptables = '''# Firewall configuration written by system-config-firewall
+# Manual customization of this file is not recommended.
+*filter
+:INPUT ACCEPT [0:0]
+:FORWARD ACCEPT [0:0]
+:OUTPUT ACCEPT [0:0]
+-A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+-A INPUT -p icmp -j ACCEPT
+-A INPUT -i lo -j ACCEPT
+-A INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT
+-A INPUT -j REJECT --reject-with icmp-host-prohibited
+-A FORWARD -j REJECT --reject-with icmp-host-prohibited
+COMMIT
+'''
+            return sysconfigiptables
+        elif scriptname == "sysconfigip6tables":
+            sysconfigip6tables = '''# Firewall configuration written by system-config-firewall
+# Manual customization of this file is not recommended.
+*filter
+:INPUT ACCEPT [0:0]
+:FORWARD ACCEPT [0:0]
+:OUTPUT ACCEPT [0:0]
+-A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+-A INPUT -p ipv6-icmp -j ACCEPT
+-A INPUT -i lo -j ACCEPT
+-A INPUT -m state --state NEW -m udp -p udp --dport 546 -d fe80::/64 -j ACCEPT
+-A INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT
+-A INPUT -j REJECT --reject-with icmp6-adm-prohibited
+-A FORWARD -j REJECT --reject-with icmp6-adm-prohibited
+COMMIT
+'''
+            return sysconfigip6tables
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()
