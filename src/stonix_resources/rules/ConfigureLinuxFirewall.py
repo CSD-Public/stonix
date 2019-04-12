@@ -108,7 +108,7 @@ CONFIGURELINUXFIREWALL to False.'''
             self.iprestore = "/usr/sbin/iptables-restore"
             self.ip6restore = "/usr/sbin/ip6tables-restore"
         self.scriptType = ""
-
+        self.iditerator = 0
     def report(self):
         """
         Report on whether the firewall meets baseline expectations.
@@ -116,15 +116,15 @@ CONFIGURELINUXFIREWALL to False.'''
         @return: bool
         @author: D.Kennel
         """
-        compliant = True
-        iptablesrunning = False
-        ip6tablesrunning = False
-        catchall = False
-        catchall6 = False
-        self.detailedresults = ""
-        self.iptScriptPath = ""
-        scriptExists = ""
         try:
+            compliant = True
+            iptablesrunning = False
+            ip6tablesrunning = False
+            catchall = False
+            catchall6 = False
+            self.detailedresults = ""
+            self.iptScriptPath = ""
+            scriptExists = ""
             if self.isfirewalld:
                 if self.servicehelper.auditService('firewalld.service', serviceTarget=self.serviceTarget):
                     compliant = True
@@ -326,25 +326,13 @@ CONFIGURELINUXFIREWALL to False.'''
                     self.logger.log(LogPriority.DEBUG,
                                     ['ConfigureLinuxFirewall.report',
                                      "RHEL 6 type system. Check failed."])
-            if compliant:
-                self.detailedresults = 'The firewall configuration appears ' + \
-                    'to meet minimum expectations.'
-                self.targetstate = 'configured'
-                self.compliant = True
-            else:
-                self.targetstate = 'notconfigured'
-                self.compliant = False
-
+            self.compliant = compliant
         except (KeyboardInterrupt, SystemExit):
-            # User initiated exit
             raise
         except Exception:
-            self.detailedresults = 'ConfigureLinuxFirewall: '
-            self.detailedresults = self.detailedresults + \
-                traceback.format_exc()
             self.rulesuccess = False
-            self.logger.log(LogPriority.ERROR,
-                            self.detailedresults)
+            self.detailedresults += "\n" + traceback.format_exc()
+            self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("report", self.compliant,
                                    self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
@@ -356,56 +344,57 @@ CONFIGURELINUXFIREWALL to False.'''
 
         @author: D. Kennel
         """
-        self.detailedresults = ""
-        if self.clfci.getcurrvalue():
-            self.rulesuccess = True
+        try:
+            if not self.clfci.getcurrvalue():
+                return
+            self.iditerator = 0
+            self.detailedresults = ""
             success = True
-            try:
-                if self.isfirewalld:
-                    self.servicehelper.enableService('firewalld.service', serviceTarget=self.serviceTarget)
-                    self.detailedresults += "Firewall configured.\n "
-                elif self.isufw:
-                    self.logger.log(LogPriority.DEBUG, "System uses ufw. Running ufw commands...")
-                    cmdufw = '/usr/sbin/ufw status'
-                    if not self.cmdhelper.executeCommand(cmdufw):
-                        self.detailedresults += "Unable to run " + \
-                            "ufw status command\n"
-                        success = False
-                    else:
-                        outputufw = self.cmdhelper.getOutputString()
-                        if re.search('Status: inactive', outputufw):
-                            ufwcmd = '/usr/sbin/ufw --force enable'
-                            if not self.cmdhelper.executeCommand(ufwcmd):
-                                self.detailedresults += "Unable to run " + \
-                                    "ufw enable command\n"
-                                success = False
-                            else:
-                                cmdufw = "/usr/sbin/ufw status verbose"
-                                if not self.cmdhelper.executeCommand(cmdufw):
-                                    self.detailedresults += "Unable to retrieve firewall rules\n"
-                                    success = False
-                                else:
-                                    outputfw = self.cmdhelper.getOutputString()
-                                    if not re.search("Default\:\ deny\ \(incoming\)", outputfw):
-                                        ufwcmd = "/usr/sbin/ufw default deny incoming"
-                                        if not self.cmdhelper.executeCommand(ufwcmd):
-                                            self.detailedresults += "Unable to set default " + \
-                                                "rule for incoming unspecified packets\n"
-                                            success = False
-                        elif re.search('Status: active', outputufw):
+            if self.isfirewalld:
+                self.servicehelper.enableService('firewalld.service', serviceTarget=self.serviceTarget)
+                self.detailedresults += "Firewall configured.\n "
+            elif self.isufw:
+                self.logger.log(LogPriority.DEBUG, "System uses ufw. Running ufw commands...")
+                cmdufw = '/usr/sbin/ufw status'
+                if not self.cmdhelper.executeCommand(cmdufw):
+                    self.detailedresults += "Unable to run " + \
+                        "ufw status command\n"
+                    success = False
+                else:
+                    outputufw = self.cmdhelper.getOutputString()
+                    if re.search('Status: inactive', outputufw):
+                        ufwcmd = '/usr/sbin/ufw --force enable'
+                        if not self.cmdhelper.executeCommand(ufwcmd):
+                            self.detailedresults += "Unable to run " + \
+                                "ufw enable command\n"
+                            success = False
+                        else:
                             cmdufw = "/usr/sbin/ufw status verbose"
                             if not self.cmdhelper.executeCommand(cmdufw):
-                                self.detailedresults += "Cannot retrieve firewall rules\n"
+                                self.detailedresults += "Unable to retrieve firewall rules\n"
                                 success = False
                             else:
-                                outputufw = self.cmdhelper.getOutputString()
-                                if not re.search("Default\:\ deny\ \(incoming\)", outputufw):
+                                outputfw = self.cmdhelper.getOutputString()
+                                if not re.search("Default\:\ deny\ \(incoming\)", outputfw):
                                     ufwcmd = "/usr/sbin/ufw default deny incoming"
                                     if not self.cmdhelper.executeCommand(ufwcmd):
                                         self.detailedresults += "Unable to set default " + \
                                             "rule for incoming unspecified packets\n"
                                         success = False
-                    self.rulesuccess = success
+                    elif re.search('Status: active', outputufw):
+                        cmdufw = "/usr/sbin/ufw status verbose"
+                        if not self.cmdhelper.executeCommand(cmdufw):
+                            self.detailedresults += "Cannot retrieve firewall rules\n"
+                            success = False
+                        else:
+                            outputufw = self.cmdhelper.getOutputString()
+                            if not re.search("Default\:\ deny\ \(incoming\)", outputufw):
+                                ufwcmd = "/usr/sbin/ufw default deny incoming"
+                                if not self.cmdhelper.executeCommand(ufwcmd):
+                                    self.detailedresults += "Unable to set default " + \
+                                        "rule for incoming unspecified packets\n"
+                                    success = False
+                self.rulesuccess = success
 #                     ufwcmd = '/usr/sbin/ufw --force enable'
 #                     if not self.cmdhelper.executeCommand(ufwcmd):
 #                         self.detailedresults += "Unable to run " + \
@@ -414,191 +403,97 @@ CONFIGURELINUXFIREWALL to False.'''
 #                     else:
 #                         ufwcmd = "/"
 #                         self.detailedresults += "Firewall configured.\n "
-                elif os.path.exists('/usr/bin/system-config-firewall') or \
-                     os.path.exists('/usr/bin/system-config-firewall-tui'):
-                    self.logger.log(LogPriority.DEBUG, "System uses system-config-firewall. Writing system-config-firewall file configuration...")
+            elif os.path.exists('/usr/bin/system-config-firewall') or \
+                 os.path.exists('/usr/bin/system-config-firewall-tui'):
+                self.logger.log(LogPriority.DEBUG, "System uses system-config-firewall. Writing system-config-firewall file configuration...")
+                systemconfigfirewall = self.getScriptValues("systemconfigfirewall")
+                sysconfigiptables = self.getScriptValues("sysconfigiptables")
+                sysconfigip6tables = self.getScriptValues("sysconfigip6tables")
 
-                    systemconfigfirewall = '''# Configuration file for system-config-firewall
-
---enabled
---service=ssh
-'''
-                    sysconfigiptables = '''# Firewall configuration written by system-config-firewall
-# Manual customization of this file is not recommended.
-*filter
-:INPUT ACCEPT [0:0]
-:FORWARD ACCEPT [0:0]
-:OUTPUT ACCEPT [0:0]
--A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
--A INPUT -p icmp -j ACCEPT
--A INPUT -i lo -j ACCEPT
--A INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT
--A INPUT -j REJECT --reject-with icmp-host-prohibited
--A FORWARD -j REJECT --reject-with icmp-host-prohibited
-COMMIT
-'''
-                    sysconfigip6tables = '''# Firewall configuration written by system-config-firewall
-# Manual customization of this file is not recommended.
-*filter
-:INPUT ACCEPT [0:0]
-:FORWARD ACCEPT [0:0]
-:OUTPUT ACCEPT [0:0]
--A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
--A INPUT -p ipv6-icmp -j ACCEPT
--A INPUT -i lo -j ACCEPT
--A INPUT -m state --state NEW -m udp -p udp --dport 546 -d fe80::/64 -j ACCEPT
--A INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT
--A INPUT -j REJECT --reject-with icmp6-adm-prohibited
--A FORWARD -j REJECT --reject-with icmp6-adm-prohibited
-COMMIT
-'''
-                    fwPath = '/etc/sysconfig/system-config-firewall'
-                    iptPath = '/etc/sysconfig/iptables'
-                    ip6tPath = '/etc/sysconfig/ip6tables'
-                    if os.path.exists(fwPath):
-                        shutil.move(fwPath, fwPath + ".stonix.bak")
-                        debug = "Moving " + fwPath + " to " + fwPath + \
-                            ".stonix.bak"
-                        self.logger.log(LogPriority.DEBUG, debug)
-                    fwhandle = open(fwPath, 'w')
-                    fwhandle.write(systemconfigfirewall)
-                    fwhandle.close()
-                    if os.path.exists(iptPath):
-                        shutil.move(iptPath, iptPath + ".stonix.bak")
-                        debug = "Moving " + iptPath + " to " + iptPath + \
-                            ".stonix.bak"
-                        self.logger.log(LogPriority.DEBUG, debug)
-                    ipwhandle = open(iptPath, 'w')
-                    ipwhandle.write(sysconfigiptables)
-                    ipwhandle.close()
-                    if os.path.exists(ip6tPath):
-                        shutil.move(ip6tPath, ip6tPath + ".stonix.bak")
-                        debug = "Moving " + ip6tPath + " to " + ip6tPath + \
-                            ".stonix.bak"
-                        self.logger.log(LogPriority.DEBUG, debug)
-                    ip6whandle = open(ip6tPath, 'w')
-                    ip6whandle.write(sysconfigip6tables)
-                    ip6whandle.close()
-                    self.servicehelper.enableService('iptables', serviceTarget=self.serviceTarget)
-                    self.servicehelper.enableService('ip6tables', serviceTarget=self.serviceTarget)
-                    # we restart iptables here because it doesn't respond
-                    # to reload
-                    proc = subprocess.Popen('/sbin/service iptables restart',
-                                            stdout=subprocess.PIPE,
-                                            stderr=subprocess.PIPE,
-                                            shell=True, close_fds=True)
-                    proc = subprocess.Popen('/sbin/service ip6tables restart',
-                                            stdout=subprocess.PIPE,
-                                            stderr=subprocess.PIPE,
-                                            shell=True, close_fds=True)
-                    # Sleep for a bit to let the restarts occur
-                    time.sleep(10)
-                    self.detailedresults += "Firewall configured.\n "
-                elif os.path.exists(self.iprestore) and \
-                     os.path.exists(self.ip6restore):
-                    self.logger.log(LogPriority.DEBUG, "System uses iptables-restore. Running iptables-restore commands...")
-                    iptables = '''*filter
-:INPUT ACCEPT [0:0]
-:FORWARD ACCEPT [0:0]
-:OUTPUT ACCEPT [0:0]
--A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
--A INPUT -p icmp -j ACCEPT
--A INPUT -i lo -j ACCEPT
--A INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT
--A INPUT -j REJECT --reject-with icmp-host-prohibited
--A FORWARD -j REJECT --reject-with icmp-host-prohibited
-COMMIT
-'''
-                    ip6tables = '''*filter
-:INPUT ACCEPT [0:0]
-:FORWARD ACCEPT [0:0]
-:OUTPUT ACCEPT [0:0]
--A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
--A INPUT -p ipv6-icmp -j ACCEPT
--A INPUT -i lo -j ACCEPT
--A INPUT -m state --state NEW -m udp -p udp --dport 546 -d fe80::/64 -j ACCEPT
--A INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT
--A INPUT -j REJECT --reject-with icmp6-adm-prohibited
--A FORWARD -j REJECT --reject-with icmp6-adm-prohibited
-COMMIT
-'''
-                    proc = subprocess.Popen(self.iprestore,
-                                            stdin=subprocess.PIPE,
-                                            stdout=subprocess.PIPE,
-                                            stderr=subprocess.PIPE)
-                    proc.communicate(input=iptables)
-                    proc = subprocess.Popen(self.ip6restore,
-                                            stdin=subprocess.PIPE,
-                                            stdout=subprocess.PIPE,
-                                            stderr=subprocess.PIPE)
-                    proc.communicate(input=ip6tables)
-                    if self.scriptType == "debian":
-                        iptScript = '#!/bin/bash\n' + self.iprestore + \
-                            ' <<< "' + iptables + '"\n' + self.ip6restore + \
-                            ' <<< "' + ip6tables + '"'
-                    else:
-                        iptScript = '''fw_custom_after_chain_creation() {
-*filter
-:INPUT ACCEPT [0:0]
-:FORWARD ACCEPT [0:0]
-:OUTPUT ACCEPT [0:0]
--A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
--A INPUT -p icmp -j ACCEPT
--A INPUT -i lo -j ACCEPT
--A INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT
--A INPUT -j REJECT --reject-with icmp-host-prohibited
--A FORWARD -j REJECT --reject-with icmp-host-prohibited
--A INPUT -p ipv6-icmp -j ACCEPT
--A INPUT -m state --state NEW -m udp -p udp --dport 546 -d fe80::/64 -j ACCEPT
--A INPUT -j REJECT --reject-with icmp6-adm-prohibited
--A FORWARD -j REJECT --reject-with icmp6-adm-prohibited
-    true
-}
-
-fw_custom_before_port_handling() {
-    true
-}
-
-fw_custom_before_masq() {
-    true
-}
-
-fw_custom_before_denyall() {
-    true
-}
-
-fw_custom_after_finished() {
-    true
-}
-'''
-                    if os.path.exists(self.iptScriptPath):
-                        shutil.move(self.iptScriptPath,
-                                    self.iptScriptPath + ".stonix.bak")
-                    iptShellHandle = open(self.iptScriptPath, "w")
-                    iptShellHandle.write(iptScript)
-                    iptShellHandle.close()
-                    os.chmod(self.iptScriptPath, 0755)
-                    self.detailedresults += "Firewall configured.\n "
+                fwPath = '/etc/sysconfig/system-config-firewall'
+                iptPath = '/etc/sysconfig/iptables'
+                ip6tPath = '/etc/sysconfig/ip6tables'
+                if os.path.exists(fwPath):
+                    shutil.move(fwPath, fwPath + ".stonix.bak")
+                    debug = "Moving " + fwPath + " to " + fwPath + \
+                        ".stonix.bak"
+                    self.logger.log(LogPriority.DEBUG, debug)
+                fwhandle = open(fwPath, 'w')
+                fwhandle.write(systemconfigfirewall)
+                fwhandle.close()
+                if os.path.exists(iptPath):
+                    shutil.move(iptPath, iptPath + ".stonix.bak")
+                    debug = "Moving " + iptPath + " to " + iptPath + \
+                        ".stonix.bak"
+                    self.logger.log(LogPriority.DEBUG, debug)
+                ipwhandle = open(iptPath, 'w')
+                ipwhandle.write(sysconfigiptables)
+                ipwhandle.close()
+                if os.path.exists(ip6tPath):
+                    shutil.move(ip6tPath, ip6tPath + ".stonix.bak")
+                    debug = "Moving " + ip6tPath + " to " + ip6tPath + \
+                        ".stonix.bak"
+                    self.logger.log(LogPriority.DEBUG, debug)
+                ip6whandle = open(ip6tPath, 'w')
+                ip6whandle.write(sysconfigip6tables)
+                ip6whandle.close()
+                self.servicehelper.enableService('iptables', serviceTarget=self.serviceTarget)
+                self.servicehelper.enableService('ip6tables', serviceTarget=self.serviceTarget)
+                # we restart iptables here because it doesn't respond
+                # to reload
+                proc = subprocess.Popen('/sbin/service iptables restart',
+                                        stdout=subprocess.PIPE,
+                                        stderr=subprocess.PIPE,
+                                        shell=True, close_fds=True)
+                proc = subprocess.Popen('/sbin/service ip6tables restart',
+                                        stdout=subprocess.PIPE,
+                                        stderr=subprocess.PIPE,
+                                        shell=True, close_fds=True)
+                # Sleep for a bit to let the restarts occur
+                time.sleep(10)
+                self.detailedresults += "Firewall configured.\n "
+            elif os.path.exists(self.iprestore) and \
+                 os.path.exists(self.ip6restore):
+                self.logger.log(LogPriority.DEBUG, "System uses iptables-restore. Running iptables-restore commands...")
+                iptables = self.getScriptValues("iptables")
+                ip6tables = self.getScriptValues("ipt6tables")
+                proc = subprocess.Popen(self.iprestore,
+                                        stdin=subprocess.PIPE,
+                                        stdout=subprocess.PIPE,
+                                        stderr=subprocess.PIPE)
+                proc.communicate(input=iptables)
+                proc = subprocess.Popen(self.ip6restore,
+                                        stdin=subprocess.PIPE,
+                                        stdout=subprocess.PIPE,
+                                        stderr=subprocess.PIPE)
+                proc.communicate(input=ip6tables)
+                if self.scriptType == "debian":
+                    iptScript = '#!/bin/bash\n' + self.iprestore + \
+                        ' <<< "' + iptables + '"\n' + self.ip6restore + \
+                        ' <<< "' + ip6tables + '"'
                 else:
-                    self.detailedresults += "Unable to configure a " + \
-                        "firewall for this system. The system " + \
-                        "administrator should configure an iptables firewall.\n"
-                    self.rulesuccess = False
-                if not success:
-                    self.rulesuccess = False
-            except (KeyboardInterrupt, SystemExit):
-                # User initiated exit
-                raise
-            except Exception:
-                self.rulesuccess = False
-                self.detailedresults = 'ConfigureLinuxFirewall: '
-                self.detailedresults = self.detailedresults + \
-                    traceback.format_exc()
-                self.rulesuccess = False
-                self.logger.log(LogPriority.ERROR,
-                                self.detailedresults)
-        else:
-            self.logger.log(LogPriority.DEBUG, "Rule was not enabled. Nothing will be done.")
+                    iptScript = self.getScriptValues("iptscript")
+                if os.path.exists(self.iptScriptPath):
+                    shutil.move(self.iptScriptPath,
+                                self.iptScriptPath + ".stonix.bak")
+                iptShellHandle = open(self.iptScriptPath, "w")
+                iptShellHandle.write(iptScript)
+                iptShellHandle.close()
+                os.chmod(self.iptScriptPath, 0755)
+                self.detailedresults += "Firewall configured.\n "
+            else:
+                self.detailedresults += "Unable to configure a " + \
+                    "firewall for this system. The system " + \
+                    "administrator should configure an iptables firewall.\n"
+                success = False
+            self.rulesuccess = success
+        except (KeyboardInterrupt, SystemExit):
+            # User initiated exit
+            raise
+        except Exception:
+            self.rulesuccess = False
+            self.detailedresults += "\n" + traceback.format_exc()
+            self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("fix", self.rulesuccess,
                                    self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
@@ -699,3 +594,110 @@ fw_custom_after_finished() {
             self.detailedresults = 'ConfigureLinuxFirewalls: Changes ' + \
                 'successfully reverted'
         return True
+
+    def getScriptValues(self, scriptname):
+        if scriptname == "iptscript":
+            iptScript = '''fw_custom_after_chain_creation() {
+*filter
+:INPUT ACCEPT [0:0]
+:FORWARD ACCEPT [0:0]
+:OUTPUT ACCEPT [0:0]
+-A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+-A INPUT -p icmp -j ACCEPT
+-A INPUT -i lo -j ACCEPT
+-A INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT
+-A INPUT -j REJECT --reject-with icmp-host-prohibited
+-A FORWARD -j REJECT --reject-with icmp-host-prohibited
+-A INPUT -p ipv6-icmp -j ACCEPT
+-A INPUT -m state --state NEW -m udp -p udp --dport 546 -d fe80::/64 -j ACCEPT
+-A INPUT -j REJECT --reject-with icmp6-adm-prohibited
+-A FORWARD -j REJECT --reject-with icmp6-adm-prohibited
+    true
+}
+
+fw_custom_before_port_handling() {
+    true
+}
+
+fw_custom_before_masq() {
+    true
+}
+
+fw_custom_before_denyall() {
+    true
+}
+
+fw_custom_after_finished() {
+    true
+}
+'''
+            return iptScript
+        elif scriptname == "iptables":
+            iptables = '''*filter
+:INPUT ACCEPT [0:0]
+:FORWARD ACCEPT [0:0]
+:OUTPUT ACCEPT [0:0]
+-A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+-A INPUT -p icmp -j ACCEPT
+-A INPUT -i lo -j ACCEPT
+-A INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT
+-A INPUT -j REJECT --reject-with icmp-host-prohibited
+-A FORWARD -j REJECT --reject-with icmp-host-prohibited
+COMMIT
+'''
+            return iptables
+        elif scriptname == "ip6tables":
+            ip6tables = '''*filter
+:INPUT ACCEPT [0:0]
+:FORWARD ACCEPT [0:0]
+:OUTPUT ACCEPT [0:0]
+-A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+-A INPUT -p ipv6-icmp -j ACCEPT
+-A INPUT -i lo -j ACCEPT
+-A INPUT -m state --state NEW -m udp -p udp --dport 546 -d fe80::/64 -j ACCEPT
+-A INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT
+-A INPUT -j REJECT --reject-with icmp6-adm-prohibited
+-A FORWARD -j REJECT --reject-with icmp6-adm-prohibited
+COMMIT
+'''
+            return ip6tables
+        elif scriptname == "systemconfigurefirewall":
+            systemconfigfirewall = '''# Configuration file for system-config-firewall
+
+--enabled
+--service=ssh
+'''
+            return systemconfigfirewall
+        elif scriptname == "sysconfigiptables":
+            sysconfigiptables = '''# Firewall configuration written by system-config-firewall
+# Manual customization of this file is not recommended.
+*filter
+:INPUT ACCEPT [0:0]
+:FORWARD ACCEPT [0:0]
+:OUTPUT ACCEPT [0:0]
+-A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+-A INPUT -p icmp -j ACCEPT
+-A INPUT -i lo -j ACCEPT
+-A INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT
+-A INPUT -j REJECT --reject-with icmp-host-prohibited
+-A FORWARD -j REJECT --reject-with icmp-host-prohibited
+COMMIT
+'''
+            return sysconfigiptables
+        elif scriptname == "sysconfigip6tables":
+            sysconfigip6tables = '''# Firewall configuration written by system-config-firewall
+# Manual customization of this file is not recommended.
+*filter
+:INPUT ACCEPT [0:0]
+:FORWARD ACCEPT [0:0]
+:OUTPUT ACCEPT [0:0]
+-A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+-A INPUT -p ipv6-icmp -j ACCEPT
+-A INPUT -i lo -j ACCEPT
+-A INPUT -m state --state NEW -m udp -p udp --dport 546 -d fe80::/64 -j ACCEPT
+-A INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT
+-A INPUT -j REJECT --reject-with icmp6-adm-prohibited
+-A FORWARD -j REJECT --reject-with icmp6-adm-prohibited
+COMMIT
+'''
+            return sysconfigip6tables
