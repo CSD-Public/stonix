@@ -1,22 +1,20 @@
 ###############################################################################
 #                                                                             #
-# Copyright, 2008-2013, Los Alamos National Security, LLC.                    #
+# Copyright 2019. Triad National Security, LLC. All rights reserved.          #
+# This program was produced under U.S. Government contract 89233218CNA000001  #
+# for Los Alamos National Laboratory (LANL), which is operated by Triad       #
+# National Security, LLC for the U.S. Department of Energy/National Nuclear   #
+# Security Administration.                                                    #
 #                                                                             #
-# This software was produced under a U.S. Government contract by Los Alamos   #
-# National Laboratory, which is operated by Los Alamos National Security,     #
-# LLC., under Contract No. DE-AC52-06NA25396 with the U.S. Department of      #
-# Energy.                                                                     #
-#                                                                             #
-# The U.S. Government is licensed to use, reproduce, and distribute this      #
-# software. Permission is granted to the public to copy and use this software #
-# without charge, provided that this Notice and any statement of authorship   #
-# are reproduced on all copies.                                               #
-#                                                                             #
-# Neither the Government nor the Los Alamos National Security, LLC., makes    #
-# any warranty, express or implied, or assumes any liability or               #
-# responsibility for the use of this software.                                #
+# All rights in the program are reserved by Triad National Security, LLC, and #
+# the U.S. Department of Energy/National Nuclear Security Administration. The #
+# Government is granted for itself and others acting on its behalf a          #
+# nonexclusive, paid-up, irrevocable worldwide license in this material to    #
+# reproduce, prepare derivative works, distribute copies to the public,       #
+# perform publicly and display publicly, and to permit others to do so.       #
 #                                                                             #
 ###############################################################################
+
 
 # ============================================================================ #
 #               Filename          $RCSfile: stonix/__init__.py,v $
