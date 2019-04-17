@@ -1,3 +1,4 @@
+#!/usr/bin/python
 ###############################################################################
 #                                                                             #
 # Copyright 2019. Triad National Security, LLC. All rights reserved.          #
@@ -14,8 +15,6 @@
 # perform publicly and display publicly, and to permit others to do so.       #
 #                                                                             #
 ###############################################################################
-
-#!/usr/bin/python
 
 '''
 Mac build script for STONIX. Based on original shell script by Roy Nielsen,
