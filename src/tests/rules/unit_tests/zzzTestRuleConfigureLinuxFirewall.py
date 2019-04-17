@@ -59,8 +59,10 @@ class zzzTestRuleConfigureLinuxFirewall(RuleTest):
         self.isfirewalld = False
         self.isufw = False
         if os.path.exists('/bin/firewall-cmd'):
+            print "is firewalld\n"
             self.isfirewalld = True
         if os.path.exists('/usr/sbin/ufw'):
+            print "is ufw\n"
             self.isufw = True
 
         # mostly pertains to RHEL6, Centos6
@@ -70,11 +72,6 @@ class zzzTestRuleConfigureLinuxFirewall(RuleTest):
         self.ip6tables = "/usr/sbin/ip6tables"
         if not os.path.exists(self.ip6tables):
             self.ip6tables = '/sbin/ip6tables'
-        self.iprestore = "/sbin/iptables-restore"
-        self.ip6restore = "/sbin/ip6tables-restore"
-        if not os.path.exists(self.iprestore):
-            self.iprestore = "/usr/sbin/iptables-restore"
-            self.ip6restore = "/usr/sbin/ip6tables-restore"
         self.scriptType = ""
 
     def tearDown(self):
@@ -91,16 +88,12 @@ class zzzTestRuleConfigureLinuxFirewall(RuleTest):
         @author: ekkehard j. koch
         '''
         success = True
-        iptablesrunning = False
-        ip6tablesrunning = False
-        catchall = False
-        catchall6 = False
         self.detailedresults = ""
         self.iptScriptPath = ""
         scriptExists = ""
         debug = ""
         if self.isfirewalld:
-            if self.servicehelper.auditService('firewalld.service', serviceTarget=self.serviceTarget):
+            if self.servicehelper.auditService('firewalld.service'):
                 if not self.servicehelper.disableService('firewalld.service'):
                     success = False
         elif self.isufw:
@@ -119,6 +112,7 @@ class zzzTestRuleConfigureLinuxFirewall(RuleTest):
                         success = False
         elif os.path.exists('/usr/bin/system-config-firewall') or \
             os.path.exists('/usr/bin/system-config-firewall-tui'):
+            print "system-config-firewall commands exist\n"
             fwpath = '/etc/sysconfig/system-config-firewall'
             iptpath = '/etc/sysconfig/iptables'
             ip6tpath = '/etc/sysconfig/ip6tables'
@@ -129,10 +123,12 @@ class zzzTestRuleConfigureLinuxFirewall(RuleTest):
             if os.path.exists(ip6tpath):
                 os.remove(ip6tpath)
             if not self.servicehelper.disableService('iptables'):
+                print "unable to disable iptables\n"
                 success = False
                 debug = "Could not disable iptables in unit test\n"
                 self.logger.log(LogPriority.DEBUG, debug)
-            if not self.servicehelper.disableService('ipv6ables'):
+            if not self.servicehelper.disableService('ip6ables'):
+                print "unable to disable ip6tables\n"
                 success = False
                 debug = "Could not disable ip6tables in unit test\n"
                 self.logger.log(LogPriority.DEBUG, debug)
@@ -140,15 +136,21 @@ class zzzTestRuleConfigureLinuxFirewall(RuleTest):
             if not self.ch.executeCommand(cmd):
                 success = False
                 debug = "Unable to stop iptables in unit test\n"
+                print "unable to stop iptables in unit test\n"
                 self.logger.log(LogPriority.DEBUG, debug)
             cmd = "/sbin/service ip6tables stop"
             if not self.ch.executeCommand(cmd):
                 success = False
                 debug = "Unable to stop ip6tables in unit test\n"
+                print "unable to stop iop6tables in unit test\n"
                 self.logger.log(LogPriority.DEBUG, debug)
         elif os.path.exists(self.iprestore) and \
                 os.path.exists(self.ip6restore):
-            
+            if os.path.exists(self.iptScriptPath):
+                if not os.remove(self.iptScriptPath):
+                    debug = "Unable to remove " + self.iptScriptPath + " for setConditionsForRule\n"
+                    self.logger.log(LogPriority.DEBUG, debug)
+                    success = False
         return success
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
