@@ -117,8 +117,7 @@ FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
         self.gnomelockpath = "/etc/dconf/db/local.d/locks/autologout"
         self.undotimeout = ""
         self.undoforcelogout = ""
-        if self.environ.getosfamily() != 'darwin':
-            self.kdesddm = self.ph.check("sddm")
+        self.kdesddm = ""
 
     def report(self):
         """
@@ -132,6 +131,7 @@ FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
             compliant = True
             self.detailedresults = ""
             if self.environ.osfamily == 'linux':
+                self.kdesddm = self.ph.check("sddm")
                 ph = Pkghelper(self.logger, self.environ)
                 if ph.check("gdm") or ph.check("gdm3"):
                     self.gnomeInstalled = True
