@@ -55,10 +55,8 @@ class zzzTestRuleConfigureLinuxFirewall(RuleTest):
         self.isfirewalld = False
         self.isufw = False
         if os.path.exists('/bin/firewall-cmd'):
-            print "is firewalld\n"
             self.isfirewalld = True
         if os.path.exists('/usr/sbin/ufw'):
-            print "is ufw\n"
             self.isufw = True
 
         # mostly pertains to RHEL6, Centos6
@@ -92,7 +90,7 @@ class zzzTestRuleConfigureLinuxFirewall(RuleTest):
             if self.servicehelper.auditService('firewalld.service'):
                 if not self.servicehelper.disableService('firewalld.service'):
                     success = False
-        elif self.isufw:
+        if self.isufw:
             cmdufw = '/usr/sbin/ufw status'
             if not self.cmdhelper.executeCommand(cmdufw):
                 debug = "Unable to run ufw status command in unit test\n"
@@ -123,7 +121,7 @@ class zzzTestRuleConfigureLinuxFirewall(RuleTest):
                 success = False
                 debug = "Could not disable iptables in unit test\n"
                 self.logger.log(LogPriority.DEBUG, debug)
-            if not self.servicehelper.disableService('ip6ables'):
+            if not self.servicehelper.disableService('ip6tables'):
                 print "unable to disable ip6tables\n"
                 success = False
                 debug = "Could not disable ip6tables in unit test\n"

@@ -85,6 +85,7 @@ CONFIGURELINUXFIREWALL to False.'''
         default = True
         self.clfci = self.initCi(datatype, key, instructions, default)
         self.scriptType = ""
+        self.iptScriptPath = ""
         self.iptables, self.ip6tables, self.iprestore, self.ip6restore = "", "", "", ""
         self.checkIptables()
         self.iditerator = 0
@@ -95,6 +96,9 @@ CONFIGURELINUXFIREWALL to False.'''
 
         @return: bool
         @author: D.Kennel
+        @change: dwalker - updating rule to check for every possible firewall
+            implementation and configure it rather than mutually exclusively
+            checking based on system.
         """
         try:
             compliant = True
@@ -103,7 +107,6 @@ CONFIGURELINUXFIREWALL to False.'''
             catchall = False
             catchall6 = False
             self.detailedresults = ""
-            self.iptScriptPath = ""
             scriptExists = ""
             if self.checkFirewalld():
                 if self.servicehelper.auditService('firewalld.service', serviceTarget=self.serviceTarget):
@@ -112,6 +115,7 @@ CONFIGURELINUXFIREWALL to False.'''
                     compliant = False
                     self.detailedresults = 'This system appears to have ' + \
                         'firewalld but it is not running as required'
+
             elif self.checkUFW():
                 cmdufw = '/usr/sbin/ufw status'
                 if not self.cmdhelper.executeCommand(cmdufw):
@@ -135,9 +139,13 @@ CONFIGURELINUXFIREWALL to False.'''
                                 compliant = False
                                 self.detailedresults += "The default value for " + \
                                     "incoming unspecified packets is not deny\n"
-            elif self.checkIsOther():
-                # for debian and opensuse systems
-                if "iptables" not in self.servicehelper.listServices():
+            else:
+                if self.servicehelper.auditService('iptables'):
+                    iptablesrunning = True
+                if self.servicehelper.auditService('ip6tables'):
+                    ip6tablesrunning = True
+
+                if self.iptables:
                     cmd = [self.iptables, "-L"]
                     if not self.cmdhelper.executeCommand(cmd):
                         self.detailedresults += "Unable to run " + \
@@ -150,11 +158,12 @@ CONFIGURELINUXFIREWALL to False.'''
                                          '\s+all\s+--\s+anywhere\s+anywhere', line):
                                 catchall = True
                                 break
-                        self.logger.log(LogPriority.DEBUG,
-                                        ['ConfigureLinuxFirewall.report',
-                                         "Debian type system. ipv4 catchall rule: "
-                                         + str(catchall)])
-                if "ip6tables" not in self.servicehelper.listServices():
+                        if not catchall:
+                            compliant = False
+                            self.detailedresults += "Incorrect IPV4 firewall INPUT rule\n"
+                            self.logger.log(LogPriority.DEBUG, self.detailedresults)
+
+                if self.ip6tables:
                     cmd6 = [self.ip6tables, "-L"]
                     if not self.cmdhelper.executeCommand(cmd6):
                         self.detailedresults += "Unable to run " + \
@@ -167,10 +176,9 @@ CONFIGURELINUXFIREWALL to False.'''
                                          '\s+all\s+anywhere\s+anywhere', line):
                                 catchall6 = True
                                 break
-                        self.logger.log(LogPriority.DEBUG,
-                                        ['ConfigureLinuxFirewall.report',
-                                         "Debian type system. ipv6 catchall rule: "
-                                         + str(catchall6)])
+                        if not catchall6:
+                            self.detailedresults += "Incorrect IPV6 firewall INPUT rule\n"
+                            self.logger.log(LogPriority.DEBUG, self.detailedresults)
 
                 if os.path.exists("/etc/network/if-pre-up.d"):
                     self.iptScriptPath = "/etc/network/if-pre-up.d/iptables"
@@ -188,84 +196,30 @@ CONFIGURELINUXFIREWALL to False.'''
                         scriptExists = True
                     else:
                         scriptExists = False
+                else:
+                    scriptExists = True
 
                 if not catchall:
                     compliant = False
                     self.detailedresults += 'This system appears to use ' + \
-                        'iptables but the expected deny all is missing ' + \
-                        'from the rules.\n'
+                        'iptables but does not contain the expected rules\n'
                     self.logger.log(LogPriority.DEBUG,
                                     ['ConfigureLinuxFirewall.report',
-                                     "Debian type system. Missing v4 deny all."])
+                                     "Missing v4 deny all."])
                 if not catchall6:
                     compliant = False
                     self.detailedresults += 'This system appears to use ' + \
-                        'ip6tables but the expected deny all is missing ' + \
-                        'from the rules.\n'
+                        'ip6tables but does not contain the expected rules\n'
                     self.logger.log(LogPriority.DEBUG,
                                     ['ConfigureLinuxFirewall.report',
-                                     "Debian type system. Missing v6 deny all."])
+                                     "Missing v6 deny all."])
                 if not scriptExists:
                     compliant = False
                     self.detailedresults += 'This system appears to use ' + \
                         'iptables but the startup script is not present\n'
                     self.logger.log(LogPriority.DEBUG,
                                     ['ConfigureLinuxFirewall.report',
-                                     "Debian type system. Missing startup " +
-                                     "script"])
-            else:
-                if self.servicehelper.auditService('iptables.service', serviceTarget=self.serviceTarget) or \
-                   self.servicehelper.auditService('iptables', serviceTarget=self.serviceTarget):
-                    iptablesrunning = True
-                self.logger.log(LogPriority.DEBUG,
-                                ['ConfigureLinuxFirewall.report',
-                                 "RHEL 6 type system. iptables service: " +
-                                 str(iptablesrunning)])
-                if self.servicehelper.auditService('ip6tables.service', serviceTarget=self.serviceTarget) or \
-                   self.servicehelper.auditService('ip6tables', serviceTarget=self.serviceTarget):
-                    ip6tablesrunning = True
-                self.logger.log(LogPriority.DEBUG,
-                                ['ConfigureLinuxFirewall.report',
-                                 "RHEL 6 type system. ip6tables service: " +
-                                 str(ip6tablesrunning)])
-                if self.iptables:
-                    cmd = [self.iptables, "-L"]
-                    if not self.cmdhelper.executeCommand(cmd):
-                        self.detailedresults += "Unable to run " + \
-                            "iptables -L command\n"
-                        compliant = False
-                    else:
-                        output = self.cmdhelper.getOutput()
-                        for line in output:
-                            if re.search('Chain INPUT \(policy REJECT\)|REJECT' +
-                                         '\s+all\s+--\s+anywhere\s+anywhere', line):
-                                catchall = True
-                                break
-                        self.logger.log(LogPriority.DEBUG,
-                                        ['ConfigureLinuxFirewall.report',
-                                         "RHEL 6 type system. ipv4 catchall rule: "
-                                         + str(catchall)])
-                if self.ip6tables:
-                    cmd6 = [self.ip6tables, "-L"]
-                    if not self.cmdhelper.executeCommand(cmd6):
-                        self.detailedresults += "Unable to run " + \
-                            "ip6tables -L command\n"
-                        compliant = False
-                    else:
-                        output6 = self.cmdhelper.getAllString()
-                        if re.search('Chain INPUT \(policy REJECT\)|REJECT' +
-                                     '\s+all\s+anywhere\s+anywhere', output6):
-                            catchall6 = True
-                        elif re.search("can't initialize ip6tables", output6):
-                            catchall6 = True
-                            self.logger.log(LogPriority.DEBUG,
-                                            ['ConfigureLinuxFirewall.report',
-                                             "IPv6 is disabled. " +
-                                             "Reporting as compliant."])
-                        self.logger.log(LogPriority.DEBUG,
-                                        ['ConfigureLinuxFirewall.report',
-                                         "RHEL 6 type system. ipv6 catchall rule: "
-                                         + str(catchall6)])
+                                     "Missing startup script"])
                 if not iptablesrunning:
                     compliant = False
                     self.detailedresults += 'This system appears to use ' + \
@@ -280,22 +234,6 @@ CONFIGURELINUXFIREWALL to False.'''
                     self.logger.log(LogPriority.DEBUG,
                                     ['ConfigureLinuxFirewall.report',
                                      "RHEL 6 type system. IP6tables not running."])
-                if not catchall:
-                    compliant = False
-                    self.detailedresults += 'This system appears to use ' + \
-                        'iptables but the expected deny all is missing ' + \
-                        'from the rules.\n'
-                    self.logger.log(LogPriority.DEBUG,
-                                    ['ConfigureLinuxFirewall.report',
-                                     "RHEL 6 type system. Missing v4 deny all."])
-                if not catchall6:
-                    compliant = False
-                    self.detailedresults += 'This system appears to use ' + \
-                        'ip6tables but the expected deny all is missing ' + \
-                        'from the rules.\n'
-                    self.logger.log(LogPriority.DEBUG,
-                                    ['ConfigureLinuxFirewall.report',
-                                     "RHEL 6 type system. Missing v6 deny all."])
             self.compliant = compliant
         except (KeyboardInterrupt, SystemExit):
             raise
@@ -320,6 +258,11 @@ CONFIGURELINUXFIREWALL to False.'''
             self.iditerator = 0
             self.detailedresults = ""
             success = True
+            # delete past state change records from previous fix
+            eventlist = self.statechglogger.findrulechanges(self.rulenumber)
+            for event in eventlist:
+                self.statechglogger.deleteentry(event)
+            #firewall-cmd portion
             if self.checkFirewalld():
                 if self.servicehelper.enableService('firewalld.service', serviceTarget=self.serviceTarget):
                     self.iditerator += 1
@@ -334,6 +277,8 @@ CONFIGURELINUXFIREWALL to False.'''
                     self.detailedresults += "Unable to enable firewall\n"
                     debug = "Unable to enable firewall\n"
                     self.logger.log(LogPriority.DEBUG, debug)
+
+            #ufw command portion
             elif self.checkUFW():
                 self.logger.log(LogPriority.DEBUG, "System uses ufw. Running ufw commands...")
                 cmdufw = '/usr/sbin/ufw status'
@@ -395,204 +340,263 @@ CONFIGURELINUXFIREWALL to False.'''
                                     event = {"eventtype": "commandstring",
                                              "command": undocmd}
                                     self.statechglogger.recordchgevent(myid, event)
-            elif self.checkIsOther():
-                #this script will ensure that iptables gets configured
-                #each time the network restarts
-                iptables = self.getScriptValues("iptables")
-                ip6tables = self.getScriptValues("ipt6tables")
-                if self.scriptType == "debian":
-                    iptScript = '#!/bin/bash\n' + self.iprestore + \
-                                ' <<< "' + iptables + '"\n' + self.ip6restore + \
-                                ' <<< "' + ip6tables + '"'
-                else:
-                    iptScript = self.getScriptValues("iptscript")
-                if not os.path.exists(self.iptScriptPath):
-                    created = False
-                    if not createFile(self.iptScriptPath, self.logger):
-                        created = True
-                        success = False
-                        self.detailedresults += "Unable to create file " + self.iptScriptPath + "\n"
+            else:
+                #following portion is mainly for debian and opensuse systems only
+                if self.iptScriptPath:
+                    if os.path.exists("/etc/network/if-pre-up.d"):
+                        self.iptScriptPath = "/etc/network/if-pre-up.d/iptables"
+                        self.scriptType = "debian"
+                    elif os.path.exists("/etc/sysconfig/scripts"):
+                        self.iptScriptPath = "/etc/sysconfig/scripts/SuSEfirewall2-custom"
+                        self.scriptType = "suse"
+                    #this script will ensure that iptables gets configured
+                    #each time the network restarts
+                    iptables = self.getScriptValues("iptables")
+                    ip6tables = self.getScriptValues("ipt6tables")
+                    iptScript = ""
+                    if self.scriptType == "debian":
+                        if self.iprestore and self.ip6restore:
+                            iptScript = '#!/bin/bash\n' + self.iprestore + \
+                                        ' <<< "' + iptables + '"\n' + self.ip6restore + \
+                                        ' <<< "' + ip6tables + '"'
                     else:
-                        self.iditerator += 1
-                        myid = iterate(self.iditerator, self.rulenumber)
-                        event = {"eventtype": "creation",
-                                 "filepath": self.iptScriptPath}
-                        self.statechglogger.recordchgevent(myid, event)
-                if os.path.exists(self.iptScriptPath):
-                    if not checkPerms(self.iptScriptPath, [0, 0, 0o755], self.logger):
-                        if not created:
-                            self.iditerator += 1
-                            myid = iterate(self.iditerator, self.rulenumber)
-                            if not setPerms(self.iptScriptPath, [0, 0, 0o755], self.logger, self.statechglogger, myid):
+                        iptScript = self.getScriptValues("iptscript")
+                    if iptScript:
+                        if not os.path.exists(self.iptScriptPath):
+                            created = False
+                            if not createFile(self.iptScriptPath, self.logger):
+                                created = True
                                 success = False
-                                self.detailedresults += "Unable to set permissions on " + self.iptScriptPath + "\n"
-                    contents = readFile(self.iptScriptPath, self.logger)
-                    if contents != iptScript:
-                        tempfile = self.iptScriptPath + ".tmp"
-                        if not writeFile(tempfile, self.iptScriptPath, self.logger):
-                            success = False
-                            self.detailedresults += "Unable to write contents to " + self.iptScriptPath + "\n"
-                        else:
-                            if not created:
+                                self.detailedresults += "Unable to create file " + self.iptScriptPath + "\n"
+                            else:
                                 self.iditerator += 1
                                 myid = iterate(self.iditerator, self.rulenumber)
-                                event = {"eventtype": "conf",
+                                event = {"eventtype": "creation",
                                          "filepath": self.iptScriptPath}
                                 self.statechglogger.recordchgevent(myid, event)
-                                self.statechglogger.recordfilechange(self.iptScriptPath, tempfile, myid)
-                                os.rename(tempfile, self.iptScriptPath)
-                                os.chown(self.iptScriptPath, 0, 0)
-                                os.chmod(self.iptScriptPath, 0o755)
-                                resetsecon(self.iptScriptPath)
-                #but we also want to ensure it takes effect now
-                cmd = self.iprestore + ' <<< "' + iptables + '"'
-                if not self.cmdhelper.executeCommand(cmd):
-                    success = False
-                    self.detailedresults += "Unable to configure ipv4 firewall\n"
-                cmd = self.ip6restore + ' <<< "' + ip6tables + '"'
-                if not self.cmdhelper.executeCommand(cmd):
-                    success = False
-                    self.detailedresults += "Unable to configure ipv6 firewall\n"
-            else:
-                self.logger.log(LogPriority.DEBUG, "System uses system-config-firewall. Writing system-config-firewall file configuration...")
-                systemconfigfirewall = self.getScriptValues("systemconfigfirewall")
-                sysconfigiptables = self.getScriptValues("sysconfigiptables")
-                sysconfigip6tables = self.getScriptValues("sysconfigip6tables")
-
-                fwpath = '/etc/sysconfig/system-config-firewall'
-                iptpath = '/etc/sysconfig/iptables'
-                ip6tpath = '/etc/sysconfig/ip6tables'
-                #portion to handle the system-config-firewall file
-                if not os.path.exists(fwpath):
-                    created = False
-                    if not createFile(fwpath, self.logger):
-                        created = True
-                        success = False
-                        self.detailedresults += "Unable to create file " + fwpath + "\n"
+                        if os.path.exists(self.iptScriptPath):
+                            if not checkPerms(self.iptScriptPath, [0, 0, 0o755], self.logger):
+                                if not created:
+                                    self.iditerator += 1
+                                    myid = iterate(self.iditerator, self.rulenumber)
+                                    if not setPerms(self.iptScriptPath, [0, 0, 0o755], self.logger, self.statechglogger, myid):
+                                        success = False
+                                        self.detailedresults += "Unable to set permissions on " + self.iptScriptPath + "\n"
+                            contents = readFile(self.iptScriptPath, self.logger)
+                            if contents != iptScript:
+                                tempfile = self.iptScriptPath + ".tmp"
+                                if not writeFile(tempfile, self.iptScriptPath, self.logger):
+                                    success = False
+                                    self.detailedresults += "Unable to write contents to " + self.iptScriptPath + "\n"
+                                else:
+                                    if not created:
+                                        self.iditerator += 1
+                                        myid = iterate(self.iditerator, self.rulenumber)
+                                        event = {"eventtype": "conf",
+                                                 "filepath": self.iptScriptPath}
+                                        self.statechglogger.recordchgevent(myid, event)
+                                        self.statechglogger.recordfilechange(self.iptScriptPath, tempfile, myid)
+                                        os.rename(tempfile, self.iptScriptPath)
+                                        os.chown(self.iptScriptPath, 0, 0)
+                                        os.chmod(self.iptScriptPath, 0o755)
+                                        resetsecon(self.iptScriptPath)
                     else:
-                        self.iditerator += 1
-                        myid = iterate(self.iditerator, self.rulenumber)
-                        event = {"eventtype": "creation",
-                                 "filepath": fwpath}
-                        self.statechglogger.recordchgevent(myid, event)
-                if os.path.exists(fwpath):
-                    if not checkPerms(fwpath, [0, 0, 0o600], self.logger):
-                        if not created:
+                        success = False
+                        self.detailedresults += "There is no iptables startup script\n"
+                        self.logger.log(LogPriority.DEBUG, self.detailedresults)
+                    if self.iprestore:
+                        #but we also want to ensure it takes effect now
+                        cmd = self.iprestore + ' <<< "' + iptables + '"'
+                        if not self.cmdhelper.executeCommand(cmd):
+                            success = False
+                            self.detailedresults += "Unable to configure ipv4 firewall\n"
+                    if self.ip6restore:
+                        cmd = self.ip6restore + ' <<< "' + ip6tables + '"'
+                        if not self.cmdhelper.executeCommand(cmd):
+                            success = False
+                            self.detailedresults += "Unable to configure ipv6 firewall\n"
+
+                #this portion mostly applies to RHEL6 and Centos6
+                if os.path.exists('/usr/bin/system-config-firewall') or \
+                        os.path.exists('/usr/bin/system-config-firewall-tui'):
+                    systemconfigfirewall = self.getScriptValues("systemconfigfirewall")
+                    sysconfigiptables = self.getScriptValues("sysconfigiptables")
+                    sysconfigip6tables = self.getScriptValues("sysconfigip6tables")
+
+                    fwpath = '/etc/sysconfig/system-config-firewall'
+                    iptpath = '/etc/sysconfig/iptables'
+                    ip6tpath = '/etc/sysconfig/ip6tables'
+                    #portion to handle the system-config-firewall file
+                    created = False
+                    if not os.path.exists(fwpath):
+                        print "fwpath doesn't exist\n"
+                        if not createFile(fwpath, self.logger):
+                            success = False
+                            self.detailedresults += "Unable to create file " + fwpath + "\n"
+                        else:
+                            created = True
                             self.iditerator += 1
                             myid = iterate(self.iditerator, self.rulenumber)
-                            if not setPerms(fwpath, [0, 0, 0o600], self.logger, self.statechglogger, myid):
-                                success = False
-                                self.detailedresults += "Unable to set permissions on " + fwpath + "\n"
-                    contents = readFile(fwpath, self.logger)
-                    if contents != systemconfigfirewall:
-                        tempfile = fwpath + ".tmp"
-                        if not writeFile(tempfile, systemconfigfirewall, self.logger):
-                            success = False
-                            self.detailedresults += "Unable to write contents to " + fwpath + "\n"
-                        else:
+                            event = {"eventtype": "creation",
+                                     "filepath": fwpath}
+                            self.statechglogger.recordchgevent(myid, event)
+                    if os.path.exists(fwpath):
+                        if not checkPerms(fwpath, [0, 0, 0o600], self.logger):
                             if not created:
                                 self.iditerator += 1
                                 myid = iterate(self.iditerator, self.rulenumber)
-                                event = {"eventtype": "conf",
-                                         "filepath": fwpath}
-                                self.statechglogger.recordchgevent(myid, event)
-                                self.statechglogger.recordfilechange(fwpath, tempfile, myid)
+                                if not setPerms(fwpath, [0, 0, 0o600], self.logger, self.statechglogger, myid):
+                                    success = False
+                                    self.detailedresults += "Unable to set permissions on " + fwpath + "\n"
+                        contents = readFile(fwpath, self.logger)
+                        if contents != systemconfigfirewall:
+                            print "contents don't equal systemconfigurefirewall contents\n"
+                            tempfile = fwpath + ".tmp"
+                            if not writeFile(tempfile, systemconfigfirewall, self.logger):
+                                success = False
+                                self.detailedresults += "Unable to write contents to " + fwpath + "\n"
+                            else:
+                                if not created:
+                                    self.iditerator += 1
+                                    myid = iterate(self.iditerator, self.rulenumber)
+                                    event = {"eventtype": "conf",
+                                             "filepath": fwpath}
+                                    self.statechglogger.recordchgevent(myid, event)
+                                    self.statechglogger.recordfilechange(fwpath, tempfile, myid)
                                 os.rename(tempfile, fwpath)
                                 os.chown(fwpath, 0, 0)
                                 os.chmod(fwpath, 0o600)
                                 resetsecon(fwpath)
-                #portion to handle the iptables rules file
-                if not os.path.exists(iptpath):
                     created = False
-                    if not createFile(iptpath, self.logger):
-                        created = True
-                        success = False
-                        self.detailedresults += "Unable to create file " + iptpath + "\n"
-                    else:
-                        self.iditerator += 1
-                        myid = iterate(self.iditerator, self.rulenumber)
-                        event = {"eventtype": "creation",
-                                 "filepath": iptpath}
-                        self.statechglogger.recordchgevent(myid, event)
-                if os.path.exists(iptpath):
-                    if not checkPerms(iptpath, [0, 0, 0o644], self.logger):
-                        if not created:
+                    #portion to handle the iptables rules file
+                    if not os.path.exists(iptpath):
+                        if not createFile(iptpath, self.logger):
+                            success = False
+                            self.detailedresults += "Unable to create file " + iptpath + "\n"
+                        else:
+                            created = True
                             self.iditerator += 1
                             myid = iterate(self.iditerator, self.rulenumber)
-                            if not setPerms(iptpath, [0, 0, 0o644], self.logger, self.statechglogger, myid):
-                                success = False
-                                self.detailedresults += "Unable to set permissions on " + iptpath + "\n"
-                    contents = readFile(iptpath, self.logger)
-                    if contents != sysconfigiptables:
-                        tempfile = iptpath + ".tmp"
-                        if not writeFile(tempfile, sysconfigiptables, self.logger):
-                            success = False
-                            self.detailedresults += "Unable to write contents to " + iptpath + "\n"
-                        else:
+                            event = {"eventtype": "creation",
+                                     "filepath": iptpath}
+                            self.statechglogger.recordchgevent(myid, event)
+                    if os.path.exists(iptpath):
+                        if not checkPerms(iptpath, [0, 0, 0o644], self.logger):
                             if not created:
                                 self.iditerator += 1
                                 myid = iterate(self.iditerator, self.rulenumber)
-                                event = {"eventtype": "conf",
-                                         "filepath": iptpath}
-                                self.statechglogger.recordchgevent(myid, event)
-                                self.statechglogger.recordfilechange(iptpath, tempfile, myid)
+                                if not setPerms(iptpath, [0, 0, 0o644], self.logger, self.statechglogger, myid):
+                                    success = False
+                                    self.detailedresults += "Unable to set permissions on " + iptpath + "\n"
+                        contents = readFile(iptpath, self.logger)
+                        if contents != sysconfigiptables:
+                            tempfile = iptpath + ".tmp"
+                            if not writeFile(tempfile, sysconfigiptables, self.logger):
+                                success = False
+                                self.detailedresults += "Unable to write contents to " + iptpath + "\n"
+                            else:
+                                if not created:
+                                    self.iditerator += 1
+                                    myid = iterate(self.iditerator, self.rulenumber)
+                                    event = {"eventtype": "conf",
+                                             "filepath": iptpath}
+                                    self.statechglogger.recordchgevent(myid, event)
+                                    self.statechglogger.recordfilechange(iptpath, tempfile, myid)
                                 os.rename(tempfile, iptpath)
                                 os.chown(iptpath, 0, 0)
                                 os.chmod(iptpath, 0o644)
                                 resetsecon(iptpath)
-                #portion to handle ip6tables rules file
-                if not os.path.exists(ip6tpath):
                     created = False
-                    if not createFile(ip6tpath, self.logger):
-                        created = True
-                        success = False
-                        self.detailedresults += "Unable to create file " + ip6tpath + "\n"
-                    else:
-                        self.iditerator += 1
-                        myid = iterate(self.iditerator, self.rulenumber)
-                        event = {"eventtype": "creation",
-                                 "filepath": ip6tpath}
-                        self.statechglogger.recordchgevent(myid, event)
-                if os.path.exists(ip6tpath):
-                    if not checkPerms(ip6tpath, [0, 0, 0o644], self.logger):
-                        if not created:
+                    #portion to handle ip6tables rules file
+                    if not os.path.exists(ip6tpath):
+                        if not createFile(ip6tpath, self.logger):
+                            success = False
+                            self.detailedresults += "Unable to create file " + ip6tpath + "\n"
+                        else:
+                            created = True
                             self.iditerator += 1
                             myid = iterate(self.iditerator, self.rulenumber)
-                            if not setPerms(ip6tpath, [0, 0, 0o644], self.logger, self.statechglogger, myid):
-                                success = False
-                                self.detailedresults += "Unable to set permissions on " + ip6tpath + "\n"
-                    contents = readFile(ip6tpath, self.logger)
-                    if contents != sysconfigip6tables:
-                        tempfile = ip6tpath + ".tmp"
-                        if not writeFile(tempfile, sysconfigip6tables, self.logger):
-                            success = False
-                            self.detailedresults += "Unable to write contents to " + ip6tpath + "\n"
-                        else:
+                            event = {"eventtype": "creation",
+                                     "filepath": ip6tpath}
+                            self.statechglogger.recordchgevent(myid, event)
+                    if os.path.exists(ip6tpath):
+                        if not checkPerms(ip6tpath, [0, 0, 0o644], self.logger):
                             if not created:
                                 self.iditerator += 1
                                 myid = iterate(self.iditerator, self.rulenumber)
-                                event = {"eventtype": "conf",
-                                         "filepath": ip6tpath}
-                                self.statechglogger.recordchgevent(myid, event)
-                                self.statechglogger.recordfilechange(ip6tpath, tempfile, myid)
+                                if not setPerms(ip6tpath, [0, 0, 0o644], self.logger, self.statechglogger, myid):
+                                    success = False
+                                    self.detailedresults += "Unable to set permissions on " + ip6tpath + "\n"
+                        contents = readFile(ip6tpath, self.logger)
+                        if contents != sysconfigip6tables:
+                            tempfile = ip6tpath + ".tmp"
+                            if not writeFile(tempfile, sysconfigip6tables, self.logger):
+                                success = False
+                                self.detailedresults += "Unable to write contents to " + ip6tpath + "\n"
+                            else:
+                                if not created:
+                                    self.iditerator += 1
+                                    myid = iterate(self.iditerator, self.rulenumber)
+                                    event = {"eventtype": "conf",
+                                             "filepath": ip6tpath}
+                                    self.statechglogger.recordchgevent(myid, event)
+                                    self.statechglogger.recordfilechange(ip6tpath, tempfile, myid)
                                 os.rename(tempfile, ip6tpath)
                                 os.chown(ip6tpath, 0, 0)
                                 os.chmod(ip6tpath, 0o644)
                                 resetsecon(ip6tpath)
-                self.servicehelper.enableService('iptables', serviceTarget=self.serviceTarget)
-                self.servicehelper.enableService('ip6tables', serviceTarget=self.serviceTarget)
-                # we restart iptables here because it doesn't respond
-                # to reload
-                cmd = "/sbin/service iptables restart"
-                if not self.cmdhelper.executeCommand(cmd):
-                    success = False
-                    self.detailedresults += "Unable to restart iptables service\n"
-                cmd = "/sbin/service ip6tables restart"
-                if not self.cmdhelper.executeCommand(cmd):
-                    success = False
-                    self.detailedresults += "Unable to restart ip6tables service\n"
-                # Sleep for a bit to let the restarts occur
-                time.sleep(10)
+                    # check if iptables is enabled to run at start
+                    if not self.servicehelper.auditService('iptables'):
+                        # enable service to run at start if not
+                        if not self.servicehelper.enableService('iptables'):
+                            self.detailedresults += "Unable to enable iptables service\n"
+                            debug = "Unable to enable iptables service\n"
+                            self.logger.log(LogPriority.DEBUG, debug)
+                            success = False
+                        else:
+                            # record event if successful
+                            self.iditerator += 1
+                            myid = iterate(self.iditerator, self.rulenumber)
+                            cmd = self.servicehelper.getDisableCommand('iptables')
+                            event = {"eventtype": "commandstring",
+                                     "command": cmd}
+                            self.statechglogger.recordchgevent(myid, event)
+
+                    self.servicehelper.stopService('iptables')
+                    # start iptables if not
+                    if not self.servicehelper.startService('iptables'):
+                        self.detailedresults += "Unable to start iptables service\n"
+                        debug = "Unable to start iptables service\n"
+                        self.logger.log(LogPriority.DEBUG, debug)
+                        success = False
+
+                    # check if ip6tables is enabled to run at start
+                    if not self.servicehelper.auditService('ip6tables'):
+                        # enable service to run at start if not
+                        if not self.servicehelper.enableService('ip6tables'):
+                            self.detailedresults += "Unable to enable ip6tables service\n"
+                            debug = "Unable to enable ip6tables service\n"
+                            self.logger.log(LogPriority.DEBUG, debug)
+                            success = False
+                        else:
+                            # record event if successful
+                            self.iditerator += 1
+                            myid = iterate(self.iditerator, self.rulenumber)
+                            cmd = self.servicehelper.getDisableCommand('ip6tables')
+                            event = {"eventtype": "commandstring",
+                                     "command": cmd}
+                            self.statechglogger.recordchgevent(myid, event)
+
+                    self.servicehelper.stopService('ip6tables')
+                    # start ip6tables if not
+                    if not self.servicehelper.startService('ip6tables'):
+                        self.detailedresults += "Unable to start ip6tables service\n"
+                        debug = "Unable to start ip6tables service\n"
+                        self.logger.log(LogPriority.DEBUG, debug)
+                        success = False
+
+                     # Sleep for a bit to let the restarts occur
+                    time.sleep(10)
             self.rulesuccess = success
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
@@ -607,7 +611,6 @@ CONFIGURELINUXFIREWALL to False.'''
         return self.rulesuccess
 
     def checkFirewalld(self):
-        #For Rhel7, centos 7, and fedora mostly
         if os.path.exists('/bin/firewall-cmd'):
             return True
 
@@ -710,7 +713,7 @@ COMMIT
 COMMIT
 '''
             return ip6tables
-        elif scriptname == "systemconfigurefirewall":
+        elif scriptname == "systemconfigfirewall":
             systemconfigfirewall = '''# Configuration file for system-config-firewall
 
 --enabled

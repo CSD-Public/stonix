@@ -30,6 +30,9 @@ installed.
 @author: 2017-23-2017 Roy Nielsen modified/simplified to second generation 
         service helper with **kwargs concept
 @change: 2018/02/27 Brandon Gonzales Fixed Traceback caused by using self.logger
+@change: 2019/04/17 dwalker - added submethods getStartCommand, getStopCommand,
+        getEnableCommand, getDisableCommand for use by rule when recording
+        change events
 """
 
 import os
@@ -819,3 +822,35 @@ class ServiceHelper(object):
             self.logdispatcher.log(LogPriority.DEBUG, "Failed to stop service: " + service)
 
         return stopped
+
+    def getStartCommand(self, service):
+        '''
+        retrieve the start command.  Mostly used by event recording
+        @return: string - start command
+        @author: dwalker
+        '''
+        return self.svchelper.getStartCommand(service)
+
+    def getStopCommand(self, service):
+        '''
+        retrieve the stop command.  Mostly used by event recording
+        @return: string - stop command
+        @author: dwalker
+        '''
+        return self.svchelper.getStopCommand(service)
+
+    def getEnableCommand(self, service):
+        '''
+        retrieve the enable command.  Mostly used by event recording
+        @return: string - enable command
+        @author: dwalker
+        '''
+        return self.svchelper.getEnableCommand(service)
+
+    def getDisableCommand(self, service):
+        '''
+        retrieve the start command.  Mostly used by event recording
+        @return: string - disable command
+        @author: dwalker
+        '''
+        return self.svchelper.getDisableCommand(service)
