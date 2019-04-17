@@ -104,6 +104,8 @@ CONFIGURELINUXFIREWALL to False.'''
             compliant = True
             iptablesrunning = False
             ip6tablesrunning = False
+            iptablesenabled = False
+            ip6tablesenabled = False
             catchall = False
             catchall6 = False
             self.detailedresults = ""
@@ -140,10 +142,18 @@ CONFIGURELINUXFIREWALL to False.'''
                                 self.detailedresults += "The default value for " + \
                                     "incoming unspecified packets is not deny\n"
             else:
-                if self.servicehelper.auditService('iptables'):
+                self.servicehelper.stopService('iptables')
+                self.servicehelper.startService('iptables')
+                self.servicehelper.stopService('ip6tables')
+                self.servicehelper.startService('ip6tables')
+                if self.servicehelper.isRunning('iptables'):
                     iptablesrunning = True
-                if self.servicehelper.auditService('ip6tables'):
+                if self.servicehelper.isRunning('ip6tables'):
                     ip6tablesrunning = True
+                if self.servicehelper.auditService('iptables'):
+                    iptablesenabled = True
+                if self.servicehelper.auditService('ip6tables'):
+                    ip6tablesenabled = True
 
                 if self.iptables:
                     cmd = [self.iptables, "-L"]
@@ -213,13 +223,6 @@ CONFIGURELINUXFIREWALL to False.'''
                     self.logger.log(LogPriority.DEBUG,
                                     ['ConfigureLinuxFirewall.report',
                                      "Missing v6 deny all."])
-                if not scriptExists:
-                    compliant = False
-                    self.detailedresults += 'This system appears to use ' + \
-                        'iptables but the startup script is not present\n'
-                    self.logger.log(LogPriority.DEBUG,
-                                    ['ConfigureLinuxFirewall.report',
-                                     "Missing startup script"])
                 if not iptablesrunning:
                     compliant = False
                     self.detailedresults += 'This system appears to use ' + \
@@ -227,6 +230,12 @@ CONFIGURELINUXFIREWALL to False.'''
                     self.logger.log(LogPriority.DEBUG,
                                     ['ConfigureLinuxFirewall.report',
                                      "RHEL 6 type system. IPtables not running."])
+                if not iptablesenabled:
+                    compliant = False
+                    self.detailedresults += "iptables not enabled\n"
+                if not ip6tablesenabled:
+                    compliant = False
+                    self.detailedresults += "ip6tables not enabled\n"
                 if not ip6tablesrunning:
                     compliant = False
                     self.detailedresults += 'This system appears to use ' + \
@@ -234,6 +243,13 @@ CONFIGURELINUXFIREWALL to False.'''
                     self.logger.log(LogPriority.DEBUG,
                                     ['ConfigureLinuxFirewall.report',
                                      "RHEL 6 type system. IP6tables not running."])
+                if not scriptExists:
+                    compliant = False
+                    self.detailedresults += 'This system appears to use ' + \
+                        'iptables but the startup script is not present\n'
+                    self.logger.log(LogPriority.DEBUG,
+                                    ['ConfigureLinuxFirewall.report',
+                                     "Missing startup script"])
             self.compliant = compliant
         except (KeyboardInterrupt, SystemExit):
             raise
@@ -429,7 +445,6 @@ CONFIGURELINUXFIREWALL to False.'''
                     #portion to handle the system-config-firewall file
                     created = False
                     if not os.path.exists(fwpath):
-                        print "fwpath doesn't exist\n"
                         if not createFile(fwpath, self.logger):
                             success = False
                             self.detailedresults += "Unable to create file " + fwpath + "\n"
