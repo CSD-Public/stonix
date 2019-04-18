@@ -66,6 +66,15 @@ class zzzTestRuleConfigureLinuxFirewall(RuleTest):
         self.ip6tables = "/usr/sbin/ip6tables"
         if not os.path.exists(self.ip6tables):
             self.ip6tables = '/sbin/ip6tables'
+        if os.path.exists("/usr/sbin/iptables-restore"):
+            self.iprestore = "/usr/sbin/iptables-restore"
+        elif os.path.exists("/sbin/iptables-restore"):
+            self.iprestore = "/sbin/iptables-restore"
+
+        if os.path.exists("/usr/sbin/ip6tables-restore"):
+            self.ip6restore = "/usr/sbin/ip6tables-restore"
+        elif os.path.exists("/sbin/ip6tables-restore"):
+            self.ip6restore = "/sbin/ip6tables-restore"
         self.scriptType = ""
 
     def tearDown(self):
@@ -92,18 +101,32 @@ class zzzTestRuleConfigureLinuxFirewall(RuleTest):
                     success = False
         if self.isufw:
             cmdufw = '/usr/sbin/ufw status'
-            if not self.cmdhelper.executeCommand(cmdufw):
+            if not self.ch.executeCommand(cmdufw):
                 debug = "Unable to run ufw status command in unit test\n"
                 self.logger.log(LogPriority.DEBUG, debug)
                 success = False
             else:
-                outputufw = self.cmdhelper.getOutputString()
+                outputufw = self.ch.getOutputString()
                 if re.search('Status: active', outputufw):
                     ufwcmd = '/usr/sbin/ufw --force disable'
                     if not self.ch.executeCommand(ufwcmd):
                         debug = "Unable to disable firewall for unit test\n"
                         self.logger.log(LogPriority.DEBUG, debug)
                         success = False
+                    else:
+                        cmdufw = "/usr/sbin/ufw status verbose"
+                        if not self.ch.executeCommand(cmdufw):
+                            debug = "Unable to get verbose status for unit test\n"
+                            self.logger.log(LogPriority.DEBUG, debug)
+                            success = False
+                        else:
+                            outputfw = self.cmdhelper.getOutputString()
+                            if re.search("Default\:\ deny\ \(incoming\)", outputfw):
+                                ufwcmd = "/usr/sbin/ufw default allow incoming"
+                                if not self.ch.executeCommand(ufwcmd):
+                                    debug = "Unable to set allow status for unit test\n"
+                                    self.logger.log(LogPriority.DEBUG, debug)
+                                    success = False
         elif os.path.exists('/usr/bin/system-config-firewall') or \
             os.path.exists('/usr/bin/system-config-firewall-tui'):
             print "system-config-firewall commands exist\n"
