@@ -125,6 +125,7 @@ Created on Aug 23, 2010
 """
 
 # Std Library imports
+import atexit
 import sys
 import os
 import re
@@ -170,6 +171,7 @@ class Controller(Observable):
         self.pcf = False
         self.pcs = False
         self.list = False
+        self.stonixsubprocs = []
 
         if not self.safetycheck():
             self.logger.log(LogPriority.CRITICAL,
@@ -227,12 +229,23 @@ class Controller(Observable):
 
         self.tryacquirelock()
 
+        atexit.register(self.cleanup)
+
+        self.chkapp = CheckApplicable(self.environ, self.logger)
+
+        # Initialize Apple Notification Handler
+        self.applicableAppleNotifications = {'type': 'white',
+                                             'os': {'Mac OS X': ['10.12', '+']}}
+
+        if self.chkapp.isApplicable(applicableAppleNotifications):
+            start_apple_notification_handler()
+
+        # Initialize GUI
         if self.mode == 'gui':
             applicable2PyQt5 = {'type': 'white',
                                'os': {'Mac OS X': ['10.10', '+']}}
             applicable2PyQt4 = {'type': 'black',
                                'family': ['darwin']}
-            self.chkapp = CheckApplicable(self.environ, self.logger)
 
             if self.chkapp.isApplicable(applicable2PyQt5):
                 #####
@@ -1299,6 +1312,37 @@ ABORTING EXECUTION!"""
                 # and a lock file has been left behind by a privileged run.
                 pass
 
+    def start_apple_notification_handler(self):
+        """
+        Starts a swift script that observes Apple Notifications (for example,
+        sleep and power off) and handles these events by sending interrupts
+        to stonix. This swift script is called as a subprocess and can be found
+        in 'src/stonix_resources/AppleNotificationHandler.swift'.
+
+        @return: void
+        @author: Brandon R. Gonzales
+        """
+        notehandlerpath = os.path.join(self.environ.resources_path,
+                                       "AppleNotificationHandler.swift")
+        if os.path.exists(noteHandlerPath):
+            command = [noteHandlerPath, str(os.getpid())]
+            notehandlerproc = subprocess.Popen(command)
+            self.stonixsubprocs.append(noteHandlerProc)
+
+    def cleanup(self):
+        """
+        Terminates the subprocesses spawned by STONIX. This function is
+        invoked by the atexit standard library.
+        
+        @return: void
+        @author: Brandon R. Gonzales
+        """
+        for proc in self.stonixsubprocs:
+            try:
+                proc.kill()
+            except:
+                pass
+                    
     def processargs(self):
         """
         This method calls the prog_args instance to process the command line
