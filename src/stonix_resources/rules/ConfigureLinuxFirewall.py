@@ -367,9 +367,11 @@ CONFIGURELINUXFIREWALL to False.'''
                 if os.path.exists("/etc/network/if-pre-up.d"):
                     self.iptScriptPath = "/etc/network/if-pre-up.d/iptables"
                     self.scriptType = "debian"
+                    servicename = "networking"
                 elif os.path.exists("/etc/sysconfig/scripts"):
                     self.iptScriptPath = "/etc/sysconfig/scripts/SuSEfirewall2-custom"
                     self.scriptType = "suse"
+                    servicename = "network"
                 #this script will ensure that iptables gets configured
                 #each time the network restarts
                 iptables = self.getScriptValues("iptables")
@@ -440,9 +442,9 @@ CONFIGURELINUXFIREWALL to False.'''
                                 debug = "Unable to save current ipv6 " + \
                                         "firewall rules for revert\n"
                                 self.logger.log(LogPriority.DEBUG, debug)
-                            self.servicehelper.stopService("networking")
+                            self.servicehelper.stopService(servicename)
 
-                            if not self.servicehelper.startService("networking"):
+                            if not self.servicehelper.startService(servicename):
                                 success = False
                                 self.detailedresults += "Unable to restart networking\n"
                                 debug = "Unable to restart networking\n"
@@ -692,7 +694,7 @@ CONFIGURELINUXFIREWALL to False.'''
         return self.rulesuccess
 
     def checkFirewalld(self):
-        if os.path.exists('/bin/firewall-cmd'):
+        if os.path.exists('/bin/firewall-cmd') or os.path.exists('/usr/bin/firewall-cmd'):
             return True
 
     def checkUFW(self):
