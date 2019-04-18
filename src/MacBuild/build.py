@@ -1,3 +1,4 @@
+#!/usr/bin/python
 ###############################################################################
 #                                                                             #
 # Copyright 2019. Triad National Security, LLC. All rights reserved.          #
@@ -15,7 +16,6 @@
 #                                                                             #
 ###############################################################################
 
-#!/usr/bin/python
 '''
 Refactor of the python mac build script to allow for easier transition between
 library versions and products.  Instigated by the upgrade to PyQt5, PyInstaller 3.3

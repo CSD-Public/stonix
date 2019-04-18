@@ -393,6 +393,7 @@ class ServiceHelper(object):
         disabled = True
         systemctl_disabled = False
         chkconfig_disabled = False
+        audit_success = True
 
         if self.setService(service):
 
@@ -419,7 +420,15 @@ class ServiceHelper(object):
         except Exception:
             raise
 
-        if self.auditService(service, **kwargs):
+        if self.isHybrid:
+            if bool(self.svchelper.auditService(service, **kwargs) or self.secondary.auditService(service, **kwargs)):
+                audit_success = False
+        else:
+            if self.svchelper.auditService(service, **kwargs):
+                audit_success = False
+
+        if not audit_success:
+            self.logdispatcher.log(LogPriority.DEBUG, "Post-disable audit indicates service not actually disabled after operation")
             disabled = False
 
         if disabled:
@@ -468,6 +477,7 @@ class ServiceHelper(object):
         enabledSuccess = True
         systemctl_enabled = False
         chkconfig_enabled = False
+        audit_success = False
 
         if self.setService(service):
 
@@ -494,7 +504,13 @@ class ServiceHelper(object):
         except Exception:
             raise
 
-        if not self.auditService(service, **kwargs):
+        if self.isHybrid:
+            audit_success = bool(self.svchelper.auditService(service, **kwargs) or self.secondary.auditService(service, **kwargs))
+        else:
+            audit_success = self.svchelper.auditService(service, **kwargs)
+
+        if not audit_success:
+            self.logdispatcher.log(LogPriority.DEBUG, "Post-enable audit indicates service not actually enabled after operation")
             enabledSuccess = False
 
         if enabledSuccess:
@@ -758,6 +774,7 @@ class ServiceHelper(object):
 
         started = True
         primstart = False
+        running_success = False
 
         try:
 
@@ -775,6 +792,15 @@ class ServiceHelper(object):
         # any other exception, raise
         except:
             raise
+
+        if self.isHybrid:
+            running_success = bool(self.svchelper.isRunning(service, **kwargs) or self.secondary.isRunning(service, **kwargs))
+        else:
+            running_success = self.svchelper.isRunning(service, **kwargs)
+
+        if not running_success:
+            self.logdispatcher.log(LogPriority.DEBUG, "Post-start isrunning check indicates service not actually running after operation")
+            started = False
 
         if started:
             self.logdispatcher.log(LogPriority.DEBUG, "Successfully started service: " + service)
@@ -798,6 +824,7 @@ class ServiceHelper(object):
 
         stopped = True
         primstop = False
+        running_success = True
 
         try:
 
@@ -815,6 +842,17 @@ class ServiceHelper(object):
         # any other exception, raise
         except:
             raise
+
+        if self.isHybrid:
+            if bool(self.svchelper.isRunning(service, **kwargs) or self.secondary.isRunning(service, **kwargs)):
+                running_success = False
+        else:
+            if self.svchelper.isRunning(service, **kwargs):
+                running_success = False
+
+        if not running_success:
+            self.logdispatcher.log(LogPriority.DEBUG, "Post-stop isrunning check indicates service not actually stopped after operation")
+            stopped = False
 
         if stopped:
             self.logdispatcher.log(LogPriority.DEBUG, "Successfully stopped service: " + service)
