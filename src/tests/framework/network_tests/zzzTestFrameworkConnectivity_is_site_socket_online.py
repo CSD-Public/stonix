@@ -1,3 +1,4 @@
+#!/usr/bin/python
 ###############################################################################
 #                                                                             #
 # Copyright 2019. Triad National Security, LLC. All rights reserved.          #
@@ -15,7 +16,6 @@
 #                                                                             #
 ###############################################################################
 
-#!/usr/bin/python
 """
 @note: This test is not set up to use proxies.
 @author: Roy Nielsen
