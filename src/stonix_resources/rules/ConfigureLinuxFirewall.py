@@ -422,16 +422,50 @@ CONFIGURELINUXFIREWALL to False.'''
                                     os.chown(self.iptScriptPath, 0, 0)
                                     os.chmod(self.iptScriptPath, 0o755)
                                     resetsecon(self.iptScriptPath)
-                            if not self.servicehelper.reloadService("networking"):
+
+                            stonixfilepath = "/var/db/stonix/"
+                            savecmd = "/sbin/iptables-save > " + stonixfilepath + "user-firewall-pre-stonix"
+                            if not self.cmdhelper.executeCommand(savecmd):
+                                success = False
+                                self.detailedresults += "Unable to save current ipv4 " + \
+                                                        "firewall rules for revert\n"
+                                debug = "Unable to save current ipv4 " + \
+                                        "firewall rules for revert\n"
+                                self.logger.log(LogPriority.DEBUG, debug)
+                            save6cmd = "/sbin/ip6tables-save > " + stonixfilepath + "user-firewall6-pre-stonix"
+                            if not self.cmdhelper.executeCommand(save6cmd):
+                                success = False
+                                self.detailedresults += "Unable to save current ipv6 " + \
+                                                        "firewall rules for revert\n"
+                                debug = "Unable to save current ipv6 " + \
+                                        "firewall rules for revert\n"
+                                self.logger.log(LogPriority.DEBUG, debug)
+                            self.servicehelper.stopService("networking")
+
+                            if not self.servicehelper.startService("networking"):
                                 success = False
                                 self.detailedresults += "Unable to restart networking\n"
-                                self.logger.log(LogPriority.DEBUG, self.detailedresults)
+                                debug = "Unable to restart networking\n"
+                                self.logger.log(LogPriority.DEBUG, debug)
                             else:
-                                
+                                self.iditerator += 1
+                                myid = iterate(self.iditerator, self.rulenumber)
+                                cmd = "/sbin/iptables-restore < " + stonixfilepath + "user-firewall-pre-stonix"
+                                event = {"eventtype": "commandstring",
+                                         "command": cmd}
+                                self.statechglogger.recordchgevent(myid, event)
+                                self.iditerator += 1
+                                myid = iterate(self.iditerator, self.rulenumber)
+                                cmd = "/sbin/ip6tables-restore < " + stonixfilepath + "user-firewall6-pre-stonix"
+                                event = {"eventtype": "commandstring",
+                                         "command": cmd}
+                                self.statechglogger.recordchgevent(myid, event)
+
                     else:
                         success = False
                         self.detailedresults += "There is no iptables startup script\n"
-                        self.logger.log(LogPriority.DEBUG, self.detailedresults)
+                        debug = "There is no iptables startup script\n"
+                        self.logger.log(LogPriority.DEBUG, debug)
 
                 #this portion mostly applies to RHEL6 and Centos6
                 if os.path.exists('/usr/bin/system-config-firewall') or \
@@ -585,7 +619,38 @@ CONFIGURELINUXFIREWALL to False.'''
                         debug = "Unable to start iptables service\n"
                         self.logger.log(LogPriority.DEBUG, debug)
                         success = False
-
+                    else:
+                        stonixfilepath = "/var/db/stonix/"
+                        savecmd = "/sbin/iptables-save > " + stonixfilepath + "user-firewall-pre-stonix"
+                        if not self.cmdhelper.executeCommand(savecmd):
+                            success = False
+                            self.detailedresults += "Unable to save current ipv4 " + \
+                                                    "firewall rules for revert\n"
+                            debug = "Unable to save current ipv4 " + \
+                                    "firewall rules for revert\n"
+                            self.logger.log(LogPriority.DEBUG, debug)
+                        else:
+                            self.iditerator += 1
+                            myid = iterate(self.iditerator, self.rulenumber)
+                            cmd = "/sbin/iptables-restore < " + stonixfilepath + "user-firewall-pre-stonix"
+                            event = {"eventtype": "commandstring",
+                                     "command": cmd}
+                            self.statechglogger.recordchgevent(myid, event)
+                        savecmd = "/sbin/ip6tables-save > " + stonixfilepath + "user-firewall6-pre-stonix"
+                        if not self.cmdhelper.executeCommand(savecmd):
+                            success = False
+                            self.detailedresults += "Unable to save current ipv6 " + \
+                                                    "firewall rules for revert\n"
+                            debug = "Unable to save current ipv6 " + \
+                                    "firewall rules for revert\n"
+                            self.logger.log(LogPriority.DEBUG, debug)
+                        else:
+                            self.iditerator += 1
+                            myid = iterate(self.iditerator, self.rulenumber)
+                            cmd = "/sbin/ip6tables-restore < " + stonixfilepath + "user-firewall6-pre-stonix"
+                            event = {"eventtype": "commandstring",
+                                     "command": cmd}
+                            self.statechglogger.recordchgevent(myid, event)
                     # check if ip6tables is enabled to run at start
                     if not self.servicehelper.auditService('ip6tables'):
                         # enable service to run at start if not
