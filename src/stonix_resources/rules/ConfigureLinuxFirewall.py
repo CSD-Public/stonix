@@ -142,17 +142,41 @@ CONFIGURELINUXFIREWALL to False.'''
                                 self.detailedresults += "The default value for " + \
                                     "incoming unspecified packets is not deny\n"
             else:
-                self.servicehelper.stopService('iptables')
-                self.servicehelper.startService('iptables')
-                self.servicehelper.stopService('ip6tables')
-                self.servicehelper.startService('ip6tables')
-                if self.servicehelper.isRunning('iptables'):
+                if os.path.exists("/etc/network/if-pre-up.d"):
+                    self.iptScriptPath = "/etc/network/if-pre-up.d/iptables"
+                    self.scriptType = "debian"
+                elif os.path.exists("/etc/sysconfig/scripts"):
+                    self.iptScriptPath = "/etc/sysconfig/scripts/SuSEfirewall2-custom"
+                    self.scriptType = "suse"
+                else:
+                    self.logger.log(LogPriority.DEBUG,
+                                    ['ConfigureLinuxFirewall.report',
+                                     "No acceptable path for a startup " +
+                                     "script found"])
+                if self.iptScriptPath:
+                    if os.path.exists(self.iptScriptPath):
+                        scriptExists = True
+                    else:
+                        scriptExists = False
+                else:
+                    scriptExists = True
+                if self.scriptType != "debian":
+                    self.servicehelper.stopService('iptables')
+                    self.servicehelper.startService('iptables')
+                    self.servicehelper.stopService('ip6tables')
+                    self.servicehelper.startService('ip6tables')
+                    if self.servicehelper.isRunning('iptables'):
+                        iptablesrunning = True
+                    if self.servicehelper.isRunning('ip6tables'):
+                        ip6tablesrunning = True
+                    if self.servicehelper.auditService('iptables'):
+                        iptablesenabled = True
+                    if self.servicehelper.auditService('ip6tables'):
+                        ip6tablesenabled = True
+                else:
                     iptablesrunning = True
-                if self.servicehelper.isRunning('ip6tables'):
                     ip6tablesrunning = True
-                if self.servicehelper.auditService('iptables'):
                     iptablesenabled = True
-                if self.servicehelper.auditService('ip6tables'):
                     ip6tablesenabled = True
 
                 if self.iptables:
@@ -189,25 +213,6 @@ CONFIGURELINUXFIREWALL to False.'''
                         if not catchall6:
                             self.detailedresults += "Incorrect IPV6 firewall INPUT rule\n"
                             self.logger.log(LogPriority.DEBUG, self.detailedresults)
-
-                if os.path.exists("/etc/network/if-pre-up.d"):
-                    self.iptScriptPath = "/etc/network/if-pre-up.d/iptables"
-                    self.scriptType = "debian"
-                elif os.path.exists("/etc/sysconfig/scripts"):
-                    self.iptScriptPath = "/etc/sysconfig/scripts/SuSEfirewall2-custom"
-                    self.scriptType = "suse"
-                else:
-                    self.logger.log(LogPriority.DEBUG,
-                                    ['ConfigureLinuxFirewall.report',
-                                     "No acceptable path for a startup " +
-                                     "script found"])
-                if self.iptScriptPath:
-                    if os.path.exists(self.iptScriptPath):
-                        scriptExists = True
-                    else:
-                        scriptExists = False
-                else:
-                    scriptExists = True
 
                 if not catchall:
                     compliant = False
@@ -358,18 +363,20 @@ CONFIGURELINUXFIREWALL to False.'''
                                     self.statechglogger.recordchgevent(myid, event)
             else:
                 #following portion is mainly for debian and opensuse systems only
+
+                if os.path.exists("/etc/network/if-pre-up.d"):
+                    self.iptScriptPath = "/etc/network/if-pre-up.d/iptables"
+                    self.scriptType = "debian"
+                elif os.path.exists("/etc/sysconfig/scripts"):
+                    self.iptScriptPath = "/etc/sysconfig/scripts/SuSEfirewall2-custom"
+                    self.scriptType = "suse"
+                #this script will ensure that iptables gets configured
+                #each time the network restarts
+                iptables = self.getScriptValues("iptables")
+                ip6tables = self.getScriptValues("ip6tables")
+                iptScript = ""
+                created = False
                 if self.iptScriptPath:
-                    if os.path.exists("/etc/network/if-pre-up.d"):
-                        self.iptScriptPath = "/etc/network/if-pre-up.d/iptables"
-                        self.scriptType = "debian"
-                    elif os.path.exists("/etc/sysconfig/scripts"):
-                        self.iptScriptPath = "/etc/sysconfig/scripts/SuSEfirewall2-custom"
-                        self.scriptType = "suse"
-                    #this script will ensure that iptables gets configured
-                    #each time the network restarts
-                    iptables = self.getScriptValues("iptables")
-                    ip6tables = self.getScriptValues("ipt6tables")
-                    iptScript = ""
                     if self.scriptType == "debian":
                         if self.iprestore and self.ip6restore:
                             iptScript = '#!/bin/bash\n' + self.iprestore + \
@@ -379,12 +386,11 @@ CONFIGURELINUXFIREWALL to False.'''
                         iptScript = self.getScriptValues("iptscript")
                     if iptScript:
                         if not os.path.exists(self.iptScriptPath):
-                            created = False
                             if not createFile(self.iptScriptPath, self.logger):
-                                created = True
                                 success = False
                                 self.detailedresults += "Unable to create file " + self.iptScriptPath + "\n"
                             else:
+                                created = True
                                 self.iditerator += 1
                                 myid = iterate(self.iditerator, self.rulenumber)
                                 event = {"eventtype": "creation",
@@ -401,7 +407,7 @@ CONFIGURELINUXFIREWALL to False.'''
                             contents = readFile(self.iptScriptPath, self.logger)
                             if contents != iptScript:
                                 tempfile = self.iptScriptPath + ".tmp"
-                                if not writeFile(tempfile, self.iptScriptPath, self.logger):
+                                if not writeFile(tempfile, iptScript, self.logger):
                                     success = False
                                     self.detailedresults += "Unable to write contents to " + self.iptScriptPath + "\n"
                                 else:
@@ -412,25 +418,20 @@ CONFIGURELINUXFIREWALL to False.'''
                                                  "filepath": self.iptScriptPath}
                                         self.statechglogger.recordchgevent(myid, event)
                                         self.statechglogger.recordfilechange(self.iptScriptPath, tempfile, myid)
-                                        os.rename(tempfile, self.iptScriptPath)
-                                        os.chown(self.iptScriptPath, 0, 0)
-                                        os.chmod(self.iptScriptPath, 0o755)
-                                        resetsecon(self.iptScriptPath)
+                                    os.rename(tempfile, self.iptScriptPath)
+                                    os.chown(self.iptScriptPath, 0, 0)
+                                    os.chmod(self.iptScriptPath, 0o755)
+                                    resetsecon(self.iptScriptPath)
+                            if not self.servicehelper.reloadService("networking"):
+                                success = False
+                                self.detailedresults += "Unable to restart networking\n"
+                                self.logger.log(LogPriority.DEBUG, self.detailedresults)
+                            else:
+                                
                     else:
                         success = False
                         self.detailedresults += "There is no iptables startup script\n"
                         self.logger.log(LogPriority.DEBUG, self.detailedresults)
-                    if self.iprestore:
-                        #but we also want to ensure it takes effect now
-                        cmd = self.iprestore + ' <<< "' + iptables + '"'
-                        if not self.cmdhelper.executeCommand(cmd):
-                            success = False
-                            self.detailedresults += "Unable to configure ipv4 firewall\n"
-                    if self.ip6restore:
-                        cmd = self.ip6restore + ' <<< "' + ip6tables + '"'
-                        if not self.cmdhelper.executeCommand(cmd):
-                            success = False
-                            self.detailedresults += "Unable to configure ipv6 firewall\n"
 
                 #this portion mostly applies to RHEL6 and Centos6
                 if os.path.exists('/usr/bin/system-config-firewall') or \

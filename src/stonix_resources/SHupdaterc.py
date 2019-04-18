@@ -207,3 +207,35 @@ class SHupdaterc(ServiceHelperTemplate):
         self.logdispatcher.log(LogPriority.DEBUG,
                                'SHupdaterc.listservices ' + str(svclist))
         return svclist
+
+    def getStartCommand(self, service):
+        '''
+        retrieve the start command.  Mostly used by event recording
+        @return: string - start command
+        @author: dwalker
+        '''
+        return self.svc + service + ' start'
+
+    def getStopCommand(self, service):
+        '''
+        retrieve the stop command.  Mostly used by event recording
+        @return: string - stop command
+        @author: dwalker
+        '''
+        return self.svc + service + ' stop'
+
+    def getEnableCommand(self, service):
+        '''
+        retrieve the enable command.  Mostly used by event recording
+        @return: string - enable command
+        @author: dwalker
+        '''
+        return self.cmd + service + ' defaults'
+
+    def getDisableCommand(self, service):
+        '''
+        retrieve the start command.  Mostly used by event recording
+        @return: string - disable command
+        @author: dwalker
+        '''
+        return self.cmd + '-f ' + service + ' remove'
