@@ -15,7 +15,7 @@
 #                                                                             #
 ###############################################################################
 
-'''
+"""
 Created on Jun 5, 2013
 
 Install and configure warning banners, to be displayed at startup.
@@ -41,7 +41,7 @@ Install and configure warning banners, to be displayed at startup.
 @change: 3/12/2019 dwalker - hotfix to fixlinux method to correct all available
     desktop managers if installed.  Previous implementation was only correcting
     the first desktop manager found.
-'''
+"""
 
 from __future__ import absolute_import
 import os
@@ -63,14 +63,14 @@ from ..stonixutilityfunctions import setPerms, readFile, writeFile
 
 
 class InstallBanners(RuleKVEditor):
-    '''
+    """
     Install and configure warning banners, to be displayed at startup.
-    '''
+    """
 
     def __init__(self, config, environ, logger, statechglogger):
-        '''
+        """
         Constructor
-        '''
+        """
 
         RuleKVEditor.__init__(self, config, environ, logger, statechglogger)
         self.logger = logger
@@ -115,8 +115,8 @@ class InstallBanners(RuleKVEditor):
         self.ismac()
 
     def initobjs(self):
-        '''
-        '''
+        """
+        """
 
         try:
 
@@ -134,17 +134,17 @@ class InstallBanners(RuleKVEditor):
             raise
 
     def setgnome2(self):
-        '''
+        """
         set up all variables for use with gnome2-based systems
 
         @author: Breen Malmberg
-        '''
+        """
 
         self.gnome2 = True
         self.gnome2bannertext = GDMWARNINGBANNER
 
     def forcelightdm(self):
-        '''
+        """
         force debian systems using gdm3 to
         change to the lightdm display manager
         in order to comply with login/display
@@ -153,7 +153,7 @@ class InstallBanners(RuleKVEditor):
         @return: retval
         @rtype: bool
         @author: Breen Malmberg
-        '''
+        """
 
         retval = True
 
@@ -202,21 +202,21 @@ class InstallBanners(RuleKVEditor):
         return retval
 
     def setgnome3(self):
-        '''
+        """
         set up all variables for use with gnome3-based systems
 
         @author: Breen Malmberg
-        '''
+        """
 
         self.gnome3 = True
         self.gnome3bannertext = GDM3WARNINGBANNER
 
     def setkde(self):
-        '''
+        """
         set up all variables for use with kde-based systems
 
         @author: Breen Malmberg
-        '''
+        """
 
         self.kde = True
         self.kdebannertext = ALTWARNINGBANNER
@@ -232,7 +232,7 @@ class InstallBanners(RuleKVEditor):
         tmpfile = self.kdefile + '.stonixtmp'
 
         key1 = 'GreetString'
-        val1 = '"' + self.kdebannertext + '"'
+        val1 = '"' + str(self.kdebannertext) + '"'
         self.greetbanner = [key1, val1]
         key2 = 'UserList'
         val2 = 'false'
@@ -270,11 +270,11 @@ class InstallBanners(RuleKVEditor):
                                        self.kdedict, "present", "closedeq")
 
     def setlightdm(self):
-        '''
+        """
         set up all variables for use with lightdm-based systems
 
         @author: Breen Malmberg
-        '''
+        """
 
         self.lightdm = True
         self.ldmbannertext = ALTWARNINGBANNER
@@ -284,6 +284,7 @@ class InstallBanners(RuleKVEditor):
                 'greeter-hide-users=true',
                 'greeter-show-manual-login=true',
                 'autologin-user=']
+        self.loginbannerfile = "/etc/issue"
         key2 = self.loginbannerfile
         val2 = WARNINGBANNER
         key3 = '/etc/lightdm/lightdm.conf.d/stonixlightdm.conf'
@@ -296,11 +297,11 @@ class InstallBanners(RuleKVEditor):
                             key3: val3}
 
     def setlinuxcommon(self):
-        '''
+        """
         set up all variables for use with linux-based systems
 
         @author: Breen Malmberg
-        '''
+        """
 
         if not self.sshdfile:
             self.sshdfile = '/etc/ssh/sshd_config'
@@ -311,11 +312,11 @@ class InstallBanners(RuleKVEditor):
                             "/etc/banner"]
 
     def setcommon(self):
-        '''
+        """
         set up all variables for use with all systems
 
         @author: Breen Malmberg
-        '''
+        """
 
         self.loginbannerfile = "/etc/issue"
         self.sshbannerfile = "/etc/banner"
@@ -332,11 +333,11 @@ class InstallBanners(RuleKVEditor):
         self.sshbannerdict = {"Banner": self.sshbannerfile}
 
     def setmac(self):
-        '''
+        """
         set up all variables for use with darwin-based systems
 
         @author: Breen Malmberg
-        '''
+        """
 
         self.mac = True
         self.bannertext = WARNINGBANNER
@@ -369,11 +370,11 @@ class InstallBanners(RuleKVEditor):
                          self.ci)
 
     def ismac(self):
-        '''
+        """
         determine whether the current system is macintosh, or darwin-based
 
         @author: Breen Malmberg
-        '''
+        """
 
         try:
             if self.environ.getosfamily() == 'darwin':
@@ -383,12 +384,12 @@ class InstallBanners(RuleKVEditor):
             raise
 
     def islinux(self):
-        '''
+        """
         determine whether the current system is linux-based, and set all
         distro-specific variables
 
         @author: Breen Malmberg
-        '''
+        """
 
         try:
 
@@ -415,7 +416,7 @@ class InstallBanners(RuleKVEditor):
             raise
 
     def getFileContents(self, filepath, returntype='list'):
-        '''
+        """
         Retrieve and return file contents (in list format) of a given file path
 
         @param filepath: string full path to file to read
@@ -424,7 +425,7 @@ class InstallBanners(RuleKVEditor):
         @return filecontents
         @rtype: list
         @author: Breen Malmberg
-        '''
+        """
 
         self.logger.log(LogPriority.DEBUG, "Retrieving contents of file " + filepath)
 
@@ -452,7 +453,7 @@ class InstallBanners(RuleKVEditor):
         return filecontents
 
     def setFileContents(self, filepath, contents, perms=[0, 0, 0644]):
-        '''
+        """
         write (or append) specified contents to specified file
 
         @param filepath: string full path to file
@@ -467,7 +468,7 @@ class InstallBanners(RuleKVEditor):
         @return: retval
         @rtype: boolean
         @author: Breen Malmberg
-        '''
+        """
 
         retval = True
         tmpPath = filepath + ".stonixtmp"
@@ -524,7 +525,7 @@ class InstallBanners(RuleKVEditor):
         return retval
 
     def replaceFileContents(self, filepath, contentdict):
-        '''
+        """
         replace key from contentdict with value from contentdict, in filepath
 
         @param filepath: string full path to file
@@ -533,7 +534,7 @@ class InstallBanners(RuleKVEditor):
         @return: retval
         @rtype: boolean
         @author: Breen Malmberg
-        '''
+        """
 
         retval = True
         appends = []
@@ -563,10 +564,10 @@ class InstallBanners(RuleKVEditor):
         return retval
 
     def appendFileContents(self, filepath, contents, appends):
-        '''
+        """
 
         @return:
-        '''
+        """
 
         self.logger.log(LogPriority.DEBUG, "Appending missing configuration lines...")
 
@@ -576,7 +577,7 @@ class InstallBanners(RuleKVEditor):
         self.setFileContents(filepath, contents)
 
     def reportFileContents(self, filepath, searchparams):
-        '''
+        """
         verify that the give key:value pairs in contentdict exist in filepath
 
         @param filepath: string full path to file
@@ -585,7 +586,7 @@ class InstallBanners(RuleKVEditor):
         @return: retval
         @rtype: boolean
         @author: Breen Malmberg
-        '''
+        """
 
         retval = True
         foundDict = {}
@@ -625,14 +626,14 @@ class InstallBanners(RuleKVEditor):
         return retval
 
     def checkCommand(self, cmd, val="", regex=True):
-        '''
+        """
         check the output of a given command to see if it matches given value
 
         @return: retval
         @rtype: boolean
 
         @author: Breen Malmberg
-        '''
+        """
 
         retval = True
 
@@ -674,7 +675,7 @@ class InstallBanners(RuleKVEditor):
         return retval
 
     def report(self):
-        '''
+        """
         The report method examines the current configuration and determines
         whether or not it is correct. If the config is correct then the
         self.compliant, self.detailed results and self.currstate properties are
@@ -685,7 +686,7 @@ class InstallBanners(RuleKVEditor):
         @rtype: boolean
 
         @author Breen Malmberg
-        '''
+        """
 
         self.compliant = True
         self.detailedresults = ""
@@ -713,13 +714,13 @@ class InstallBanners(RuleKVEditor):
         return self.compliant
 
     def getgnome3version(self):
-        '''
+        """
         get the gnome3 version as a float
 
         @return: g3ver
         @rtype: float
         @author: Breen Malmberg
-        '''
+        """
 
         g3ver = 0.0
         cmd = '/usr/sbin/gdm3 --version'
@@ -742,13 +743,13 @@ class InstallBanners(RuleKVEditor):
         return g3ver
 
     def reportlinux(self):
-        '''
+        """
         run report functionality for linux-based systems
 
         @return: retval
         @rtype: boolean
         @author: Breen Malmberg
-        '''
+        """
 
         compliant = True
 
@@ -780,14 +781,14 @@ class InstallBanners(RuleKVEditor):
         return compliant
 
     def reportlinuxcommon(self):
-        '''
+        """
         run report functionality which is common to linux platforms
 
         @return: retval
         @rtype: boolean
 
         @author: Breen Malmberg
-        '''
+        """
 
         compliant = True
 
@@ -805,14 +806,14 @@ class InstallBanners(RuleKVEditor):
         return compliant
 
     def reportcommon(self):
-        '''
+        """
         run report functionality which is common to all platforms
 
         @return: retval
         @rtype: boolean
 
         @author: Breen Malmberg
-        '''
+        """
 
         compliant = True
         if not os.path.exists(self.sshdfile):
@@ -828,15 +829,14 @@ class InstallBanners(RuleKVEditor):
             self.detailedresults += self.sshdfile + " doesn't contain correct contents\n"
         return compliant
 
-
     def reportgnome2(self):
-        '''
+        """
         run report functionality for gnome2-based systems
 
         @return: retval
         @rtype: boolean
         @author: Breen Malmberg
-        '''
+        """
 
         compliant = True
 
@@ -859,13 +859,13 @@ class InstallBanners(RuleKVEditor):
         return compliant
 
     def reportgnome3(self):
-        '''
+        """
         run report functionality for gnome3-based systems
 
         @return: retval
         @rtype: boolean
         @author: Breen Malmberg
-        '''
+        """
 
         compliant = True
 
@@ -881,10 +881,10 @@ class InstallBanners(RuleKVEditor):
         return compliant
 
     def checkprofilecfg(self):
-        '''
+        """
 
         @return:
-        '''
+        """
 
         compliant = True
 
@@ -897,10 +897,10 @@ class InstallBanners(RuleKVEditor):
         return compliant
 
     def checkkeyfilecfg(self):
-        '''
+        """
 
         @return:
-        '''
+        """
 
         compliant = True
 
@@ -916,13 +916,13 @@ class InstallBanners(RuleKVEditor):
         return compliant
 
     def reportlightdm(self):
-        '''
+        """
         run report functionality for lightdm-based systems
 
         @return: retval
         @rtype: boolean
         @author: Breen Malmberg
-        '''
+        """
 
         compliant = True
 
@@ -938,13 +938,13 @@ class InstallBanners(RuleKVEditor):
         return compliant
 
     def reportkde(self):
-        '''
+        """
         run report functionality for kde-based systems
 
         @return: retval
         @rtype: boolean
         @author: Breen Malmberg
-        '''
+        """
 
         retval = True
 
@@ -1010,13 +1010,13 @@ class InstallBanners(RuleKVEditor):
         return retval
 
     def reportmac(self):
-        '''
+        """
         run report functionality for macintosh, or darwin-based systems
 
         @return: retval
         @rtype: boolean
         @author: Breen Malmberg
-        '''
+        """
 
         retval = True
 
@@ -1053,7 +1053,7 @@ class InstallBanners(RuleKVEditor):
         return retval
 
     def fix(self):
-        '''
+        """
         Install warning banners, set the warning text and configure the
         file permissions for the warning banner files.
 
@@ -1061,7 +1061,7 @@ class InstallBanners(RuleKVEditor):
         @rtype: boolean
 
         @author Breen Malmberg
-        '''
+        """
 
         self.rulesuccess = True
         self.detailedresults = ""
@@ -1101,13 +1101,13 @@ class InstallBanners(RuleKVEditor):
         return self.rulesuccess
 
     def fixlinux(self):
-        '''
+        """
         run fix functionality for linux-based systems
 
         @return: success
         @rtype: boolean
         @author: Breen Malmberg
-        '''
+        """
 
         success = True
 
@@ -1133,13 +1133,13 @@ class InstallBanners(RuleKVEditor):
         return success
 
     def fixlinuxcommon(self):
-        '''
+        """
         run fix functionality which is common to linux platforms
 
         @return: success
         @rtype: boolean
         @author: Breen Malmberg
-        '''
+        """
 
         success = True
 
@@ -1154,14 +1154,14 @@ class InstallBanners(RuleKVEditor):
         return success
 
     def fixcommon(self):
-        '''
+        """
         run fix functionlity which is common to all platforms
 
         @return: success
         @rtype: boolean
 
         @author: Breen Malmberg
-        '''
+        """
 
         success = True
 
@@ -1183,14 +1183,14 @@ class InstallBanners(RuleKVEditor):
         return success
 
     def fixgnome2(self):
-        '''
+        """
         run fix functionality for gnome2-based systems
         (implementation based on: https://access.redhat.com/solutions/32480)
 
         @return: success
         @rtype: boolean
         @author: Breen Malmberg
-        '''
+        """
 
         success = True
         gconf = "/usr/bin/gconftool-2"
@@ -1217,13 +1217,13 @@ class InstallBanners(RuleKVEditor):
         return success
 
     def fixgnome3(self):
-        '''
+        """
         run fix functionality for gnome3-based systems
 
         @return: success
         @rtype: boolean
         @author: Breen Malmberg
-        '''
+        """
 
         success = True
 
@@ -1283,13 +1283,13 @@ class InstallBanners(RuleKVEditor):
         return success
 
     def fixlightdm(self):
-        '''
+        """
         run fix functionality for lightdm-based systems
 
         @return: success
         @rtype: boolean
         @author: Breen Malmberg
-        '''
+        """
 
         success = True
         contentlines = []
@@ -1313,7 +1313,7 @@ class InstallBanners(RuleKVEditor):
         return success
 
     def fixkde(self):
-        '''
+        """
         run fix functionality for kde-based systems
 
         @return: success
@@ -1321,7 +1321,7 @@ class InstallBanners(RuleKVEditor):
         @author: Breen Malmberg
         @change: Breen Malmberg - 5/25/2016 - moved the commit calls to ensure
         they are only called if the fix calls completed successfully
-        '''
+        """
 
         success = True
 
@@ -1390,13 +1390,13 @@ class InstallBanners(RuleKVEditor):
         return success
 
     def fixmac(self):
-        '''
+        """
         run fix functionality for macintosh, or darwin-based systems
 
         @return: success
         @rtype: boolean
         @author: Breen Malmberg
-        '''
+        """
 
         success = True
 
