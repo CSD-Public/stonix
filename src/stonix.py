@@ -122,6 +122,8 @@ Created on Aug 23, 2010
 @TODO improve logging/debugging on all methods
 @TODO look at adding try/except to all methods missing them
 @change: 2019/04/08 - Breen Malmberg - removed unused import 'imp'; fixed unreachable logging calls
+@change: 2019/04/18 - Brandon R. Gonzales - Integrate Apple Notification
+        handling; Add cleanup method which runs when STONIX is terminated
 """
 
 # Std Library imports
@@ -171,6 +173,8 @@ class Controller(Observable):
         self.pcf = False
         self.pcs = False
         self.list = False
+
+        # List of subprocesses spawned by STONIX
         self.stonixsubprocs = []
 
         if not self.safetycheck():
@@ -229,18 +233,22 @@ class Controller(Observable):
 
         self.tryacquirelock()
 
+        # Register the cleanup method to run STONIX is terminated
         atexit.register(self.cleanup)
 
         self.chkapp = CheckApplicable(self.environ, self.logger)
 
+        #
         # Initialize Apple Notification Handler
+        #
         self.applicableAppleNotifications = {'type': 'white',
                                              'os': {'Mac OS X': ['10.12', '+']}}
-
         if self.chkapp.isApplicable(applicableAppleNotifications):
-            start_apple_notification_handler()
+            self.start_apple_notification_handler()
 
+        #
         # Initialize GUI
+        #
         if self.mode == 'gui':
             applicable2PyQt5 = {'type': 'white',
                                'os': {'Mac OS X': ['10.10', '+']}}
@@ -1316,23 +1324,23 @@ ABORTING EXECUTION!"""
         """
         Starts a swift script that observes Apple Notifications (for example,
         sleep and power off) and handles these events by sending interrupts
-        to stonix. This swift script is called as a subprocess and can be found
+        to STONIX. This swift script is called as a subprocess and can be found
         in 'src/stonix_resources/AppleNotificationHandler.swift'.
 
         @return: void
         @author: Brandon R. Gonzales
         """
-        notehandlerpath = os.path.join(self.environ.resources_path,
+        handlerpath = os.path.join(self.environ.resources_path,
                                        "AppleNotificationHandler.swift")
-        if os.path.exists(noteHandlerPath):
+        if os.path.exists(handlerpath):
             command = [noteHandlerPath, str(os.getpid())]
-            notehandlerproc = subprocess.Popen(command)
-            self.stonixsubprocs.append(noteHandlerProc)
+            handlerproc = subprocess.Popen(command)
+            self.stonixsubprocs.append(handlerproc)
 
     def cleanup(self):
         """
         Terminates the subprocesses spawned by STONIX. This function is
-        invoked by the atexit standard library.
+        invoked by the atexit standard library and is registered in __init__.
         
         @return: void
         @author: Brandon R. Gonzales
@@ -1340,7 +1348,7 @@ ABORTING EXECUTION!"""
         for proc in self.stonixsubprocs:
             try:
                 proc.kill()
-            except:
+            except OSError:
                 pass
                     
     def processargs(self):
