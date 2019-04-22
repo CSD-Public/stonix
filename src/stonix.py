@@ -241,7 +241,7 @@ class Controller(Observable):
         #
         # Initialize Apple Notification Handler
         #
-        self.applicableAppleNotifications = {'type': 'white',
+        applicableAppleNotifications = {'type': 'white',
                                              'os': {'Mac OS X': ['10.12', '+']}}
         if self.chkapp.isApplicable(applicableAppleNotifications):
             self.start_apple_notification_handler()
