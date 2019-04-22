@@ -82,7 +82,7 @@ class ConfigureLinuxFirewall(Rule):
         key = 'CONFIGURELINUXFIREWALL'
         instructions = '''To disable this rule set the value of \
 CONFIGURELINUXFIREWALL to False.'''
-        default = True
+        default = False
         self.clfci = self.initCi(datatype, key, instructions, default)
         self.scriptType = ""
         self.iptScriptPath = ""
