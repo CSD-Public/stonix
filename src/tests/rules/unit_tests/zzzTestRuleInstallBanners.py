@@ -17,20 +17,26 @@
 ###############################################################################
 
 
-'''
+"""
 This is a Unit Test for Rule InstallBanners
 
 @author: ekkehard j. koch
 @change: 02/27/2013 Original Implementation
 @change: 2016/02/10 roy Added sys.path.append for being able to unit test this
                         file as well as with the test harness.
-'''
+"""
+
 from __future__ import absolute_import
+
 import unittest
 import sys
+import os
 
 sys.path.append("../../../..")
 from src.tests.lib.RuleTestTemplate import RuleTest
+from src.stonix_resources.localize import GDMWARNINGBANNER
+from src.stonix_resources.localize import GDM3WARNINGBANNER
+from src.stonix_resources.localize import ALTWARNINGBANNER
 from src.stonix_resources.CommandHelper import CommandHelper
 from src.tests.lib.logdispatcher_mock import LogPriority
 from src.stonix_resources.rules.InstallBanners import InstallBanners
@@ -53,11 +59,121 @@ class zzzTestRuleInstallBanners(RuleTest):
     def tearDown(self):
         pass
 
+    def test_initobjs(self):
+        """
+
+        @return:
+        """
+
+        self.rule.initobjs()
+
+        try:
+            self.assertIsNotNone(self.rule.ph)
+            self.assertIsNotNone(self.rule.ch)
+        except AttributeError:
+            pass
+        except:
+            raise
+
+        self.assertFalse(self.rule.linux)
+        self.assertFalse(self.rule.mac)
+        self.assertFalse(self.rule.gnome2)
+        self.assertFalse(self.rule.gnome3)
+        self.assertFalse(self.rule.kde)
+        self.assertFalse(self.rule.lightdm)
+        self.assertFalse(self.rule.badline)
+
+    def test_setgnome3(self):
+        """
+
+        @return: 
+        """
+
+        self.rule.setgnome3()
+
+        self.assertTrue(self.rule.gnome3)
+        self.assertEqual(self.rule.gnome3bannertext, GDM3WARNINGBANNER)
+
+    def test_setgnome2(self):
+        """
+
+        @return:
+        """
+
+        self.rule.setgnome2()
+
+        self.assertTrue(self.rule.gnome2)
+        self.assertEqual(self.rule.gnome2bannertext, GDMWARNINGBANNER)
+
+    def test_setkde(self):
+        """
+
+        @return:
+        """
+
+        self.rule.setkde()
+
+        self.assertTrue(self.rule.kde)
+        self.assertEqual(self.rule.kdebannertext, ALTWARNINGBANNER)
+
+        try:
+            self.assertIsNotNone(self.rule.kdeditor)
+        except AttributeError:
+            pass
+        except:
+            raise
+
+    def test_setlightdm(self):
+        """
+
+        @return:
+        """
+
+        self.rule.setlightdm()
+
+        self.assertTrue(self.rule.lightdm)
+        self.assertEqual(self.rule.ldmbannertext, ALTWARNINGBANNER)
+
+    def test_setcommon(self):
+        """
+
+        @return:
+        """
+
+        self.rule.setcommon()
+
+        try:
+            self.assertIsNotNone(self.rule.loginbannerfile)
+            self.assertNotEqual(self.rule.loginbannerfile, "")
+            self.assertIsNotNone(self.rule.sshdfile)
+            self.assertNotEqual(self.rule.sshdfile, "")
+        except AttributeError:
+            pass
+        except:
+            raise
+
+    def test_getfilecontents(self):
+        """
+
+        @return:
+        """
+
+        self.assertEqual(self.rule.getFileContents(''), [])
+        self.assertEqual(self.rule.getFileContents('', 'unknown'), '')
+
+        try:
+            self.assertNotEqual(self.rule.getFileContents(os.path.dirname(os.path.abspath(__file__)) + "/" + __file__), [])
+            self.assertIsInstance(self.rule.getFileContents(os.path.dirname(os.path.abspath(__file__)) + "/" + __file__), list)
+        except AttributeError:
+            pass
+        except:
+            raise
+
     def runTest(self):
         self.simpleRuleTest()
 
     def setConditionsForRule(self):
-        '''
+        """
         This makes sure the intial report fails by executing the following
         commands:
         defaults -currentHost delete /Library/Preferences/com.apple.AppleFileServer loginGreeting
@@ -65,7 +181,7 @@ class zzzTestRuleInstallBanners(RuleTest):
         @param self: essential if you override this definition
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
-        '''
+        """
         success = True
         if self.environ.getosfamily() == "darwin":
             if success:
@@ -84,15 +200,16 @@ class zzzTestRuleInstallBanners(RuleTest):
             success = self.checkReportForRule(False, True)
         return success
 
+
     def checkReportForRule(self, pCompliance, pRuleSuccess):
-        '''
+        """
         To see what happended run these commans:
         defaults -currentHost read /Library/Preferences/com.apple.AppleFileServer loginGreeting
         defaults -currentHost read /Library/Preferences/com.apple.loginwindow LoginWindowText
         @param self: essential if you override this definition
         @return: boolean - If successful True; If failure False
         @author: ekkehard j. koch
-        '''
+        """
         self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " +
                              str(pCompliance) + ".")
         self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
