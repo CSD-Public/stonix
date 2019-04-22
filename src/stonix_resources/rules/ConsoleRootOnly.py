@@ -249,7 +249,7 @@ class ConsoleRootOnly(Rule):
                                          'Line is incorrect.'])
                         tempstring += "#" + line
 
-                    tmpfile = self.securetty + ".tmp"
+                tmpfile = self.securetty + ".tmp"
 
                 if writeFile(tmpfile, tempstring, self.logger):
 
