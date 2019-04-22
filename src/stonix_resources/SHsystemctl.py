@@ -342,3 +342,35 @@ class SHsystemctl(ServiceHelperTemplate):
             self.logdispatcher.log(LogPriority.DEBUG, "Status of service: " + service + " indicates it is either protected, required or immutable. Will not perform operation on this service!")
 
         return status
+
+    def getStartCommand(self, service):
+        '''
+        retrieve the start command.  Mostly used by event recording
+        @return: string - start command
+        @author: dwalker
+        '''
+        return self.sysctl + " start " + service
+
+    def getStopCommand(self, service):
+        '''
+        retrieve the stop command.  Mostly used by event recording
+        @return: string - stop command
+        @author: dwalker
+        '''
+        return self.sysctl + " stop " + service
+
+    def getEnableCommand(self, service):
+        '''
+        retrieve the enable command.  Mostly used by event recording
+        @return: string - enable command
+        @author: dwalker
+        '''
+        return self.sysctl + " enable " + service
+
+    def getDisableCommand(self, service):
+        '''
+        retrieve the start command.  Mostly used by event recording
+        @return: string - disable command
+        @author: dwalker
+        '''
+        return self.sysctl + " disable " + service

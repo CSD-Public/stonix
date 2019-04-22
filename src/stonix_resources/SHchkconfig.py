@@ -175,7 +175,7 @@ class SHchkconfig(ServiceHelperTemplate):
         if retcode != 0:
             enabled = False
 
-        if self.auditService(service):
+        if not self.auditService(service):
             enabled = False
 
         if not self.startService(service):
@@ -275,7 +275,7 @@ class SHchkconfig(ServiceHelperTemplate):
         if any(os.path.exists(sl) for sl in systemctl_locations):
             searchterms = ["Active:\s+inactive", "Active:\s+unknown"]
         else:
-            searchterms = ["is stopped", "hook is not installed"]
+            searchterms = ["is stopped", "hook is not installed", "is not running"]
 
         for line in outputlines:
             if any(re.search(st, line) for st in searchterms):
@@ -332,3 +332,35 @@ class SHchkconfig(ServiceHelperTemplate):
                 pass
 
         return service_list
+
+    def getStartCommand(self, service):
+        '''
+        retrieve the start command.  Mostly used by event recording
+        @return: string - start command
+        @author: dwalker
+        '''
+        return self.svc + " " + service + " start"
+
+    def getStopCommand(self, service):
+        '''
+        retrieve the stop command.  Mostly used by event recording
+        @return: string - stop command
+        @author: dwalker
+        '''
+        return self.svc + " " + service + " stop"
+
+    def getEnableCommand(self, service):
+        '''
+        retrieve the enable command.  Mostly used by event recording
+        @return: string - enable command
+        @author: dwalker
+        '''
+        return self.chk + " " + service + " on"
+
+    def getDisableCommand(self, service):
+        '''
+        retrieve the start command.  Mostly used by event recording
+        @return: string - disable command
+        @author: dwalker
+        '''
+        return self.chk + " " + service + " off"

@@ -221,3 +221,46 @@ class ServiceHelperTemplate(object):
                                '--This method not yet in production.')
         self.__calledBy()
         raise MethodNotImplementedError
+
+    def getStartCommand(self, service):
+        '''
+        retrieve the start command.  Mostly used by event recording
+        @return: string - start command
+        '''
+        self.logdispatcher.log(LogPriority.INFO,
+                               '--This method not yet in production.')
+        self.__calledBy()
+        raise MethodNotImplementedError
+
+    def getStopCommand(self, service):
+        '''
+        retrieve the stop command.  Mostly used by event recording
+        @return: string - stop command
+        @author: dwalker
+        '''
+        self.logdispatcher.log(LogPriority.INFO,
+                               '--This method not yet in production.')
+        self.__calledBy()
+        raise MethodNotImplementedError
+
+    def getEnableCommand(self, service):
+        '''
+        retrieve the enable command.  Mostly used by event recording
+        @return: string - enable command
+        @author: dwalker
+        '''
+        self.logdispatcher.log(LogPriority.INFO,
+                               '--This method not yet in production.')
+        self.__calledBy()
+        raise MethodNotImplementedError
+
+    def getDisableCommand(self, service):
+        '''
+        retrieve the start command.  Mostly used by event recording
+        @return: string - disable command
+        @author: dwalker
+        '''
+        self.logdispatcher.log(LogPriority.INFO,
+                               '--This method not yet in production.')
+        self.__calledBy()
+        raise MethodNotImplementedError

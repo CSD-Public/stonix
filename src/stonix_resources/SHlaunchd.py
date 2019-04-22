@@ -472,3 +472,47 @@ class SHlaunchd(ServiceHelperTemplate):
                                    ') = ' + str(servicesuccess))
 
         return servicesuccess
+
+    def getStartCommand(self, service):
+        '''
+        retrieve the start command.  Mostly used by event recording
+        @return: string - start command
+        @author: dwalker
+        '''
+        serviceTarget = self.targetValid(service)
+        if serviceTarget:
+            command = [self.launchd, 'start', 'job', serviceTarget]
+            return command
+
+    def getStopCommand(self, service):
+        '''
+        retrieve the stop command.  Mostly used by event recording
+        @return: string - stop command
+        @author: dwalker
+        '''
+        serviceTarget = self.targetValid(service)
+        if serviceTarget:
+            command = [self.launchd, 'stop', 'job ', serviceTarget]
+            return command
+
+    def getEnableCommand(self, service):
+        '''
+        retrieve the enable command.  Mostly used by event recording
+        @return: string - enable command
+        @author: dwalker
+        '''
+        serviceTarget = self.targetValid(service)
+        if serviceTarget:
+            command = [self.launchd, 'load', "-w", service]
+            return command
+
+    def getDisableCommand(self, service):
+        '''
+        retrieve the start command.  Mostly used by event recording
+        @return: string - disable command
+        @author: dwalker
+        '''
+        serviceTarget = self.targetValid(service)
+        if serviceTarget:
+            command = [self.launchd, 'unload', service]
+            return command
