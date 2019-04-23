@@ -1333,7 +1333,7 @@ ABORTING EXECUTION!"""
         handlerpath = os.path.join(self.environ.resources_path,
                                        "AppleNotificationHandler.swift")
         if os.path.exists(handlerpath):
-            command = [noteHandlerPath, str(os.getpid())]
+            command = [handlerpath, str(os.getpid())]
             handlerproc = subprocess.Popen(command)
             self.stonixsubprocs.append(handlerproc)
 
