@@ -38,6 +38,12 @@ from ..pkghelper import Pkghelper
 class InstallVLock(Rule):
     """
     This class installs the vlock package to enable screen locking
+    vlock is the package name on opensuse 15+, debian, ubuntu
+    kbd is the package name on opensuse 42.3-, rhel, fedora, centos (contains vlock package)
+
+    references:
+    https://pkgs.org/download/vlock
+    https://access.redhat.com/discussions/3543671
     """
 
     def __init__(self, config, environ, logger, statechglogger):
@@ -65,6 +71,22 @@ class InstallVLock(Rule):
         self.ci = self.initCi(datatype, key, instructions, default)
         self.sethelptext()
 
+    def set_pkg(self):
+        """
+        set package name based on distro
+
+        @return:
+        """
+
+        majorver = self.environ.getosmajorver()
+
+        if self.ph.manager in ["yum", "dnf"]:
+            self.pkg = "kbd"
+        elif bool(self.ph.manager == "zypper" and majorver == "42"):
+            self.pkg = "kbd"
+        else:
+            self.pkg = "vlock"
+
     def report(self):
         """
         Perform a check to see if package is already installed.
@@ -82,10 +104,10 @@ class InstallVLock(Rule):
             self.ch = CommandHelper(self.logger)
             self.compliant = True
 
-            pkgs = ["kbd", "vlock"]
-            if not any(self.ph.check(pkg) for pkg in pkgs):
+            self.set_pkg()
+
+            if not self.ph.check(self.pkg):
                 self.compliant = False
-            if not self.compliant:
                 self.detailedresults += "\nvlock Package is NOT installed"
             else:
                 self.detailedresults += "\nvlock Package is installed"
@@ -128,22 +150,11 @@ class InstallVLock(Rule):
 
             undocmd = self.ph.getRemove()
 
-            if self.ph.manager == "zypper":
-                if not self.ph.install("kbd"):
-                    self.rulesuccess = False
-                else:
-                    undocmd += "kbd"
-            elif self.ph.manager in ["yum", "dnf"]:
-                if not self.ph.install("vlock"):
-                    self.rulesuccess = False
-                else:
-                    undocmd += "vlock"
-            else:
-                undocmd += "vlock"
-
-            if not self.rulesuccess:
+            if not self.ph.install(self.pkg):
+                self.rulesuccess = False
                 self.detailedresults += "\nFailed to install vlock package"
             else:
+                undocmd += self.pkg
                 self.iditerator += 1
                 myid = iterate(self.iditerator, self.rulenumber)
                 event = {"eventtype": "comm",
