@@ -31,6 +31,7 @@ sys.path.append("../../../..")
 from src.tests.lib.RuleTestTemplate import RuleTest
 from src.tests.lib.logdispatcher_mock import LogPriority
 from src.stonix_resources.rules.ForceIdleLogout import ForceIdleLogout
+from src.stonix_resources.pkghelper import Pkghelper
 
 
 class zzzTestRuleForceIdleLogout(RuleTest):
@@ -41,10 +42,12 @@ class zzzTestRuleForceIdleLogout(RuleTest):
                                     self.environ,
                                     self.logdispatch,
                                     self.statechglogger)
+        self.logger = self.logdispatch
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
         self.rule.filci.updatecurrvalue(True)
         self.checkUndo = True
+        self.ph = Pkghelper(self.logger, self.environ)
 
     def tearDown(self):
         pass
@@ -60,7 +63,26 @@ class zzzTestRuleForceIdleLogout(RuleTest):
         @author: ekkehard j. koch
         '''
         success = True
+        desktopmgr = False
+        desktopmgrs = ["gdm", "gdm3", "kdm", "kde-workspace"]
+        if self.ph.check("gdm") or self.ph.check("gdm3"):
+            desktopmgr = True
+            success = self.setgnome3()
+        if self.ph.check("kdm") or self.ph.check("kde-workspace"):
+            desktopmgr = True
+            success = self.setkde()
+        if not desktopmgr:
+            for mgr in desktopmgrs:
+                if self.ph.checkAvailable(mgr):
+                    if self.ph.install(mgr):
+                        desktopmgr = True
+            if not desktopmgr:
+                success = False
+                debug = "Unable to install a desktop manager for testing\n"
+                self.logger.log(LogPriority.DEBUG, debugt)
         return success
+
+    def setgnome3(self):
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
         '''
