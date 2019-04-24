@@ -215,6 +215,18 @@ this system, set the value of EnableKernelAuditing to False"""
                 self.logger.log(LogPriority.DEBUG, "Couldn't locate audit configuration file")
             self.auditconftmp = self.auditconffile + '.stonixtmp'
 
+
+
+            self.flushfrequency = str(self.freqci.getcurrvalue())
+            allowable_flush_types = ['data', 'incremental', 'sync']
+            allowable_freq_range = range(1,100)
+            if self.flushtypeci.getcurrvalue() not in allowable_flush_types:
+                self.flushtypeci.updatecurrvalue('incremental')
+                self.logger.log(LogPriority.DEBUG, "User entered value for flush type was not one of the acceptable types. Changed to default incremental.")
+            self.flushtype = self.flushtypeci.getcurrvalue()
+            if int(self.flushfrequency) not in allowable_freq_range:
+                self.flushfrequency = '20'
+                self.logger.log(LogPriority.DEBUG, "User entered value for flush frequency was not within acceptable range. Changed to default 20.")
             self.auditconfoptions = {'log_file': '/var/log/audit/audit.log',
                                      'log_format': 'RAW',
                                      'flush': str(self.flushtype),
@@ -231,18 +243,6 @@ this system, set the value of EnableKernelAuditing to False"""
                                      'admin_space_left_action': 'HALT',
                                      'disk_full_action': 'HALT',
                                      'disk_error_action': 'SINGLE'}
-
-            self.flushfrequency = str(self.freqci.getcurrvalue())
-            allowable_flush_types = ['data', 'incremental', 'sync']
-            allowable_freq_range = range(1,100)
-            if self.flushtypeci.getcurrvalue() not in allowable_flush_types:
-                self.flushtypeci.updatecurrvalue('incremental')
-                self.logger.log(LogPriority.DEBUG, "User entered value for flush type was not one of the acceptable types. Changed to default incremental.")
-            self.flushtype = self.flushtypeci.getcurrvalue()
-            if int(self.flushfrequency) not in allowable_freq_range:
-                self.flushfrequency = '20'
-                self.logger.log(LogPriority.DEBUG, "User entered value for flush frequency was not within acceptable range. Changed to default 20.")
-
 # AUDIT DISPATCHER SECTION
             self.logger.log(LogPriority.DEBUG, "Setting up Audit Dispatcher variables...")
             auditdispconflocs = ['/etc/audisp/audispd.conf']
@@ -338,6 +338,24 @@ this system, set the value of EnableKernelAuditing to False"""
         self.cmdhelper = CommandHelper(self.logger)
         self.svchelper = ServiceHelper(self.environ, self.logger)
         self.pkghelper = Pkghelper(self.logger, self.environ)
+        self.flushtype = self.flushtypeci.getcurrvalue()
+        self.flushfrequency = str(self.freqci.getcurrvalue())
+        self.auditconfoptions = {'log_file': '/var/log/audit/audit.log',
+                                 'log_format': 'RAW',
+                                 'flush': str(self.flushtype),
+                                 'freq': str(self.flushfrequency),
+                                 'num_logs': '20',
+                                 'dispatcher': '/sbin/audispd',
+                                 'disp_qos': 'lossy',
+                                 'max_log_file': '200',
+                                 'max_log_file_action': 'ROTATE',
+                                 'space_left': '200',
+                                 'space_left_action': 'EMAIL',
+                                 'action_mail_acct': 'root',
+                                 'admin_space_left': '50',
+                                 'admin_space_left_action': 'HALT',
+                                 'disk_full_action': 'HALT',
+                                 'disk_error_action': 'SINGLE'}
 
         try:
 
