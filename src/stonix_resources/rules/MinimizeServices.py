@@ -463,6 +463,7 @@ class MinimizeServices(Rule):
                                'urandom.service',
                                'urandom',
                                'virtlockd.service',
+                               'wicked.service',
                                'xdm', 'xdm.service',
                                'YaST2-Second-Stage.service',
                                'ypbind.service',
