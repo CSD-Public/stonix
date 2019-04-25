@@ -82,7 +82,7 @@ class InstallVLock(Rule):
 
         if self.ph.manager in ["yum", "dnf"]:
             self.pkg = "kbd"
-        elif bool(self.ph.manager == "zypper" and majorver == "42"):
+        elif bool(self.ph.manager == "zypper" and majorver == "15"):
             self.pkg = "kbd"
         else:
             self.pkg = "vlock"
