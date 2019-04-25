@@ -218,10 +218,10 @@ this system, set the value of EnableKernelAuditing to False"""
 
 
             self.flushfrequency = str(self.freqci.getcurrvalue())
-            allowable_flush_types = ['data', 'incremental', 'sync']
+            allowable_flush_types = ['data', 'incremental', 'sync', 'incremental_async']
             allowable_freq_range = range(1,100)
             if self.flushtypeci.getcurrvalue() not in allowable_flush_types:
-                self.flushtypeci.updatecurrvalue('incremental')
+                self.flushtypeci.updatecurrvalue('incremental_async')
                 self.logger.log(LogPriority.DEBUG, "User entered value for flush type was not one of the acceptable types. Changed to default incremental.")
             self.flushtype = self.flushtypeci.getcurrvalue()
             if int(self.flushfrequency) not in allowable_freq_range:
@@ -315,6 +315,7 @@ this system, set the value of EnableKernelAuditing to False"""
                             "Could not locate the grub v2 cfg file")
         grubmkconfignames = ['/usr/sbin/grub2-mkconfig',
                              '/usr/sbin/grub-mkconfig']
+        grubmkconfigname = '/usr/sbin/grub2-mkconfig'
         for name in grubmkconfignames:
             if os.path.exists(name):
                 grubmkconfigname = name
