@@ -246,13 +246,13 @@ valid exceptions.'
                                 retval = False
                                 self.detailedresults += "The microphone boost labeled: " + str(mcb) + " does not have its volume level set to 0\n"
                                 debug = "The microphone boost labeled: " + str(mcb) + " does not have its volume level set to 0\n"
-                                self.logger.log(LogPriority.DEBUG(), debug)
+                                self.logger.log(LogPriority.DEBUG, debug)
                         elif re.search("\[on\]|\[off\]", line, re.IGNORECASE):
                             if not re.search("\[off\]", line, re.IGNORECASE):
                                 retval = False
                                 self.detailedresults += "The microphone boost labeled: " + str(mcb) + " is not turned off\n"
                                 debug = "The microphone boost labeled: " + str(mcb) + " is not turned off\n"
-                                self.logger.log(LogPriority.DEBUG(), debug)
+                                self.logger.log(LogPriority.DEBUG, debug)
     
                 for cap in c0Capcontrols:
                     getc0Cap = self.amixer + " -c 0 sget " + cap
