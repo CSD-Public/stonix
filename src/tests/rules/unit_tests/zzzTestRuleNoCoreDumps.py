@@ -17,18 +17,22 @@
 ###############################################################################
 
 
-'''
+"""
 This is a Unit Test for Rule NoCoreDumps
 
-@author: ekkehard j. koch
+@author: Ekkehard J. Koch
 @change: 03/18/2013 Original Implementation
-@change: 2016/02/10 roy Added sys.path.append for being able to unit test this
+@change: 2016/02/10 Roy Nielsen Added sys.path.append for being able to unit test this
                         file as well as with the test harness.
-@change: 2016/09/09 eball Added self.checkUndo = True
-@change: 2019/01/30 dwalker - updated setConditionsForRule method to
-    take out desired contents from file and to make permissions incorrect.
-'''
+@change: 2016/09/09 Eric Ball Added self.checkUndo = True
+@change: 2019/01/30 Derek Walker - updated setConditionsForRule method to
+        take out desired contents from file and to make permissions incorrect.
+@change: 2019/05/01 Breen Malmberg - removed unit test portions for the profile checks
+        to reflect changes to the rule itself.
+"""
+
 from __future__ import absolute_import
+
 import unittest
 import sys
 import os
@@ -62,12 +66,12 @@ class zzzTestRuleNoCoreDumps(RuleTest):
         self.simpleRuleTest()
 
     def setConditionsForRule(self):
-        '''
+        """
         Configure system for the unit test
         @param self: essential if you override this definition
         @return: boolean - If successful True; If failure False
-        @author: ekkehard j. koch
-        '''
+        @author: Ekkehard J. Koch
+        """
         success = True
         if self.environ.getosfamily() == "linux":
             if not self.setLinuxConditions():
@@ -134,39 +138,18 @@ class zzzTestRuleNoCoreDumps(RuleTest):
                     debug = "Unable to set incorrect value for fs.suid_dumpable"
                     self.logger.log(LogPriority.DEBUG, debug)
                     success = False
-        profile = ""
-        if os.path.exists("/etc/profile.d"):
-            profile = "/etc/profile.d/stonix_no_core_dumps.sh"
-            if not os.path.exists(profile):
-                profile = ""
-        elif os.path.exists("/etc/profile"):
-            profile = "/etc/profile"
-        if profile:
-            contents = readFile(profile, self.logger)
-            tempstring = ""
-            found = False
-            for line in contents:
-                if not re.search("^ulimit\s+\-S\s+\-c\s+1", line.strip()):
-                    tempstring += line
-                else:
-                    found = True
-            if found:
-                tempstring += "ulimit -S -c 0\n"
-                if not writeFile(profile, tempstring, self.logger):
-                    debug = "Unable to write incorrect contents to " + profile + "\n"
-                    self.logger.log(LogPriority.DEBUG, debug)
-                    success = False
+        
         return success
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
-        '''
+        """
         check on whether report was correct
         @param self: essential if you override this definition
         @param pCompliance: the self.iscompliant value of rule
         @param pRuleSuccess: did report run successfully
         @return: boolean - If successful True; If failure False
-        @author: ekkehard j. koch
-        '''
+        @author: Ekkehard J. Koch
+        """
         self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " + \
                              str(pCompliance) + ".")
         self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
@@ -175,26 +158,26 @@ class zzzTestRuleNoCoreDumps(RuleTest):
         return success
 
     def checkFixForRule(self, pRuleSuccess):
-        '''
+        """
         check on whether fix was correct
         @param self: essential if you override this definition
         @param pRuleSuccess: did report run successfully
         @return: boolean - If successful True; If failure False
-        @author: ekkehard j. koch
-        '''
+        @author: Ekkehard J. Koch
+        """
         self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
                              str(pRuleSuccess) + ".")
         success = True
         return success
 
     def checkUndoForRule(self, pRuleSuccess):
-        '''
+        """
         check on whether undo was correct
         @param self: essential if you override this definition
         @param pRuleSuccess: did report run successfully
         @return: boolean - If successful True; If failure False
-        @author: ekkehard j. koch
-        '''
+        @author: Ekkehard J. Koch
+        """
         self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
                              str(pRuleSuccess) + ".")
         success = True
