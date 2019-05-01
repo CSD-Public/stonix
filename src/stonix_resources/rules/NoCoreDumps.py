@@ -82,7 +82,6 @@ class NoCoreDumps(Rule):
         instructions = "To prevent the disabling of core dumps on your system, set the value of NOCOREDUMPS to False."
         default = True
         self.ci = self.initCi(datatype, key, instructions, default)
-        self.ch = CommandHelper(self.logger)
         self.sethelptext()
 
     def report(self):
@@ -99,12 +98,14 @@ class NoCoreDumps(Rule):
 
         self.detailedresults = ""
         self.compliant = True
+        self.ch = CommandHelper(self.logger)
+        osfam = self.environ.getosfamily()
 
         try:
-            if self.environ.getosfamily() == "linux":
+            if osfam == "linux":
                 if not self.reportLinux():
                     self.compliant = False
-            elif self.environ.getostype()== "mac":
+            elif osfam == "darwin":
                 if not self.reportMac():
                     self.compliant = False
 
@@ -131,6 +132,7 @@ class NoCoreDumps(Rule):
 
         self.logger.log(LogPriority.DEBUG, "System has been detected as Mac OS X, running reportMac()...")
         compliant = True
+
         self.ch.executeCommand("/usr/bin/launchctl limit core")
         retcode = self.ch.getReturnCode()
         if retcode != 0:
@@ -144,6 +146,7 @@ class NoCoreDumps(Rule):
                     compliant = False
             else:
                 compliant = False
+
         return compliant
 
     def reportLinux(self):
@@ -164,6 +167,8 @@ class NoCoreDumps(Rule):
         if not self.check_sysctl():
             compliant = False
 
+        return compliant
+
     def check_security_limits(self):
         """
         check the limits.conf file for the configuration line
@@ -175,24 +180,26 @@ class NoCoreDumps(Rule):
         """
 
         compliant = True
-        path1 = "/etc/security/limits.conf"
-        lookfor1 = "(^\*)\s+hard\s+core\s+0?"
-        if os.path.exists(path1):
-            if not checkPerms(path1, [0, 0, 0o644], self.logger):
-                self.detailedresults += "Permissions incorrect on " + path1 + "\n"
+        securitylimits = "/etc/security/limits.conf"
+        coresetting = "(^\*)\s+hard\s+core\s+0?"
+
+        if os.path.exists(securitylimits):
+            if not checkPerms(securitylimits, [0, 0, 0o644], self.logger):
+                self.detailedresults += "Permissions incorrect on " + securitylimits + "\n"
                 compliant = False
-            contents = readFile(path1, self.logger)
+            contents = readFile(securitylimits, self.logger)
             if contents:
                 found = False
                 for line in contents:
-                    if re.search(lookfor1, line.strip()):
+                    if re.search(coresetting, line.strip()):
                         found = True
                 if not found:
                     self.detailedresults += "Correct configuration line * hard core 0 " + \
                         "not found in /etc/security/limits.conf\n"
                     compliant = False
         else:
-            self.detailedresults += path1 + " file doesn't exist\n"
+            self.detailedresults += securitylimits + " file doesn't exist\n"
+
         return compliant
 
     def check_sysctl(self):
@@ -220,6 +227,7 @@ class NoCoreDumps(Rule):
             if output.strip() != "fs.suid_dumpable = 0":
                 compliant = False
                 self.detailedresults += "Core dumps are currently enabled\n"
+
         return compliant
 
     def fix(self):
@@ -234,22 +242,23 @@ class NoCoreDumps(Rule):
         self.iditerator = 0
         self.detailedresults = ""
         self.rulesuccess = True
+        osfam = self.environ.getosfamily()
 
         try:
 
             if not self.ci.getcurrvalue():
-                return
+                return self.rulesuccess
 
             #clear out event history so only the latest fix is recorded
             eventlist = self.statechglogger.findrulechanges(self.rulenumber)
             for event in eventlist:
                 self.statechglogger.deleteentry(event)
 
-            if self.environ.getosfamily() == "linux":
+            if osfam == "linux":
                 if not self.fixLinux():
                     self.rulesuccess = False
 
-            elif self.environ.getostype() == "mac":
+            elif osfam == "darwin":
                 if not self.fixMac():
                     self.rulesuccess = False
 
@@ -279,6 +288,8 @@ class NoCoreDumps(Rule):
 
         if not self.fix_sysctl():
             success = False
+
+        return success
 
     def fix_sysctl(self):
         """
