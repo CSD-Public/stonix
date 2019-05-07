@@ -449,7 +449,8 @@ class MinimizeServices(Rule):
                                'systemd-vconsole-setup.service',
                                'systemd-resolved.service',
                                'systemd-resolved',
-                               # DAMN YOU UBUNTU!!!!!!!!!!
+                               'dbus-org.freedesktop.NetworkManager.service',
+                               'NetworkManager-dispatcher.service',
                                'dbus-org.freedesktop.resolve1.service'
                                'tcsd.service', 'tuned.service',
                                'udev',
