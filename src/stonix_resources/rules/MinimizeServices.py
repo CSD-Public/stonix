@@ -362,7 +362,7 @@ class MinimizeServices(Rule):
                                'plymouth-read-write.service',
                                'plymouth-start.service',
                                'polkit.service', 'postfix.service',
-                               'postfix@-.service', # for ubuntu 18...
+                               'postfix@-.service',
                                'poweroff.service', 'prefdm.service',
                                'procps.service',
                                'procps', 'psacct.service',
@@ -514,6 +514,16 @@ elements should be space separated."""
         else:
             self.logger.log(LogPriority.DEBUG, ['MinimizeServices.__init__', "Detection fell through. Return from ENV:" + self.environ.getosfamily()])
             self.svcslistci = self.initCi(datatype2, key2, instructions2, self.linuxdefault)
+
+        #what's in stonix.conf
+        x = self.svcslistci.getcurrvalue()
+
+        #self.systemddefault - x
+        y = [li for li in self.systemddefault if li not in x]
+
+        if systemtype == "systemd":
+            #the set of what's in stonix.conf added to what's in self.systemddefault that isn't in stonix.conf
+            self.svcslistci.updatecurrvalue(x + y)
 
     def report(self):
         """
