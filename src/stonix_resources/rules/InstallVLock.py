@@ -15,39 +15,49 @@
 #                                                                             #
 ###############################################################################
 
-'''
+"""
 Created on Jun 27, 2012
 This InstallVLock object installs the vlock package to enable screen locking
 @author: Derek T Walker
 @change: dkennel 04/18/2014 replaced old-style CI invocation
 @change: 2014/10/17 ekkehard OS X Yosemite 10.10 Update
 @change: 2015/04/15 dkennel updated for new isApplicable
-'''
+"""
+
 from __future__ import absolute_import
-from ..pkghelper import Pkghelper
-from ..logdispatcher import LogPriority
-from ..rule import Rule
-from ..CommandHelper import CommandHelper
+
 import traceback
-import re
+
+from ..rule import Rule
+from ..logdispatcher import LogPriority
+from ..stonixutilityfunctions import iterate
+from ..CommandHelper import CommandHelper
+from ..pkghelper import Pkghelper
 
 
 class InstallVLock(Rule):
-    '''
+    """
     This class installs the vlock package to enable screen locking
-    '''
+    vlock is the package name on opensuse 15+, debian, ubuntu
+    kbd is the package name on opensuse 42.3-, rhel, fedora, centos (contains vlock package)
+
+    references:
+    https://pkgs.org/download/vlock
+    https://access.redhat.com/discussions/3543671
+    """
 
     def __init__(self, config, environ, logger, statechglogger):
-        '''
+        """
         Constructor
-        '''
+        """
+
         Rule.__init__(self, config, environ, logger, statechglogger)
         self.logger = logger
         self.rulenumber = 121
         self.rulename = "InstallVLock"
         self.mandatory = True
         self.rootrequired = True
-        self.detailedresults = "InstallVLock has not yet been run."
+        self.formatDetailedResults("initialize")
         self.guidance = ["NSA 2.3.5.6"]
         self.applicable = {'type': 'white',
                            'family': ['linux', 'freebsd']}
@@ -59,94 +69,105 @@ class InstallVLock(Rule):
             "screen lock program vlock set the value of INSTALLVLOCK to False."
         default = True
         self.ci = self.initCi(datatype, key, instructions, default)
-
         self.sethelptext()
 
-    def report(self):
-        '''Perform a check to see if package is already installed.
-           If so, there is  no need to run Fix method
+    def set_pkg(self):
+        """
+        set package name based on distro
 
-           @return: Bool
-           @author: Derek T Walker '''
+        @return:
+        """
+
+        majorver = self.environ.getosmajorver()
+
+        if self.ph.manager in ["yum", "dnf"]:
+            self.pkg = "kbd"
+        elif bool(self.ph.manager == "zypper" and majorver == "15"):
+            self.pkg = "kbd"
+        else:
+            self.pkg = "vlock"
+
+    def report(self):
+        """
+        Perform a check to see if package is already installed.
+        If so, there is  no need to run Fix method
+
+        @return: self.compliant
+        @rtype: bool
+        @author: Derek T Walker
+        """
+
         try:
+
             self.detailedresults = ""
             self.ph = Pkghelper(self.logger, self.environ)
             self.ch = CommandHelper(self.logger)
-            vlock = ""
-            if self.ph.manager == "yum":
-                cmd = ["/usr/bin/yum", "whatprovides", "vlock"]
-            elif self.ph.manager == "dnf":
-                cmd = ["/usr/bin/dnf", "whatprovides", "vlock"]
-            if self.ph.manager == "yum" or self.ph.manager == "dnf":
-                self.ch.executeCommand(cmd)
-                output = self.ch.getOutput()
-                for line in output:
-                    if re.search("kbd", line):
-                        vlock = "kbd"
-                if vlock != "kbd":
-                    vlock = "vlock"
-            elif self.ph.manager == "zypper":
-                vlock = "kbd"
-            else:
-                vlock = "vlock"
-            present = self.ph.check(vlock)
-            if present:
-                self.compliant = True
-            else:
+            self.compliant = True
+
+            self.set_pkg()
+
+            if not self.ph.check(self.pkg):
                 self.compliant = False
+                self.detailedresults += "\nvlock Package is NOT installed"
+            else:
+                self.detailedresults += "\nvlock Package is installed"
+
         except (KeyboardInterrupt, SystemExit):
-            # User initiated exit
             raise
         except Exception:
-            self.rulesuccess = False
+            self.compliant = False
             self.detailedresults += "\n" + traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("report", self.compliant,
-                                   self.detailedresults)
+        self.formatDetailedResults("report", self.compliant, self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
 
-###############################################################################
-
     def fix(self):
-        '''
+        """
         The fix method will apply the required settings to the system.
         self.rulesuccess will be updated if the rule does not succeed.
         Attempt to install Vlock, record success or failure in event
         logger.
-        @return: bool
-        @author: Derek T Walker'''
+
+        @return: self.rulesuccess
+        @rtype: bool
+        @author: Derek T Walker
+        """
+
         try:
+
             self.detailedresults = ""
+            self.rulesuccess = True
+            self.iditerator = 0
+
             if not self.ci.getcurrvalue():
-                return
+                return self.rulesuccess
 
             # Clear out event history so only the latest fix is recorded
             eventlist = self.statechglogger.findrulechanges(self.rulenumber)
             for event in eventlist:
                 self.statechglogger.deleteentry(event)
 
-            self.rulesuccess = self.ph.install("vlock")
-            if self.rulesuccess and self.ph.manager != "zypper":
-                myid = "0121001"
-                cmd = self.ph.getInstall()
-                cmd += "vlock"
-                event = {"eventtype": "comm",
-                         "command": cmd}
-                self.statechglogger.recordchgevent(myid, event)
-                self.detailedresults += "InstallVLock fix was run and was " + \
-                    "successful"
+            undocmd = self.ph.getRemove()
+
+            if not self.ph.install(self.pkg):
+                self.rulesuccess = False
+                self.detailedresults += "\nFailed to install vlock package"
             else:
-                self.detailedresults += "InstallVLock fix was run and was " + \
-                    "not successful"
+                undocmd += self.pkg
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                event = {"eventtype": "comm",
+                         "command": undocmd}
+                self.statechglogger.recordchgevent(myid, event)
+                self.detailedresults += "\nvlock Package was installed successfully"
+
         except (KeyboardInterrupt, SystemExit):
-            # User initiated exit
             raise
         except Exception:
             self.rulesuccess = False
             self.detailedresults += "\n" + traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("fix", self.rulesuccess,
-                                   self.detailedresults)
+        self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.rulesuccess
