@@ -15,227 +15,239 @@
 #                                                                             #
 ###############################################################################
 
-'''
+"""
 Created on Sep 19, 2012
 
-@author: dkennel
-@change: 2015/10/15 eball Added chk.wait() and chk.returncode == 0 to isrunning
-@change: 2018/02/22 bgonz12 Changed regex in auditService to cut off after the
+@author: Dave Kennel
+@change: 2015/10/15 Eric Ball Added chk.wait() and chk.returncode == 0 to isrunning
+@change: 2018/02/22 Brandon Gonzales Changed regex in auditService to cut off after the
                     service's name
-'''
-import subprocess
+@change: 2019/05/13 Breen Malmberg - refactored class
+"""
+
 import re
-import os
+
 from logdispatcher import LogPriority
+from CommandHelper import CommandHelper
 from ServiceHelperTemplate import ServiceHelperTemplate
 
 
 class SHupdaterc(ServiceHelperTemplate):
-    '''
+    """
     SHupdaterc is the Service Helper for systems using the rcupdate command to
     configure services. (Debian, Ubuntu and variants)
-    '''
+    """
 
     def __init__(self, environment, logdispatcher):
-        '''
+        """
         Constructor
-        '''
+        """
         super(SHupdaterc, self).__init__(environment, logdispatcher)
         self.environment = environment
         self.logdispatcher = logdispatcher
-        self.cmd = '/usr/sbin/update-rc.d '
-        self.svc = '/usr/sbin/service '
+        self.ch = CommandHelper(self.logdispatcher)
+        self.updaterc = "/usr/sbin/update-rc.d "
+        self.svc = "/usr/sbin/service "
 
     def disableService(self, service, **kwargs):
-        '''
+        """
         Disables the service and terminates it if it is running.
 
-        @param string: Name of the service to be disabled
-        @return: Bool indicating success status
-        '''
-        ret2 = 0
-        self.logdispatcher.log(LogPriority.DEBUG,
-                               'SHupdaterc.disableservice ' + service)
-        confsuccess = True
-        svcoff = True
-        ret = subprocess.call(self.cmd + '-f ' + service + ' remove',
-                              shell=True, close_fds=True,
-                              stdout=subprocess.PIPE,
-                              stderr=subprocess.PIPE)
-        if ret != 0:
-            confsuccess = False
-        if self.isRunning(service):
-            ret2 = subprocess.call(self.svc + service + ' stop',
-                                   shell=True, close_fds=True,
-                                   stdout=subprocess.PIPE,
-                                   stderr=subprocess.PIPE)
-            if ret2 != 0:
-                svcoff = False
-        self.logdispatcher.log(LogPriority.DEBUG,
-                               'SHupdaterc.disableservice ' + service + ' ' +
-                               str(confsuccess) + " " + str(svcoff))
-        if confsuccess and svcoff:
-            return True
+        @param service: string; name of service
+        @param kwargs: dict; dictionary of key-value arguments
+        @return: enabled
+        @rtype: bool
+        @author: ???
+        """
+
+        disabled = True
+
+        self.logdispatcher.log(LogPriority.DEBUG, "Disabling service: " + service)
+
+        self.ch.executeCommand(self.updaterc + "disable " + service)
+        retcode = self.ch.getReturnCode()
+        if retcode != 0:
+            errmsg = self.ch.getErrorString()
+            self.logdispatcher.log(LogPriority.DEBUG, errmsg)
+            disabled = False
         else:
-            return False
+            if self.auditService(service):
+                disabled = False
+
+        if disabled:
+            self.logdispatcher.log(LogPriority.DEBUG, "Successfully disabled service: " + service)
+
+        return disabled
 
     def enableService(self, service, **kwargs):
-        '''
+        """
         Enables a service and starts it if it is not running as long as we are
         not in install mode
 
-        @param string: Name of the service to be enabled
-        @return: Bool indicating success status
-        '''
-        ret2 = 0
-        self.logdispatcher.log(LogPriority.DEBUG,
-                               'SHupdaterc.enableservice ' + service)
-        if not os.path.exists('/etc/init.d/' + service):
-            return False
-        confsuccess = True
-        svcon = True
-        ret = subprocess.call(self.cmd + service + ' defaults',
-                              shell=True, close_fds=True,
-                              stdout=subprocess.PIPE,
-                              stderr=subprocess.PIPE)
-        if ret != 0:
-            confsuccess = False
-        if not self.environment.getinstallmode():
-            ret2 = subprocess.call(self.svc + service + ' start',
-                                   shell=True, close_fds=True,
-                                   stdout=subprocess.PIPE,
-                                   stderr=subprocess.PIPE)
-            if ret2 != 0:
-                svcon = False
-        self.logdispatcher.log(LogPriority.DEBUG,
-                               'SHupdaterc.enableservice ' + service + ' ' +
-                               str(confsuccess) + str(svcon))
-        if confsuccess and svcon:
-            return True
+        @param service: string; name of service
+        @param kwargs: dict; dictionary of key-value arguments
+        @return: enabled
+        @rtype: bool
+        @author: ???
+        """
+
+        enabled = True
+
+        self.logdispatcher.log(LogPriority.DEBUG, "Enabling service: " + service)
+
+        self.ch.executeCommand(self.updaterc + "enable " + service)
+        retcode = self.ch.getReturnCode()
+        if retcode != 0:
+            errmsg = self.ch.getErrorString()
+            self.logdispatcher.log(LogPriority.DEBUG, errmsg)
+            enabled = False
         else:
-            return False
+            if not self.auditService(service):
+                enabled = False
+
+        if enabled:
+            self.logdispatcher.log(LogPriority.DEBUG, "Successfully enabled service: " + service)
+
+        return enabled
 
     def auditService(self, service, **kwargs):
-        '''
-        Checks the status of a service and returns a bool indicating whether or
-        not the service is configured to run or not.
+        """
+        Checks all /etc/rc*.d/ directories for the "S" (start) service entry
+        in updaterc, if an "S" entry with the service name exists in any of the rc*.d/
+        directories, it means that the service is scheduled to start at boot
 
-        @param string: Name of the service to audit
-        @return: Bool, True if the service is configured to run
-        '''
-        self.logdispatcher.log(LogPriority.DEBUG,
-                               'SHupdaterc.auditservice ' + service)
-        running = False
-        sklist = []
-        for rcdir in ['/etc/rc2.d', '/etc/rc3.d', '/etc/rc4.d', '/etc/rc5.d']:
-            sklist = sklist + os.listdir(rcdir)
-        for entry in sklist:
-            if re.search('S..' + service + '$', entry):
-                running = True
-        self.logdispatcher.log(LogPriority.DEBUG,
-                               'SHupdaterc.auditservice ' + service + ' ' +
-                               str(running))
-        return running
+        @param service: string; name of service
+        @param kwargs: dict; dictionary of key-value arguments
+        @return: enabled
+        @rtype: bool
+        @author: ???
+        """
+
+        enabled = False
+
+        self.logdispatcher.log(LogPriority.DEBUG, "Checking if service: " + service + " is enabled")
+
+        self.ch.executeCommand("ls -l /etc/rc*.d/")
+        if self.ch.findInOutput("S[0-9]+" + service):
+            enabled = True
+
+        if enabled:
+            self.logdispatcher.log(LogPriority.DEBUG, "Service: " + service + " is enabled")
+        else:
+            self.logdispatcher.log(LogPriority.DEBUG, "Service: " + service + " is disabled")
+
+        return enabled
 
     def isRunning(self, service, **kwargs):
-        '''
+        """
         Check to see if a service is currently running.
 
-        @param sting: Name of the service to check
-        @return: bool, True if the service is already running
-        '''
-        self.logdispatcher.log(LogPriority.DEBUG,
-                               'SHupdaterc.isrunning ' + service)
+        @param service: string; name of service
+        @param kwargs: dict; dictionary of key-value arguments
+        @return: enabled
+        @rtype: bool
+        @author: ???
+        """
+
         running = False
-        chk = subprocess.Popen(self.svc + service + ' status',
-                               stdout=subprocess.PIPE,
-                               stderr=subprocess.PIPE, shell=True,
-                               close_fds=True)
-        # wait() can be a risky call, but in this case, the service command
-        # will almost never output more than a few lines
-        chk.wait()
-        message = chk.stdout.readlines()
-        # some services don't return any output (sysstat) so we call audit
-        if len(message) == 0:
-            running = self.auditService(service)
-        for line in message:
-            if re.search('running', line) and chk.returncode == 0:
-                running = True
-        self.logdispatcher.log(LogPriority.DEBUG,
-                               'SHupdaterc.isrunning ' + service + ' ' +
-                               str(running))
+
+        self.logdispatcher.log(LogPriority.DEBUG, "Checking if service: " + service + " is running")
+
+        self.ch.executeCommand(self.svc + "--status-all")
+        if self.ch.findInOutput("\[\s+\+\s+\]\s+" + service):
+            running = True
+
+        if running:
+            self.logdispatcher.log(LogPriority.DEBUG, "Service: " + service + " IS running")
+        else:
+            self.logdispatcher.log(LogPriority.DEBUG, "Service: " + service + " is NOT running")
+
         return running
 
     def reloadService(self, service, **kwargs):
-        '''
+        """
         Reload (HUP) a service so that it re-reads it's config files. Called
         by rules that are configuring a service to make the new configuration
         active.
 
-        @param string: Name of the service to reload
-        @return: bool indicating success status
-        '''
-        self.logdispatcher.log(LogPriority.DEBUG,
-                               'SHupdaterc.reload ' + service)
-        if not os.path.exists('/etc/init.d/' + service):
-            return False
-        if not self.environment.getinstallmode():
-            ret = subprocess.call(self.svc + service + ' reload',
-                                  shell=True, close_fds=True,
-                                  stdout=subprocess.PIPE,
-                                  stderr=subprocess.PIPE)
-            self.logdispatcher.log(LogPriority.DEBUG,
-                                   'SHupdaterc.reload ' + service + str(ret))
-            if ret != 0:
-                return False
-            else:
-                return True
+        @param service: string; name of service
+        @param kwargs: dict; dictionary of key-value arguments
+        @return: enabled
+        @rtype: bool
+        @author: ???
+        """
+
+        reloaded = True
+
+        self.logdispatcher.log(LogPriority.DEBUG, "Reloading service: " + service)
+
+        self.ch.executeCommand(self.svc + service + " stop")
+        self.ch.executeCommand(self.svc + service + " start")
+        retcode = self.ch.getReturnCode()
+        if retcode != 0:
+            reloaded = False
+            errmsg = self.ch.getErrorString()
+            self.logdispatcher.log(LogPriority.DEBUG, errmsg)
+        else:
+            if not self.isRunning(service):
+                reloaded = False
+                self.logdispatcher.log(LogPriority.DEBUG, "Failed to reload service: " + service)
+
+        return reloaded
 
     def listServices(self, **kwargs):
-        '''
+        """
         Return a list containing strings that are service names.
 
-        @return: list
-        '''
-        self.logdispatcher.log(LogPriority.DEBUG,
-                               'SHupdaterc.listservices')
-        svclist = os.listdir('/etc/init.d/')
-        metafiles = ['README', 'skeleton', 'rc', 'rcS']
-        # This list comprehension will filter out filenames listed
-        # in metafiles.
-        svclist = [service for service in svclist if service not in metafiles]
-        self.logdispatcher.log(LogPriority.DEBUG,
-                               'SHupdaterc.listservices ' + str(svclist))
-        return svclist
+        @param kwargs: dict; dictionary of key-value arguments
+        @return: enabled
+        @rtype: bool
+        @author: ???
+        """
+
+        services = []
+
+        self.logdispatcher.log(LogPriority.DEBUG, "Fetching list of services")
+
+        self.ch.executeCommand(self.svc + "--status-all")
+        output = self.ch.getOutput()
+        for line in output:
+            if re.search("^\[", line):
+                try:
+                    services.append(line.split("]")[1].strip())
+                except (IndexError, AttributeError):
+                    continue
+
+        return services
 
     def getStartCommand(self, service):
-        '''
+        """
         retrieve the start command.  Mostly used by event recording
         @return: string - start command
-        @author: dwalker
-        '''
+        @author: Derek Walker
+        """
         return self.svc + service + ' start'
 
     def getStopCommand(self, service):
-        '''
+        """
         retrieve the stop command.  Mostly used by event recording
         @return: string - stop command
-        @author: dwalker
-        '''
+        @author: Derek Walker
+        """
         return self.svc + service + ' stop'
 
     def getEnableCommand(self, service):
-        '''
+        """
         retrieve the enable command.  Mostly used by event recording
         @return: string - enable command
-        @author: dwalker
-        '''
-        return self.cmd + service + ' defaults'
+        @author: Derek Walker
+        """
+        return self.updaterc + service + ' enable'
 
     def getDisableCommand(self, service):
-        '''
+        """
         retrieve the start command.  Mostly used by event recording
         @return: string - disable command
-        @author: dwalker
-        '''
-        return self.cmd + '-f ' + service + ' remove'
+        @author: Derek Walker
+        """
+        return self.updaterc + service + ' disable'
