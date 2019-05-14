@@ -367,6 +367,8 @@ class SoftwareBuilder():
                             self.STONIX4MACICON, self.tmphome + "/src/MacBuild/" + \
                             self.STONIX4MAC)
 
+            self.postCompile(self.STONIX4MAC, self.tmphome + "/src/MacBuild/")
+
             #####
             # Create the installer
             self.makeInstaller(self.STONIX4MAC, self.STONIXVERSION, self.tmphome + \
@@ -653,7 +655,7 @@ class SoftwareBuilder():
                 self.logger.log(lp.DEBUG, "Starting stonix postCompile.")
                 returnDir = os.getcwd()
                 os.chdir(prepPath)
-                plist = self.tmphome + "/src/MacBuild/stonix" + "/dist/" + appName + ".app/Contents/Info.plist"
+                plist = self.tmphome + "/src/MacBuild/stonix/dist/" + appName + ".app/Contents/Info.plist"
 
                 # Change version string of the app
                 print "Changing .app version string..."
@@ -673,14 +675,14 @@ class SoftwareBuilder():
                 #####
                 # Copy the stonix_resources directory into the
                 # stonix.app/Contents/MacOS directory
-                rsync = [self.RSYNC, "-avp", "--exclude=\".svn\"",
-                         "--exclude=\"*.tar.gz\"", "--exclude=\"*.dmg\"",
-                         "--exclude=\".git*\"", self.tmphome + \
-                         "/src/stonix_resources",
-                         self.tmphome + "/src/MacBuild/stonix" + "/dist/" + \
-                         appName + ".app/Contents/MacOS"]
-                output = Popen(rsync, stdout=PIPE, stderr=STDOUT).communicate()[0]
-                print output
+                #rsync = [self.RSYNC, "-avp", "--exclude=\".svn\"",
+                #         "--exclude=\"*.tar.gz\"", "--exclude=\"*.dmg\"",
+                #         "--exclude=\".git*\"", self.tmphome + \
+                #         "/src/stonix_resources",
+                #         self.tmphome + "/src/MacBuild/stonix" + "/dist/" + \
+                #         appName + ".app/Contents/MacOS"]
+                #output = Popen(rsync, stdout=PIPE, stderr=STDOUT).communicate()[0]
+                #print output
                 self.libc.sync()
                 self.libc.sync()
                 #####
@@ -692,15 +694,83 @@ class SoftwareBuilder():
                 output = Popen(rsync, stdout=PIPE, stderr=STDOUT).communicate()[0]
                 print output
                 self.libc.sync()
+
             elif appName == 'stonix4mac':
                 self.logger.log(lp.DEBUG, "Starting stonix4mac postCompile.")
                 os.chdir(self.tmphome + "/src/MacBuild/stonix4mac/build/Release")
+
+                #####
+                # Optional codesign
+                self.libc.sync()
+                self.libc.sync()
+                if self.doCodesign and self.signature:
+                    # Sign stonix app
+                    self.signObject(self.tmphome + '/src/Macbuild/stonix4mac',
+                                    self.tmphome + '/src/Macbuild/stonix4mac/build/Release/stonix4mac.app/Contents/Resources',
+                                    'stonix.app')
+
+                    # Sign stonix4mac app
+                    self.signObject(self.tmphome + '/src/Macbuild/stonix4mac',
+                                    self.tmphome + '/src/Macbuild/stonix4mac/build/Release',
+                                    appName + '.app' )
+
 
             os.chdir(returnDir)
         except Exception:
             raise
         print "buildStonix4MacAppResources Finished..."
 
+    def signObject(self, workingDir, objectParentDir, objectName):
+        '''
+        Uses xcodebuild to sign a file or bundle.
+
+        @param workingDir: The working directory that the process will take place
+        @param objectParentDir: The directory that contains the object to be signed
+        @param objectName: The name of the object to be signed
+
+        @author: Brandon R. Gonzales
+        '''
+        self.logger.log(lp.DEBUG, "\n##################################################")
+        self.logger.log(lp.DEBUG, "##################################################")
+        self.logger.log(lp.DEBUG, "Signing \'" + os.path.join(objectParentDir, objectName) + "\'!")
+        self.logger.log(lp.DEBUG, "##################################################")
+        self.logger.log(lp.DEBUG, "##################################################")
+        os.chdir(workingDir)
+        print workingDir
+
+        #####
+        # Perform a codesigning on the stonix4mac application
+        cmd = [self.tmphome + '/src/MacBuild/xcodebuild.py',
+               '--psd', objectParentDir,
+               '-c',
+               '--tmpenc', self.ordPass, '-u', self.keyuser,
+               '-i', objectName,
+               '-d',
+               '-v', self.codesignVerbose,
+               '-s', '"' + self.signature + '"',
+               '--keychain', self.keychain]
+
+        self.logger.log(lp.DEBUG, '.')
+        self.logger.log(lp.DEBUG, '.')
+        self.logger.log(lp.DEBUG, "Working dir: " + workingDir)
+        self.logger.log(lp.DEBUG, '.')
+        self.logger.log(lp.DEBUG, '.')
+
+        #####
+        # Run the xcodebuild script to codesign the mac installer package
+        self.rw.setCommand(cmd)
+        output, error, retcode = self.rw.liftDown(self.keyuser, workingDir)
+        # output, error, retcode = self.rw.communicate()
+        self.logger.log(lp.DEBUG, "Codesign returns: " + str(retcode))
+        for line in output.split('\n'):
+            self.logger.log(lp.DEBUG, line)
+        for line in error.split('\n'):
+            self.logger.log(lp.DEBUG, line)
+
+        self.libc.sync()
+        sleep(1)
+        self.libc.sync()
+        sleep(3)
 
     def makeInstaller(self, appName, appVersion, appPath):
         '''
@@ -719,54 +789,6 @@ class SoftwareBuilder():
         try:
             returnDir = os.getcwd()
             os.chdir(appPath + "/" + appName)
-
-            #####
-            # Optional codesign
-            self.libc.sync()
-            self.libc.sync()
-            if self.doCodesign and self.signature:
-                self.logger.log(lp.DEBUG, "#########################")
-                self.logger.log(lp.DEBUG, "#########################")
-                self.logger.log(lp.DEBUG, "Proceeding with signing!")
-                self.logger.log(lp.DEBUG, "#########################")
-                self.logger.log(lp.DEBUG, "#########################")
-                os.chdir(self.tmphome + '/src/Macbuild/stonix4mac')
-                buildDir = os.getcwd()
-                print buildDir
-
-                #####
-                # Perform a codesigning on the stonix4mac application
-                cmd = [self.tmphome + '/src/MacBuild/xcodebuild.py',
-                       '--psd', self.tmphome + '/src/MacBuild/stonix4mac/build/Release',
-                       '-c',
-                       '--tmpenc', self.ordPass, '-u', self.keyuser,
-                       '-i', appName + '.app',
-                       '-d',
-                       '-v', self.codesignVerbose,
-                       '-s', '"' + self.signature + '"',
-                       '--keychain', self.keychain]
-
-                self.logger.log(lp.DEBUG, '.')
-                self.logger.log(lp.DEBUG, '.')
-                self.logger.log(lp.DEBUG, "Working dir: " + buildDir)
-                self.logger.log(lp.DEBUG, '.')
-                self.logger.log(lp.DEBUG, '.')
-
-                #####
-                # Run the xcodebuild script to codesign the mac installer package
-                self.rw.setCommand(cmd)
-                output, error, retcode = self.rw.liftDown(self.keyuser, buildDir)
-                # output, error, retcode = self.rw.communicate()
-                self.logger.log(lp.DEBUG, "Codesign returns: " + str(retcode))
-                for line in output.split('\n'):
-                    self.logger.log(lp.DEBUG, line)
-                for line in error.split('\n'):
-                    self.logger.log(lp.DEBUG, line)
-
-                self.libc.sync()
-                sleep(1)
-                self.libc.sync()
-                sleep(3)
 
             #####
             # Processing makefile to create a package
@@ -826,6 +848,8 @@ class SoftwareBuilder():
             # Run the xcodebuild script to codesign the mac installer package
             self.rw.setCommand(cmd)
             # output, error, retcode = self.rw.communicate()
+            buildDir = os.getcwd()
+            print buildDir
             output, error, retcode = self.rw.liftDown(self.keyuser, buildDir)
             for line in output.split('\n'):
                 self.logger.log(lp.DEBUG, line)
