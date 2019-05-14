@@ -478,7 +478,7 @@ class MacBuildLib(object):
                 cmd += ['-' + verbose]
             if deep:
                 cmd += ['--deep']
-            cmd += ['-f', '-s', sig, '--keychain', signingKeychain, itemName]
+            cmd += ['--force', '--timestamp', '--options=runtime', '--sign', sig, '--keychain', signingKeychain, itemName]
             self.logger.log(lp.DEBUG, "================================================================================")
             self.logger.log(lp.DEBUG, "CWD: " + str(os.getcwd()))
             self.logger.log(lp.DEBUG, "Command: " + str(cmd))
@@ -535,7 +535,7 @@ class MacBuildLib(object):
             #####
             # Build the codesign command
             cmd = ['/usr/bin/productsign']
-            cmd += ['--sign', sig, '--keychain', signingKeychain, itemName, newPkgName]
+            cmd += ['--timestamp', '--sign', sig, '--keychain', signingKeychain, itemName, newPkgName]
             self.logger.log(lp.DEBUG, "================================================================================")
             self.logger.log(lp.DEBUG, "CWD: " + str(os.getcwd()))
             self.logger.log(lp.DEBUG, "Command: " + str(cmd))
