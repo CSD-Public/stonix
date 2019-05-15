@@ -58,15 +58,16 @@ from ..stonixutilityfunctions import getlocalfs
 
 
 class FilePermissions(Rule):
-    '''
-    This class audits world
+    '''This class audits world
     writable files, world writable folders, SUID/SGID programs and files
     without known owners. Where world writable folders are detected it will
     (in fix mode) attempt to set the sticky bit if it is not presently set and
     will remove the world write bit from files in the root users path.
     Otherwise this class is an audit only rule.
-
+    
     @author: dkennel
+
+
     '''
 
     def __init__(self, config, environ, logger, statechglogger):
@@ -174,26 +175,28 @@ value of FIXROOTOWNERSHIP to False. The affected directories are: /bin, \
         self.sethelptext()
 
     def processconfig(self):
-        """
-        This is primarily a private method but may be called if the
+        '''This is primarily a private method but may be called if the
         configuration has changed after the rules have been instantiated. This
         method will cause the rule to process its entries from the
         configuration file object and instantiate its dependent
         configuration item objects. Instantiated configuration items will be
         added to the self.confitems property.
 
-        @return void :
+
+        :returns: void :
         @author dkennel
-        """
+
+        '''
         pass
 
     def getfilesystems(self):
-        '''
-        This method, intended for private internal use only, gets all of the
+        '''This method, intended for private internal use only, gets all of the
         local filesystems and returns them as a list.
 
-        @return: list of filesystems
+
+        :returns: list of filesystems
         @author: dkennel
+
         '''
         try:
             fslist = getlocalfs(self.logger, self.environ)
@@ -210,13 +213,14 @@ value of FIXROOTOWNERSHIP to False. The affected directories are: /bin, \
         return fslist
 
     def multifind(self):
-        '''
-        Private method that runs the find command on the file system to create
+        '''Private method that runs the find command on the file system to create
         lists of world writable, suid/sgid, and unowned files. The invocation
         of the find shell command is a bit complex to do all of this in one
         shot.
-
+        
         @author: dkennel
+
+
         '''
 
         try:
@@ -397,6 +401,8 @@ value of FIXROOTOWNERSHIP to False. The affected directories are: /bin, \
     def wwreport(self):
         '''Public method to report on installed WorldWritable files.
         @author: dkennel
+
+
         '''
         # workflow is as follows
         # move previous run to wwlast
@@ -609,6 +615,8 @@ find / -xdev -type f \( -perm -0002 -a ! -perm -1000 \) -print'''
         '''Public method to report on group-writable and non-root owned files
         in lib and bin directories.
         @author: eball
+
+
         '''
         compliant = False
         locationList = ["/lib", "/lib64", "/usr/lib", "/usr/lib64",
@@ -704,6 +712,8 @@ find / -xdev -type f \( -perm -0002 -a ! -perm -1000 \) -print'''
     def suidreport(self):
         '''Private method to report on installed SUID/SGID files.
         @author: dkennel
+
+
         '''
         # workflow is as follows
         # compare current run to last and origin.
@@ -1060,6 +1070,8 @@ find / -xdev \( -perm -04000 -o -perm -02000 \) -print
     def noownersreport(self):
         '''Private method to report on files without owners.
         @author: dkennel
+
+
         '''
         compliant = False
         try:
@@ -1148,16 +1160,17 @@ find / -xdev \( -nouser -o -nogroup \) -print
         return compliant
 
     def rpmcheck(self, path):
-        '''
-        The rpmcheck method is a private method intended to check the status of
+        '''The rpmcheck method is a private method intended to check the status of
         the program at the passed path in the rpm database. If the file was
         found in the RPM database but the mode has changed we return 0. If the
         file was found and the mode has not changed we return 1. If the file
         was not found we return 3. If the system does not use RPM then we
         return 4. If something weird happens we return 5.
 
-        @return: int
+        :param path: 
+        :returns: int
         @author: dkennel
+
         '''
         path = path.strip()
         if not os.path.exists('/bin/rpm'):
@@ -1193,16 +1206,17 @@ find / -xdev \( -nouser -o -nogroup \) -print
             return 5
 
     def report(self):
-        '''
-        Public report method for the FilePermissions rule. This method will
+        '''Public report method for the FilePermissions rule. This method will
         invoke the multifind and then call the report routines that examine
         the status of World Writable files, SUID/SGID files and files without
         known owners. This rule because of the length of time it takes to do
         the full filesystem scan sets a bool at self.hasrunalready after
         completing the report method. This prevents the scan from being invoked
         repeatedly by the controller logic.
-
+        
         @author: dkennel
+
+
         '''
 
         self.detailedresults = ''
@@ -1271,13 +1285,14 @@ has been called a second time. The previous results are displayed. '''
         return self.compliant
 
     def fix(self):
-        """
-        The fix method will apply the sticky bit to all world writable
+        '''The fix method will apply the sticky bit to all world writable
         directories.
         self.rulesuccess will be updated if the rule does not succeed.
-
+        
         @author dkennel
-        """
+
+
+        '''
 
         # UPDATE THIS SECTION IF YOU CHANGE THE CONSTANTS BEING USED IN THE RULE
         constlist = [SITELOCALWWWDIRS]

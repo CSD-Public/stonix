@@ -25,31 +25,32 @@ from lib.loggers import LogPriority as lp
 
 
 class DsclError(Exception):
-    """
-    Meant for being thrown when an action/class being run/instanciated is not
+    '''Meant for being thrown when an action/class being run/instanciated is not
     applicable for the running operating system.
-
+    
     @author: Roy Nielsen
-    """
+
+
+    '''
     def __init__(self, *args, **kwargs):
         Exception.__init__(self, *args, **kwargs)
 
 
 class CreateHomeDirError(Exception):
-    """
-    Meant for being thrown when an action/class being run/instanciated is not
+    '''Meant for being thrown when an action/class being run/instanciated is not
     applicable for the running operating system.
-
+    
     @author: Roy Nielsen
-    """
+
+
+    '''
     def __init__(self, *args, **kwargs):
         Exception.__init__(self, *args, **kwargs)
 
 
 class MacOSUser(ParentManageUser):
-    """
-    Class to manage users on Mac OS.
-
+    '''Class to manage users on Mac OS.
+    
     #----- Getters
     @method findUniqueUid
     @method uidTaken
@@ -78,9 +79,11 @@ class MacOSUser(ParentManageUser):
     @method rmUser
     @method rmUserFromGroup
     @method rmUserHome
-
+    
     @author: Roy Nielsen
-    """
+
+
+    '''
     def __init__(self, **kwargs):
         """
         Variables that can be passed in:
@@ -106,13 +109,14 @@ class MacOSUser(ParentManageUser):
     #----------------------------------------------------------------------
 
     def findUniqueUid(self):
-        """
-        We need to make sure to find an unused uid (unique ID) for the user,
+        '''We need to make sure to find an unused uid (unique ID) for the user,
            $ dscl . -list /Users UniqueID
         will list all the existing users, an unused number above 500 is good.
-
+        
         @author: Roy Nielsen
-        """
+
+
+        '''
         success = False
         maxUserID = 0
         newUserID = 0
@@ -132,12 +136,14 @@ class MacOSUser(ParentManageUser):
     #----------------------------------------------------------------------
 
     def uidTaken(self, uid):
-        """
-        See if the UID requested has been taken.  Only approve uid's over 1k
+        '''See if the UID requested has been taken.  Only approve uid's over 1k
            $ dscl . -list /Users UniqueID
-
+        
         @author: Roy Nielsen
-        """
+
+        :param uid: 
+
+        '''
         uidList = []
         success = False
         userList = self.getDscl(".", "-list", "/Users", "UniqueID")
@@ -156,8 +162,11 @@ class MacOSUser(ParentManageUser):
     #----------------------------------------------------------------------
 
     def getUser(self, userName=""):
-        """
-        """
+        '''
+
+        :param userName:  (Default value = "")
+
+        '''
         userInfo = False
         if self.isSaneUserName(userName):
             output = self.getDscl(".", "read", "/Users/" + str(userName), "RecordName")
@@ -175,8 +184,11 @@ class MacOSUser(ParentManageUser):
     #----------------------------------------------------------------------
 
     def getUserShell(self, userName=""):
-        """
-        """
+        '''
+
+        :param userName:  (Default value = "")
+
+        '''
         userShell = False
         if self.isSaneUserName(userName):
             output = self.getDscl(".", "read", "/Users/" + str(userName), "UserShell")
@@ -194,8 +206,11 @@ class MacOSUser(ParentManageUser):
     #----------------------------------------------------------------------
 
     def getUserComment(self, userName=""):
-        """
-        """
+        '''
+
+        :param userName:  (Default value = "")
+
+        '''
         userComment = False
         if self.isSaneUserName(userName):
             #####
@@ -216,8 +231,11 @@ class MacOSUser(ParentManageUser):
     #----------------------------------------------------------------------
 
     def getUserUid(self, userName=""):
-        """
-        """
+        '''
+
+        :param userName:  (Default value = "")
+
+        '''
         userUid = False
         if self.isSaneUserName(userName):
             output = self.getDscl(".", "read", "/Users/" + str(userName), "UniqueID")
@@ -237,8 +255,11 @@ class MacOSUser(ParentManageUser):
     #----------------------------------------------------------------------
 
     def getUserPriGid(self, userName=""):
-        """
-        """
+        '''
+
+        :param userName:  (Default value = "")
+
+        '''
         userPriGid = False
         if self.isSaneUserName(userName):
             output = self.getDscl(".", "read", "/Users/" + str(userName), "PrimaryGroupID")
@@ -258,8 +279,11 @@ class MacOSUser(ParentManageUser):
     #----------------------------------------------------------------------
 
     def getUserHomeDir(self, userName=""):
-        """
-        """
+        '''
+
+        :param userName:  (Default value = "")
+
+        '''
         userHomeDir = False
         if self.isSaneUserName(userName):
             output = self.getDscl(".", "read", "/Users/" + str(userName), "NFSHomeDirectory")
@@ -279,11 +303,13 @@ class MacOSUser(ParentManageUser):
     #----------------------------------------------------------------------
 
     def isUserInstalled(self, user=""):
-        """
-        Check if the user "user" is installed
-
+        '''Check if the user "user" is installed
+        
         @author Roy Nielsen
-        """
+
+        :param user:  (Default value = "")
+
+        '''
         success = False
         if self.isSaneUserName(user):
             cmd = [self.dscl, ".", "-read", "/Users/" + str(user)]
@@ -299,11 +325,14 @@ class MacOSUser(ParentManageUser):
     #----------------------------------------------------------------------
 
     def isUserInGroup(self, userName="", groupName=""):
-        """
-        Check if this user is in this group
+        '''Check if this user is in this group
         
         @author: Roy Nielsen
-        """
+
+        :param userName:  (Default value = "")
+        :param groupName:  (Default value = "")
+
+        '''
         self.logger.log(lp.DEBUG, "U: " + str(userName))
         self.logger.log(lp.DEBUG, "G: " + str(groupName))
         
@@ -322,12 +351,19 @@ class MacOSUser(ParentManageUser):
 
     def validateUser(self, userName=False, userShell=False, userComment=False,
                      userUid=False, userPriGid=False, userHomeDir=False):
-        """
-        Future functionality... validate that the passed in parameters to the
+        '''Future functionality... validate that the passed in parameters to the
         class instanciation match.
-
+        
         @author:
-        """
+
+        :param userName:  (Default value = False)
+        :param userShell:  (Default value = False)
+        :param userComment:  (Default value = False)
+        :param userUid:  (Default value = False)
+        :param userPriGid:  (Default value = False)
+        :param userHomeDir:  (Default value = False)
+
+        '''
         sane = False
         #####
         # Look up all user attributes and check that they are accurate.
@@ -376,14 +412,12 @@ class MacOSUser(ParentManageUser):
         return sane
 
     def authenticate(self, user="", password=""):
-        """
-        Open a pty to run "su" to see if the password is correct...
+        '''Open a pty to run "su" to see if the password is correct...
 
-        @param: user - name of a user to check
-        @param: password - to check if the password is correct for this user
+        :param user:  (Default value = "")
+        :param password:  (Default value = "")
 
-        @author: Roy Nielsen
-        """
+        '''
         authenticated = False
 
         if not self.isSaneUserName(user) or \
@@ -440,17 +474,20 @@ class MacOSUser(ParentManageUser):
     #----------------------------------------------------------------------
 
     def createStandardUser(self, userName, password):
-        """
-        Creates a user that has the "next" uid in line to be used, then puts
+        '''Creates a user that has the "next" uid in line to be used, then puts
         in in a group of the same id.  Uses /bin/bash as the standard shell.
         The userComment is left empty.  Primary use is managing a user
         during test automation, when requiring a "user" context.
-
+        
         It does not set a login keychain password as that is created on first
         login to the GUI.
-
+        
         @author: Roy Nielsen
-        """
+
+        :param userName: 
+        :param password: 
+
+        '''
         self.createBasicUser(userName)
         newUserID = self.findUniqueUid()
         newUserGID = newUserID
@@ -466,16 +503,18 @@ class MacOSUser(ParentManageUser):
     #----------------------------------------------------------------------
 
     def createBasicUser(self, userName=""):
-        """
-        Create a username with just a moniker.  Allow the system to take care of
+        '''Create a username with just a moniker.  Allow the system to take care of
         the rest.
-
+        
         Only allow usernames with letters and numbers.
-
+        
         On the MacOS platform, all other steps must also be done.
-
+        
         @author: Roy Nielsen
-        """
+
+        :param userName:  (Default value = "")
+
+        '''
         success = False
         reterr = ""
         if isinstance(userName, basestring)\
@@ -495,11 +534,14 @@ class MacOSUser(ParentManageUser):
     #----------------------------------------------------------------------
 
     def setUserShell(self, user="", shell=""):
-        """
-        dscl . -create /Users/luser UserShell /bin/bash
-
+        '''dscl . -create /Users/luser UserShell /bin/bash
+        
         @author: Roy Nielsen
-        """
+
+        :param user:  (Default value = "")
+        :param shell:  (Default value = "")
+
+        '''
         success = False
         if self.isSaneUserName(user) and self.isSaneUserShell(shell):
             isSetDSL = self.setDscl(".", "-create", "/Users/" + str(user),
@@ -512,11 +554,14 @@ class MacOSUser(ParentManageUser):
     #----------------------------------------------------------------------
 
     def setUserComment(self, user="", comment=""):
-        """
-        dscl . -create /Users/luser RealName "Real A. Name"
-
+        '''dscl . -create /Users/luser RealName "Real A. Name"
+        
         @author: Roy Nielsen
-        """
+
+        :param user:  (Default value = "")
+        :param comment:  (Default value = "")
+
+        '''
         success = False
 
         if self.isSaneUserName(user) and comment:
@@ -530,11 +575,14 @@ class MacOSUser(ParentManageUser):
     #----------------------------------------------------------------------
 
     def setUserUid(self, user="", uid=""):
-        """
-        dscl . -create /Users/luser UniqueID "503"
-
+        '''dscl . -create /Users/luser UniqueID "503"
+        
         @author: Roy Nielsen
-        """
+
+        :param user:  (Default value = "")
+        :param uid:  (Default value = "")
+
+        '''
         success = False
 
         if self.isSaneUserName(user) and uid:
@@ -549,11 +597,14 @@ class MacOSUser(ParentManageUser):
     #----------------------------------------------------------------------
 
     def setUserPriGid(self, user="", priGid=""):
-        """
-        dscl . -create /Users/luser PrimaryGroupID 20
-
+        '''dscl . -create /Users/luser PrimaryGroupID 20
+        
         @author: Roy Nielsen
-        """
+
+        :param user:  (Default value = "")
+        :param priGid:  (Default value = "")
+
+        '''
         success = False
 
         if self.isSaneUserName(user) and priGid:
@@ -568,17 +619,20 @@ class MacOSUser(ParentManageUser):
     #----------------------------------------------------------------------
 
     def setUserHomeDir(self, user="", userHome=""):
-        """
-        Create a "local" home directory
-
+        '''Create a "local" home directory
+        
         dscl . -create /Users/luser NFSHomeDirectory /Users/luser
-
+        
         better yet:
-
+        
         createhomedir -l -u <username>
-
+        
         @author: Roy Nielsen
-        """
+
+        :param user:  (Default value = "")
+        :param userHome:  (Default value = "")
+
+        '''
         success = False
         #####
         # Creating a non-standard userHome is not currently permitted
@@ -594,14 +648,16 @@ class MacOSUser(ParentManageUser):
     #----------------------------------------------------------------------
 
     def createHomeDirectory(self, user=""):
-        """
-        createhomedir -c -u luser
-
+        '''createhomedir -c -u luser
+        
         This should use the system "User Template" for standard system user
         settings.
-
+        
         @author: Roy Nielsen
-        """
+
+        :param user:  (Default value = "")
+
+        '''
         success = False
         reterr = ""
         if user:
@@ -620,11 +676,14 @@ class MacOSUser(ParentManageUser):
     #----------------------------------------------------------------------
 
     def addUserToGroup(self, user="", group=""):
-        """
-        dscl . -append /Groups/admin GroupMembership luser
-
+        '''dscl . -append /Groups/admin GroupMembership luser
+        
         @author: Roy Nielsen
-        """
+
+        :param user:  (Default value = "")
+        :param group:  (Default value = "")
+
+        '''
         success = False
 
         if self.isSaneUserName(user) and self.isSaneGroupName(group):
@@ -638,13 +697,17 @@ class MacOSUser(ParentManageUser):
     #----------------------------------------------------------------------
 
     def setUserPassword(self, user="", password="", oldPassword=""):
-        """
-        dscl . -passwd /Users/luser password
+        '''dscl . -passwd /Users/luser password
         -- or --
         dscl . -passwd /Users/luser oldPassword password
-
+        
         @author: Roy Nielsen
-        """
+
+        :param user:  (Default value = "")
+        :param password:  (Default value = "")
+        :param oldPassword:  (Default value = "")
+
+        '''
         success = False
 
         if self.isSaneUserName(user):
@@ -668,13 +731,15 @@ class MacOSUser(ParentManageUser):
     #----------------------------------------------------------------------
 
     def fixUserHome(self, userName=""):
-        """
-        Get the user information from the local directory and fix the user
+        '''Get the user information from the local directory and fix the user
         ownership and group of the user's home directory to reflect
         what is in the local directory service.
-
+        
         @author: Roy Nielsen
-        """
+
+        :param userName:  (Default value = "")
+
+        '''
         success = False
         if self.isSaneUserName(userName):
             #####
@@ -710,11 +775,13 @@ class MacOSUser(ParentManageUser):
     #----------------------------------------------------------------------
 
     def rmUser(self, user=""):
-        """
-        dscl . delete /Users/<user>
-
+        '''dscl . delete /Users/<user>
+        
         @author: Roy Nielsen
-        """
+
+        :param user:  (Default value = "")
+
+        '''
         success = False
 
         if self.isSaneUserName(user):
@@ -734,13 +801,15 @@ class MacOSUser(ParentManageUser):
     #----------------------------------------------------------------------
 
     def rmUserHome(self, user=""):
-        """
-        Remove the user home... right now only default location, but should
+        '''Remove the user home... right now only default location, but should
         look up the user home in the directory service and remove that
         specifically.
-
+        
         @author: Roy Nielsen
-        """
+
+        :param user:  (Default value = "")
+
+        '''
         success = False
         if self.isSaneUserName(user):
 
@@ -765,8 +834,12 @@ class MacOSUser(ParentManageUser):
     #----------------------------------------------------------------------
 
     def rmUserFromGroup(self, user="", group=""):
-        """
-        """
+        '''
+
+        :param user:  (Default value = "")
+        :param group:  (Default value = "")
+
+        '''
         success = False
 
         if self.isSaneUserName(user) and self.isSaneGroupName(group):
@@ -782,11 +855,17 @@ class MacOSUser(ParentManageUser):
     #----------------------------------------------------------------------
 
     def setDscl(self, directory=".", action="", object="", property="", value=""):
-        """
-        Using dscl to set a value in a directory...
-
+        '''Using dscl to set a value in a directory...
+        
         @author: Roy Nielsen
-        """
+
+        :param directory:  (Default value = ".")
+        :param action:  (Default value = "")
+        :param object:  (Default value = "")
+        :param property:  (Default value = "")
+        :param value:  (Default value = "")
+
+        '''
         success = False
         reterr = ""
         retval = ""
@@ -824,11 +903,16 @@ class MacOSUser(ParentManageUser):
     #----------------------------------------------------------------------
 
     def getDscl(self, directory="", action="", dirobj="", dirprop=""):
-        """
-        Using dscl to retrieve a value from the directory
-
+        '''Using dscl to retrieve a value from the directory
+        
         @author: Roy Nielsen
-        """
+
+        :param directory:  (Default value = "")
+        :param action:  (Default value = "")
+        :param dirobj:  (Default value = "")
+        :param dirprop:  (Default value = "")
+
+        '''
         success = False
         reterr = ""
         retval = ""
@@ -871,11 +955,13 @@ class MacOSUser(ParentManageUser):
     #----------------------------------------------------------------------
 
     def isUserAnAdmin(self, userName=""):
-        """
-        Check if this user is in this group
+        '''Check if this user is in this group
         
         @author: Roy Nielsen
-        """
+
+        :param userName:  (Default value = "")
+
+        '''
         success = False
         if self.isSaneUserName(userName):
             success = self.isUserInGroup(userName, "admin")
@@ -884,10 +970,11 @@ class MacOSUser(ParentManageUser):
     #----------------------------------------------------------------------
 
     def acquireUserData(self):
-        """
-        Acquire user data for local user lookup information.
+        '''Acquire user data for local user lookup information.
         
         @author: Roy Nielsen
-        """
+
+
+        '''
         pass
         

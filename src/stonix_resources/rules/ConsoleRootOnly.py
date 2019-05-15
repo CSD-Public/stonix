@@ -44,10 +44,11 @@ import re
 
 
 class ConsoleRootOnly(Rule):
-    '''
-    This class will restrict access to the root log on to console only
-
+    '''This class will restrict access to the root log on to console only
+    
     @author: bemalmbe
+
+
     '''
 
     def __init__(self, config, environ, logger, statechglogger):
@@ -81,15 +82,16 @@ class ConsoleRootOnly(Rule):
 ###############################################################################
 
     def report(self):
-        '''
-        Report whether securetty is configured to only allow local console
+        '''Report whether securetty is configured to only allow local console
         log on for root
 
-        @return: bool
+
+        :returns: bool
         @author: bemalmbe
         @change: dwalker - implemented applicability for apt-get like systems,
             more in depth permission checks on files, more in depth checking
             of the file and the desired contents.
+
         '''
 
         try:
@@ -149,11 +151,12 @@ class ConsoleRootOnly(Rule):
 ###############################################################################
 
     def reportsolaris(self):
-        '''
-        because solaris has to be different
+        '''because solaris has to be different
 
-        @return bool
+
+        :returns: bool
         @author bemalmbe
+
         '''
 
         # set kve arguments for reportsolaris and fixsolaris
@@ -179,14 +182,15 @@ class ConsoleRootOnly(Rule):
 ###############################################################################
 
     def fix(self):
-        '''
-        Make config changes to securetty file (or sshd_config if solaris)
+        '''Make config changes to securetty file (or sshd_config if solaris)
         to ensure that root can only log in via local console
-
+        
         @author: bemalmbe
         @change: dwalker - implemented previous even deletion, more in depth
             file checking for appropriate contents along with writing any fixes
             to the file using methods found in stonixutiltyfunctions.py
+
+
         '''
 
         try:
@@ -282,10 +286,11 @@ class ConsoleRootOnly(Rule):
 ###############################################################################
 
     def fixsolaris(self):
-        '''
-        because solaris has to be different
-
+        '''because solaris has to be different
+        
         @author bemalmbe
+
+
         '''
 
         if not checkPerms(self.editor.getPath(), [0, 3, 420], self.logger):

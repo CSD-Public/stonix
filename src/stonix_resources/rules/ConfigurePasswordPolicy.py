@@ -37,10 +37,11 @@ from ..localize import FISMACAT
 
 
 class ConfigurePasswordPolicy(Rule):
-    '''
-    Deploy Passcode Policy configuration profiles for OS X Mavericks 10.9
+    '''Deploy Passcode Policy configuration profiles for OS X Mavericks 10.9
     & OS Yosemite 10.10. Profile files are installed using the following
     OS X command.
+
+
     '''
     def __init__(self, config, environ, logdispatch, statechglogger):
         '''
@@ -94,8 +95,7 @@ class ConfigurePasswordPolicy(Rule):
 ################################################################################################
 
     def report(self):
-        '''
-        first item in dictionary - identifier (multiple can exist)
+        '''first item in dictionary - identifier (multiple can exist)
         first item in second nested dictionary - key identifier within
             opening braces in output
         first item in nested list is the expected value after the = in
@@ -105,8 +105,10 @@ class ConfigurePasswordPolicy(Rule):
         third item in nested list (if int) is whether the allowable value
             is allowed to be more or less and still be ok
             "more", "less"
-
+        
         @author: Derek Walker
+
+
         '''
 
         self.compliant = True
@@ -167,14 +169,15 @@ class ConfigurePasswordPolicy(Rule):
 ###############################################################################
 
     def fix(self):
-        '''
-        Configure and install the password policy profile for Mac OS X
-
+        '''Configure and install the password policy profile for Mac OS X
+        
         @author: Derek Walker
         @change: 04/19/2018 - Breen Malmberg - added doc string; cleaned up redundant code;
                 added more logging; added in-line comments; removed dead-end logic paths which
                 blocked correct code from running at all (ever); corrected the return variable;
                 added detailedresults formatting if exiting method early due to CI not being set
+
+
         '''
 
         self.rulesuccess = True

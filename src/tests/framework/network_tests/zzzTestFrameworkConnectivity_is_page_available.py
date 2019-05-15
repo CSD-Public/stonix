@@ -31,9 +31,11 @@ from src.stonix_resources.environment import Environment
 
 
 def name_test_template(*args):
-    """
-    decorator for monkeypatching
-    """
+    '''decorator for monkeypatching
+
+    :param *args: 
+
+    '''
 
     def foo(self):
         self.assert_value(*args)
@@ -43,8 +45,7 @@ def name_test_template(*args):
 class test_Connectivity_is_page_available(unittest.TestCase):
 
     def setUp(self):
-        '''
-        '''
+        ''' '''
 
         self.environ = Environment()
         self.logdispatcher = LogDispatcher(self.environ)
@@ -52,6 +53,12 @@ class test_Connectivity_is_page_available(unittest.TestCase):
 
     def assert_value(self, expected, test_iteration, site, page):
         '''
+
+        :param expected: 
+        :param test_iteration: 
+        :param site: 
+        :param page: 
+
         '''
 
         if expected:

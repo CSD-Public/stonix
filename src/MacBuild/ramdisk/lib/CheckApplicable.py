@@ -34,12 +34,13 @@ from .loggers import LogPriority
 
 
 class CheckApplicable(object):
-    '''
-    This class uses either the passed in 'environment', or operating system
+    '''This class uses either the passed in 'environment', or operating system
     identifiation set by the caller to determine if a family or OS is
     applicable to the identified operating system id.  Also carries
     a FISMA level check as well as a user privilege level and version or
     version ranges.
+
+
     '''
     def __init__(self, environ, logger):
         self.logger = logger
@@ -53,12 +54,14 @@ class CheckApplicable(object):
         self.noroot = None
 
     def isApplicableValid(self, applicable):
-        """
-        Validate that the applicable dictionary has valid keys and valid value
+        '''Validate that the applicable dictionary has valid keys and valid value
         types.
-
+        
         @author: Roy Nielsen
-        """
+
+        :param applicable: 
+
+        '''
         success = False
         if isinstance(applicable, dict):
             keysSuccess = []
@@ -94,14 +97,13 @@ class CheckApplicable(object):
         return success
 
     def isApplicable(self, applicableDict={'default': 'default'}):
-        """
-        This method returns true if the rule applies to the platform on which
+        '''This method returns true if the rule applies to the platform on which
         stonix is currently running. The method in this template class will
         return true by default. The class property applicable will be
         referenced when this method is called and should be set by classes
         inheriting from the rule class including sub-template rules and
         concrete rule implementations.
-
+        
         The format for the applicable property is a dictionary. The dictionary
         will be interpreted as follows:
         Key    Values        Meaning
@@ -142,30 +144,32 @@ class CheckApplicable(object):
                             always causes the method to return true. The
                             default only takes affect if the family and os keys
                             are not defined.
-
+        
         An Example dictionary might look like this:
         applicable = {'type': 'white',
                            'family': Linux,
                            'os': {'Mac OS X': ['10.11', 'r', '10.14.10']}
         That example whitelists all Linux operating systems and Mac OS X from
         10.11.0 to 10.13.10.
-
+        
         The family and os keys may be combined. Note that specifying a family
         will mask the behavior of the more specific os key.
-
+        
         Note that version comparison is done using the distutils.version
         module. If the stonix environment module returns a 3 place version
         string then you need to provide a 3 place version string. I.E. in this
         case 10.11 only matches 10.11.0 and does not match 10.11.3 or 10.11.5.
-
+        
         This method may be overridden if required.
 
-        @return bool :
+        :param applicableDict:  (Default value = {'default': 'default'})
+        :returns: bool :
         @author D. Kennel
         @change: 2015/04/13 added this method to template class
         @change: 2017/03/18 rsn adding fisma check as well as vaildating both
                                 self.applicable and passed in applicableDict.
-        """
+
+        '''
         applies = False
 
         self.logger.log(LogPriority.DEBUG,
@@ -233,14 +237,16 @@ class CheckApplicable(object):
         return applies
 
     def isInRange(self, rangeList, myversion=0):
-        """
-        This method separates out the range-checking functionality of the
+        '''This method separates out the range-checking functionality of the
         original rule.isapplicable() method. The proper formats for a version
         list are detailed in the isapplicable docs above.
 
-        @return: bool
+        :param rangeList: 
+        :param myversion:  (Default value = 0)
+        :returns: bool
         @author: David Kennel, Eric Ball
-        """
+
+        '''
         if not myversion:
             myversion = self.myosversion
         # Process version and up
@@ -291,9 +297,8 @@ class CheckApplicable(object):
                 return False
 
     def fismaApplicable(self, checkLevel=None, systemLevel=None):
-        '''
-        Check if the passed in level matches the class variable level.
-
+        '''Check if the passed in level matches the class variable level.
+        
         @author: David Kennel, Roy Nielsen
         
         applies = False
@@ -308,7 +313,7 @@ class CheckApplicable(object):
                 self.logger.log(LogPriority.DEBUG, traceback.format_exc())
                 self.logger.log(LogPriority.DEBUG, "Can't acquire a valid checkLevel...")
                 raise ValueError('checkLevel invalid: valid values are low, med, high')
-
+        
         if systemLevel is not None and systemLevel in ['high', 'med', 'low']:
              slevel = systemLevel
         else:
@@ -317,18 +322,18 @@ class CheckApplicable(object):
             except KeyError:
                 self.logger.log(LogPriority.DEBUG, traceback.format_exc())
                 self.logger.log(LogPriority.DEBUG, "Can't acquire a valid checkLevel...")
-                raise ValueError('systemLevel invalid: valid values are low, med, high')
 
-        if slevel == 'high':
-            pass
-        elif slevel == 'med':
-            if clevel == 'high':
-                applies = False
-        elif slevel == 'low':
-            if clevel in ['high', 'med']:
-                applies = False
+        :param checkLevel:  (Default value = None)
+        :param systemLevel:  (Default value = None)
+        :raises if: slevel
+        :raises pass: 
+        :raises elif: slevel
+        :raises if: clevel
+        :raises applies: False
+        :raises elif: slevel
+        :raises if: clevel in
+        :raises applies: False
 
-        return applies
         '''
         pass
 
@@ -357,9 +362,10 @@ class CheckApplicable(object):
         return self.systemFismaLevel
 
     def setOsBasedOnEnv(self):
-        '''
-        Set the values to check against to the values
+        '''Set the values to check against to the values
         found in the environment.
+
+
         '''
         self.myosfamily = self.environ.getosfamily()
         self.myosversion = self.environ.getosver()

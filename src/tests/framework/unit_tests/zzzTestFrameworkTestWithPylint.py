@@ -90,8 +90,10 @@ def genTestData(fileList=[], excludeFiles=[], excludeFromLines=[]):
     return test_case_data
 
 def pylint_test_template(*args):
-    '''
-    decorator for monkeypatching
+    '''decorator for monkeypatching
+
+    :param *args: 
+
     '''
     def foo(self):
         self.assert_pylint_error(*args)

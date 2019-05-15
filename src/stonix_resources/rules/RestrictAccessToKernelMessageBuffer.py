@@ -33,9 +33,7 @@ import traceback
 
 
 class RestrictAccessToKernelMessageBuffer(Rule):
-    '''
-    Unprivileged access to the kernel syslog can expose sensitive kernel address information.
-    '''
+    '''Unprivileged access to the kernel syslog can expose sensitive kernel address information.'''
 
     def __init__(self, config, environ, logger, statechglogger):
         '''
@@ -64,10 +62,11 @@ class RestrictAccessToKernelMessageBuffer(Rule):
         self.initobjs()
 
     def localize(self):
-        '''
-        determine system-specific settings
-
+        '''determine system-specific settings
+        
         @author: Breen Malmberg
+
+
         '''
 
         # set defaults
@@ -75,21 +74,24 @@ class RestrictAccessToKernelMessageBuffer(Rule):
         self.reportcommand = "sysctl kernel.dmesg_restrict"
 
     def initobjs(self):
-        '''
-        initialize class objects
-
+        '''initialize class objects
+        
         @author: Breen Malmberg
+
+
         '''
 
         self.ch = CommandHelper(self.logger)
 
     def report(self):
-        '''
-        run report actions for this rule
+        '''run report actions for this rule
 
-        @return: self.compliant
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: self.compliant
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         self.detailedresults = ""
@@ -128,12 +130,14 @@ class RestrictAccessToKernelMessageBuffer(Rule):
         return self.compliant
 
     def fix(self):
-        '''
-        run fix actions for this rule
+        '''run fix actions for this rule
 
-        @return: success
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: success
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         success = True

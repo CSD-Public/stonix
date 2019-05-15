@@ -31,12 +31,13 @@ from CommandHelper import CommandHelper
 
 
 class SHchkconfig(ServiceHelperTemplate):
-    """
-    SHchkconfig is the Service Helper for systems using the chkconfig command to
+    '''SHchkconfig is the Service Helper for systems using the chkconfig command to
     configure services. (RHEL up to 6, SUSE, Centos up to 6, etc)
-
+    
     @author: David Kennel
-    """
+
+
+    '''
 
     def __init__(self, environment, logdispatcher):
         """
@@ -49,20 +50,12 @@ class SHchkconfig(ServiceHelperTemplate):
         self.localize()
 
     def initobjs(self):
-        """
-        initialize class objects
-
-        @return:
-        """
+        '''initialize class objects'''
 
         self.ch = CommandHelper(self.logger)
 
     def localize(self):
-        """
-        set base command paths (chkconfig and service) based on OS
-
-        @return:
-        """
+        '''set base command paths (chkconfig and service) based on OS'''
 
         self.svc = ""
         self.chk = ""
@@ -84,15 +77,16 @@ class SHchkconfig(ServiceHelperTemplate):
             raise IOError("Could not locate the chkconfig utility on this system")
 
     def startService(self, service, **kwargs):
-        """
-        start a given service
+        '''start a given service
 
-        @param service: string; name of service
-        @param kwargs: 
-        @return: success
-        @rtype: bool
-        @author: Breen Malmberg
-        """
+        :param service: string; name of service
+        :param kwargs: return: success
+        :param **kwargs: 
+        :returns: success
+        :rtype: bool
+@author: Breen Malmberg
+
+        '''
 
         success = True
 
@@ -107,15 +101,15 @@ class SHchkconfig(ServiceHelperTemplate):
         return success
 
     def stopService(self, service, **kwargs):
-        """
-        stop a given service
+        '''stop a given service
 
-        @param service: 
-        @param kwargs: 
-        @return: success
-        @rtype: bool
-        @author: Breen Malmberg
-        """
+        :param service: param kwargs:
+        :param **kwargs: 
+        :returns: success
+        :rtype: bool
+@author: Breen Malmberg
+
+        '''
 
         success = True
 
@@ -130,16 +124,17 @@ class SHchkconfig(ServiceHelperTemplate):
         return success
 
     def disableService(self, service, **kwargs):
-        """
-        Disables the specified service and stops it if
+        '''Disables the specified service and stops it if
         it is running
 
-        @param service: string; Name of the service to be disabled
-        @return: bool
+        :param service: string; Name of the service to be disabled
+        :param **kwargs: 
+        :returns: bool
         @author: David Kennel
         @change: Breen Malmberg - 04/10/2019 - method refactor; doc string edit;
                 logging edit
-        """
+
+        '''
 
         disabled = True
 
@@ -157,16 +152,17 @@ class SHchkconfig(ServiceHelperTemplate):
         return disabled
 
     def enableService(self, service, **kwargs):
-        """
-        Enables a service and starts it if it is not running as long as we are
+        '''Enables a service and starts it if it is not running as long as we are
         not in install mode
 
-        @param service: string; Name of the service to be enabled
-        @return: enabled
-        @rtype: bool
-        @author: David Kennel
-        @change: Breen Malmberg - 04/10/2019 - 
-        """
+        :param service: string; Name of the service to be enabled
+        :param **kwargs: 
+        :returns: enabled
+        :rtype: bool
+@author: David Kennel
+@change: Breen Malmberg - 04/10/2019 -
+
+        '''
 
         enabled = True
 
@@ -184,17 +180,18 @@ class SHchkconfig(ServiceHelperTemplate):
         return enabled
 
     def auditService(self, service, **kwargs):
-        """
-        Checks the status of a service and returns a bool indicating whether or
+        '''Checks the status of a service and returns a bool indicating whether or
         not the service is enabled
 
-        @param service: string; Name of the service to audit
-        @return: enabled
-        @rtype: bool
-        @author: ???
-        @change: Breen Malmberg - 04/10/2019 - method refactor; doc string edit;
-                logging edit
-        """
+        :param service: string; Name of the service to audit
+        :param **kwargs: 
+        :returns: enabled
+        :rtype: bool
+@author: ???
+@change: Breen Malmberg - 04/10/2019 - method refactor; doc string edit;
+        logging edit
+
+        '''
 
         enabled = True
 
@@ -204,14 +201,15 @@ class SHchkconfig(ServiceHelperTemplate):
         return enabled
 
     def audit_chkconfig_service(self, service):
-        """
-        uses the chkconfig command to check if a given
+        '''uses the chkconfig command to check if a given
         service is enabled or not
 
-        @return: enabled
-        @rtype: bool
-        @author: Breen Malmberg
-        """
+        :param service: 
+        :returns: enabled
+        :rtype: bool
+@author: Breen Malmberg
+
+        '''
 
         enabled = True
 
@@ -229,16 +227,17 @@ class SHchkconfig(ServiceHelperTemplate):
         return enabled
 
     def isRunning(self, service, **kwargs):
-        """
-        Check to see if a service is currently running.
+        '''Check to see if a service is currently running.
 
-        @param service: string; Name of the service to check
-        @return: running
-        @rtype: bool
-        @author: ???
-        @change: Breen Malmberg - 04/10/2019 - method refactor; doc string edit;
-                logging edit
-        """
+        :param service: string; Name of the service to check
+        :param **kwargs: 
+        :returns: running
+        :rtype: bool
+@author: ???
+@change: Breen Malmberg - 04/10/2019 - method refactor; doc string edit;
+        logging edit
+
+        '''
 
         running = True
         # see: http://refspecs.linuxbase.org/LSB_3.1.0/LSB-generic/LSB-generic/iniscrptact.html
@@ -259,16 +258,16 @@ class SHchkconfig(ServiceHelperTemplate):
         return running
 
     def parse_running(self, outputlines):
-        """
-        check whether given service is running, with the
+        '''check whether given service is running, with the
         service command
         this is the older (classic) systemV case
 
-        @param outputlines: list; list of strings to search
-        @return: running
-        @rtype: bool
-        @author: Breen Malmberg
-        """
+        :param outputlines: list; list of strings to search
+        :returns: running
+        :rtype: bool
+@author: Breen Malmberg
+
+        '''
 
         running = True
         systemctl_locations = ["/usr/bin/systemctl", "/bin/systemctl"]
@@ -285,18 +284,19 @@ class SHchkconfig(ServiceHelperTemplate):
         return running
 
     def reloadService(self, service, **kwargs):
-        """
-        Reload (HUP) a service so that it re-reads it's config files. Called
+        '''Reload (HUP) a service so that it re-reads it's config files. Called
         by rules that are configuring a service to make the new configuration
         active.
 
-        @param service: string; Name of service to be reloaded
-        @return: reloaded
-        @rtype: bool
-        @author: ???
-        @change: Breen Malmberg - 04/10/2019 - method refactor; doc string edit;
-                logging edit
-        """
+        :param service: string; Name of service to be reloaded
+        :param **kwargs: 
+        :returns: reloaded
+        :rtype: bool
+@author: ???
+@change: Breen Malmberg - 04/10/2019 - method refactor; doc string edit;
+        logging edit
+
+        '''
 
         reloaded = True
 
@@ -311,15 +311,16 @@ class SHchkconfig(ServiceHelperTemplate):
         return reloaded
 
     def listServices(self, **kwargs):
-        """
-        Return a list containing strings that are service names.
+        '''Return a list containing strings that are service names.
 
-        @return: service_list
-        @rtype: list
-        @author: ???
-        @change: Breen Malmberg - 04/10/2019 - method refactor; doc string edit;
-                logging edit
-        """
+        :param **kwargs: 
+        :returns: service_list
+        :rtype: list
+@author: ???
+@change: Breen Malmberg - 04/10/2019 - method refactor; doc string edit;
+        logging edit
+
+        '''
 
         service_list = []
 
@@ -334,33 +335,41 @@ class SHchkconfig(ServiceHelperTemplate):
         return service_list
 
     def getStartCommand(self, service):
-        '''
-        retrieve the start command.  Mostly used by event recording
-        @return: string - start command
+        '''retrieve the start command.  Mostly used by event recording
+
+        :param service: 
+        :returns: string - start command
         @author: dwalker
+
         '''
         return self.svc + " " + service + " start"
 
     def getStopCommand(self, service):
-        '''
-        retrieve the stop command.  Mostly used by event recording
-        @return: string - stop command
+        '''retrieve the stop command.  Mostly used by event recording
+
+        :param service: 
+        :returns: string - stop command
         @author: dwalker
+
         '''
         return self.svc + " " + service + " stop"
 
     def getEnableCommand(self, service):
-        '''
-        retrieve the enable command.  Mostly used by event recording
-        @return: string - enable command
+        '''retrieve the enable command.  Mostly used by event recording
+
+        :param service: 
+        :returns: string - enable command
         @author: dwalker
+
         '''
         return self.chk + " " + service + " on"
 
     def getDisableCommand(self, service):
-        '''
-        retrieve the start command.  Mostly used by event recording
-        @return: string - disable command
+        '''retrieve the start command.  Mostly used by event recording
+
+        :param service: 
+        :returns: string - disable command
         @author: dwalker
+
         '''
         return self.chk + " " + service + " off"

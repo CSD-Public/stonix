@@ -48,11 +48,12 @@ from ..localize import PROXY, UPDATESERVERS
 
 
 class SoftwarePatching(Rule):
-    '''
-    The Software Patching class checks to see if the system is patched, is
+    '''The Software Patching class checks to see if the system is patched, is
     using gpg secured updates where applicable is using local update servers
     when available, and ensures that the system is
     updating automatically from a scheduled job where feasible.
+
+
     '''
 
     def __init__(self, config, environ, logger, statechglogger):
@@ -95,18 +96,20 @@ class SoftwarePatching(Rule):
         self.constlist = [PROXY, UPDATESERVERS]
 
     def updated(self):
-        '''
-        This method checks to see if the system is fully patched or if there
+        '''This method checks to see if the system is fully patched or if there
         are updates that need to be done. Returns True if the system
         is patched or the check doesn't apply. If there are updates that need
         to be applied then it returns False.
 
-        @return: updated
-        @rtype: bool
-        @author: dkennel
-        @change: Breen Malmberg - 4/26/2017 - added method call checkUpdate()
-                added code to use package helper instead of dynamically looking
-                up the package manager and command to use
+
+        :returns: updated
+
+        :rtype: bool
+@author: dkennel
+@change: Breen Malmberg - 4/26/2017 - added method call checkUpdate()
+        added code to use package helper instead of dynamically looking
+        up the package manager and command to use
+
         '''
 
         updated = False
@@ -127,12 +130,14 @@ class SoftwarePatching(Rule):
         return updated
 
     def report(self):
-        '''
-        Method to report on the configuration status of the system.
+        '''Method to report on the configuration status of the system.
 
-        @return: self.compliant
-        @rtype: bool
-        @author: dkennel
+
+        :returns: self.compliant
+
+        :rtype: bool
+@author: dkennel
+
         '''
 
         self.detailedresults = ""
@@ -212,14 +217,15 @@ class SoftwarePatching(Rule):
         return self.compliant
 
     def cronsconfigured(self):
-        '''
-        Method to check to see if updates are scheduled to run automatically
+        '''Method to check to see if updates are scheduled to run automatically
 
-        @return: cronpresent
-        @rtype: bool
-        @author: dkennel
-        @change: Breen Malmberg - 4/26/2017 - doc string edit; added try/except
-                
+
+        :returns: cronpresent
+
+        :rtype: bool
+@author: dkennel
+@change: Breen Malmberg - 4/26/2017 - doc string edit; added try/except
+
         '''
 
         cronpresent = False
@@ -253,14 +259,16 @@ class SoftwarePatching(Rule):
         return cronpresent
 
     def localupdatesource(self):
-        '''
-        Method to check to see if the system is getting updates from a local
+        '''Method to check to see if the system is getting updates from a local
         source.
 
-        @return: local
-        @rtype: bool
-        @author: dkennel
-        @change: Breen Malmberg - 4/26/2017 - doc string edit; added try/except
+
+        :returns: local
+
+        :rtype: bool
+@author: dkennel
+@change: Breen Malmberg - 4/26/2017 - doc string edit; added try/except
+
         '''
 
         local = False
@@ -284,14 +292,16 @@ class SoftwarePatching(Rule):
         return local
 
     def updatesecurity(self):
-        '''
-        Method to check to see if the package signing is set up correctly.
+        '''Method to check to see if the package signing is set up correctly.
 
-        @return: pkgsigning
-        @rtype: bool
-        @author: dkennel
-        @change: Breen Malmberg - 4/26/2017 - doc string edit; method now
-                returns a variable; added try/except
+
+        :returns: pkgsigning
+
+        :rtype: bool
+@author: dkennel
+@change: Breen Malmberg - 4/26/2017 - doc string edit; method now
+        returns a variable; added try/except
+
         '''
 
         pkgsigning = False
@@ -362,9 +372,12 @@ class SoftwarePatching(Rule):
         '''Method to set system settings to configure software update sources
         and schedule updates.
 
-        @return: self.rulesuccess
-        @rtype: bool
-        @author: dkennel
+
+        :returns: self.rulesuccess
+
+        :rtype: bool
+@author: dkennel
+
         '''
 
         if not self.checkConsts(self.constlist):
@@ -407,10 +420,11 @@ class SoftwarePatching(Rule):
         return self.rulesuccess
 
     def makecrons(self):
-        '''
-        This method creates cron entries for automating update installations.
-
+        '''This method creates cron entries for automating update installations.
+        
         @author: dkennel
+
+
         '''
         rootcron = "/var/spool/cron/root"
         random.seed()
@@ -449,11 +463,12 @@ class SoftwarePatching(Rule):
             self.rulesuccess = False
 
     def installkeys(self):
-        '''
-        This method will install the gpg keys used by RPM based distros to
+        '''This method will install the gpg keys used by RPM based distros to
         authenticate updates.
-
+        
         @author: dkennel
+
+
         '''
         importcmd = '/bin/rpm --import '
         keylist = ['/etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release',
@@ -485,11 +500,12 @@ class SoftwarePatching(Rule):
                              self.detailedresults])
 
     def undo(self):
-        """
-        Return the system to the state that it was in before this rule ran.
+        '''
 
-        @author: D. Kennel
-        """
+
+        :returns: @author: D. Kennel
+
+        '''
         self.targetstate = 'notconfigured'
         try:
             event1 = self.statechglogger.getchgevent('0007001')

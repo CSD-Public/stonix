@@ -67,13 +67,14 @@ class DisableNobodyAccess(Rule):
         self.sethelptext()
 
     def report(self):
-        '''
-        DisableNobodyAccess.report() method to report on whether system is
+        '''DisableNobodyAccess.report() method to report on whether system is
         compliant or not. If the key-value pair ENABLE_NOBODY_KEYS=NO
         is present, the system is compliant, if not, system is not compliant
         @author: dwalker
-        @return: bool - False if the method died during execution
-        @param self:essential if you override this definition
+
+        :param self: essential if you override this definition
+        :returns: bool - False if the method died during execution
+
         '''
         try:
             compliant = True
@@ -110,12 +111,13 @@ class DisableNobodyAccess(Rule):
 ###############################################################################
 
     def fix(self):
-        '''
-        DisableNobodyAccess.fix() method to insert the key value pair of
+        '''DisableNobodyAccess.fix() method to insert the key value pair of
         ENABLE_NOBODY_KEYS=NO if not present in the necessary file.
         @author: dwalker
-        @param self - essential if you override this definition
-        @return: bool - True if fix is successful, False if it isn't
+
+        :param self: essential if you override this definition
+        :returns: bool - True if fix is successful, False if it isn't
+
         '''
         try:
             if not self.ci.getcurrvalue():

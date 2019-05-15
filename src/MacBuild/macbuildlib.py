@@ -54,17 +54,18 @@ class macbuildlib(object):
 
     def regexReplace(self, filename, findPattern, replacePattern, outputFile="",
                      backupname=""):
-        '''
-        Find and replace text in a file using regular expression patterns.
-
+        '''Find and replace text in a file using regular expression patterns.
+        
         @author: Eric Ball
-        @param filename: name of origin file
-        @param findPattern: string containing the regex to find in the file
-        @param replacePattern: string containing the text to replace the
+
+        :param filename: name of origin file
+        :param findPattern: string containing the regex to find in the file
+        :param replacePattern: string containing the text to replace the
                                findPattern with
-        @param outputFile: name of file to output new text to. If not supplied,
-                           output will be written back to the origin file
-        @param backupname: optional name of backup for origin file
+        :param outputFile: name of file to output new text to. If not supplied,
+                           output will be written back to the origin file (Default value = "")
+        :param backupname: optional name of backup for origin file (Default value = "")
+
         '''
         try:
             if backupname != "":
@@ -82,8 +83,11 @@ class macbuildlib(object):
             raise
 
     def makeTarball(self, source, dest):
-        '''
-        A quick and easy method to create a .tar.gz out of a single file or folder
+        '''A quick and easy method to create a .tar.gz out of a single file or folder
+
+        :param source: 
+        :param dest: 
+
         '''
         try:
             with tarfile.open(dest, "w:gz") as tar:
@@ -92,8 +96,11 @@ class macbuildlib(object):
             raise
 
     def makeZip(self, source, dest):
-        '''
-        A quick and easy method to create a .zip out of a single file or folder
+        '''A quick and easy method to create a .zip out of a single file or folder
+
+        :param source: 
+        :param dest: 
+
         '''
         try:
             with zipfile.ZipFile(dest, "w", zipfile.ZIP_DEFLATED) as myzip:
@@ -103,20 +110,22 @@ class macbuildlib(object):
 
     def pyinstMakespec(self, scripts, noupx=False, strip=False, console=True,
                        icon_file=None, pathex=[], specpath=None, hiddenimports=None):
-        '''
-        An interface for direct access to PyInstaller's makespec function
-
+        '''An interface for direct access to PyInstaller's makespec function
+        
         @author: Eric Ball
-        @param scripts: A list of python scripts to make a specfile for
-        @param noupx: Do not use UPX even if it is available
-        @param strip: Apply a symbol-table strip to the executable and shared libs
-        @param console: Open a console window for standard i/o
-        @param icon_file: icon to be used for the completed program
-        @param pathex: A path to search for imports (like using PYTHONPATH)
-        @param specpath: Folder to store the generated spec file (default: CWD)
-        @return: Output of PyInstaller.makespec
+
+        :param scripts: A list of python scripts to make a specfile for
+        :param noupx: Do not use UPX even if it is available (Default value = False)
+        :param strip: Apply a symbol-table strip to the executable and shared libs (Default value = False)
+        :param console: Open a console window for standard i/o (Default value = True)
+        :param icon_file: icon to be used for the completed program (Default value = None)
+        :param pathex: A path to search for imports (like using PYTHONPATH) (Default value = [])
+        :param specpath: Folder to store the generated spec file (default: CWD)
+        :param hiddenimports:  (Default value = None)
+        :returns: Output of PyInstaller.makespec
         @note: PyInstaller.makespec accepts further options,
                which may need to be added in future versions
+
         '''
         # specpath default cannot be reliably set here; os.getcwd() will return dir
         # of macbuildlib, not necessarily the current working dir of the calling
@@ -136,19 +145,20 @@ class macbuildlib(object):
 
     def pyinstBuild(self, specfile, workpath, distpath, clean_build=False,
                     noconfirm=False):
-        '''
-        An interface for direct access to PyInstaller's build function
-
+        '''An interface for direct access to PyInstaller's build function
+        
         @author: Eric Ball
-        @param specfile: The specfile to be built
-        @param workpath: Where to put all the temporary work files
-        @param distpath: Where to put the bundled app
-        @param clean_build: Clean PyInstaller cache and remove temporary files
-                            before building
-        @param noconfirm: Replace output directory without asking for confirmation
-        @return: Output of PyInstaller.build
+
+        :param specfile: The specfile to be built
+        :param workpath: Where to put all the temporary work files
+        :param distpath: Where to put the bundled app
+        :param clean_build: Clean PyInstaller cache and remove temporary files
+                            before building (Default value = False)
+        :param noconfirm: Replace output directory without asking for confirmation (Default value = False)
+        :returns: Output of PyInstaller.build
         @note: PyInstaller.build accepts further options,
                which may need to be added in future versions
+
         '''
         try:
             kwargs = {'workpath': workpath, 'loglevel': 'INFO', 'distpath':
@@ -160,7 +170,12 @@ class macbuildlib(object):
         return build_main.main(None, specfile, noconfirm, **kwargs)
 
     def chownR(self, user, target):
-        '''Recursively apply chown to a directory'''
+        '''Recursively apply chown to a directory
+
+        :param user: 
+        :param target: 
+
+        '''
         try:
             if not os.path.isdir(target):
                 raise TypeError(target)
@@ -179,15 +194,16 @@ class macbuildlib(object):
             raise
 
     def chmodR(self, perm, target, writemode):
-        '''
-        Recursively apply chmod to a directory
-
+        '''Recursively apply chmod to a directory
+        
         @author: Eric Ball
-        @param perm: Permissions to be applied. For information on available
+
+        :param perm: Permissions to be applied. For information on available
                      permissions/modes, see os.chmod documentation at
                      https://docs.python.org/2/library/os.html#os.chmod
-        @param target: Target directory
-        @param writemode: [a]ppend or [o]verwrite
+        :param target: Target directory
+        :param writemode: a]ppend or [o]verwrite
+
         '''
         try:
             if not os.path.isdir(target):
@@ -236,13 +252,14 @@ class macbuildlib(object):
             raise
 
     def modplist(self, targetFile, targetKey, newValue):
-        '''
-        Modify the value of a particular key in a Mac OS X property list file
-
+        '''Modify the value of a particular key in a Mac OS X property list file
+        
         @author: Eric Ball
-        @param targetFile: Path to the plist to be modified
-        @param targetKey: The particular key within the plist to be modified
-        @param newValue: The new value for the targetKey within the targetFile
+
+        :param targetFile: Path to the plist to be modified
+        :param targetKey: The particular key within the plist to be modified
+        :param newValue: The new value for the targetKey within the targetFile
+
         '''
         try:
             mypl = pl.readPlist(targetFile)
@@ -252,11 +269,12 @@ class macbuildlib(object):
             raise
 
     def getHiddenImports(self):
-        '''
-        Acquire a list of all '*.py' files in the stonix_resources directory,
-        replace '/' with '.' for a module name that can be imported. 
-
+        '''Acquire a list of all '*.py' files in the stonix_resources directory,
+        replace '/' with '.' for a module name that can be imported.
+        
         @author: Roy Nielsen
+
+
         '''
         try:
             origdir = os.getcwd()
@@ -286,11 +304,13 @@ class macbuildlib(object):
         return hiddenimports
         
     def getpyuicpath(self):
-        '''
-        Attempt to find PyQt4
-
+        '''Attempt to find PyQt4
+        
         @author: Eric Ball
-        @return: Path to PyQt4 executable pyuic4
+
+
+        :returns: Path to PyQt4 executable pyuic4
+
         '''
         # This method is called before ramdisk creation, so it does not use the
         # try/except block that most methods do
@@ -327,11 +347,13 @@ class macbuildlib(object):
         exit(1)
 
     def checkBuildUser(self):
-        '''
-        Checks if the build user has UID of 0
-
+        '''Checks if the build user has UID of 0
+        
         @author: Roy Nielsen, Eric Ball
-        @return: Tuple containing the current user's login name and UID
+
+
+        :returns: Tuple containing the current user's login name and UID
+
         '''
         # This method is called before ramdisk creation, so it does not use the
         # try/except block that most methods do
@@ -357,15 +379,16 @@ class macbuildlib(object):
         return CURRENT_USER, RUNNING_ID
 
     def codeSign(self, username, password, sig='', verbose='', deep='', appName=''):
-        '''
-        For codesigning on the Mac.
-        
-        @param: Signature to sign with (string)
-        @param: How verbose to be: 'v', 'vv', 'vvv' or 'vvvv' (string)
-        @param: Whether or not to do a 'deep' codesign or not. (bool)
-        @param: App name (ending in .app)
+        '''For codesigning on the Mac.
 
-        @returns: True for success, False otherwise.
+        :param username: 
+        :param password: 
+        :param sig:  (Default value = '')
+        :param verbose:  (Default value = '')
+        :param deep:  (Default value = '')
+        :param appName:  (Default value = '')
+        :returns: s: True for success, False otherwise.
+
         '''
         success = False
         requirementMet = False
@@ -400,13 +423,11 @@ class macbuildlib(object):
         return success
 
     def unlockKeychain(self, username, password):
-        '''
-        Unlock the appropriate keychain for signing purposes
-        
-        @param: Username of the login.keychain to unlock
-        @param: Password for the user
-        
-        @author: Roy Nielsen
+        '''Unlock the appropriate keychain for signing purposes
+
+        :param username: 
+        :param password: 
+
         '''
         success = False
         userHome = self.manage_user.getUserHomeDir(username)

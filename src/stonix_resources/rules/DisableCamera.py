@@ -48,6 +48,11 @@ class DisableCamera(Rule):
 
     def __init__(self, config, environ, logger, statechglogger):
         '''
+
+        :param config:
+        :param environ:
+        :param logger:
+        :param statechglogger:
         '''
 
         Rule.__init__(self, config, environ, logger, statechglogger)
@@ -77,17 +82,19 @@ class DisableCamera(Rule):
 #                          "stonix_resources/files/" + \
 #                          "stonix4macCameraDisablement.mobileconfig"
     def report(self):
-        '''
-        check for the existence of the AppleCameraInterface driver in the
+        '''check for the existence of the AppleCameraInterface driver in the
         output of kexstat. Report non-compliant if found. Report compliant
         if not found.
 
-        @return: self.compliant
-        @rtype: bool
-        @author: Breen Malmberg
-        @change: dwalker - ??? - ???
-        @change: Breen Malmberg - 1/19/2017 - minor doc string edit; minor refactor
-        @change: dwalker 10/3/2017 updated to check for a profile value
+
+        :returns: self.compliant
+
+        :rtype: bool
+@author: Breen Malmberg
+@change: dwalker - ??? - ???
+@change: Breen Malmberg - 1/19/2017 - minor doc string edit; minor refactor
+@change: dwalker 10/3/2017 updated to check for a profile value
+
         '''
         try:
             self.detailedresults = ""
@@ -119,18 +126,20 @@ class DisableCamera(Rule):
         return self.compliant
 
     def fix(self):
-        '''
-        run kextunload on the AppleCameraInterface driver to
+        '''run kextunload on the AppleCameraInterface driver to
         unload it and disable the iSight camera.
         return True if the command succeeds. return False if
         the command fails.
 
-        @return: success
-        @rtype: bool
-        @author: Breen Malmberg
-        @change: dwalker - ??? - ???
-        @change: Breen Malmberg - 1/19/2017 - minor doc string edit; minor refactor
-        @change: dwalker 10/3/2017 updated to check for a profile value
+
+        :returns: success
+
+        :rtype: bool
+@author: Breen Malmberg
+@change: dwalker - ??? - ???
+@change: Breen Malmberg - 1/19/2017 - minor doc string edit; minor refactor
+@change: dwalker 10/3/2017 updated to check for a profile value
+
         '''
 
         try:

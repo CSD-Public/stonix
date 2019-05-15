@@ -33,9 +33,7 @@ from ..CommandHelper import CommandHelper
 
 class DisableSIRIandContinuityFeatures(Rule):
     def __init__(self, config, environ, logdispatch, statechglogger):
-        '''
-        Constructor
-        '''
+        '''Constructor'''
         Rule.__init__(self, config, environ, logdispatch, statechglogger)
 
         self.logger = logdispatch
@@ -233,4 +231,3 @@ class DisableSIRIandContinuityFeatures(Rule):
                                    self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.rulesuccess
-        

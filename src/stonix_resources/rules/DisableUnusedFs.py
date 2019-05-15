@@ -40,9 +40,10 @@ from ..stonixutilityfunctions import resetsecon
 
 
 class DisableUnusedFs(Rule):
-    '''
-    This class checks kernel configuration files to ensure that support for
+    '''This class checks kernel configuration files to ensure that support for
     file system types not in regular use is disabled.
+
+
     '''
 
     def __init__(self, config, environ, logger, statechglogger):
@@ -84,7 +85,10 @@ be space separated.'''
 
     def report(self):
         '''Fssupport.report() Public method to report on the status of the
-        uncommon filesystem support.'''
+        uncommon filesystem support.
+
+
+        '''
         compliant = True
         try:
             self.detailedresults = ""
@@ -230,11 +234,12 @@ followed by /bin/true: ''' + fsstring
         return self.report()
 
     def undo(self):
-        """
-        Return the system to the state that it was in before this rule ran.
+        '''
 
-        @author: D. Kennel
-        """
+
+        :returns: @author: D. Kennel
+
+        '''
         self.targetstate = 'notconfigured'
         try:
             event3 = self.statechglogger.getchgevent('0256003')
@@ -286,13 +291,14 @@ followed by /bin/true: ''' + fsstring
                 "reverted"
 
     def isapplicable(self):
-        """
-        Return a bool indicating whether or not to run on the current os. This
+        '''Return a bool indicating whether or not to run on the current os. This
         rule only works on Linux systems at present.
 
-        @return: Bool
+
+        :returns: Bool
         @author: D. Kennel
-        """
+
+        '''
         if self.environ.getosfamily() == 'linux':
             return True
         else:

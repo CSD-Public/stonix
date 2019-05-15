@@ -56,9 +56,10 @@ from ..stonixutilityfunctions import iterate
 
 
 class SecureFTP(Rule):
-    '''
-    Enable logging for all attempted access and ftp commands, restrict the set
-of users allowed to access ftp and set the default umask for ftp users.
+    '''Enable logging for all attempted access and ftp commands, restrict the set
+    of users allowed to access ftp and set the default umask for ftp users.
+
+
     '''
 
     def __init__(self, config, environ, logger, statechglogger):
@@ -141,16 +142,18 @@ of users allowed to access ftp and set the default umask for ftp users.
 
 ###############################################################################
     def report(self):
-        '''
-        The report method examines the current configuration and determines
+        '''The report method examines the current configuration and determines
         whether or not it is correct. If the config is correct then the
         self.compliant, self.detailed results and self.currstate properties are
         updated to reflect the system status. self.rulesuccess will be updated
         if the rule does not succeed.
 
-        @return self.compliant
-        @rtype: bool
-        @author Breen Malmberg
+
+        :returns: self.compliant
+
+        :rtype: bool
+@author Breen Malmberg
+
         '''
 
         # defaults
@@ -205,13 +208,15 @@ of users allowed to access ftp and set the default umask for ftp users.
         return self.compliant
 
     def reportPart(self):
-        '''
-        check whether the ftp root is mounted on its own partition or not
+        '''check whether the ftp root is mounted on its own partition or not
         return True if mounted on its own partition; False if not
 
-        @return: separate
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: separate
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         separate = True
@@ -280,12 +285,14 @@ of users allowed to access ftp and set the default umask for ftp users.
 
 ###############################################################################
     def reportMac(self):
-        '''
-        method to determine compliance status of only mac os x systems
+        '''method to determine compliance status of only mac os x systems
 
-        @return: compliant
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: compliant
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         # defaults
@@ -336,12 +343,14 @@ of users allowed to access ftp and set the default umask for ftp users.
 
 ###############################################################################
     def reportLinux(self):
-        '''
-        run report actions specific to linux systems
+        '''run report actions specific to linux systems
 
-        @return: compliant
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: compliant
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         # defaults
@@ -376,12 +385,14 @@ of users allowed to access ftp and set the default umask for ftp users.
 
 ###############################################################################
     def checkFTPDConfig(self):
-        '''
-        check the FTP configuration for compliance
+        '''check the FTP configuration for compliance
 
-        @return: retval
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: retval
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         # defaults
@@ -426,12 +437,14 @@ of users allowed to access ftp and set the default umask for ftp users.
 
 ###############################################################################
     def checkFTPUsers(self):
-        '''
-        check ftp user config for compliance
+        '''check ftp user config for compliance
 
-        @return: retval
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: retval
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         # defaults
@@ -459,14 +472,16 @@ of users allowed to access ftp and set the default umask for ftp users.
 
 ###############################################################################
     def fix(self):
-        '''
-        if the ftp configuration file does not contain the secure configuration
+        '''if the ftp configuration file does not contain the secure configuration
         options listed in self.confoptions, then add them to the file.
         self.rulesuccess will be updated if the rule does not succeed.
 
-        @return: self.rulesuccess
-        @rtype: bool
-        @author Breen Malmberg
+
+        :returns: self.rulesuccess
+
+        :rtype: bool
+@author Breen Malmberg
+
         '''
 
         # defaults
@@ -508,10 +523,11 @@ of users allowed to access ftp and set the default umask for ftp users.
 
 ###############################################################################
     def fixLinux(self):
-        '''
-        run fix actions specific to linux systems
-
+        '''run fix actions specific to linux systems
+        
         @author: Breen Malmberg
+
+
         '''
 
         try:
@@ -526,10 +542,11 @@ of users allowed to access ftp and set the default umask for ftp users.
 
 ###############################################################################
     def fixMac(self):
-        '''
-        run fix actions specific to mac os x systems
-
+        '''run fix actions specific to mac os x systems
+        
         @author: Breen Malmberg
+
+
         '''
 
         macoptionslist = ['umask all 077',
@@ -617,11 +634,12 @@ of users allowed to access ftp and set the default umask for ftp users.
 
 ###############################################################################
     def configureFTPD(self):
-        '''
-        set the proper ftp configuration options
+        '''set the proper ftp configuration options
         (logoptions, allowftpoptions)
-
+        
         @author: Breen Malmberg
+
+
         '''
 
         # defaults
@@ -685,10 +703,11 @@ of users allowed to access ftp and set the default umask for ftp users.
 
 ###############################################################################
     def configureFTPUsers(self):
-        '''
-        set the proper ftp user configuration options
-
+        '''set the proper ftp user configuration options
+        
         @author: Breen Malmberg
+
+
         '''
 
         # defaults
@@ -742,13 +761,15 @@ of users allowed to access ftp and set the default umask for ftp users.
 
 ###############################################################################
     def searchList(self, searchterm, searchlist):
-        '''
-        search a list of strings for the specified searchterm
+        '''search a list of strings for the specified searchterm
         if found, return True, else return False
 
-        @return: retval
-        @rtype: bool
-        @author: Breen Malmberg
+        :param searchterm: 
+        :param searchlist: 
+        :returns: retval
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         # defaults

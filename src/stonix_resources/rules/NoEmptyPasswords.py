@@ -68,10 +68,11 @@ class NoEmptyPasswords(Rule):
 ###############################################################################
 
     def report(self):
-        '''
-        Opens the /etc/shadow file and checks the second field of each entry
+        '''Opens the /etc/shadow file and checks the second field of each entry
         for empty passwords. If they exist, call the fix method
         @author: dwalker
+
+
         '''
         try:
             self.detailedresults = ""
@@ -200,7 +201,11 @@ system that need to be checked for empty passwords\n"
     def fixMain(self, command):
         '''Entries that are found with an empty password field (2nd field)
         should have the blank field replaced with an !
-        @author: dwalker'''
+        @author: dwalker
+
+        :param command: 
+
+        '''
         success = True
         if os.path.exists(self.shadow):
             if self.empty:
@@ -304,12 +309,14 @@ not continue to complete fix"
 ###############################################################################
 
     def undo(self):
-        '''
-        Note! There is no undo method for this rule (NoEmptyPasswords) because
+        '''Note! There is no undo method for this rule (NoEmptyPasswords) because
         of the nature of the fix this rule implements and the high risk any
         system carries if this rule is ever not in effect.
-        @return void :
+
+
+        :returns: void :
         @author dwalker
+
         '''
         try:
             self.detailedresults = "no undo available"

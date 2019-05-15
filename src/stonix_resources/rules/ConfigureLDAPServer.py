@@ -61,7 +61,7 @@ CONFIGURELDAPSERV to False.'''
         self.created = False
 
     def report(self):
-        ''''''
+        ''' '''
         try:
             compliant = True
             self.ph = Pkghelper(self.logger, self.environ)

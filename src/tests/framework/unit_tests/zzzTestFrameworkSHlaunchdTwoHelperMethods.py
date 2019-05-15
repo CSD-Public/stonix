@@ -43,16 +43,15 @@ if sys.platform == 'darwin':
 
 
     class zzzTestFrameworkSHlaunchdTwoHelperMethods(unittest.TestCase):
-        '''
-        Test the launchd version 2 service helper.
-
+        '''Test the launchd version 2 service helper.
+        
         @author: Roy Nielsen
+
+
         '''
         @classmethod
         def setUpClass(self):
-            '''
-            Test initializer
-            '''
+            '''Test initializer'''
             self.environ = Environment()
             self.environ.setdebugmode(True)
 
@@ -67,8 +66,7 @@ if sys.platform == 'darwin':
             self.logger.log(lp.DEBUG, "test " + __file__ + " initialized...")
 
         def test_isValidServicePath(self):
-            '''
-            '''
+            ''' '''
             for test_key, test_values in service_path_test_data.iteritems():
                 if re.match("^valid_service_paths", test_key):
                     for test_item in test_values:
@@ -82,8 +80,7 @@ if sys.platform == 'darwin':
                                          str(test_item))
 
         def test_getServiceNameFromService(self):
-            '''
-            '''
+            ''' '''
             for test_key, test_values in name_from_service_test_data.iteritems():
                 if re.match("^valid_service_plists", test_key):
                     for test_item in test_values:
@@ -97,8 +94,7 @@ if sys.platform == 'darwin':
                                          str(test_item))
 
         def test_targetValid(self):
-            '''
-            '''
+            ''' '''
             for test_key, test_values in target_valid_test_data.iteritems():
                 if re.match("^valid_target_data", test_key):
                     for test_item in test_values:
@@ -123,9 +119,7 @@ if sys.platform == 'darwin':
 
         @classmethod
         def tearDownClass(self):
-            '''
-            Test destructor
-            '''
+            '''Test destructor'''
             #####
             # capture end time
             test_end_time = datetime.now()

@@ -45,13 +45,14 @@ from logdispatcher import LogPriority
 
 class StateChgLogger(object):
 
-    """
-     The state change logger assists rules in tracking changes made so that they
+    '''The state change logger assists rules in tracking changes made so that they
      can be reverted at a later date.
-
+    
     :version: 1.0
     :author: D. Kennel
-    """
+
+
+    '''
     def __init__(self, logdispatcher, environment):
         """ ATTRIBUTES
 
@@ -116,21 +117,24 @@ class StateChgLogger(object):
             pass
 
     def recordfilechange(self, oldfile, newfile, eventid):
-        """
-        Recordfilechange does the following actions. Make a copy of the
+        '''Recordfilechange does the following actions. Make a copy of the
         unaltered original file and store it. Using the newfile (expected to be
         the post change version of the file) create a unified diff that can be
         used to undo the changes that were made and store the diff.
 
-        @param string oldfile : The origin file path pre-change. This should be
+        :param string: oldfile : The origin file path pre-change. This should be
         the canonical location for the file on disk.
-        @param string newfile : The path to the new version of the file,
+        :param string: newfile : The path to the new version of the file,
         post-changes.
-        @param string: eventid : The change event id associated with this file
+        :param string: eventid : The change event id associated with this file
         change
-        @return  : void
+        :param oldfile: 
+        :param newfile: 
+        :param eventid: 
+        :returns: void
         @author D. Kennel
-        """
+
+        '''
         if not self.privmode:
             raise RuntimeError('''recordfilechange method called without privilege.
 If you are a rule developer you should guard against this. If you
@@ -185,19 +189,21 @@ are an end user please report a bug.''')
         return True
 
     def revertfilechanges(self, filename, eventid):
-        """
-        revertfilechanges removes changes made to complex configuration files
+        '''revertfilechanges removes changes made to complex configuration files
         by stonix. It uses the patch utility and a diff file created by
         recordfilechange to restore the configuration file without altering
         other customizations.
 
-        @param string file : Path to the configuration file that should have
+        :param string: file : Path to the configuration file that should have
         changes made by stonix reverted to a pre-alteration state.
-        @param string eventid: The event id associated with the original change
+        :param string: eventid: The event id associated with the original change
         to the file being reverted
-        @return  : Bool for success
+        :param filename: 
+        :param eventid: 
+        :returns: Bool for success
         @author D. Kennel
-        """
+
+        '''
         if not self.privmode:
             raise RuntimeError('''recordfilechange method called without privilege.
 If you are a rule developer you should guard against this. If you
@@ -241,18 +247,20 @@ are an end user please report a bug.''')
                              "Problem patching: %s" % fullpath])
 
     def recordfiledelete(self, filename, eventid):
-        """
-        recordfiledelete will make a backup copy of a file that is being
+        '''recordfiledelete will make a backup copy of a file that is being
         deleted. The backed up file may later be restored with the
         revertfiledelete method.
 
-        @param string oldfile : The origin file path. This should be
+        :param string: oldfile : The origin file path. This should be
         the canonical location for the file on disk.
-        @param string: eventid : The change event id associated with this file
+        :param string: eventid : The change event id associated with this file
         deletion
-        @return  : void
+        :param filename: 
+        :param eventid: 
+        :returns: void
         @author D. Kennel
-        """
+
+        '''
         if not self.privmode:
             raise RuntimeError('''recordfiledelete method called without privilege.
 If you are a rule developer you should guard against this. If you
@@ -286,18 +294,19 @@ are an end user please report a bug.''')
         return True
 
     def revertfiledelete(self, filepath):
-        """
-         revertfiledelete restores deleted files back to their original
+        '''revertfiledelete restores deleted files back to their original
          location. This method will try to restore the newest archived version
          of the file.
 
-        @param string file : Path to the configuration file that should be
+        :param string: file : Path to the configuration file that should be
         restored.
-        @param string eventid: The event id associated with the original change
+        :param string: eventid: The event id associated with the original change
         to the file being reverted
-        @return  : Bool for success
+        :param filepath: 
+        :returns: Bool for success
         @author D. Kennel
-        """
+
+        '''
         if not self.privmode:
             raise RuntimeError('''revertfiledelete method called without privilege.
 If you are a rule developer you should guard against this. If you
@@ -358,16 +367,15 @@ are an end user please report a bug.''')
         return True
 
     def recordchgevent(self, eventcode, eventdict):
-        """
-        Record change event records a change event along with a unique id so
+        '''Record change event records a change event along with a unique id so
         that the rule can retrieve information about a change that it may be
         reverted at a later date if called for.
 
-        @param string eventcode : The eventcode is a unique identifier that is
+        :param string: eventcode : The eventcode is a unique identifier that is
         used to record and locate information about a specific change. Format
         is a four digit zero padded rule number and a three digit zero padded
         number selected by the rule author.
-        @param dictionary eventdict : The event dict is a python dictionary that
+        :param dictionary: eventdict : The event dict is a python dictionary that
         contains the following key:data element sets:
         eventtype: conf | creation | deletion
         filepath: string
@@ -389,10 +397,12 @@ are an end user please report a bug.''')
         servicename: string
         startstate: enabled | disabled
         endstate: enabled | disabled
-
-        @return  : void
+        :param eventcode: 
+        :param eventdict: 
+        :returns: void
         @author D. Kennel
-        """
+
+        '''
         if not self.privmode:
             raise RuntimeError('''recordfilechange method called without privilege.
 If you are a rule developer you should guard against this. If you
@@ -403,16 +413,17 @@ are an end user please report a bug.''')
         self.eventlog.sync()
 
     def getchgevent(self, eventcode):
-        """
-        Get change event takes an eventcode and returns a dictionary containing
+        '''Get change event takes an eventcode and returns a dictionary containing
         information about that specific change event. The rule can then use
         that information to revert back to a previous system state.
 
-        @param string eventcode : Eventcode to retreive data for. See
+        :param string: eventcode : Eventcode to retreive data for. See
         documentation for recordchgevent for eventcode format.
-        @return dictionary : eventdict
+        :param eventcode: 
+        :returns: dictionary : eventdict
         @author D. Kennel
-        """
+
+        '''
         if not self.privmode:
             raise RuntimeError('''recordfilechange method called without privilege.
 If you are a rule developer you should guard against this. If you
@@ -421,12 +432,13 @@ are an end user please report a bug.''')
         return eventdict
 
     def closelog(self):
-        """
-        Close the logfile. This prepares the StateChgLogger for going out of
+        '''Close the logfile. This prepares the StateChgLogger for going out of
         scope or manual closure.
-
+        
         @author: D. Kennel
-        """
+
+
+        '''
         if not self.privmode:
             raise RuntimeError('''recordfilechange method called without privilege.
 If you are a rule developer you should guard against this. If you
@@ -434,14 +446,15 @@ are an end user please report a bug.''')
         self.eventlog.close()
 
     def archivefile(self, oldfile):
-        """
-        Private method to archive a copy of a file into the file archive. This
+        '''Private method to archive a copy of a file into the file archive. This
         is intended to be called by the recordfilechanges method.
 
-        @param string: oldfile - full path to the file to be archived
-        @return: True unless an error was encountered
+        :param string: oldfile - full path to the file to be archived
+        :param oldfile: 
+        :returns: True unless an error was encountered
         @author: D. Kennel
-        """
+
+        '''
         if not self.privmode:
             raise RuntimeError('''recordfilechange method called without privilege.
 If you are a rule developer you should guard against this. If you
@@ -490,9 +503,11 @@ are an end user please report a bug.''')
         as an integer. The return will be a list of strings that are full event
         identifiers. Missing or invalid rule ids will result in a TypeError.
 
-        @param string|int: ruleid number
-        @return: list of strings - eventids
+        :param string: int: ruleid number
+        :param ruleid: 
+        :returns: list of strings - eventids
         @author: D. Kennel
+
         '''
         if not self.privmode:
             raise RuntimeError('''findrulechanges method called without privilege.
@@ -539,9 +554,11 @@ are an end user please report a bug.''')
         requires an eventid as an argument and returns True for success or if
         the passed eventid does not exist in the event log.
 
-        @param string: eventid
-        @return bool: True for success
+        :param string: eventid
+        :param eventid: 
+        :returns: bool: True for success
         @author D. Kennel
+
         '''
         if not self.privmode:
             raise RuntimeError('''deleteentry method called without privilege.

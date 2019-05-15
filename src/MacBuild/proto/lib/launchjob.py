@@ -16,75 +16,76 @@ from .run_commands import RunWith
 from .loggers import LogPriority as lp
 
 class LaunchCtl(object):
-    """
-    Service manager that provides an interface to the Mac OS launchctl command.
+    '''Service manager that provides an interface to the Mac OS launchctl command.
     
     @privatemethod: validateSubCommand - validate a command that is
                     formatted as: { <subcommand> : [<arg1>, <arg1>, <arg3>]}
                     where each argN is a string.
-
+    
     @privatemethod: runSubCommand - runs a launchctl command, in the format
                     described above, then collects standard out, standard error
                     and the launchctl return code, returning them to the caller.
-
+    
     #-------------------------------------------------------------------------
     Legacy commands
-
+    
     @publicmethod: load - (legacy) loads the passed in plist/service
-
+    
     @publicmethod: unload - (legacy) unloads the passed in plist/service
-
+    
     @publicmethod: start - (legacy) Start a service
-
+    
     @publicmethod: stop - (legacy) Stop a service
-
+    
     @publicmethod: list - (legacy) list a specific plist state, or
                    returns a list of running launchd services.
-
+    
     @publicmethod: bsexec - (legacy) execute a command in as close as possible
                             context to the passed in PID.
-
+    
     @publicmethod: asuser - (legacy) execute a command in as close as possible
                             context to the passed in UID
-
+    
     #-------------------------------------------------------------------------
     Current commands
-
+    
     @publicmethod: bootstrap
-
+    
     @publicmethod: bootout
-
+    
     @publicmethod: enable
-
+    
     @publicmethod: disable
-
+    
     @publicmethod: uncache
-
+    
     @publicmethod: kickstart
-
+    
     @publicmethod: kill - (2.0) Kills a service, with one of the passed
                    in signals that are described in the Mac OS signal(3) manpage.
-
+    
     @publicmethod: blame
-
+    
     @publicmethod: printTarget
-
+    
     @publicmethod: printCache
-
+    
     @publicmethod: printDisabled
-
+    
     @publicmethod: procinfo
-
+    
     @publicmethod: hostinfo
-
+    
     @publicmethod: resolveport
-
+    
     @publicmethod: reboot
-
+    
     @Note: Future subcommands may include 'plist', 'config', 'error'.
-
+    
     @author: Roy Nielsen
-    """
+
+
+    '''
     def __init__(self, logger):
         """
         Initialization Method
@@ -100,11 +101,13 @@ class LaunchCtl(object):
     #----------------------------------------------------------------------
 
     def isSaneFilePath(self, filepath):
-        """
-        Check for a good file path in the passed in string.
+        '''Check for a good file path in the passed in string.
         
         @author: Roy Nielsen
-        """
+
+        :param filepath: 
+
+        '''
         sane = False
         if isinstance(filepath, basestring):
             if re.match("^[A-Za-z/\.][A-Za-z0-9/\.]*", filepath):
@@ -116,21 +119,15 @@ class LaunchCtl(object):
     #----------------------------------------------------------------------
 
     def validateSubCommand(self, command={}):
-        """
-        Validate that we have a properly formatted command, and the subcommand
+        '''Validate that we have a properly formatted command, and the subcommand
         is valid.
-        
-        @param: the commandDict should be in the format below:
-        
-        cmd = { "load" : [options, sessionType, launchJobPath] }
-        
-        where the key is the launchctl 'subcommand' and the list is an ordered
-        list of the arguments to give the subcommand.
-        
-        @returns: success - whether the command was formatted correctly or not.
 
+        :param command:  (Default value = {})
+        :returns: s: success - whether the command was formatted correctly or not.
+        
         @author: Roy Nielsen
-        """
+
+        '''
         success = False
         subcmd = []
         if not isinstance(command, dict):
@@ -180,21 +177,15 @@ class LaunchCtl(object):
     #-------------------------------------------------------------------------
 
     def runSubCommand(self, commandDict={}):
-        """
-        Use the passed in dictionary to create a MacOS 'security' command
+        '''Use the passed in dictionary to create a MacOS 'security' command
         and execute it.
-        
-        @param: the commandDict should be in the format below:
-        
-        cmd = { "bsexec" : [pid, command, arg1, arg2, ...] }
-        
-        where the key is the security 'subcommand' and the list is an ordered
-        list of the arguments to give the subcommand.
-        
-        @returns: success - whether the command was successfull or not.
+
+        :param commandDict:  (Default value = {})
+        :returns: s: success - whether the command was successfull or not.
         
         @author: Roy Nielsen
-        """
+
+        '''
         success = False
         output = ''
         error = ''
@@ -232,8 +223,7 @@ class LaunchCtl(object):
     #----------------------------------------------------------------------
 
     def load(self, plist="", options="", sessionType="", domain=False):
-        """
-        @note: From the launchctl man page:
+        '''@note: From the launchctl man page:
           load | unload [-wF] [-S sessiontype] [-D domain] paths ...
               Load the specified configuration files or directories of con-
               figuration files.  Jobs that are not on-demand will be started
@@ -247,11 +237,11 @@ class LaunchCtl(object):
               tions are in place for security reasons, as allowing writabil-
               ity to a launchd configuration file allows one to specify which
               executable will be launched.
-
+        
               Note that allowing non-root write access to the
               /System/Library/LaunchDaemons directory WILL render your system
               unbootable.
-
+        
               -w       Overrides the Disabled key and sets it to false or
                        true for the load and unload subcommands respectively.
                        In previous versions, this option would modify the
@@ -259,10 +249,10 @@ class LaunchCtl(object):
                        is stored elsewhere on- disk in a location that may
                        not be directly manipulated by any process other than
                        launchd.
-
+        
               -F       Force the loading or unloading of the plist. Ignore
                        the Disabled key.
-
+        
               -S sessiontype
                        Some jobs only make sense in certain contexts. This
                        flag instructs launchctl to look for jobs in a differ-
@@ -276,7 +266,7 @@ class LaunchCtl(object):
                        at the GUI. LoginWindow agents are loaded when the
                        LoginWindow UI is displaying and currently run as
                        root.
-
+        
               -D domain
                        Look for plist(5) files ending in *.plist in the
                        domain given. This option may be thoughts of as
@@ -288,14 +278,20 @@ class LaunchCtl(object):
                        system" would load from or unload property list files
                        from /System/Library/LaunchDaemons.  With a session
                        type passed, it would load from /System/Library/Laun-
-
+        
               NOTE: Due to bugs in the previous implementation and long-
               standing client expectations around those bugs, the load and
               unload subcommands will only return a non-zero exit code due to
               improper usage.  Otherwise, zero is always returned.
-
+        
         @author: Roy Nielsen
-        """
+
+        :param plist:  (Default value = "")
+        :param options:  (Default value = "")
+        :param sessionType:  (Default value = "")
+        :param domain:  (Default value = False)
+
+        '''
         success = False
         #####
         # Input validatio.
@@ -331,8 +327,7 @@ class LaunchCtl(object):
     #-------------------------------------------------------------------------
 
     def unload(self, plist="", options="", sessionType="", domain=False):
-        """
-        @note: From the launchctl man page:
+        '''@note: From the launchctl man page:
           load | unload [-wF] [-S sessiontype] [-D domain] paths ...
               Load the specified configuration files or directories of con-
               figuration files.  Jobs that are not on-demand will be started
@@ -346,11 +341,11 @@ class LaunchCtl(object):
               tions are in place for security reasons, as allowing writabil-
               ity to a launchd configuration file allows one to specify which
               executable will be launched.
-
+        
               Note that allowing non-root write access to the
               /System/Library/LaunchDaemons directory WILL render your system
               unbootable.
-
+        
               -w       Overrides the Disabled key and sets it to false or
                        true for the load and unload subcommands respectively.
                        In previous versions, this option would modify the
@@ -358,10 +353,10 @@ class LaunchCtl(object):
                        is stored elsewhere on- disk in a location that may
                        not be directly manipulated by any process other than
                        launchd.
-
+        
               -F       Force the loading or unloading of the plist. Ignore
                        the Disabled key.
-
+        
               -S sessiontype
                        Some jobs only make sense in certain contexts. This
                        flag instructs launchctl to look for jobs in a differ-
@@ -375,7 +370,7 @@ class LaunchCtl(object):
                        at the GUI. LoginWindow agents are loaded when the
                        LoginWindow UI is displaying and currently run as
                        root.
-
+        
               -D domain
                        Look for plist(5) files ending in *.plist in the
                        domain given. This option may be thoughts of as
@@ -387,14 +382,20 @@ class LaunchCtl(object):
                        system" would load from or unload property list files
                        from /System/Library/LaunchDaemons.  With a session
                        type passed, it would load from /System/Library/Laun-
-
+        
               NOTE: Due to bugs in the previous implementation and long-
               standing client expectations around those bugs, the load and
               unload subcommands will only return a non-zero exit code due to
               improper usage.  Otherwise, zero is always returned.
-
+        
         @author: Roy Nielsen
-        """
+
+        :param plist:  (Default value = "")
+        :param options:  (Default value = "")
+        :param sessionType:  (Default value = "")
+        :param domain:  (Default value = False)
+
+        '''
         success = False
         #####
         # Input validatio.
@@ -429,15 +430,17 @@ class LaunchCtl(object):
     #-------------------------------------------------------------------------
 
     def start(self, label=""):
-        """
-        @note: From the launchctl man page:
+        '''@note: From the launchctl man page:
           start label
               Start the specified job by label. The expected use of this sub-
               command is for debugging and testing so that one can manually
               kick-start an on-demand server.
-
+        
         @author: Roy Nielsen
-        """
+
+        :param label:  (Default value = "")
+
+        '''
         success = False
         #####
         # Input validatio.
@@ -452,15 +455,17 @@ class LaunchCtl(object):
     #-------------------------------------------------------------------------
 
     def stop(self, label=""):
-        """
-        @note: From the launchctl man page:
+        '''@note: From the launchctl man page:
           stop label
               Stop the specified job by label. If a job is on-demand, launchd
               may immediately restart the job if launchd finds any criteria
               that is satisfied.
-
+        
         @author: Roy Nielsen
-        """
+
+        :param label:  (Default value = "")
+
+        '''
         success = False
         #####
         # Input validatio.
@@ -475,8 +480,7 @@ class LaunchCtl(object):
     #-------------------------------------------------------------------------
 
     def list(self, label=""):
-        """
-        @note: From the launchctl man page:
+        '''@note: From the launchctl man page:
           list [-x] [label]
               With no arguments, list all of the jobs loaded into launchd in
               three columns. The first column displays the PID of the job if
@@ -486,11 +490,14 @@ class LaunchCtl(object):
               "-15" would indicate that the job was terminated with SIGTERM.
               The third column is the job's label. If [label] is specified,
               prints information about the requested job.
-
+        
               -x       This flag is no longer supported.
-
+        
         @author: Roy Nielsen
-        """
+
+        :param label:  (Default value = "")
+
+        '''
         success = False
         #####
         # Input validatio.
@@ -518,8 +525,7 @@ class LaunchCtl(object):
     #-------------------------------------------------------------------------
 
     def bsexec(self, pid, command, args=[]):
-        '''
-        @note: From the launchctl man page:
+        '''@note: From the launchctl man page:
           bsexec PID command [args]
               This executes the given command in as similar an execution con-
               text as possible to the target PID. Adopted attributes include
@@ -528,8 +534,13 @@ class LaunchCtl(object):
               (UID, GID, etc.) or adopt any environment variables from the
               target process. It affects only the Mach bootstrap context and
               directly-related attributes.
-
+        
         @author: Roy Nielsen
+
+        :param pid: 
+        :param command: 
+        :param args:  (Default value = [])
+
         '''
         success = False
         #####
@@ -547,8 +558,7 @@ class LaunchCtl(object):
     #-------------------------------------------------------------------------
 
     def asuser(self, uid, command, args=[]):
-        '''
-        @note: From the launchctl man page:
+        '''@note: From the launchctl man page:
           asuser UID command [args]
               This executes the given command in as similar an execution con-
               text as possible to that of the target user's bootstrap.
@@ -557,8 +567,13 @@ class LaunchCtl(object):
               process' credentials (UID, GID, etc.) or adopt any user-spe-
               cific environment variables. It affects only the Mach bootstrap
               context and directly- related attributes.
-
+        
         @author: Roy Nielsen
+
+        :param uid: 
+        :param command: 
+        :param args:  (Default value = [])
+
         '''
         success = False
         #####
@@ -578,8 +593,7 @@ class LaunchCtl(object):
     #----------------------------------------------------------------------
 
     def bootstrap(self, domainTarget="", servicePath=''):
-        '''
-        @note: From the launchctl man page:
+        '''@note: From the launchctl man page:
           bootstrap | bootout domain-target [service-path service-path2 ...] |
               service-target
               Bootstraps or removes domains and services. Services may be
@@ -589,13 +603,17 @@ class LaunchCtl(object):
               one or more errors while bootstrapping or removing a collection
               of services, the problematic paths will be printed with the
               errors that occurred.
-
+        
               If no paths or service target are specified, these commands can
               either bootstrap or remove a domain specified as a domain tar-
               get. Some domains will implicitly bootstrap pre-defined paths
               as part of their creation.
-
+        
         @author: Roy Nielsen
+
+        :param domainTarget:  (Default value = "")
+        :param servicePath:  (Default value = '')
+
         '''
         success = False
         #####
@@ -612,8 +630,7 @@ class LaunchCtl(object):
     #----------------------------------------------------------------------
 
     def bootout(self, domainTarget="", servicePath=''):
-        '''
-        @note: From the launchctl man page:
+        '''@note: From the launchctl man page:
           bootstrap | bootout domain-target [service-path service-path2 ...] |
               service-target
               Bootstraps or removes domains and services. Services may be
@@ -623,13 +640,17 @@ class LaunchCtl(object):
               one or more errors while bootstrapping or removing a collection
               of services, the problematic paths will be printed with the
               errors that occurred.
-
+        
               If no paths or service target are specified, these commands can
               either bootstrap or remove a domain specified as a domain tar-
               get. Some domains will implicitly bootstrap pre-defined paths
               as part of their creation.
-
+        
         @author: Roy Nielsen
+
+        :param domainTarget:  (Default value = "")
+        :param servicePath:  (Default value = '')
+
         '''
         success = False
         #####
@@ -646,8 +667,7 @@ class LaunchCtl(object):
     #----------------------------------------------------------------------
 
     def enable(self, serviceTarget):
-        '''
-        @note: From the launchctl man page:
+        '''@note: From the launchctl man page:
           enable | disable service-target
               Enables or disables the service in the requested domain. Once a
               service is disabled, it cannot be loaded in the specified
@@ -655,8 +675,11 @@ class LaunchCtl(object):
               across boots of the device. This subcommand may only target
               services within the system domain or user and user-login
               domains.
-
+        
         @author: Roy Nielsen
+
+        :param serviceTarget: 
+
         '''
         success = False
         #####
@@ -672,8 +695,7 @@ class LaunchCtl(object):
     #-------------------------------------------------------------------------
 
     def disable(self, serviceTarget):
-        '''
-        @note: From the launchctl man page:
+        '''@note: From the launchctl man page:
           enable | disable service-target
               Enables or disables the service in the requested domain. Once a
               service is disabled, it cannot be loaded in the specified
@@ -681,8 +703,11 @@ class LaunchCtl(object):
               across boots of the device. This subcommand may only target
               services within the system domain or user and user-login
               domains.
-
+        
         @author: Roy Nielsen
+
+        :param serviceTarget: 
+
         '''
         success = False
         #####
@@ -698,22 +723,10 @@ class LaunchCtl(object):
     #-------------------------------------------------------------------------
 
     def uncache(self, serviceName):
-        '''
-        Bypass the cache and read the service configuration from disk
-        
-        @param: serviceName - name of the service to check (plist)
-        
-        @note: From the launchctl man page:
-          uncache service-name
-              This subcommand instructs launchd to bypass its service cache
-              for the named service and instead read the service's configura-
-              tion file directly from disk.  launchd maintains an in-memory
-              cache of XPC service configuration files to minimize the disk
-              I/O. This subcommand will remove a cached entry so that devel-
-              opers may more rapidly iterate on a service's configuration. It
-              should not ever be used as part of production workflow.
+        '''Bypass the cache and read the service configuration from disk
 
-        @author: Roy Nielsen
+        :param serviceName: 
+
         '''
         success = False
         #####
@@ -729,19 +742,22 @@ class LaunchCtl(object):
     #-------------------------------------------------------------------------
 
     def kickstart(self, service="", options='-k'):
-        """
-        @note: From the launchctl man page:
+        '''@note: From the launchctl man page:
           kickstart [-kp] service-target
               Instructs launchd to kickstart the specified service.
-
+        
               -k       If the service is already running, kill the running
                        instance before restarting the service.
-
+        
               -p       Upon success, print the PID of the new process or the
                        already-running process to stdout.
-
+        
         @author: Roy Nielsen
-        """
+
+        :param service:  (Default value = "")
+        :param options:  (Default value = '-k')
+
+        '''
         success = False
         #####
         # Input validatio.
@@ -765,15 +781,18 @@ class LaunchCtl(object):
     #-------------------------------------------------------------------------
 
     def kill(self, signal="", service=""):
-        """
-        @note: From the launchctl man page:
+        '''@note: From the launchctl man page:
           kill signal-name | signal-number service-target
               Sends the specified signal to the specified service if it is
               running. The signal number or name (SIGTERM, SIGKILL, etc.) may
               be specified.
-
+        
         @author: Roy Nielsen
-        """
+
+        :param signal:  (Default value = "")
+        :param service:  (Default value = "")
+
+        '''
         success = False
         args = []
         #####
@@ -809,8 +828,7 @@ class LaunchCtl(object):
     #-------------------------------------------------------------------------
 
     def blame(self, serviceName):
-        '''
-        @note: From the launchctl man page:
+        '''@note: From the launchctl man page:
           blame service-target
               If the service is running, prints a human-readable string
               describing why launchd launched the service. Note that services
@@ -821,8 +839,11 @@ class LaunchCtl(object):
               endpoints. This subcommand is only intended for debugging and
               profiling use and its output should not be relied upon in pro-
               duction scenarios.
-
+        
         @author: Roy Nielsen
+
+        :param serviceName: 
+
         '''
         success = False
         #####
@@ -838,8 +859,7 @@ class LaunchCtl(object):
     #-------------------------------------------------------------------------
 
     def printTarget(self, target):
-        '''
-        @note: From the launchctl man page:
+        '''@note: From the launchctl man page:
           print domain-target | service-target
               Prints information about the specified service or domain.
               Domain output includes various properties about the domain as
@@ -848,12 +868,15 @@ class LaunchCtl(object):
               erties of the service, including information about its origin
               on-disk, its current state, execution context, and last exit
               status.
-
+        
               IMPORTANT: This output is NOT API in any sense at all. Do NOT
               rely on the structure or information emitted for ANY reason. It
               may change from release to release without warning.
-
+        
         @author: Roy Nielsen
+
+        :param target: 
+
         '''
         success = False
         #####
@@ -869,12 +892,13 @@ class LaunchCtl(object):
     #-------------------------------------------------------------------------
 
     def printCache(self):
-        '''
-        @note: From the launchctl man page:
+        '''@note: From the launchctl man page:
         print-cache
               Prints the contents of the launchd service cache.
-
+        
         @author: Roy Nielsen
+
+
         '''
         success = False
         
@@ -886,12 +910,13 @@ class LaunchCtl(object):
     #-------------------------------------------------------------------------
 
     def printDisabled(self):
-        '''
-        @note: From the launchctl man page:
+        '''@note: From the launchctl man page:
           print-disabled
               Prints the list of disabled services.
         
         @author: Roy Nielsen
+
+
         '''
         success = False
         
@@ -903,19 +928,19 @@ class LaunchCtl(object):
     #-------------------------------------------------------------------------
 
     def procinfo(self, pid):
-        '''
-        @note: From the launchctl man page:
+        '''@note: From the launchctl man page:
           procinfo pid
               Prints information about the execution context of the specified
               PID. This information includes Mach task-special ports and
-              exception ports (and when run against a DEVELOPMENT launchd,
-              what names the ports are advertised as in the Mach bootstrap
-              namespace, if they are known to launchd) and audit session con-
-              text. This subcommand is intended for diagnostic purposes only,
-              and its output should not be relied upon in production scenar-
-              ios. This command requires root privileges.
 
-        @author: Roy Nielsen
+        :param pid: 
+        :raises what: names the ports are advertised as in the Mach bootstrap
+        :raises namespace: if they are known to launchd
+        :raises text.: This subcommand is intended for diagnostic purposes only
+        :raises and: its output should not be relied upon in production scenar
+        :raises ios.: This command requires root privileges
+        :raises author: Roy Nielsen
+
         '''
         success = False
         #####
@@ -931,14 +956,15 @@ class LaunchCtl(object):
     #-------------------------------------------------------------------------
 
     def hostinfo(self):
-        '''
-        @note: From the launchctl man page:
+        '''@note: From the launchctl man page:
           hostinfo
               Prints information about the system's host-special ports,
               including the host-exception port. This subcommand requires
               root privileges.
-
+        
         @author: Roy Nielsen
+
+
         '''
         success = False
         
@@ -950,14 +976,17 @@ class LaunchCtl(object):
     #-------------------------------------------------------------------------
 
     def resolveport(self, ownerPid, portName):
-        '''
-        @note: From the launchctl man page:
+        '''@note: From the launchctl man page:
           resolveport owner-pid port-name
               Given a PID and the name of a Mach port right in that process'
               port namespace, resolves that port to an endpoint name known to
               launchd.  This subcommand requires root privileges.
-
+        
         @author: Roy Nielsen
+
+        :param ownerPid: 
+        :param portName: 
+
         '''
         success = False
         #####
@@ -973,9 +1002,7 @@ class LaunchCtl(object):
     #-------------------------------------------------------------------------
 
     def reboot(self, context, mountPoint, single=False):
-        '''
-        
-        @note: From the launchctl man page:
+        '''@note: From the launchctl man page:
           reboot [system|userspace|halt|logout|apps|reroot <mount-point>]
               Instructs launchd to begin tearing down userspace. With no
               argument given or with the system argument given, launchd will
@@ -984,13 +1011,13 @@ class LaunchCtl(object):
               make the reboot(2) system call when userspace has been com-
               pletely torn down and pass the RB_HALT flag, halting the system
               and not initiating a reboot.
-
+        
               With the userspace argument given, launchd will re-exec itself
               when userspace has been torn down and bring userspace back up.
               This is useful for rebooting the system quickly under condi-
               tions where kernel data structures or hardware do not need to
               be re-initialized.
-
+        
               With the reroot argument given, launchd will perform a
               userspace shutdown as with the userspace argument, but it will
               exec a copy of launchd from the specified mount-point.  This
@@ -998,16 +1025,16 @@ class LaunchCtl(object):
               part of this process, launchd will make mount-point the new
               root partition and bring userspace up as if the kernel had des-
               ignated mount-point as the root partition.
-
+        
               IMPORTANT: This type of reboot will, in no way, affect the
               already-running kernel on the host. Therefore, when using this
               option to switch to another volume, you should only target vol-
               umes whose userspace stacks are compatible with the already-
               running kernel.
-
+        
               NOTE: As of the date of this writing, this option does not com-
               pletely work.
-
+        
               With the logout argument given, launchd will tear down the
               caller's GUI login session in a manner similar to a logout ini-
               tiated from the Apple menu. The key difference is that a logout
@@ -1016,19 +1043,24 @@ class LaunchCtl(object):
               logout indefinitely; therefore there is data corruption risk to
               using this option. Only use it when you know you have no
               unsaved data in your running apps.
-
+        
               With the apps argument given, launchd will terminate all apps
               running in the caller's GUI login session that did not come
               from a launchd.plist(5) on-disk. Apps like Finder, Dock and
               SystemUIServer will be unaffected. Apps are terminated in the
               same manner as the logout argument, and all the same caveats
               apply.
-
+        
               -s       When rebooting the machine (either a full reboot or
                        userspace reboot), brings the subsequent boot session
                        up in single-user mode.
-
+        
         @author: Roy Nielsen
+
+        :param context: 
+        :param mountPoint: 
+        :param single:  (Default value = False)
+
         '''
         success = False
         validContexts = ['System', 'users', 'halt', 'logout', 'apps', 'reroot']

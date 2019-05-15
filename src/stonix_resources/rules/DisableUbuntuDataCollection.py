@@ -38,10 +38,11 @@ class DisableUbuntuDataCollection(Rule):
     def __init__(self, config, environ, logger, statechglogger):
         '''
 
-        @param config:
-        @param environ:
-        @param logger:
-        @param statechglogger:
+        :param config:
+        :param environ:
+        :param logger:
+        :param statechglogger:
+
         '''
 
         Rule.__init__(self, config, environ, logger, statechglogger)
@@ -64,15 +65,17 @@ class DisableUbuntuDataCollection(Rule):
         self.enabledCI = self.initCi(datatype, key, instructions, default)
 
     def report(self):
-        '''
-        Check for the existence of any of a number of data-collection
+        '''Check for the existence of any of a number of data-collection
         and reporting utilities on the system
         report compliance status as not compliant if any exist
         report compliance status as compliant if none exist
 
-        @return: self.compliant
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: self.compliant
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         self.detailedresults = ""
@@ -102,14 +105,16 @@ class DisableUbuntuDataCollection(Rule):
         return self.compliant
 
     def fix(self):
-        '''
-        Remove any data-collection and reporting utilities from the system
+        '''Remove any data-collection and reporting utilities from the system
         report success status as True if all are removed
         report success status as False if any remain
 
-        @return: self.rulesuccess
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: self.rulesuccess
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         self.detailedresults = ""

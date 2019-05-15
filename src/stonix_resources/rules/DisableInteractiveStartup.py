@@ -42,9 +42,7 @@ from ..CommandHelper import CommandHelper
 class DisableInteractiveStartup(Rule):
 
     def __init__(self, config, environ, logger, statechglogger):
-        '''
-        Constructor
-        '''
+        '''Constructor'''
         Rule.__init__(self, config, environ, logger, statechglogger)
         self.logger = logger
         self.rulenumber = 119
@@ -70,17 +68,18 @@ class DisableInteractiveStartup(Rule):
         self.sethelptext()
 
     def report(self):
-        '''
-        The report method examines the current configuration and determines
+        '''The report method examines the current configuration and determines
         whether or not it is correct. If the config is correct then the
         self.compliant, self.detailedresults and self.currstate properties are
         updated to reflect the system status. self.rulesuccess will be updated
         if the rule does not succeed.
         Perform a check to see if PROMPT has been set to 'no' or not
 
-        @return bool
+
+        :returns: bool
         @author bemalmbe
         @change: dwalker
+
         '''
         try:
             self.detailedresults = ""
@@ -132,14 +131,15 @@ class DisableInteractiveStartup(Rule):
 ###############################################################################
 
     def fix(self):
-        '''
-        The fix method will apply the required settings to the system.
+        '''The fix method will apply the required settings to the system.
         self.rulesuccess will be updated if the rule does not succeed.
         Search for the /etc/sysconfig/init configuration file and set the
         PROMPT setting to PROMPT=no
-
+        
         @author bemalmbe
         @change: dwalker 4/8/2014 implementing KVEditorStonix
+
+
         '''
         try:
             if not self.ci.getcurrvalue():

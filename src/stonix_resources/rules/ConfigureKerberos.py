@@ -51,9 +51,7 @@ from ..localize import MACKRB5, LINUXKRB5
 
 
 class ConfigureKerberos(Rule):
-    """
-    @author: Ekkehard J. Koch
-    """
+    '''@author: Ekkehard J. Koch'''
 
     def __init__(self, config, environ, logdispatcher, statechglogger):
         """
@@ -161,16 +159,18 @@ class ConfigureKerberos(Rule):
         self.ci = self.initCi(datatype, key, instructions, default)
 
     def report(self):
-        """
-        run report actions for configure kerberos
+        '''run report actions for configure kerberos
         determine compliance status of the current system
         return True if compliant, False if non-compliant
 
-        @return: self.compliant
-        @rtype: bool
-        @author: ???
-        @change: Breen Malmberg - 2/23/2017 - added doc string; added const checks preamble to report and fix methods
-        """
+
+        :returns: self.compliant
+
+        :rtype: bool
+@author: ???
+@change: Breen Malmberg - 2/23/2017 - added doc string; added const checks preamble to report and fix methods
+
+        '''
 
         self.compliant = True
         self.detailedresults = ""
@@ -216,15 +216,17 @@ class ConfigureKerberos(Rule):
         return self.compliant
 
     def fix(self):
-        """
-        run fix actions
+        '''run fix actions
 
-        @return: self.rulesuccess
-        @rtype: bool
-        @author: ???
-        @change: Breen Malmberg - 2/23/2017 - added doc string; added checkconsts preamble to ensure
-                the rule does not attempt to run without requied information (from localize.py)
-        """
+
+        :returns: self.rulesuccess
+
+        :rtype: bool
+@author: ???
+@change: Breen Malmberg - 2/23/2017 - added doc string; added checkconsts preamble to ensure
+        the rule does not attempt to run without requied information (from localize.py)
+
+        '''
 
         self.rulesuccess = True
         self.detailedresults = ""

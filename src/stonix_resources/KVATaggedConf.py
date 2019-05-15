@@ -29,27 +29,30 @@ class KVATaggedConf():
 
     '''This class checks files for correctness that consist of a tag, usually
     in brackets such as [userdefaults], followed by nested key:value pairs
-    either closed equal separated (k=v), open separated (k = v), or space 
+    either closed equal separated (k=v), open separated (k = v), or space
     separated (k v).  To implement this class, the calling KVEditor class
-    must have already had the path set and the intent set.  The intent should 
-    either be a value of present or notpresent.  By default, the intent value 
-    is "present" The purpose of the intent is to determine whether the values 
+    must have already had the path set and the intent set.  The intent should
+    either be a value of present or notpresent.  By default, the intent value
+    is "present" The purpose of the intent is to determine whether the values
     you are setting are desired in the configuration file or not desired, where
-    present = desired and notpresent = not desired, this rule also assumes 
-    that for the given file, the tag only appears at most, once.  If the 
-    specified tag appears more than once, the first appearance of the tag will 
-    get corrected and not any others.  This class also assumes that the tags 
-    are encased in square brackets. If other tags are discovered, updates will 
-    be made.  When passing in a dictionary it should be in the form of: 
+    present = desired and notpresent = not desired, this rule also assumes
+    that for the given file, the tag only appears at most, once.  If the
+    specified tag appears more than once, the first appearance of the tag will
+    get corrected and not any others.  This class also assumes that the tags
+    are encased in square brackets. If other tags are discovered, updates will
+    be made.  When passing in a dictionary it should be in the form of:
     {tag:{key:value,key:value}}.  If the intent is notpresent, the values can
     be anything since the values won't be checked anyway.
-    1. When creating the KVEditor object, pass through all the parameters in 
+    1. When creating the KVEditor object, pass through all the parameters in
     the beginning
     2.run the create method in the KVEditor object
     3.Run validate, if Validate returns False, run update
     4.Change intent and/or data if necessary
     5.repeat steps 3 and 4 until finished checking then run commit
-    6.A temporary file that you specified should exist now with corrections'''
+    6.A temporary file that you specified should exist now with corrections
+
+
+    '''
 ###############################################################################
     def __init__(self, path, tmpPath="", intent="present", configType="", logger=""):
         self.path = path
@@ -81,8 +84,10 @@ class KVATaggedConf():
         return self.intent
 
     def getValue(self, tag, dict1):
-        '''
-        will either return True, False, or a blank dictionary {}
+        '''will either return True, False, or a blank dictionary {}
+
+        :param tag: 
+        :param dict1: 
 
         '''
         if self.configType in ["openeq", "closedeq"]:
@@ -95,9 +100,9 @@ class KVATaggedConf():
     def getOpenClosedValue(self, tag, dict1):
         '''
 
-        :param tag:
-        :param dict1:
-        :return:
+        :param tag: param dict1:
+        :param dict1: 
+
         '''
 
         if self.contents:
@@ -190,9 +195,9 @@ class KVATaggedConf():
     def getSpaceValue(self, tag, dict1):
         '''
 
-        :param tag:
-        :param dict1:
-        :return:
+        :param tag: param dict1:
+        :param dict1: 
+
         '''
 
         if self.contents:
@@ -557,16 +562,16 @@ class KVATaggedConf():
         return self.writeFile(self.tmpPath, self.tempstring)
 ###############################################################################
     def writeFile(self, tmpfile, contents):
-        '''
-        write the string(contents) to the tmpfile
+        '''write the string(contents) to the tmpfile
 
-        @param tmpfile: string; full path of file to write
-        @param contents: string|list; contents to write to tmpfile
-        @return: retval
-        @rtype: bool
-        @author: Derek Walker
-        @change: 01/18/2018 - Breen Malmberg - fixed an attributeerror issue associated with the exception handling;
-                re-write of method; added doc string
+        :param tmpfile: string; full path of file to write
+        :param contents: string|list; contents to write to tmpfile
+        :returns: retval
+        :rtype: bool
+@author: Derek Walker
+@change: 01/18/2018 - Breen Malmberg - fixed an attributeerror issue associated with the exception handling;
+        re-write of method; added doc string
+
         '''
 
         retval = True

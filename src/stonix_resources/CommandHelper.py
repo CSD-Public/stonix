@@ -45,13 +45,14 @@ from logdispatcher import LogPriority
 
 
 class CommandHelper(object):
-    '''
-    CommandHelper is class that helps with execution of subprocess Popen based
+    '''CommandHelper is class that helps with execution of subprocess Popen based
     commands and then finding or parsing strerror and/or strout
     their output.
     @author: rsn
     @author: dwalker
     @author: ekkehard
+
+
     '''
 
 ###############################################################################
@@ -102,33 +103,36 @@ class CommandHelper(object):
 ###############################################################################
 
     def getCommand(self):
-        '''
-        Get the current command.
-        @param self:essential if you override this definition
-        @return: string or list of command
+        '''Get the current command.
+
+        :param self: essential if you override this definition
+        :returns: string or list of command
         @author: ekkehard j. koch
+
         '''
         return self.command
 
 ###############################################################################
 
     def getError(self):
-        '''
-        Get standard error stream for last executed command
-        @param self:essential if you override this definition
-        @return: list of standard error stream
+        '''Get standard error stream for last executed command
+
+        :param self: essential if you override this definition
+        :returns: list of standard error stream
         @author: ekkehard j. koch
+
         '''
         return self.stderr
 
 ###############################################################################
 
     def getErrorOutput(self):
-        '''
-        Get standard out stream and standard error for last executed command
-        @param self:essential if you override this definition
-        @return: list of output
+        '''Get standard out stream and standard error for last executed command
+
+        :param self: essential if you override this definition
+        :returns: list of output
         @author: ekkehard j. koch
+
         '''
 
         return self.output
@@ -136,13 +140,14 @@ class CommandHelper(object):
 ###############################################################################
 
     def getOutput(self):
-        '''
-        Get standard out stream for last executed command
-        @param self:essential if you override this definition
-        @return: self.stdout
-        @rtype: list
-        @author: ekkehard j. koch
-        @change: Breen Malmberg - 12/3/2015
+        '''Get standard out stream for last executed command
+
+        :param self: essential if you override this definition
+        :returns: self.stdout
+        :rtype: list
+@author: ekkehard j. koch
+@change: Breen Malmberg - 12/3/2015
+
         '''
 
         return self.stdout
@@ -150,17 +155,18 @@ class CommandHelper(object):
 ###############################################################################
 
     def getOutputGroup(self, expression, groupnumber, searchgroup="output"):
-        '''
-        getOutputGroup (expression,groupnumber) finds an expression in the
+        '''getOutputGroup (expression,groupnumber) finds an expression in the
         returns the specified group after using regular expression on output
-        @param self:essential if you override this definition
-        @param expression string: expression to search for in searchgroup
-        @param groupnumber integer: number of group to return
-        @param searchgroup string: group to search in output, stdout, stderr
-        @return: returnlist
-        @rtype: list
-        @author: rsn
-        @change: Breen Malmberg - 12/3/2015
+
+        :param self: essential if you override this definition
+        :param expression: string: expression to search for in searchgroup
+        :param groupnumber: integer: number of group to return
+        :param searchgroup: string: group to search in output, stdout, stderr (Default value = "output")
+        :returns: returnlist
+        :rtype: list
+@author: rsn
+@change: Breen Malmberg - 12/3/2015
+
         '''
 
         returnlist = []
@@ -194,18 +200,20 @@ class CommandHelper(object):
 ###############################################################################
 
     def getFirstOutputGroup(self, expression, groupnumber, searchgroup="output"):
-        '''
-        getOutputGroup (expression, groupnumber) finds an expression in the
+        '''getOutputGroup (expression, groupnumber) finds an expression in the
         returns the first instance (string) of the group specified in the
         regular expression that is found in the output.
-        @param self:essential if you override this definition
-        @param expresssion string: expression to search for
-        @param groupnumber integer: number of group to return
-        @param searchgroup string: group to search in output, stdout, stderr
-        @return: returnstring
-        @rtype: bool
-        @author: rsn
-        @change: Breen Malmberg - 12/3/2015
+
+        :param self: essential if you override this definition
+        :param expresssion: string: expression to search for
+        :param groupnumber: integer: number of group to return
+        :param searchgroup: string: group to search in output, stdout, stderr (Default value = "output")
+        :param expression: 
+        :returns: returnstring
+        :rtype: bool
+@author: rsn
+@change: Breen Malmberg - 12/3/2015
+
         '''
 
         returnstring = ""
@@ -241,13 +249,14 @@ class CommandHelper(object):
 ###############################################################################
 
     def getOutputString(self):
-        '''
-        Get standard out in string format
-        @param self:essential if you override this definition
-        @return: stdstring
-        @rtype: string
-        @author: ekkehard j. koch
-        @change: Breen Malmberg - 12/3/2015
+        '''Get standard out in string format
+
+        :param self: essential if you override this definition
+        :returns: stdstring
+        :rtype: string
+@author: ekkehard j. koch
+@change: Breen Malmberg - 12/3/2015
+
         '''
 
         stdstring = ""
@@ -275,13 +284,14 @@ class CommandHelper(object):
 ###############################################################################
 
     def getErrorString(self):
-        '''
-        Get standard error in string format
-        @param self:essential if you override this definition
-        @return: self.stderr
-        @rtype: string
-        @author: dwalker
-        @change: Breen Malmberg - 12/3/2015
+        '''Get standard error in string format
+
+        :param self: essential if you override this definition
+        :returns: self.stderr
+        :rtype: string
+@author: dwalker
+@change: Breen Malmberg - 12/3/2015
+
         '''
 
         errstring = ""
@@ -310,12 +320,13 @@ class CommandHelper(object):
 ###############################################################################
 
     def getAllString(self):
-        '''
-        Get both the stdout and stderr together as one string
-        @param self:essential if you override this definition
-        @return: allstring
-        @rtype: string
-        @author: Breen Malmberg
+        '''Get both the stdout and stderr together as one string
+
+        :param self: essential if you override this definition
+        :returns: allstring
+        :rtype: string
+@author: Breen Malmberg
+
         '''
 
         allstring = ""
@@ -357,12 +368,13 @@ class CommandHelper(object):
 ###############################################################################
 
     def getAllList(self):
-        '''
-        Get both the stdout and stderr together as one list
-        @param self:essential if you override this definition
-        @return: alllist
-        @rtype: list
-        @author: Breen Malmberg
+        '''Get both the stdout and stderr together as one list
+
+        :param self: essential if you override this definition
+        :returns: alllist
+        :rtype: list
+@author: Breen Malmberg
+
         '''
 
         alllist = []
@@ -396,12 +408,14 @@ class CommandHelper(object):
 ###############################################################################
 
     def getReturnCode(self):
-        '''
-        Get return code for last executed command
+        '''Get return code for last executed command
 
-        @return: self.returncode
-        @rtype: bool
-        @author: ekkehard j. koch
+
+        :returns: self.returncode
+
+        :rtype: bool
+@author: ekkehard j. koch
+
         '''
 
         return self.returncode
@@ -409,30 +423,30 @@ class CommandHelper(object):
 ###############################################################################
 
     def setCommand(self, command):
-        '''
-        setCommand (command) set the command for the CommandHelper
+        '''setCommand (command) set the command for the CommandHelper
 
-        @param command string: command to set the command property to
-        @return: success
-        @rtype: bool
-        @author: ekkehard j. koch
-        @change: Breen Malmberg - 04/11/2018 - fixed a typo in the msg = on line 472;
-                fixed doc string; removed most of the raiseexception calls (they were unnecessary
-                since the entire code block is already encapsulated with a try except; also removed
-                the call to explicit exception type within the except portion as that is
-                automatically detected and reported by python and overriding that can lead to
-                incorrect except type reporting in debug logs; added a logger error log call within
-                the except block with the appropriate message; removed possible variable confusion
-                issue by assigning a unique variable to list items to determine their type
-                rather than assigning the type of each list item to the same variable being used
-                to determine the type of the command parameter being passed in; added default
-                variable initializations to several uninitialized method-scope variables;
-                pulled the default variable initializations outside of the try except (these will
-                never fail); removed repeated instances of command variable checking and made
-                a single check at the beginning of the rule, with debug output; changed the default
-                initialization of the variable 'success' to True which removed the need for several
-                redundant instances of setting it to True when there were also already instances of
-                it being set to False (one or the other; both are not needed explicitly)
+        :param command: string: command to set the command property to
+        :returns: success
+        :rtype: bool
+@author: ekkehard j. koch
+@change: Breen Malmberg - 04/11/2018 - fixed a typo in the msg = on line 472;
+        fixed doc string; removed most of the raiseexception calls (they were unnecessary
+        since the entire code block is already encapsulated with a try except; also removed
+        the call to explicit exception type within the except portion as that is
+        automatically detected and reported by python and overriding that can lead to
+        incorrect except type reporting in debug logs; added a logger error log call within
+        the except block with the appropriate message; removed possible variable confusion
+        issue by assigning a unique variable to list items to determine their type
+        rather than assigning the type of each list item to the same variable being used
+        to determine the type of the command parameter being passed in; added default
+        variable initializations to several uninitialized method-scope variables;
+        pulled the default variable initializations outside of the try except (these will
+        never fail); removed repeated instances of command variable checking and made
+        a single check at the beginning of the rule, with debug output; changed the default
+        initialization of the variable 'success' to True which removed the need for several
+        redundant instances of setting it to True when there were also already instances of
+        it being set to False (one or the other; both are not needed explicitly)
+
         '''
 
         success = True
@@ -500,13 +514,13 @@ class CommandHelper(object):
 ###############################################################################
 
     def setLogPriority(self, logpriority=None):
-        '''
-        Setting log priority use LogPriority.DEBUG, LogPrority.ERROR, etc.
+        '''Setting log priority use LogPriority.DEBUG, LogPrority.ERROR, etc.
 
-        @param logpriority of type LogPriority.xxx
-        @return: success
-        @rtype: bool
-        @author: ekkehard j. koch
+        :param logpriority: of type LogPriority.xxx (Default value = None)
+        :returns: success
+        :rtype: bool
+@author: ekkehard j. koch
+
         '''
 
         success = True
@@ -528,11 +542,12 @@ class CommandHelper(object):
 ###############################################################################
 
     def setRegexFlag(self, flag):
-        '''
-        Set the Regular Expression Flag.
-        @param self:essential if you override this definition
-        @param flag used in regular expression
+        '''Set the Regular Expression Flag.
+
+        :param self: essential if you override this definition
+        :param flag: used in regular expression
         @author: rsn
+
         '''
         if flag in self.flags:
             self.flag = flag
@@ -540,12 +555,13 @@ class CommandHelper(object):
 ###############################################################################
 
     def executeCommand(self, command=None):
-        '''
-        executeCommand (command) excecute the command for the CommandHelper
-        @param self:essential if you override this definition
-        @param command string or list: command to set the command property to
-        @return: bool indicating success or failure
+        '''executeCommand (command) excecute the command for the CommandHelper
+
+        :param self: essential if you override this definition
+        :param command: string or list: command to set the command property to (Default value = None)
+        :returns: bool indicating success or failure
         @author: ekkehard j. koch
+
         '''
 
         commandaborted = False
@@ -640,16 +656,17 @@ class CommandHelper(object):
 ###############################################################################
 
     def findInOutput(self, expression, searchgroup="output", dtype="list"):
-        '''
-        findInOutput (expression) finds an expression in the combined stderr
+        '''findInOutput (expression) finds an expression in the combined stderr
         and stdout
-        @param self:essential if you override this definition
-        @param expression string: expression to search for in searchgroup
-        @param searchgroup string: group to search in output, stdout, stderr
-        @param dtype string: search as list or string
-        @return: bool indicating success or failure
+
+        :param self: essential if you override this definition
+        :param expression: string: expression to search for in searchgroup
+        :param searchgroup: string: group to search in output, stdout, stderr (Default value = "output")
+        :param dtype: string: search as list or string (Default value = "list")
+        :returns: bool indicating success or failure
         @author: ekkehard j. koch
         @author: dwalker
+
         '''
 
         try:

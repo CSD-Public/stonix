@@ -44,10 +44,7 @@ from src.stonix_resources.rules.ConfigureKerberos import ConfigureKerberos
 class zzzTestRuleConfigureKerberos(RuleTest):
 
     def setUp(self):
-        """
-
-        @return:
-        """
+        ''' '''
 
         RuleTest.setUp(self)
         self.rule = ConfigureKerberos(self.config,
@@ -69,13 +66,15 @@ class zzzTestRuleConfigureKerberos(RuleTest):
                 self.backupDict = {p: tp}
 
     def tearDown(self):
-        """
-        restore any/all files to original versions
+        '''restore any/all files to original versions
 
-        @return: success
-        @rtype: bool
-        @author: Breen Malmberg
-        """
+
+        :returns: success
+
+        :rtype: bool
+@author: Breen Malmberg
+
+        '''
 
         success = True
 
@@ -91,15 +90,17 @@ class zzzTestRuleConfigureKerberos(RuleTest):
         return success
 
     def setConditionsForRule(self):
-        """
-        backup the krb5 conf file
+        '''backup the krb5 conf file
         and write a new version with the contents:
         'test'
 
-        @return: success
-        @rtype: bool
-        @author: Breen Malmberg
-        """
+
+        :returns: success
+
+        :rtype: bool
+@author: Breen Malmberg
+
+        '''
 
         success = True
 
@@ -115,26 +116,17 @@ class zzzTestRuleConfigureKerberos(RuleTest):
         return success
 
     def runTest(self):
-        """
-
-        @return:
-        """
+        ''' '''
 
         self.simpleRuleTest()
 
     def test_backup_dict(self):
-        """
-
-        @return:
-        """
+        ''' '''
 
         self.assertNotEqual(self.backupDict, {})
 
     def test_init(self):
-        """
-
-        @return:
-        """
+        ''' '''
 
         self.assertIsNotNone(self.rule.files)
         self.assertIsInstance(self.rule.files, dict)
@@ -144,10 +136,7 @@ class zzzTestRuleConfigureKerberos(RuleTest):
             self.assertIsNotNone(self.rule.ph)
 
     def test_fix_ci(self):
-        """
-
-        @return:
-        """
+        ''' '''
 
         origcival = self.rule.ci.getcurrvalue()
         self.rule.ci.updatecurrvalue(False)
@@ -156,14 +145,14 @@ class zzzTestRuleConfigureKerberos(RuleTest):
         self.rule.ci.updatecurrvalue(origcival)
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
-        """
-        check on whether report was correct
+        '''check on whether report was correct
 
-        @param pCompliance: the self.iscompliant value of rule
-        @param pRuleSuccess: did report run successfully
-        @return: boolean - If successful True; If failure False
+        :param pCompliance: the self.iscompliant value of rule
+        :param pRuleSuccess: did report run successfully
+        :returns: boolean - If successful True; If failure False
         @author: Ekkehard J. Koch
-        """
+
+        '''
 
         self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " +
                              str(pCompliance) + ".")
@@ -173,26 +162,26 @@ class zzzTestRuleConfigureKerberos(RuleTest):
         return success
 
     def checkFixForRule(self, pRuleSuccess):
-        """
-        check on whether fix was correct
+        '''check on whether fix was correct
 
-        @param pRuleSuccess: did report run successfully
-        @return: boolean - If successful True; If failure False
+        :param pRuleSuccess: did report run successfully
+        :returns: boolean - If successful True; If failure False
         @author: Ekkehard J. Koch
-        """
+
+        '''
         self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True
         return success
 
     def checkUndoForRule(self, pRuleSuccess):
-        """
-        check on whether undo was correct
+        '''check on whether undo was correct
 
-        @param pRuleSuccess: did report run successfully
-        @return: boolean - If successful True; If failure False
+        :param pRuleSuccess: did report run successfully
+        :returns: boolean - If successful True; If failure False
         @author: Ekkehard J. Koch
-        """
+
+        '''
         self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True

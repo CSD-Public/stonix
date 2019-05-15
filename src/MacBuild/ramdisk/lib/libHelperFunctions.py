@@ -26,11 +26,12 @@ logger = CyLogger()
 run = RunWith(logger)
 
 def getOsFamily():
-    """
-    Get the os name from the "uname -s" command
-
+    '''Get the os name from the "uname -s" command
+    
     @author: Roy Nielsen
-    """
+
+
+    '''
 
     operatingsystemfamily = sys.platform
 
@@ -39,25 +40,27 @@ def getOsFamily():
 ###########################################################################
 
 class FoundException(Exception) :
-    """
-    Exeption to raise when the condition is met in a for/while
-
+    '''Exeption to raise when the condition is met in a for/while
+    
     Accompanying code (in collect_for_hostmaster.py) derived from example
-    in "Rapid GUI Programming with Python and QT" pgs 66 - 71, 
+    in "Rapid GUI Programming with Python and QT" pgs 66 - 71,
     by Mark Summerfeild
     
     For more examples on python user defined exceptions:
     http://docs.python.org/2/tutorial/errors.html
-    """
+
+
+    '''
     pass
 
 ##############################################################################
 
 def get_console_user():
-    """
-    Get the user that owns the console on the Mac.  This user is the user that
+    '''Get the user that owns the console on the Mac.  This user is the user that
     is logged in to the GUI.
-    """
+
+
+    '''
     user = False
 
     cmd = ["/usr/bin/stat", "-f", "'%Su'", "/dev/console"]
@@ -87,11 +90,13 @@ def get_console_user():
 ###########################################################################
 
 def is_valid_pn(random_pn=0) :
-    """
-    Validate that the property number is seven digits.
-
+    '''Validate that the property number is seven digits.
+    
     @author: Roy Nielsen
-    """
+
+    :param random_pn:  (Default value = 0)
+
+    '''
     retval = True
 
     # Need to check for 7 decimal places
@@ -106,19 +111,20 @@ def is_valid_pn(random_pn=0) :
 ###########################################################################
 
 def get_darwin_mac() :
-    """
-    Get the mac address and place it in net_hw_addr
-
+    '''Get the mac address and place it in net_hw_addr
+    
     Future METHOD: Use the "ifconfig" command - look for the "active" interface
     - collect "interface", "mac", "ipaddr" to return.  PATH to ifconfig may be
     specific to the Mac.
-
+    
     Description:   Runs the networksetup -listallhardwareports,
                    processing the output to get the network interface mac
                    address.  Specific to the Mac.
-
+    
     @author: Roy Nielsen
-    """
+
+
+    '''
     found = 0
 
     output = Popen(["/usr/sbin/networksetup", "-listallhardwareports"], stdout=PIPE, stderr=STDOUT).communicate()[0]
@@ -151,11 +157,12 @@ def get_darwin_mac() :
 ###########################################################################
 
 def is_laptop():
-    """
-    Determine if the machine this is currently running on is a laptop
+    '''Determine if the machine this is currently running on is a laptop
     
     @author: Roy Nielsen
-    """
+
+
+    '''
     isThisALaptop = False
     
     cmd = ["/usr/sbin/system_profiler", "SPHardwareDataType"]
@@ -178,10 +185,11 @@ def is_laptop():
 ###########################################################################
 
 def touch(filename=""):
-    """
-    Python implementation of the touch command..
-    
-    """
+    '''Python implementation of the touch command..
+
+    :param filename:  (Default value = "")
+
+    '''
     if re.match("^\s*$", filename) :
         logger.log(lp.INFO, "Cannot touch a file without a filename....")
     else :
@@ -196,12 +204,15 @@ def touch(filename=""):
 ###########################################################################
 
 def installFdeUser(myusername="", mypassword="") :
-    """
-    Create an input plist for the fdesetup command to enable a user in the 
+    '''Create an input plist for the fdesetup command to enable a user in the
     filevault login screen
-
+    
     @author: Roy Nielsen
-    """
+
+    :param myusername:  (Default value = "")
+    :param mypassword:  (Default value = "")
+
+    '''
     success = False
     logger.log(lp.DEBUG, "Starting installFdeUser...")
     
@@ -246,11 +257,13 @@ def installFdeUser(myusername="", mypassword="") :
 ###########################################################################
 
 def removeFdeUser(myusername=""):
-    """
-    Remove a user from the FDE login screen
+    '''Remove a user from the FDE login screen
     
     @author: Roy Nielsen
-    """
+
+    :param myusername:  (Default value = "")
+
+    '''
     success = False
     if re.match("^\s+$", myusername) or not myusername:
         logger.log(lp.INFO, "Empty username: '" + str(myusername) + "'")
@@ -265,10 +278,11 @@ def removeFdeUser(myusername=""):
 ############################################################################
 
 def touch(filename=""):
-    """
-    Python implementation of the touch command..
-    
-    """
+    '''Python implementation of the touch command..
+
+    :param filename:  (Default value = "")
+
+    '''
     if re.match("^\s*$", filename) :
         logger.log(lp.INFO, "Cannot touch a file without a filename....")
     else :
@@ -283,12 +297,15 @@ def touch(filename=""):
 ###########################################################################
 
 def getecho (fileDescriptor):
-    """This returns the terminal echo mode. This returns True if echo is
+    '''This returns the terminal echo mode. This returns True if echo is
     on or False if echo is off. Child applications that are expecting you
     to enter a password often set ECHO False. See waitnoecho().
-
+    
     Borrowed from pexpect - acceptable to license
-    """
+
+    :param fileDescriptor: 
+
+    '''
     attr = termios.tcgetattr(fileDescriptor)
     if attr[3] & termios.ECHO:
         return True
@@ -297,21 +314,25 @@ def getecho (fileDescriptor):
 ############################################################################
 
 def waitnoecho (fileDescriptor, timeout=3):
-    """This waits until the terminal ECHO flag is set False. This returns
+    '''This waits until the terminal ECHO flag is set False. This returns
     True if the echo mode is off. This returns False if the ECHO flag was
     not set False before the timeout. This can be used to detect when the
     child is waiting for a password. Usually a child application will turn
     off echo mode when it is waiting for the user to enter a password. For
     example, instead of expecting the "password:" prompt you can wait for
     the child to set ECHO off::
-
+    
         see below in runAsWithSudo
-
+    
     If timeout is None or negative, then this method to block forever until
     ECHO flag is False.
-
+    
     Borrowed from pexpect - acceptable to license
-    """
+
+    :param fileDescriptor: 
+    :param timeout:  (Default value = 3)
+
+    '''
     if timeout is not None and timeout > 0:
         end_time = time.time() + timeout
     while True:
@@ -326,11 +347,13 @@ def waitnoecho (fileDescriptor, timeout=3):
 ###########################################################################
 
 def isSaneFilePath(filepath):
-    """
-    Check for a good file path in the passed in string.
+    '''Check for a good file path in the passed in string.
     
     @author: Roy Nielsen
-    """
+
+    :param filepath: 
+
+    '''
     sane = False
     if filepath and isinstance(filepath, basestring):
         if re.match("^[A-Za-z0-9_\-/\.]*", filepath):

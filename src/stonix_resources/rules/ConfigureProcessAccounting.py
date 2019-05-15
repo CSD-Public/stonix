@@ -36,9 +36,7 @@ from ..ServiceHelper import ServiceHelper
 
 
 class ConfigureProcessAccounting(Rule):
-    """
-    Class docs
-    """
+    '''Class docs'''
 
     def __init__(self, config, environ, logger, statechglogger):
         """
@@ -72,14 +70,17 @@ class ConfigureProcessAccounting(Rule):
         self.sh = ServiceHelper(self.environ, self.logger)
 
     def report(self):
-        """
+        '''
 
-        @return: self.compliant
-        @rtype: bool
-        @author: Eric Ball
-        @change: Breen Malmberg - 04/09/2019 - doc string added; method refactor;
-                added debug logging
-        """
+
+        :returns: self.compliant
+
+        :rtype: bool
+@author: Eric Ball
+@change: Breen Malmberg - 04/09/2019 - doc string added; method refactor;
+        added debug logging
+
+        '''
 
         self.compliant = True
         self.detailedresults = ""
@@ -106,14 +107,17 @@ class ConfigureProcessAccounting(Rule):
         return self.compliant
 
     def fix(self):
-        """
+        '''
 
-        @return: self.rulesuccess
-        @rtype: bool
-        @author: Eric Ball
-        @change: Breen Malmberg - 04/09/2019 - doc string added; method refactor;
-                added debug logging
-        """
+
+        :returns: self.rulesuccess
+
+        :rtype: bool
+@author: Eric Ball
+@change: Breen Malmberg - 04/09/2019 - doc string added; method refactor;
+        added debug logging
+
+        '''
 
         self.rulesuccess = True
         self.detailedresults = ""

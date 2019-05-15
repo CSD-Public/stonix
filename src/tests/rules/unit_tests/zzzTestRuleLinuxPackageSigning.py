@@ -46,8 +46,7 @@ from src.stonix_resources.rules.LinuxPackageSigning import LinuxPackageSigning
 class zzzTestRuleLinuxPackageSigning(RuleTest):
 
     def setUp(self):
-        '''
-        '''
+        ''' '''
 
         RuleTest.setUp(self)
         self.rule = LinuxPackageSigning(self.config,
@@ -70,33 +69,31 @@ class zzzTestRuleLinuxPackageSigning(RuleTest):
                 copyfile(p, self.backup)
 
     def tearDown(self):
-        '''
-        '''
+        ''' '''
 
         if os.path.exists(self.backup):
             copyfile(self.backup, self.confpath)
             os.remove(self.backup)
 
     def setConditionsForRule(self):
-        '''
-        Configure system for the unit test
-        @param self: essential if you override this definition
-        @return: boolean - If successful True; If failure False
+        '''Configure system for the unit test
+
+        :param self: essential if you override this definition
+        :returns: boolean - If successful True; If failure False
         @author: ekkehard j. koch
+
         '''
 
         success = True
         return success
 
     def test_default(self):
-        '''
-        '''
+        ''' '''
 
         self.simpleRuleTest()
 
     def test_gpgoff(self):
-        '''
-        '''
+        ''' '''
 
         self.logdispatch.log(LogPriority.DEBUG, "Running test_gpgoff")
         found = 0
@@ -122,8 +119,7 @@ class zzzTestRuleLinuxPackageSigning(RuleTest):
             self.simpleRuleTest()
 
     def test_gpgmissing(self):
-        '''
-        '''
+        ''' '''
 
         self.logdispatch.log(LogPriority.DEBUG, "Running test_gpgmissing")
 
@@ -144,8 +140,7 @@ class zzzTestRuleLinuxPackageSigning(RuleTest):
             self.simpleRuleTest()
 
     def test_gpgon(self):
-        '''
-        '''
+        ''' '''
 
         self.logdispatch.log(LogPriority.DEBUG, "Running test_gpgon")
 
@@ -172,8 +167,7 @@ class zzzTestRuleLinuxPackageSigning(RuleTest):
             self.simpleRuleTest()
 
     def test_gpggarbage(self):
-        '''
-        '''
+        ''' '''
 
         self.logdispatch.log(LogPriority.DEBUG, "Running test_gpggarbage")
 
@@ -200,13 +194,14 @@ class zzzTestRuleLinuxPackageSigning(RuleTest):
             self.simpleRuleTest()
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
-        '''
-        check on whether report was correct
-        @param self: essential if you override this definition
-        @param pCompliance: the self.iscompliant value of rule
-        @param pRuleSuccess: did report run successfully
-        @return: boolean - If successful True; If failure False
+        '''check on whether report was correct
+
+        :param self: essential if you override this definition
+        :param pCompliance: the self.iscompliant value of rule
+        :param pRuleSuccess: did report run successfully
+        :returns: boolean - If successful True; If failure False
         @author: ekkehard j. koch
+
         '''
         self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " +
                              str(pCompliance) + ".")
@@ -216,12 +211,13 @@ class zzzTestRuleLinuxPackageSigning(RuleTest):
         return success
 
     def checkFixForRule(self, pRuleSuccess):
-        '''
-        check on whether fix was correct
-        @param self: essential if you override this definition
-        @param pRuleSuccess: did report run successfully
-        @return: boolean - If successful True; If failure False
+        '''check on whether fix was correct
+
+        :param self: essential if you override this definition
+        :param pRuleSuccess: did report run successfully
+        :returns: boolean - If successful True; If failure False
         @author: ekkehard j. koch
+
         '''
         self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
@@ -229,12 +225,13 @@ class zzzTestRuleLinuxPackageSigning(RuleTest):
         return success
 
     def checkUndoForRule(self, pRuleSuccess):
-        '''
-        check on whether undo was correct
-        @param self: essential if you override this definition
-        @param pRuleSuccess: did report run successfully
-        @return: boolean - If successful True; If failure False
+        '''check on whether undo was correct
+
+        :param self: essential if you override this definition
+        :param pRuleSuccess: did report run successfully
+        :returns: boolean - If successful True; If failure False
         @author: ekkehard j. koch
+
         '''
         self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")

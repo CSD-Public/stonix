@@ -14,9 +14,10 @@ import networksetup
 
 
 class logmock:
-    '''
-    This is a mock class to deal with the fact that the networksetup object
+    '''This is a mock class to deal with the fact that the networksetup object
     expects the logdispatcher at instantiation.
+
+
     '''
 
     def log(self, prio, message):

@@ -17,42 +17,46 @@ from lib.run_commands import RunWith
 from lib.libHelperFunctions import getOsFamily
 
 def BadRamdiskTypeException(Exception):
-    """
-    Custom Exception
-    """
+    '''Custom Exception
+
+    :param Exception: 
+
+    '''
     def __init__(self,*args,**kwargs):
         Exception.__init__(self,*args,**kwargs)
 
 def OSNotValidForRamdiskHelper(Exception):
-    """
-    Custom Exception
-    """
+    '''Custom Exception
+
+    :param Exception: 
+
+    '''
     def __init__(self, *args, **kwargs):
         Exception.__init__(self, *args, **kwargs)
 
 class RamDiskFactory(object):
-    """
-    Retrieve and OS specific ramdisk, and provide an interface to manage it.
-
+    '''Retrieve and OS specific ramdisk, and provide an interface to manage it.
+    
     Keeps a reference to a list of ramdisks.  When calling getRamdisk(new), if
     "new" is true, the method will add the ramdisk to the list of ramdisks.
 
-    @parameter message_level: Level of logging a person wishes to log at.
+    :param eter: message_level: Level of logging a person wishes to log at.
                               see logMessage in the log_message module.
-
+    
     @method: getRamdisk: Will return either a new ramdisk, or make the
                          self.activeRamdisk the ramdisk with the name of the
                          passed in mountpoint (if found).  Otherwise, the
                          self.activeRamdisk is initialized to None.
-
+    
     @method getModuleVersion: gets the version of this module.
-
+    
     @method unmountActiveRamdisk: Unmounts the active ramdisk.
-
+    
     @method unmountRamdisk: Unmounts the mountpoint that is passed in.
-
+    
     @author: Roy Nielsen
-    """
+
+    '''
     def __init__(self, logger=None):
         """
         Identify OS and instantiate an instance of a ramdisk
@@ -79,14 +83,15 @@ class RamDiskFactory(object):
     ############################################################################
     
     def getRamdisk(self, size=0, mountpoint="", ramdiskType=""):
-        """
-        Getter for the ramdisk instance.
+        '''Getter for the ramdisk instance.
         
         @var: ramdisks - a list of ramdisks this factory has created
-        
-        @param: size - size of the ramdisk to create. If zero, it looks for 
-        @author: Roy Nielsen
-        """
+
+        :param size:  (Default value = 0)
+        :param mountpoint:  (Default value = "")
+        :param ramdiskType:  (Default value = "")
+
+        '''
         if not ramdiskType in self.validRamdiskTypes:
             raise BadRamdiskTypeException("Not a valid ramdisk type")
     
@@ -134,23 +139,25 @@ class RamDiskFactory(object):
     ############################################################################
 
     def getModuleVersion(self):
-        """
-        Getter for the version of this  module.
-
+        '''Getter for the version of this  module.
+        
         @author: Roy Nielsen
-        """
+
+
+        '''
         return self.module_version
 
     ############################################################################
 
     def unmountActiveRamdisk(self):
-        """
-        Eject the currently active ramdisk in the Factory.
+        '''Eject the currently active ramdisk in the Factory.
 
-        @return: success - successful = True, unsuccessful = False
 
+        :returns: success - successful = True, unsuccessful = False
+        
         @author: Roy Nielsen
-        """
+
+        '''
         success = False
 
         success = self.activeRamdisk.unmount(self.logger)
@@ -160,15 +167,14 @@ class RamDiskFactory(object):
     ############################################################################
 
     def unmountRamdisk(self, mountpoint=""):
-        """
-        Eject the ramdisk in the list with the passed in mountpoint.
+        '''Eject the ramdisk in the list with the passed in mountpoint.
 
-        @param mountpoint: the mountpoint to eject.
-
-        @return: True if successful, False if not successful
-
+        :param mountpoint: the mountpoint to eject. (Default value = "")
+        :returns: True if successful, False if not successful
+        
         @author: Roy Nielsen
-        """
+
+        '''
         success = False
         if mountpoint:
             for ramdisk in self.ramdisks:

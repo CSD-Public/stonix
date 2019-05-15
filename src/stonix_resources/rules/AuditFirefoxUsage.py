@@ -79,10 +79,11 @@ DISABLEPROXY to True."""
         self.auditonly = True
 
     def report(self):
-        '''
-        @author: Eric Ball
-        @param self - essential if you override this definition
-        @return: bool - True if system is compliant, False if it isn't
+        '''@author: Eric Ball
+
+        :param self: essential if you override this definition
+        :returns: bool - True if system is compliant, False if it isn't
+
         '''
 
         # UPDATE THIS SECTION IF YOU CHANGE THE CONSTANTS BEING USED IN THE RULE
@@ -166,13 +167,16 @@ DISABLEPROXY to True."""
         return self.compliant
 
     def getFirefoxDirs(self):
-        '''
-        Discover the randomly-generated Firefox profile directory(ies) for the
+        '''Discover the randomly-generated Firefox profile directory(ies) for the
         root user.
-
+        
         @author: Eric Ball
-        @return: List of Firefox profile directories on the system
-        @rtype: list
+
+
+        :returns: List of Firefox profile directories on the system
+
+        :rtype: list
+
         '''
         # It's possible to have several FF profiles for each user account. This
         # method will therefore return a list.

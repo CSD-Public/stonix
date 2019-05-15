@@ -56,14 +56,15 @@ class zzzTestRuleConfigureLoginWindow(RuleTest):
         self.simpleRuleTest()
 
     def setConditionsForRule(self):
-        '''
-        This makes sure the intial report fails by executing the following
+        '''This makes sure the intial report fails by executing the following
         commands:
         defaults -currentHost write /Library/Preferences/com.apple.loginwindow SHOWFULLNAME -bool yes
         defaults -currentHost delete /Library/Preferences/com.apple.loginwindow DisableConsoleAccess
-        @param self: essential if you override this definition
-        @return: boolean - If successful True; If failure False
+
+        :param self: essential if you override this definition
+        :returns: boolean - If successful True; If failure False
         @author: ekkehard j. koch
+
         '''
         success = True
         if success:
@@ -83,12 +84,15 @@ class zzzTestRuleConfigureLoginWindow(RuleTest):
         return success
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
-        '''
-        To see what happended run these commans:
+        '''To see what happended run these commans:
         defaults -currentHost read /Library/Preferences/com.apple.loginwindow SHOWFULLNAME
-        @param self: essential if you override this definition
-        @return: boolean - If successful True; If failure False
+
+        :param self: essential if you override this definition
+        :param pCompliance: 
+        :param pRuleSuccess: 
+        :returns: boolean - If successful True; If failure False
         @author: ekkehard j. koch
+
         '''
         self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " + \
                              str(pCompliance) + ".")

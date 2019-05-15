@@ -42,9 +42,7 @@ from ..CommandHelper import CommandHelper
 
 
 class STIGConfigurePasswordPolicy(Rule):
-    '''
-    Deploy Passcode Policy configuration profiles for macOS X
-    '''
+    '''Deploy Passcode Policy configuration profiles for macOS X'''
 
     def __init__(self, config, environ, logdispatch, statechglogger):
         '''
@@ -79,11 +77,7 @@ class STIGConfigurePasswordPolicy(Rule):
         self.setvars()
 
     def setvars(self):
-        '''
-        set class variables based on os version
-
-        @return:
-        '''
+        '''set class variables based on os version'''
 
         self.pwprofile = ""
         self.secprofile = ""
@@ -137,15 +131,15 @@ class STIGConfigurePasswordPolicy(Rule):
             self.fall_back_profiles('sec', self.os_minor_ver)
 
     def fall_back_profiles(self, policy, minorver):
-        '''
-        if the current system is a new version of mac, for which we do
+        '''if the current system is a new version of mac, for which we do
         not yet have a profile (due to STIG guidance release lag), then
         use the profiles for the previous version of macOS
 
-        @param policy: string; policy to roll back (can be 'pass' or 'sec')
-        @param minorver: string; minor revision number to iterate over
-
+        :param policy: string; policy to roll back (can be 'pass' or 'sec')
+        :param minorver: string; minor revision number to iterate over
+        
         @author: Breen Malmberg
+
         '''
 
         if int(minorver) < 10:
@@ -184,17 +178,19 @@ class STIGConfigurePasswordPolicy(Rule):
             return self.fall_back_profiles('sec', rollbackminor)
 
     def report(self):
-        '''
-        report compliance to password policy and
+        '''report compliance to password policy and
         security and privacy policy
 
-        @return: self.compliant
-        @rtype: bool
 
-        @author: Derek Walker
-        @change: Breen Malmberg - 10/25/2018 - added doc string; refactor
-        @change: Derek Walker - 2/7/2019 - updated method to search for a
-            different identifier for security profile on 10.13
+        :returns: self.compliant
+
+        :rtype: bool
+
+@author: Derek Walker
+@change: Breen Malmberg - 10/25/2018 - added doc string; refactor
+@change: Derek Walker - 2/7/2019 - updated method to search for a
+    different identifier for security profile on 10.13
+
         '''
 
         self.compliant = True
@@ -262,14 +258,16 @@ class STIGConfigurePasswordPolicy(Rule):
         return self.compliant
 
     def fix(self):
-        '''
-        install the password policy and privacy and security policy profiles
+        '''install the password policy and privacy and security policy profiles
 
-        @return: self.rulesuccess
-        @rtype: bool
 
-        @author: Derek Walker
-        @change: Breen Malmberg - 10/25/2018 - added doc string; refactor
+        :returns: self.rulesuccess
+
+        :rtype: bool
+
+@author: Derek Walker
+@change: Breen Malmberg - 10/25/2018 - added doc string; refactor
+
         '''
 
         self.iditerator = 0

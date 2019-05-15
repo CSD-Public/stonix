@@ -19,10 +19,11 @@
 from logdispatcher_lite import LogDispatcher
 
 class StateChgLogger(object):
-    """
-    Mock interface for StateChgLogger
+    '''Mock interface for StateChgLogger
     @author: Roy Nielsen
-    """
+
+
+    '''
 
     def __init__(self, logdispatcher, environment):
         """

@@ -35,14 +35,11 @@ elif sys.platform.startswith("linux"):
 
 @unittest.skipUnless(sys.platform.startswith("darwin"|"linux"), "This is not valid on this OS")
 class test_ramdisk(GenericRamdiskTest):
-    """
-    """
+    ''' '''
 
     @classmethod
     def setUpClass(self):
-        """
-        Initializer
-        """
+        '''Initializer'''
         # Start timer in miliseconds
         self.test_start_time = datetime.now()
 
@@ -86,11 +83,12 @@ class test_ramdisk(GenericRamdiskTest):
         self.fs_dir = tempfile.mkdtemp()
 
     def setUp(self):
-        """
-        This method runs before each test run.
-
+        '''This method runs before each test run.
+        
         @author: Roy Nielsen
-        """
+
+
+        '''
         self.libcPath = None # initial initialization
         #####
         # setting up to call ctypes to do a filesystem sync
@@ -117,120 +115,103 @@ class test_ramdisk(GenericRamdiskTest):
     ##################################
 
     def test_init(self):
-        """
-        """
+        ''' '''
         pass
 
     ##################################
 
     def test_get_data(self):
-        """
-        """
+        ''' '''
         pass
 
     ##################################
 
     def test_getRandomizedMountpoint(self):
-        """
-        """
+        ''' '''
         pass
 
     ##################################
 
     def test_create(self):
-        """
-        """
+        ''' '''
         pass
 
     ##################################
 
     def test_mount(self):
-        """
-        """
+        ''' '''
         pass
 
     ##################################
 
     def test_attach(self):
-        """
-        """
+        ''' '''
         pass
 
     ##################################
 
     def test_remove_journal(self):
-        """
-        """
+        ''' '''
         pass
 
     ##################################
 
     def test_unmount(self):
-        """
-        """
+        ''' '''
         pass
 
     ##################################
 
     def test_eject(self):
-        """
-        """
+        ''' '''
         pass
 
     ##################################
 
     def test_format(self):
-        """
-        """
+        ''' '''
         pass
 
     ##################################
 
     def test_partition(self):
-        """
-        """
+        ''' '''
         pass
 
     ##################################
 
     def test_isMemoryAvailable(self):
-        """
-        """
+        ''' '''
         pass
 
     ##################################
 
     def test_runcmd(self):
-        """
-        """
+        ''' '''
         pass
 
     ##################################
 
     def test_getDevice(self):
-        """
-        """
+        ''' '''
         pass
 
     ##################################
 
     def test_setDevice(self):
-        """
-        """
+        ''' '''
         pass
 
     ##################################
 
     def test_getVersion(self):
-        """
-        """
+        ''' '''
         pass
 
     ##################################
 
     def test_detach(self):
-        """
-        """
+        ''' '''
         pass
 
 ###############################################################################
@@ -239,9 +220,7 @@ class test_ramdisk(GenericRamdiskTest):
     ##################################
 
     def test_files_n_dirs(self):
-        """
-        Should work when files exist in ramdisk.
-        """
+        '''Should work when files exist in ramdisk.'''
         # Do file setup for this test
         for subdir in self.subdirs:
             dirpath = self.mountPoint + "/" + subdir
@@ -259,9 +238,7 @@ class test_ramdisk(GenericRamdiskTest):
     ##################################
 
     def test_four_file_sizes(self):
-        """
-        Test file creation of various sizes, ramdisk vs. filesystem
-        """
+        '''Test file creation of various sizes, ramdisk vs. filesystem'''
         #####
         # Clean up the ramdisk
         self.my_ramdisk._format()
@@ -301,8 +278,7 @@ class test_ramdisk(GenericRamdiskTest):
 
 
     def test_many_small_files_creation(self):
-        """
-        """
+        ''' '''
         #####
         # Clean up the ramdisk
         self.my_ramdisk._format()
@@ -328,9 +304,7 @@ class test_ramdisk(GenericRamdiskTest):
 ##### unittest Tear down
     @classmethod
     def tearDownClass(self):
-        """
-        disconnect ramdisk
-        """
+        '''disconnect ramdisk'''
         if self.my_ramdisk.unmount():
             self.logger.log(lp.INFO, r"Successfully detached disk: " + \
                        str(self.my_ramdisk.mntPoint).strip())

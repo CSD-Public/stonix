@@ -47,13 +47,14 @@ from ..logdispatcher import LogPriority
 
 
 class SymlinkDangerFiles(Rule):
-    '''
-    The Symlink Dangerous Files class checks for the presence of certain files
+    '''The Symlink Dangerous Files class checks for the presence of certain files
     - namely /root/.rhosts, /root/.shosts, and /etc/hosts.equiv, and symlinks
     them to /dev/null in order to prevent a potentially exploitable weak form
     of access control.
-
+    
     @author Breen Malmberg
+
+
     '''
     # do we need @author section for each method? or is ok for just the class?
     def __init__(self, config, environ, logger, statechglogger):
@@ -86,13 +87,14 @@ class SymlinkDangerFiles(Rule):
         self.blankfiles = ['/private/etc/hosts.equiv', '/etc/hosts.equiv']
 
     def fix(self):
-        '''
-        The fix method will apply the required settings to the system.
+        '''The fix method will apply the required settings to the system.
         self.rulesuccess will be updated if the rule does not succeed.
         Search for the rhosts, shosts and hosts.equiv and if found, delete
         them and then symlink them to /dev/null
-
+        
         @author Breen Malmberg
+
+
         '''
 
         # defaults
@@ -133,11 +135,12 @@ class SymlinkDangerFiles(Rule):
         return self.rulesuccess
 
     def makeHostsBlank(self):
-        '''
-        ensure that there is no content (except for commented lines)
+        '''ensure that there is no content (except for commented lines)
         in hosts.equiv
-
+        
         @author: Breen Malmberg
+
+
         '''
 
         stonixline = "# This file enforced to be blank, by STONIX"
@@ -160,12 +163,13 @@ class SymlinkDangerFiles(Rule):
             raise
 
     def report(self):
-        '''
-        Perform a check to see if the files (.rhosts, .shosts) are
+        '''Perform a check to see if the files (.rhosts, .shosts) are
         already symlinked to /dev/null or not
 
-        @return bool
+
+        :returns: bool
         @author Breen Malmberg
+
         '''
 
         # defaults
@@ -208,17 +212,19 @@ class SymlinkDangerFiles(Rule):
         return self.compliant
 
     def checkHostsBlank(self):
-        '''
-        special check for single file: hosts.equiv
+        '''special check for single file: hosts.equiv
         this check added as a replacement for symlinking this file
         due to a race condition which existed between verifysysfileperms
         and this rule (symlinkdangerfiles)
         the file hosts.equiv will not be symlinked but instead will be
         checked to make sure it remains empty
 
-        @return: retval
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: retval
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         retval = True
@@ -245,10 +251,11 @@ class SymlinkDangerFiles(Rule):
         return retval
 
     def undo(self):
-        '''
-        no undo operations permitted for this rule due to security reasons
-
+        '''no undo operations permitted for this rule due to security reasons
+        
         @author Breen Malmberg
+
+
         '''
 
         self.formatDetailedResults('undo', None, self.detailedresults)

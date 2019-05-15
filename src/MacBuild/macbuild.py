@@ -67,12 +67,13 @@ from ramdisk.lib.get_libc import getLibc
 
 
 class ConfusingConfigurationError(Exception):
-    """
-    Meant for being thrown when the MacBuilder can't determine configuration
+    '''Meant for being thrown when the MacBuilder can't determine configuration
     information.
-
+    
     @author: Roy Nielsen
-    """
+
+
+    '''
     def __init__(self, *args, **kwargs):
         Exception.__init__(self, *args, **kwargs)
 
@@ -148,9 +149,7 @@ class MacBuilder():
             self.driver()
 
     def driver(self):
-        '''
-        The driver orchestrates the build process.
-        '''
+        '''The driver orchestrates the build process.'''
 
         # Check that user building stonix has uid 0
         current_user, _ = self.mbl.checkBuildUser()
@@ -264,9 +263,10 @@ class MacBuilder():
         exit(exitcode)
 
     def clean(self):
-        '''
-        Clean all artifacts from previous builds.
+        '''Clean all artifacts from previous builds.
         @author: Eric Ball
+
+
         '''
         folders = (["dmgs", "stonix", "stonix4mac/dist", "stonix4mac/private"]
                    + glob("stonix.*") + glob("dmgs.*"))
@@ -283,13 +283,14 @@ class MacBuilder():
         exit(0)
 
     def compileStonix4MacAppUiFiles(self, stonix4macDir):
-        '''
-        Compile the .ui files to .py files for stonix4mac.app. Works within the
+        '''Compile the .ui files to .py files for stonix4mac.app. Works within the
         MacBuild/stonix4mac directory
-
+        
         @author: Roy Nielsen, Eric Ball
-        @param stonix4macDir: Path to the [stonixroot]/src/MacBuild/stonix4mac
+
+        :param stonix4macDir: Path to the [stonixroot]/src/MacBuild/stonix4mac
             directory where this method should work
+
         '''
         try:
             returnDir = os.getcwd()
@@ -313,12 +314,13 @@ class MacBuilder():
         print "compileStonix4MacAppUiFiles Finished..."
 
     def setProgramArgumentsVersion(self, localizePath):
-        '''
-        Change the STONIX version to the version specified within the build
+        '''Change the STONIX version to the version specified within the build
         script
         @author: Roy Nielsen, Eric Ball
-        @param localizePath: Path to the [stonixroot]/src/stonix_resources/
+
+        :param localizePath: Path to the [stonixroot]/src/stonix_resources/
             localize.py file that this method should modify
+
         '''
         print "Changing versions in localize.py..."
         try:
@@ -332,11 +334,12 @@ class MacBuilder():
         print "Finished changing versions in localize.py..."
 
     def prepStonixBuild(self, MacBuildDir):
-        '''
-        Copy stonix source to app build directory
+        '''Copy stonix source to app build directory
         @author: Roy Nielsen, Eric Ball
-        @param MacBuildDir: Path to the [stonixroot]/src/MacBuild directory
+
+        :param MacBuildDir: Path to the [stonixroot]/src/MacBuild directory
             where this method should work
+
         '''
         print "Starting prepStonixBuild..."
         try:
@@ -368,13 +371,14 @@ class MacBuilder():
         print "prepStonixBuild Finished..."
 
     def compileApp(self, appName, appVersion, appIcon, appPath):
-        '''
-        Compiles stonix4mac.app
+        '''Compiles stonix4mac.app
         @author: Roy Nielsen, Eric Ball
-        @param appName: Name of application as it should appear on OS X systems
-        @param appVersion: Version of app being built
-        @param appIcon: File name of icon for OS X app
-        @param appPath: Path to [stonixroot]/src/MacBuild/[appName]
+
+        :param appName: Name of application as it should appear on OS X systems
+        :param appVersion: Version of app being built
+        :param appIcon: File name of icon for OS X app
+        :param appPath: Path to [stonixroot]/src/MacBuild/[appName]
+
         '''
         print "Started compileApp with " + appName + ", " + appVersion + \
             ", " + appIcon
@@ -450,12 +454,14 @@ class MacBuilder():
         print "compileApp with " + appName + ", " + appVersion + " Finished..."
 
     def buildStonix4MacAppResources(self, appName, appPath, appPathParent):
-        '''
-        Copy and/or create all necessary files to the Resources directory
+        '''Copy and/or create all necessary files to the Resources directory
         of stonix4mac.app
         @author: Roy Nielsen, Eric Ball
-        @param appName: Name of application as it should appear on OS X systems
-        @param appPath: Path to [stonixroot]/src/MacBuild/[appName]
+
+        :param appName: Name of application as it should appear on OS X systems
+        :param appPath: Path to [stonixroot]/src/MacBuild/[appName]
+        :param appPathParent: 
+
         '''
         print "Started buildStonix4MacAppResources with \"" + appName + \
             "\" in " + appPath + "..."
@@ -514,12 +520,13 @@ class MacBuilder():
         print "buildStonix4MacAppResources Finished..."
 
     def buildStonix4MacAppPkg(self, appName, appVersion, appPath):
-        '''
-        Build installer package and wrap into a dmg
+        '''Build installer package and wrap into a dmg
         @author: Roy Nielsen, Eric Ball
-        @param appName: Name of application as it should appear on OS X systems
-        @param appVersion: Version of app being built
-        @param appPath: Path to [stonixroot]/src/MacBuild
+
+        :param appName: Name of application as it should appear on OS X systems
+        :param appVersion: Version of app being built
+        :param appPath: Path to [stonixroot]/src/MacBuild
+
         '''
 
         print "Started buildStonix4MacAppPkg..."
@@ -560,10 +567,12 @@ class MacBuilder():
         print "buildStonix4MacAppPkg... Finished"
 
     def configSectionMap(self, section):
-        '''
-        Acquire values from the config file and store in a dictionary.
-
+        '''Acquire values from the config file and store in a dictionary.
+        
         @author: rsn
+
+        :param section: 
+
         '''
         dict1 = {}
         options = self.parser.options(section)
@@ -579,11 +588,12 @@ class MacBuilder():
         return dict1
 
     def confParser(self):
-        """
-        Parse a config file to find potential conf file settings.
-
+        '''Parse a config file to find potential conf file settings.
+        
         @author: rsn
-        """
+
+
+        '''
         success = False
         # This script should be run from [stonixroot]/src/MacBuild. We must
         os.chdir("../..")

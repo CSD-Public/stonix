@@ -40,7 +40,10 @@ import glob
 
 class DisableWeakAuthentication(Rule):
     '''This rule will remove rsh(server and client) if installed, remove
-    pam_rhosts entry from any pam file, '''
+    pam_rhosts entry from any pam file,
+
+
+    '''
     def __init__(self, config, environ, logger, statechglogger):
         Rule.__init__(self, config, environ, logger, statechglogger)
         self.logger = logger
@@ -76,7 +79,10 @@ class DisableWeakAuthentication(Rule):
         '''DisableWeakAuthentication.report() Public method to report on the
         presence of certain r-command packages and contents in pam files.
         @author: dwalker
-        @return: bool - False if the method died during execution
+
+
+        :returns: bool - False if the method died during execution
+
         '''
         self.detailedresults = ""
         try:
@@ -156,7 +162,10 @@ class DisableWeakAuthentication(Rule):
         '''DisableWeakAuthentication.fix() Public method to fix any issues
         that were found in the report method.
         @author: dwalker
-        @return: bool - False if the method died during execution
+
+
+        :returns: bool - False if the method died during execution
+
         '''
         try:
             self.detailedresults = ""
@@ -217,7 +226,10 @@ class DisableWeakAuthentication(Rule):
     def undo(self):
         '''There is no undo method for this rule since we don't ever want rsh
         installed or for the r services to be enabled.  Overrides the undo
-        inside the rule.py class'''
+        inside the rule.py class
+
+
+        '''
         try:
             info = "no undo available"
             self.logger.log(LogPriority.INFO, info)

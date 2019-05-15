@@ -55,13 +55,14 @@ class zzzTestRuleDisableInternetSharing(RuleTest):
         self.simpleRuleTest()
 
     def setConditionsForRule(self):
-        '''
-        This makes sure the intial report fails by executing the following
+        '''This makes sure the intial report fails by executing the following
         commands:
         defaults -currentHost write /Library/Preferences/SystemConfiguration/com.apple.nat NAT -dict Enabled -int 1
-        @param self: essential if you override this definition
-        @return: boolean - If successful True; If failure False
+
+        :param self: essential if you override this definition
+        :returns: boolean - If successful True; If failure False
         @author: ekkehard j. koch
+
         '''
         success = True
         if success:
@@ -75,12 +76,15 @@ class zzzTestRuleDisableInternetSharing(RuleTest):
         return success
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
-        '''
-        To see what happended run these commans:
+        '''To see what happended run these commans:
         defaults -currentHost read /Library/Preferences/SystemConfiguration/com.apple.nat NAT
-        @param self: essential if you override this definition
-        @return: boolean - If successful True; If failure False
+
+        :param self: essential if you override this definition
+        :param pCompliance: 
+        :param pRuleSuccess: 
+        :returns: boolean - If successful True; If failure False
         @author: ekkehard j. koch
+
         '''
         self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " + \
                              str(pCompliance) + ".")

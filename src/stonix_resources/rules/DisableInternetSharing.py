@@ -33,8 +33,7 @@ from ..ruleKVEditor import RuleKVEditor
 
 
 class DisableInternetSharing(RuleKVEditor):
-    '''
-    This Mac Only rule makes sure that Internet Sharing is disabled:
+    '''This Mac Only rule makes sure that Internet Sharing is disabled:
     1. InternetSharing is disabled with the following commands:
     defaults -currentHost read /Library/Preferences/SystemConfiguration/com.apple.nat NAT
     defaults -currentHost write /Library/Preferences/SystemConfiguration/com.apple.nat NAT -dict Enabled -int 0
@@ -43,6 +42,8 @@ class DisableInternetSharing(RuleKVEditor):
         Enabled = 0;
     }
     @author: ekkehard j. koch
+
+
     '''
 
 ###############################################################################

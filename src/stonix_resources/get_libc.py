@@ -4,16 +4,17 @@ import sys
 import ctypes
 
 def getLibc():
-    """
-    Acquire a reference to the system libc, initially to access the
+    '''Acquire a reference to the system libc, initially to access the
     filesystem "sync" function.
 
-    @returns: python reference to the C libc object, or False, if it can't
-              find libc on the system.
 
+    :returns: s: python reference to the C libc object, or False, if it can't
+              find libc on the system.
+    
     @author: Roy Nielsen
     @change: 2018/02/27 bgonz12 - added "/lib64/libc.so.6" to possible_paths
-    """
+
+    '''
     osFamily = sys.platform.lower().strip()
     #print "---==## OS Family: " + str(osFamily) + " #==---"
 

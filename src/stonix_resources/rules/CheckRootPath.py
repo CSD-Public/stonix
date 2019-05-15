@@ -49,9 +49,7 @@ from ..logdispatcher import LogPriority
 
 
 class CheckRootPath(Rule):
-    '''
-    @author bemalmbe
-    '''
+    '''@author bemalmbe'''
 
     def __init__(self, config, environ, logger, statechglogger):
         '''
@@ -98,15 +96,16 @@ class CheckRootPath(Rule):
             self.defaultPath = defaultPath
 
     def report(self):
-        '''
-        The report method examines the current configuration and determines
+        '''The report method examines the current configuration and determines
         whether or not it is correct. If the config is correct then the
         self.compliant, self.detailedresults and self.currstate properties are
         updated to reflect the system status. self.rulesuccess will be updated
         if the rule does not succeed.
 
-        @return: bool
+
+        :returns: bool
         @author bemalmbe
+
         '''
         try:
             compliant = True

@@ -57,9 +57,7 @@ from ..stonixutilityfunctions import resetsecon
 
 
 class BlockSystemAccounts(Rule):
-    '''
-    classdocs
-    '''
+    '''classdocs'''
 
     def __init__(self, config, enviro, logger, statechglogger):
         '''
@@ -94,19 +92,21 @@ shells set the value of this to False, or No.'''
         self.iditerator = 0
 
     def report(self):
-        '''
-        The report method examines the current configuration and determines
+        '''The report method examines the current configuration and determines
         whether or not it is correct. If the config is correct then the
         self.compliant, self.detailed results and self.currstate properties are
         updated to reflect the system status. self.rulesuccess will be updated
         if the rule does not succeed.
 
-        @return: self.compliant
-        @rtype: bool
-        @author: Breen Malmberg
-        @change: Derek Walker
-        @change: Breen Malmberg - 06/10/2015 - fixed some reporting variables;
-        added correct mac os x implementation (/usr/bin/false)
+
+        :returns: self.compliant
+
+        :rtype: bool
+@author: Breen Malmberg
+@change: Derek Walker
+@change: Breen Malmberg - 06/10/2015 - fixed some reporting variables;
+added correct mac os x implementation (/usr/bin/false)
+
         '''
 
         self.detailedresults = ""
@@ -135,12 +135,14 @@ shells set the value of this to False, or No.'''
         return self.compliant
 
     def getUIDMIN(self):
-        '''
-        return this system's minimum user ID start value, if configured
+        '''return this system's minimum user ID start value, if configured
 
-        @return: uid_min
-        @rtype: string
-        @author: Breen Malmberg
+
+        :returns: uid_min
+
+        :rtype: string
+@author: Breen Malmberg
+
         '''
 
         uid_min = ""
@@ -170,8 +172,10 @@ shells set the value of this to False, or No.'''
     def getsystemaccounts(self):
         '''
 
-        @return: system_accounts_list
+
+        :returns: system_accounts_list
         #@rtype: list
+
         '''
 
         system_accounts_list = []
@@ -211,8 +215,9 @@ shells set the value of this to False, or No.'''
     def getloginshell(self, account):
         '''
 
-        @param accountname:
-        @return:
+        :param accountname: return:
+        :param account: 
+
         '''
 
         loginshell = ""
@@ -238,10 +243,7 @@ shells set the value of this to False, or No.'''
         return loginshell
 
     def getsysloginshells(self):
-        '''
-
-        @return:
-        '''
+        ''' '''
 
         system_login_shells = {}
         system_accounts = self.getsystemaccounts()
@@ -254,25 +256,28 @@ shells set the value of this to False, or No.'''
     def setdefaultloginshell(self, account, shell):
         '''
 
-        @param account:
-        @return:
+        :param account: return:
+        :param shell: 
+
         '''
 
         change_shell_cmd = "/usr/bin/chsh -s " + shell + " " + account
         self.ch.executeCommand(change_shell_cmd)
 
     def fix(self):
-        '''
-        The fix method will apply the required settings to the system.
+        '''The fix method will apply the required settings to the system.
         self.rulesuccess will be updated if the rule does not succeed.
 
-        @return: self.rulesuccess
-        @rtype: bool
-        @author: Breen Malmberg
-        @change: Derek Walker
-        @change: Breen Malmberg - 06/10/2015 - pep8 housekeeping; readability improvements;
-        refactored some logging and reporting and try/except code; implemented correct
-        mac os x fix functionality
+
+        :returns: self.rulesuccess
+
+        :rtype: bool
+@author: Breen Malmberg
+@change: Derek Walker
+@change: Breen Malmberg - 06/10/2015 - pep8 housekeeping; readability improvements;
+refactored some logging and reporting and try/except code; implemented correct
+mac os x fix functionality
+
         '''
 
         self.detailedresults = ""

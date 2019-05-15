@@ -36,9 +36,7 @@ from ..stonixutilityfunctions import createFile, writeFile, readFileString,\
     iterate, checkPerms, setPerms, resetsecon
 
 class NoDirectRootLogin(Rule):
-    '''
-    @author bgonz12
-    '''
+    '''@author bgonz12'''
 
     def __init__(self, config, environ, logger, statechglogger):
         '''
@@ -72,16 +70,18 @@ class NoDirectRootLogin(Rule):
         self.isblank = False
 
     def report(self):
-        '''
-        The report method examines the current configuration and determines
+        '''The report method examines the current configuration and determines
         whether or not it is correct. If the config is correct then the
         self.compliant, self.detailedresults and self.currstate properties are
         updated to reflect the system status. self.rulesuccess will be updated
         if the rule does not succeed.
 
-        @return: self.compliant
-        @rtype: bool
-        @author bgonz12
+
+        :returns: self.compliant
+
+        :rtype: bool
+@author bgonz12
+
         '''
         try:
             compliant = True
@@ -119,16 +119,18 @@ class NoDirectRootLogin(Rule):
         return self.compliant
 
     def fix(self):
-        '''
-        The report method examines the current configuration and determines
+        '''The report method examines the current configuration and determines
         whether or not it is correct. If the config is correct then the
         self.compliant, self.detailedresults and self.currstate properties are
         updated to reflect the system status. self.rulesuccess will be updated
         if the rule does not succeed.
 
-        @return: self.rulesuccess
-        @rtype: bool
-        @author bgonz12
+
+        :returns: self.rulesuccess
+
+        :rtype: bool
+@author bgonz12
+
         '''
         try:
             self.iditerator = 0

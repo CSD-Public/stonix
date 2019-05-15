@@ -31,11 +31,12 @@ from ..ruleKVEditor import RuleKVEditor
 
 
 class EncryptSwap(RuleKVEditor):
-    '''
-    This rule is a user-context only rule meaning, if stonix is run as root
+    '''This rule is a user-context only rule meaning, if stonix is run as root
     this rule should not show up in the GUI or be able to be run through the
     CLI.  In addition, when this rule is being run in user context, there
     is no undo.
+
+
     '''
     def __init__(self, config, environ, logger, statechglogger):
         RuleKVEditor.__init__(self, config, environ, logger, statechglogger)

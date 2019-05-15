@@ -106,8 +106,10 @@ class ConfigureLogging(RuleKVEditor):
         configuration status of the logging daemons and associated files.
         Configures logging and log rotation
         @author: dwalker
-        @param self - essential if you override this definition
-        @return: bool - True if system is compliant, False if it isn't
+
+        :param self: essential if you override this definition
+        :returns: bool - True if system is compliant, False if it isn't
+
         '''
         try:
             self.detailedresults = ""
@@ -139,8 +141,10 @@ class ConfigureLogging(RuleKVEditor):
         '''ConfigureLogging.fix() Public method to fix any issues that were
         found in the report method.
         @author: dwalker
-        @return: bool - False if the method died during execution
-        @param self:essential if you override this definition
+
+        :param self: essential if you override this definition
+        :returns: bool - False if the method died during execution
+
         '''
         try:
             if not self.ci.getcurrvalue():
@@ -178,13 +182,15 @@ daemon, will not attempt to install one, unable to proceed with fix\n"
         return self.rulesuccess
 
     def reportSysRSyslog(self):
-        '''
-        ConfigureLogging.reporSysRsyslog reports on the logging facilities,
+        '''ConfigureLogging.reporSysRsyslog reports on the logging facilities,
         the log files, and the logging daemons of syslog and rsyslog
         @author: dwalker
-        @return: bool - True or False upon success
+
+
+        :returns: bool - True or False upon success
         @change: bgonz12 - 2018/1/18 - reduced the debug output for an
                  exception handled Traceback.
+
         '''
         debug = ""
         compliant = True
@@ -531,7 +537,10 @@ daemon config file: " + self.logpath
         inability to continue with the rest of the fix.  Appropriate logging
         will occur
         @author: dwalker
-        @return: bool - True or False upon success
+
+
+        :returns: bool - True or False upon success
+
         '''
         self.detailedresults = ""
         success = True
@@ -936,7 +945,12 @@ rotation config file: " + self.logrotpath + "\n"
         contain duplicate entries for files to be logrotated and that the 5
         mandatory fields are actually present(filename,mode,count,size,when)
         If either of these cases apply to the system, the user must delete or
-        correct the line in question'''
+        correct the line in question
+
+        :param logpath: 
+        :param logrotpath: 
+
+        '''
         universal = "\n#The following lines were added by stonix\n"
         success = True
         debug = ""
@@ -1550,7 +1564,11 @@ will not attempt to create this file.\n"
     def checkSysRsyslogOn(self):
         '''checks if rsyslog/syslog daemon is running
         @author: dwalker
-        @return: bool'''
+
+
+        :returns: bool
+
+        '''
         if re.search("opensuse", self.environ.getostype().lower()):
             ps = "/usr/bin/ps"
         else:
@@ -1563,10 +1581,12 @@ will not attempt to create this file.\n"
         return False
 
     def checkLogRotation(self):
-        '''
-        checks the path of the log rotation
+        '''checks the path of the log rotation
         @author: dwalker
-        @return: string
+
+
+        :returns: string
+
         '''
         logrotpath = ""
         if self.logs["rsyslog"]:

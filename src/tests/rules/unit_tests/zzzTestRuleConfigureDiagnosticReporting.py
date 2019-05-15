@@ -54,12 +54,12 @@ class zzzTestRuleConfigureDiagnosticReporting(RuleTest):
         self.simpleRuleTest()
 
     def setConditionsForRule(self):
-        '''
-        This makes sure the initial report fails
+        '''This makes sure the initial report fails
 
-        @param self: essential if you override this definition
-        @return: boolean - If successful True; If failure False
+        :param self: essential if you override this definition
+        :returns: boolean - If successful True; If failure False
         @author: Eric Ball
+
         '''
         success = True
         if success:
@@ -84,13 +84,14 @@ class zzzTestRuleConfigureDiagnosticReporting(RuleTest):
         return success
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
-        '''
-        Did the first rule report do what it was supposed to
-        @param self: essential if you override this definition
-        @param pCompliance: compliance of first rule report boolean
-        @param pRuleSuccess: success of first report execution boolean
-        @return: boolean - If successful True; If failure False
+        '''Did the first rule report do what it was supposed to
+
+        :param self: essential if you override this definition
+        :param pCompliance: compliance of first rule report boolean
+        :param pRuleSuccess: success of first report execution boolean
+        :returns: boolean - If successful True; If failure False
         @author: ekkehard j. koch
+
         '''
         self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " +
                              str(pCompliance) + ".")
@@ -108,12 +109,13 @@ class zzzTestRuleConfigureDiagnosticReporting(RuleTest):
         return success
 
     def checkFixForRule(self, pRuleSuccess):
-        '''
-        Did the rule fix do what it was supposed to
-        @param self: essential if you override this definition
-        @param pRuleSuccess: success of fix execution boolean
-        @return: boolean - If successful True; If failure False
+        '''Did the rule fix do what it was supposed to
+
+        :param self: essential if you override this definition
+        :param pRuleSuccess: success of fix execution boolean
+        :returns: boolean - If successful True; If failure False
         @author: ekkehard j. koch
+
         '''
         self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
@@ -125,13 +127,14 @@ class zzzTestRuleConfigureDiagnosticReporting(RuleTest):
         return success
 
     def checkReportFinalForRule(self, pCompliance, pRuleSuccess):
-        '''
-        Did the final rule report do what it was supposed to
-        @param self: essential if you override this definition
-        @param pCompliance: compliance of final rule report boolean
-        @param pRuleSuccess: success of final report execution boolean
-        @return: boolean - If successful True; If failure False
+        '''Did the final rule report do what it was supposed to
+
+        :param self: essential if you override this definition
+        :param pCompliance: compliance of final rule report boolean
+        :param pRuleSuccess: success of final report execution boolean
+        :returns: boolean - If successful True; If failure False
         @author: ekkehard j. koch
+
         '''
 
         self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " +

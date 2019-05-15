@@ -381,10 +381,14 @@ class PasswordExpiration(Rule):
 ###############################################################################
 
     def checklibuser(self):
-        '''Private method to check the password hash algorithm settings in 
+        '''Private method to check the password hash algorithm settings in
         libuser.conf.
         @author: dwalker
-        @return: bool'''
+
+
+        :returns: bool
+
+        '''
         compliant = True
         '''check if libuser is intalled'''
         if not self.ph.check("libuser"):

@@ -77,10 +77,13 @@ class DisableIPV6(Rule):
     def report(self):
         '''
 
-        @return: self.compliant
-        @rtype: bool
-        @author: Derek Walker
-        @change: Breen Malmberg - 11/20/2018 - rule refactor
+
+        :returns: self.compliant
+
+        :rtype: bool
+@author: Derek Walker
+@change: Breen Malmberg - 11/20/2018 - rule refactor
+
         '''
 
         self.detailedresults = ""
@@ -107,13 +110,15 @@ class DisableIPV6(Rule):
         return self.compliant
 
     def reportLinux(self):
-        '''
-        check for ipv6 functionality on linux systems
+        '''check for ipv6 functionality on linux systems
 
-        @return: compliant
-        @rtype: bool
-        @author: Derek Walker
-        @change: Breen Malmberg - 11/20/2018 - rule refactor
+
+        :returns: compliant
+
+        :rtype: bool
+@author: Derek Walker
+@change: Breen Malmberg - 11/20/2018 - rule refactor
+
         '''
 
         self.detailedresults = ""
@@ -152,13 +157,15 @@ class DisableIPV6(Rule):
         return compliant
 
     def reportMac(self):
-        '''
-        check for ipv6 functionality on all network services for macOS X
+        '''check for ipv6 functionality on all network services for macOS X
 
-        @return: compliant
-        @rtype: bool
-        @author: Derek Walker
-        @change: Breen Malmberg - 11/20/2018 - rule refactor
+
+        :returns: compliant
+
+        :rtype: bool
+@author: Derek Walker
+@change: Breen Malmberg - 11/20/2018 - rule refactor
+
         '''
 
         compliant = True
@@ -204,13 +211,15 @@ class DisableIPV6(Rule):
         return compliant
 
     def fix(self):
-        '''
-        remove ipv6 functionality from all interfaces
+        '''remove ipv6 functionality from all interfaces
 
-        @return: self.rulesuccess
-        @rtype: bool
-        @author: Derek Walker
-        @change: Breen Malmberg - 11/20/2018 - rule refactor
+
+        :returns: self.rulesuccess
+
+        :rtype: bool
+@author: Derek Walker
+@change: Breen Malmberg - 11/20/2018 - rule refactor
+
         '''
 
         self.detailedresults = ""
@@ -240,13 +249,15 @@ class DisableIPV6(Rule):
         return self.rulesuccess
 
     def fixLinux(self):
-        '''
-        remove ipv6 functionality for all interfaces on linux
+        '''remove ipv6 functionality for all interfaces on linux
 
-        @return: success
-        @rtype: bool
-        @author: Derek Walker
-        @change: Breen Malmberg - 11/20/2018 - rule refactor
+
+        :returns: success
+
+        :rtype: bool
+@author: Derek Walker
+@change: Breen Malmberg - 11/20/2018 - rule refactor
+
         '''
 
         directives = ["net.ipv6.conf.all.disable_ipv6",
@@ -287,13 +298,15 @@ class DisableIPV6(Rule):
         return success
 
     def fixMac(self):
-        '''
-        remove ipv6 functionality for all network services on macOS X
+        '''remove ipv6 functionality for all network services on macOS X
 
-        @return: success
-        @rtype: bool
-        @author: Derek Walker
-        @change: Breen Malmberg - 11/20/2018 - rule refactor
+
+        :returns: success
+
+        :rtype: bool
+@author: Derek Walker
+@change: Breen Malmberg - 11/20/2018 - rule refactor
+
         '''
 
         success = True

@@ -66,11 +66,12 @@ class DisableRoot(Rule):
         self.sethelptext()
 
     def report(self):
-        '''
-        DisableRoot.report() method to report whether root is disabled or not
+        '''DisableRoot.report() method to report whether root is disabled or not
         @author: dwalker
-        @param self:essential if you override this definition
-        @return: boolean - True if system is compliant, False if not
+
+        :param self: essential if you override this definition
+        :returns: boolean - True if system is compliant, False if not
+
         '''
         try:
             self.detailedresults = ""
@@ -110,12 +111,13 @@ class DisableRoot(Rule):
 ###############################################################################
 
     def fix(self):
-        '''
-        DisableRoot.fix() method to run the command necessary to disable root
+        '''DisableRoot.fix() method to run the command necessary to disable root
         on the mac.
         @author: dwalker
-        @param self:essential if you override this definition
-        @return: boolean - True if able to fix successfully, False if not
+
+        :param self: essential if you override this definition
+        :returns: boolean - True if able to fix successfully, False if not
+
         '''
         try:
             if not self.ci.getcurrvalue():

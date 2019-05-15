@@ -64,22 +64,24 @@ class zzzTestRuleMinimizeAcceptedDHCPOptions(RuleTest):
                     os.remove(fp + '.stonixtestbak')
 
     def setConditionsForRule(self):
-        '''
-        Configure system for the unit test
-        @param self: essential if you override this definition
-        @return: boolean - If successful True; If failure False
+        '''Configure system for the unit test
+
+        :param self: essential if you override this definition
+        :returns: boolean - If successful True; If failure False
         @author: Breen Malmberg
+
         '''
 
         success = True
         return success
 
     def test_static(self):
-        '''
-        test with whatever the current system configuration
+        '''test with whatever the current system configuration
         is
-
+        
         @author: Breen Malmberg
+
+
         '''
 
         if self.rule.filepaths:
@@ -89,10 +91,11 @@ class zzzTestRuleMinimizeAcceptedDHCPOptions(RuleTest):
             pass
 
     def test_blankfile(self):
-        '''
-        run test with a blank dhclient.conf file present
-
+        '''run test with a blank dhclient.conf file present
+        
         @author: Breen Malmberg
+
+
         '''
 
         if self.rule.filepaths:
@@ -105,10 +108,11 @@ class zzzTestRuleMinimizeAcceptedDHCPOptions(RuleTest):
             pass
 
     def test_garbage(self):
-        '''
-        test with a file that has garbage contents
-
+        '''test with a file that has garbage contents
+        
         @author: Breen Malmberg
+
+
         '''
 
         if self.rule.filepaths:
@@ -121,10 +125,11 @@ class zzzTestRuleMinimizeAcceptedDHCPOptions(RuleTest):
             pass
 
     def test_partialconfig(self):
-        '''
-        test with a partially configured file
-
+        '''test with a partially configured file
+        
         @author: Breen Malmberg
+
+
         '''
 
         if self.rule.filepaths:
@@ -137,13 +142,14 @@ class zzzTestRuleMinimizeAcceptedDHCPOptions(RuleTest):
             pass
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
-        '''
-        check on whether report was correct
-        @param self: essential if you override this definition
-        @param pCompliance: the self.iscompliant value of rule
-        @param pRuleSuccess: did report run successfully
-        @return: boolean - If successful True; If failure False
+        '''check on whether report was correct
+
+        :param self: essential if you override this definition
+        :param pCompliance: the self.iscompliant value of rule
+        :param pRuleSuccess: did report run successfully
+        :returns: boolean - If successful True; If failure False
         @author: ekkehard j. koch
+
         '''
         self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " +
                              str(pCompliance) + ".")
@@ -153,12 +159,13 @@ class zzzTestRuleMinimizeAcceptedDHCPOptions(RuleTest):
         return success
 
     def checkFixForRule(self, pRuleSuccess):
-        '''
-        check on whether fix was correct
-        @param self: essential if you override this definition
-        @param pRuleSuccess: did report run successfully
-        @return: boolean - If successful True; If failure False
+        '''check on whether fix was correct
+
+        :param self: essential if you override this definition
+        :param pRuleSuccess: did report run successfully
+        :returns: boolean - If successful True; If failure False
         @author: ekkehard j. koch
+
         '''
         self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
@@ -166,12 +173,13 @@ class zzzTestRuleMinimizeAcceptedDHCPOptions(RuleTest):
         return success
 
     def checkUndoForRule(self, pRuleSuccess):
-        '''
-        check on whether undo was correct
-        @param self: essential if you override this definition
-        @param pRuleSuccess: did report run successfully
-        @return: boolean - If successful True; If failure False
+        '''check on whether undo was correct
+
+        :param self: essential if you override this definition
+        :param pRuleSuccess: did report run successfully
+        :returns: boolean - If successful True; If failure False
         @author: ekkehard j. koch
+
         '''
         self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")

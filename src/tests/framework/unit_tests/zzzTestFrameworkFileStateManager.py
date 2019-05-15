@@ -48,20 +48,15 @@ logger = LogDispatcher(debug_mode=True)
 logger.initializeLogs("/tmp/zzzTestFrameworkFileStateManager", extension_type="time", syslog=False, myconsole=False)
 
 class NotApplicableToThisOS(Exception):
-    """
-    Custom Exception
-    """
+    '''Custom Exception'''
     def __init__(self, *args, **kwargs):
         Exception.__init__(self, *args, **kwargs)
 
 
 class zzzTestFrameworkFileStateManager(unittest.TestCase):
-    """
-    Class for testing the FileStateManager.
-    """
+    '''Class for testing the FileStateManager.'''
     def setUp(self):
-        """
-        """
+        ''' '''
         #self.environ = Environment()
         #self.environ.stonixversion = "1.2.3"
         self.environ = environ
@@ -119,9 +114,7 @@ class zzzTestFrameworkFileStateManager(unittest.TestCase):
     ############################################################################
 
     def tearDown(self):
-        """
-        Make sure the appropriate files are removed..
-        """
+        '''Make sure the appropriate files are removed..'''
         shutil.rmtree("/tmp/stonixtest")
         LIBC.sync()
         LIBC.sync()
@@ -130,8 +123,7 @@ class zzzTestFrameworkFileStateManager(unittest.TestCase):
     ############################################################################
     
     def test_isFileInStateCheck(self):
-        """
-        Run methods or functionality that performs a state change on a file.
+        '''Run methods or functionality that performs a state change on a file.
         
         subtests include:
             - before state equals after state equals target state
@@ -141,9 +133,11 @@ class zzzTestFrameworkFileStateManager(unittest.TestCase):
             - missing reference state file (expected fail)
             - missing target (expected fail)
             - missing target state (expected fail)
-
+        
         @author: Roy Nielsen
-        """
+
+
+        '''
         #####
         # Set up and test for expected state check
         firstTestFile = self.testTargetDirs[0] + "/test"
@@ -255,8 +249,7 @@ class zzzTestFrameworkFileStateManager(unittest.TestCase):
     ############################################################################
 
     def test_isSaneFilePath(self):
-        """
-        """
+        ''' '''
         invalidResults = []
 
         invalidFilePaths = ["^abc","$garbage","user@email.address.net",
@@ -293,8 +286,7 @@ class zzzTestFrameworkFileStateManager(unittest.TestCase):
     ############################################################################
 
     def test_isKnownStateMatch(self):
-        """
-        """
+        ''' '''
         testFp = open("/tmp/test", "w")
         testFp.write("Hello World!")
         testFp.close()
@@ -307,8 +299,7 @@ class zzzTestFrameworkFileStateManager(unittest.TestCase):
     ############################################################################
 
     def test_areFilesInStates(self):
-        """
-        """
+        ''' '''
         success = False
 
         fileOne   = "/firstTestFile"
@@ -494,8 +485,7 @@ class zzzTestFrameworkFileStateManager(unittest.TestCase):
     ############################################################################
 
     def test_buildSearchList(self):
-        """
-        """
+        ''' '''
         #####
         # Set up and test for expected state check
         thirdTestFile = self.testTargetDirs[0] + "/thirdTestFile"
@@ -526,8 +516,7 @@ class zzzTestFrameworkFileStateManager(unittest.TestCase):
     ############################################################################
 
     def test_qsort(self):
-        """
-        """
+        ''' '''
         versions = ['1.4.3', '1.2.3', '0.9.6.42', '1.5.6']
 
         newVersions = self.fsm.qsort(versions)
@@ -587,8 +576,7 @@ class zzzTestFrameworkFileStateManager(unittest.TestCase):
     ############################################################################
 
     def test_changeFileState(self):
-        """
-        """
+        ''' '''
 
         #####
         # Set two files as different
@@ -626,8 +614,7 @@ class zzzTestFrameworkFileStateManager(unittest.TestCase):
     ############################################################################
 
     def test_changeFilesState(self):
-        """
-        """
+        ''' '''
         #####
         # Set two files as different
         fileOne   = "/firstTestFile"
@@ -696,8 +683,7 @@ class zzzTestFrameworkFileStateManager(unittest.TestCase):
     ############################################################################
 
     def test_areFilesInState(self):
-        """
-        """
+        ''' '''
         #####
         # Set two files as different
         fileOne   = "/firstTestFile"

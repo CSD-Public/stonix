@@ -33,13 +33,14 @@ from environment import Environment
 
 
 class Yum(object):
-    '''
-    The template class that provides a framework that must be implemented by
+    '''The template class that provides a framework that must be implemented by
     all platform specific pkgmgr classes.
-
+    
     @author: Derek T Walker
     @change: 2012/08/06 dwalker - Original Implementation
     @change: 2015/08/20 eball - Added getPackageFromFile
+
+
     '''
 
     def __init__(self, logger):
@@ -64,17 +65,17 @@ class Yum(object):
         self.query = self.rpmloc + " -qa "
 
     def installpackage(self, package):
-        '''
-        Install a package. Return a bool indicating success or failure.
+        '''Install a package. Return a bool indicating success or failure.
 
-        @param package: string; Name of the package to be installed, must be
+        :param package: string; Name of the package to be installed, must be
                 recognizable to the underlying package manager.
-        @return: installed
-        @rtype: bool
-        @author: Derek T. Walker
-        @change: Breen Malmberg - 4/24/2017 - refactored method; added logging; replaced
-                detailedresults with logging
-        @change: Breen Malmberg - 10/1/2018 - added check for package manager lock and retry loop
+        :returns: installed
+        :rtype: bool
+@author: Derek T. Walker
+@change: Breen Malmberg - 4/24/2017 - refactored method; added logging; replaced
+        detailedresults with logging
+@change: Breen Malmberg - 10/1/2018 - added check for package manager lock and retry loop
+
         '''
 
         installed = True
@@ -115,16 +116,16 @@ class Yum(object):
         return installed
 
     def removepackage(self, package):
-        '''
-        Remove a package. Return a bool indicating success or failure.
+        '''Remove a package. Return a bool indicating success or failure.
 
-        @param package: string; Name of the package to be removed, must be
+        :param package: string; Name of the package to be removed, must be
                 recognizable to the underlying package manager.
-        @return: removed
-        @rtype: bool
-        @author: Derek T. Walker
-        @change: Breen Malmberg - 4/24/2017 - refactored method; added logging; replaced
-                detailedresults with logging
+        :returns: removed
+        :rtype: bool
+@author: Derek T. Walker
+@change: Breen Malmberg - 4/24/2017 - refactored method; added logging; replaced
+        detailedresults with logging
+
         '''
 
         removed = True
@@ -164,18 +165,18 @@ class Yum(object):
         return removed
 
     def checkInstall(self, package):
-        '''
-        Check the installation status of a package. Return a bool; True if
+        '''Check the installation status of a package. Return a bool; True if
         the package is installed.
 
-        @param package: string; Name of the package whose installation status
+        :param package: string; Name of the package whose installation status
             is to be checked, must be recognizable to the underlying package
             manager.
-        @return: found
-        @rtype: bool
-        @author: Derek T. Walker
-        @change: Breen Malmberg - 4/24/2017 - refactored method; added logging; replaced
-                detailedresults with logging
+        :returns: found
+        :rtype: bool
+@author: Derek T. Walker
+@change: Breen Malmberg - 4/24/2017 - refactored method; added logging; replaced
+        detailedresults with logging
+
         '''
 
         installed = True
@@ -216,16 +217,16 @@ class Yum(object):
         return installed
 
     def Update(self, package=""):
-        '''
-        update specified package if any updates
+        '''update specified package if any updates
         are available for it
         if no package is specified, update all
         packages which can be updated on the system
 
-        @param package: string; name of package to update
-        @return: updated
-        @rtype: bool
-        @author: Breen Malmberg
+        :param package: string; name of package to update (Default value = "")
+        :returns: updated
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         updated = True
@@ -259,16 +260,16 @@ class Yum(object):
         return updated
 
     def checkUpdate(self, package=""):
-        '''
-        check if there are any updates available for
+        '''check if there are any updates available for
         specified package
         if no package is specified, check if any updates
         are available for the current system
 
-        @param package: string; name of package to check
-        @return: updatesavail
-        @rtype: bool
-        @author: Breen Malmberg
+        :param package: string; name of package to check (Default value = "")
+        :returns: updatesavail
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         updatesavail = False
@@ -308,15 +309,15 @@ class Yum(object):
         return updatesavail
 
     def checkAvailable(self, package):
-        '''
-        check if specified package is available to install
+        '''check if specified package is available to install
         return True if it is
         return False if not
 
-        @param package: string; name of package to check
-        @return: available
-        @rtype: bool
-        @author: Breen Malmberg
+        :param package: string; name of package to check
+        :returns: available
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         available = True
@@ -356,16 +357,16 @@ class Yum(object):
         return available
 
     def getPackageFromFile(self, filename):
-        '''
-        Returns the name of the package that provides the given
+        '''Returns the name of the package that provides the given
         filename/path.
 
-        @param filename: string; The name or path of the file to resolve
-        @return: packagename
-        @rtype: string
-        @author: Eric Ball
-        @change: Breen Malmberg - 4/24/2017 - refactored method; added logging; replaced
-                detailedresults with logging
+        :param filename: string; The name or path of the file to resolve
+        :returns: packagename
+        :rtype: string
+@author: Eric Ball
+@change: Breen Malmberg - 4/24/2017 - refactored method; added logging; replaced
+        detailedresults with logging
+
         '''
 
         packagename = ""

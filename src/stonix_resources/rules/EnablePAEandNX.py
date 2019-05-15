@@ -37,9 +37,10 @@ import traceback
 
 
 class EnablePAEandNX(Rule):
-    '''
-    Install PAE Kernel on Supported 32-bit x86 Systems. If the system is 32-bit and also supports the PAE
-and NX features, the kernel-PAE package should be installed to enable XD or NX support.
+    '''Install PAE Kernel on Supported 32-bit x86 Systems. If the system is 32-bit and also supports the PAE
+    and NX features, the kernel-PAE package should be installed to enable XD or NX support.
+
+
     '''
 
     def __init__(self, config, environ, logger, statechglogger):
@@ -72,21 +73,24 @@ and NX features, the kernel-PAE package should be installed to enable XD or NX s
         self.initobjs()
 
     def initobjs(self):
-        '''
-        initialize helper objects
+        '''initialize helper objects
         @author: Breen Malmberg
+
+
         '''
 
         self.ch = CommandHelper(self.logger)
         self.pkg = Pkghelper(self.logger, self.environ)
 
     def report(self):
-        '''
-        Run report actions for EnablePAEandNX
+        '''Run report actions for EnablePAEandNX
 
-        @return: self.compliant
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: self.compliant
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         # set default variables for this method
@@ -130,23 +134,27 @@ and NX features, the kernel-PAE package should be installed to enable XD or NX s
         return self.compliant
 
     def getSystemOS(self):
-        '''
-        return the name of the OS
+        '''return the name of the OS
 
-        @return: osname
-        @rtype: string
-        @author: Breen Malmberg
+
+        :returns: osname
+
+        :rtype: string
+@author: Breen Malmberg
+
         '''
 
         return self.environ.getostype()
 
     def getSystemARCH(self):
-        '''
-        return the architecture of the system (32 or 64 bit)
+        '''return the architecture of the system (32 or 64 bit)
 
-        @return: sysARCH
-        @rtype: int
-        @author: Breen Malmberg
+
+        :returns: sysARCH
+
+        :rtype: int
+@author: Breen Malmberg
+
         '''
 
         # set default variables for this method
@@ -173,13 +181,13 @@ and NX features, the kernel-PAE package should be installed to enable XD or NX s
         return sysARCH
 
     def getSysPackage(self, systemos):
-        '''
-        return name of pae kernel package for this specific OS
+        '''return name of pae kernel package for this specific OS
 
-        @return: packagename
-        @rtype: string
-        @param systemos: string The name of the system's operating system
+        :param systemos: string The name of the system's operating system
         @author: Breen Malmberg
+        :returns: packagename
+        :rtype: string
+
         '''
 
         packagename = ""
@@ -228,13 +236,13 @@ and NX features, the kernel-PAE package should be installed to enable XD or NX s
         return packagename
 
     def checkPAE(self, package):
-        '''
-        check for the presence of the kernel-PAE package as well as the CPU pae flag
+        '''check for the presence of the kernel-PAE package as well as the CPU pae flag
 
-        @return: retval
-        @rtype: bool
-        @param package: string The name of the kernel PAE package as it appears to this specific system's OS
+        :param package: string The name of the kernel PAE package as it appears to this specific system's OS
         @author: Breen Malmberg
+        :returns: retval
+        :rtype: bool
+
         '''
 
         # set default variables for this method
@@ -294,12 +302,14 @@ and NX features, the kernel-PAE package should be installed to enable XD or NX s
         return retval
 
     def checkNX(self):
-        '''
-        check for the presence of the CPU nx flag
+        '''check for the presence of the CPU nx flag
 
-        @return: retval
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: retval
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         # set default variables for this method
@@ -326,12 +336,14 @@ and NX features, the kernel-PAE package should be installed to enable XD or NX s
         return retval
 
     def fix(self):
-        '''
-        Run fix actions for EnablePAEandNX
+        '''Run fix actions for EnablePAEandNX
 
-        @return: success
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: success
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         success = True

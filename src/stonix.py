@@ -150,10 +150,11 @@ from stonix_resources.cli import Cli
 
 
 class Controller(Observable):
-    """
-    This is the main worker object for stonix. It handles the
+    '''This is the main worker object for stonix. It handles the
     stand up and tear down of the rest of the program.
-    """
+
+
+    '''
 
     def __init__(self):
         """
@@ -347,11 +348,12 @@ class Controller(Observable):
             pass
 
     def set_session_var(self, session_var, set_command):
-        """
+        '''
 
-        @param session_var: session variable to set
-        @param set_command: the command to run to set the given session variable
-        """
+        :param session_var: session variable to set
+        :param set_command: the command to run to set the given session variable
+
+        '''
 
         session_var_value = ""
 
@@ -367,13 +369,13 @@ class Controller(Observable):
             raise
 
     def getrules(self, config, environ):
-        """
-        Private method to process the stonix rules file to populate the rules.
-        @return: List of instantiated rule objects
+        '''Private method to process the stonix rules file to populate the rules.
 
-        @return: list : a list of instantiated rule classes
-        @author: David Kennel
-        """
+        :param config: 
+        :param environ: 
+        :returns: List of instantiated rule objects
+
+        '''
         rulewalklist = []
         instruleclasses = []
         validrulefiles = []
@@ -520,15 +522,15 @@ class Controller(Observable):
         return instruleclasses
 
     def findapplicable(self, rules):
-        """
-        This method checks each rule to see if it is applicable on the current
+        '''This method checks each rule to see if it is applicable on the current
         platform on which stonix is running. A list of applicable rule objects
         is returned.
 
-        @param rules: List of instantiated rule objects
-        @return: List of instantiated rule objects
+        :param rules: List of instantiated rule objects
+        :returns: List of instantiated rule objects
         @author: David Kennel
-        """
+
+        '''
         applicablerules = []
         for rule in rules:
             try:
@@ -555,14 +557,15 @@ class Controller(Observable):
         return applicablerules
 
     def getallrulesdata(self):
-        """
-        This method returns a dictionary of lists containing the data for all
+        '''This method returns a dictionary of lists containing the data for all
         installed rules. Returned properties include; rule name, rule number,
         and the rule help text. The dictionary is keyed by rule number.
 
-        @return: Dictionary of lists
+
+        :returns: Dictionary of lists
         @author: David Kennel
-        """
+
+        '''
         rulesdata = {}
         for rule in self.installedrules:
             rulenum = rule.getrulenum()
@@ -575,18 +578,19 @@ class Controller(Observable):
         return rulesdata
 
     def getrulenumbyname(self, name):
-        """
-        This method takes a name associated with a rule as an argument and
+        '''This method takes a name associated with a rule as an argument and
         translates it into a number associated with a rule class. Acceptable
         rule names are the section headers from the stonix_resources.conf.
         These section headers are generated from the rulename property that
         each rule has.
 
-        @param string: name of the rule to fetch a number for.
-        @return: int : number for the rule matching the passed name 0 if no
+        :param string: name of the rule to fetch a number for.
+        :param name: 
+        :returns: int : number for the rule matching the passed name 0 if no
         match is found.
         @author: David Kennel
-        """
+
+        '''
         rulenum = 0
         for rule in self.installedrules:
             rulename = rule.getrulename()
@@ -595,16 +599,17 @@ class Controller(Observable):
         return rulenum
 
     def getrulenamebynum(self, rulenum):
-        """
-        This method takes a number associated with a rule as an argument and
+        '''This method takes a number associated with a rule as an argument and
         translates it into a name associated with a rule class. Acceptable
         rule number are integers and are found in rule implementations.
 
-        @param int: number of the rule to fetch a name for.
-        @return: string : name for the rule matching the passed number. None if
+        :param int: number of the rule to fetch a name for.
+        :param rulenum: 
+        :returns: string : name for the rule matching the passed number. None if
         no match is found.
         @author: David Kennel
-        """
+
+        '''
         rulename = None
         for rule in self.installedrules:
             ruleid = rule.getrulenum()
@@ -613,12 +618,13 @@ class Controller(Observable):
         return rulename
 
     def hardensystem(self):
-        """
-        Call all rules in fix(harden) mode
+        '''Call all rules in fix(harden) mode
 
-        @return void :
+
+        :returns: void :
         @author David Kennel
-        """
+
+        '''
         self.numrulesrunning = self.numexecutingrules
         self.numrulescomplete = 0
         for rule in self.installedrules:
@@ -676,12 +682,13 @@ class Controller(Observable):
             self.notify_check()
 
     def auditsystem(self):
-        """
-        Call all rules in audit(report) mode
+        '''Call all rules in audit(report) mode
 
-        @return void :
+
+        :returns: void :
         @author David Kennel
-        """
+
+        '''
         self.numrulesrunning = self.numexecutingrules
         self.numrulescomplete = 0
         for rule in self.installedrules:
@@ -723,13 +730,14 @@ class Controller(Observable):
             self.notify_check()
 
     def runruleharden(self, ruleid):
-        """
-        Run a single rule in fix(harden) mode
+        '''Run a single rule in fix(harden) mode
 
-        @param int ruleid :
-        @return void :
+        :param int: ruleid :
+        :param ruleid: 
+        :returns: void :
         @author David Kennel
-        """
+
+        '''
         self.numrulesrunning = 1
         self.numrulescomplete = 0
         rulename = self.getrulenamebynum(ruleid)
@@ -820,13 +828,14 @@ class Controller(Observable):
         self.logger.log(LogPriority.DEBUG, "****************** RULE END: " + str(rulename) + " ******************")
 
     def runruleaudit(self, ruleid):
-        """
-        Run a single rule in audit(report) mode
+        '''Run a single rule in audit(report) mode
 
-        @param int ruleid :
-        @return void :
+        :param int: ruleid :
+        :param ruleid: 
+        :returns: void :
         @author David Kennel
-        """
+
+        '''
         rulename = self.getrulenamebynum(ruleid)
         self.logger.log(LogPriority.DEBUG, "****************** RULE START: " + str(rulename) + " ******************")
         message = "Controller:runruleaudit: Entering rule with id " + \
@@ -880,12 +889,13 @@ class Controller(Observable):
         self.logger.log(LogPriority.DEBUG, "****************** RULE END: " + str(rulename) + " ******************")
 
     def undochangessystem(self):
-        """
-        Undo all changes to the system.
+        '''Undo all changes to the system.
 
-        @return void :
+
+        :returns: void :
         @author David Kennel
-        """
+
+        '''
         self.numrulesrunning = self.numexecutingrules
         self.numrulescomplete = 0
         for rule in self.installedrules:
@@ -915,14 +925,15 @@ class Controller(Observable):
             self.notify_check()
 
     def undorule(self, ruleid):
-        """
-        Undo the changes from a single rule. Expects the integer rule number
+        '''Undo the changes from a single rule. Expects the integer rule number
         as the ruleid
 
-        @param int ruleid :
-        @return void :
+        :param int: ruleid :
+        :param ruleid: 
+        :returns: void :
         @author David Kennel
-        """
+
+        '''
         self.numrulesrunning = 1
         self.numrulescomplete = 0
         for rule in self.installedrules:
@@ -957,13 +968,14 @@ class Controller(Observable):
                     self.notify_check()
 
     def getrulehelp(self, ruleid):
-        """
-        Return rule help information.
+        '''Return rule help information.
 
-        @param int ruleid : int (identifier) of rule to get help text for.
-        @return string :
+        :param int: ruleid : int (identifier) of rule to get help text for.
+        :param ruleid: 
+        :returns: string :
         @author David Kennel
-        """
+
+        '''
         helptxt = []
         for rule in self.installedrules:
             if ruleid == rule.getrulenum():
@@ -971,12 +983,13 @@ class Controller(Observable):
         return helptxt
 
     def updatedbs(self):
-        """
-        Update all databases held by database rules in stonix_resources.
+        '''Update all databases held by database rules in stonix_resources.
 
-        @return void :
+
+        :returns: void :
         @author David Kennel
-        """
+
+        '''
         numdbrules = 0
         self.numrulescomplete = 0
         for rule in self.installedrules:
@@ -1005,14 +1018,15 @@ class Controller(Observable):
                 self.notify_check()
 
     def getconfigoptions(self):
-        """
-        This method retrieves the configitems for all rules and returns a dict
+        '''This method retrieves the configitems for all rules and returns a dict
         of lists where the keys are rule names and the lists contain the rule
         text and a list of configitem objects for that rule.
 
-        @return dict :
+
+        :returns: dict :
         @author David Kennel
-        """
+
+        '''
         configdict = {}
         for rule in self.installedrules:
             rulename = rule.getrulename()
@@ -1025,15 +1039,16 @@ class Controller(Observable):
         return configdict
 
     def getruleconfigoptions(self, ruleid):
-        """
-        This method returns the configurationitem object instances associated
+        '''This method returns the configurationitem object instances associated
         with a rule. We expect to be passed the integer rule number to id the
         rule.
 
-        @param int ruleid : Integer rule number
-        @return list : list of configurationitem objects
+        :param int: ruleid : Integer rule number
+        :param ruleid: 
+        :returns: list : list of configurationitem objects
         @author David Kennel
-        """
+
+        '''
         cilist = []
         for rule in self.installedrules:
             if ruleid == rule.getrulenum():
@@ -1041,51 +1056,55 @@ class Controller(Observable):
         return cilist
 
     def regenerateconfig(self, simpleconf):
-        """
-        This method will write the stonix configuration file with the current
+        '''This method will write the stonix configuration file with the current
         configuration data. If simpleconf is True then we only write changed
         rules and rules that are marked as being in the simple config.
-
+        
         The configuration file object actually does most of the work here.
 
-        @param bool simpleconf : Whether or not we are generating a simple
+        :param bool: simpleconf : Whether or not we are generating a simple
         configuration file or not.
-        @return  : void
+        :param simpleconf: 
+        :returns: void
         @author David Kennel
-        """
+
+        '''
         currdata = self.getconfigoptions()
         self.config.writeconfig(simpleconf, currdata)
 
     def validateconfig(self):
-        """
-        FIXME - unimplemented method, is this still required/desirable at this
+        '''FIXME - unimplemented method, is this still required/desirable at this
         level?
 
-        @return bool :
+
+        :returns: bool :
         @author
-        """
+
+        '''
         pass
 
     def getcurrentrule(self):
-        """
-        This method returns the rule name for the currently executing rule.
+        '''This method returns the rule name for the currently executing rule.
         This method only returns valid data when called while the whole rule
         stack is running.
 
-        @return string : rulename
+
+        :returns: string : rulename
         @author David Kennel
-        """
+
+        '''
         return self.currulename
 
     def getrulecompstatus(self, ruleid):
-        """
-        This method returns the compliance status for the named rule. This info
+        '''This method returns the compliance status for the named rule. This info
         is only valid after the rule has had the report or fix methods called.
 
-        @param int: ruleid
-        @return: bool
+        :param int: ruleid
+        :param ruleid: 
+        :returns: bool
         @author: David Kennel
-        """
+
+        '''
         compliant = False
         for rule in self.installedrules:
             if ruleid == rule.getrulenum():
@@ -1093,14 +1112,15 @@ class Controller(Observable):
         return compliant
 
     def getruledetailedresults(self, ruleid):
-        """
-        This method returns the detailed results from the rule with a given
+        '''This method returns the detailed results from the rule with a given
         rule id. Returned data will be a string.
 
-        @param int: ruleid
-        @return: string
+        :param int: ruleid
+        :param ruleid: 
+        :returns: string
         @author: David Kennel
-        """
+
+        '''
         detailedresults = []
         for rule in self.installedrules:
             if ruleid == rule.getrulenum():
@@ -1108,14 +1128,15 @@ class Controller(Observable):
         return detailedresults
 
     def getcompletionpercentage(self):
-        """
-        This method returns the percentage of items on the to-do list
+        '''This method returns the percentage of items on the to-do list
         completed. This only returns valid data when called while the whole
         rule stack is running.
 
-        @return int : range 0 - 100
+
+        :returns: int : range 0 - 100
         @author David Kennel
-        """
+
+        '''
         total = float(self.numrulesrunning)
         curr = float(self.numrulescomplete)
         if self.environ.getdebugmode():
@@ -1130,32 +1151,32 @@ class Controller(Observable):
         return percent
 
     def set_rule_detailedresults(self, ruleid, mode, result, msg):
-        """
-        update the specified rule's (ruleid) detailedresults with the msg from
+        '''update the specified rule's (ruleid) detailedresults with the msg from
         the caller; (used to bridge the observable gap between other classes and
         the running rule)
 
-        @param ruleid: int; the rule number identifier
-        @param mode: string; fix|report|undo
-        @param result: bool; (see rule.py formatDetailedResults())
-        @param msg: string; message to update detailedresults with
+        :param ruleid: int; the rule number identifier
+        :param mode: string; fix|report|undo
+        :param result: bool; (see rule.py formatDetailedResults())
+        :param msg: string; message to update detailedresults with
         @author: Breen Malmberg
-        """
+
+        '''
 
         for rule in self.installedrules:
             if ruleid == rule.getrulenum():
                 rule.formatDetailedResults(mode, result, msg)
 
     def getruleauditonly(self, ruleid):
-        """
-        This method returns the audit only status boolean
+        '''This method returns the audit only status boolean
         from the rule with a given <ruleid>.
 
-        @param ruleid: int; the rule number identifier
-        @return: auditonly
-        @rtype: bool
-        @author: Breen Malmberg
-        """
+        :param ruleid: int; the rule number identifier
+        :returns: auditonly
+        :rtype: bool
+@author: Breen Malmberg
+
+        '''
 
         auditonly = False
 
@@ -1171,36 +1192,38 @@ class Controller(Observable):
         return auditonly
 
     def displaylastrun(self):
-        """
-        Returns the contents of the log file by way of the logger object.
+        '''Returns the contents of the log file by way of the logger object.
 
-        @return string :
+
+        :returns: string :
         @author: ???
-        """
+
+        '''
         return self.logger.displaylastrun()
 
     def updatestatus(self, callingobject):
-        """
-        WARNING! FIX ME! This was intended to be a part of the comms between
+        '''WARNING! FIX ME! This was intended to be a part of the comms between
         the controller and the view. I'm not sure this method still makes
         sense.
 
-        @param object_ callingobject :
-        @return  :
-        @author: ???
-        """
+        :param object_: callingobject :
+        :param callingobject: 
+        :returns: void
+
+        '''
         pass
 
     def tryacquirelock(self):
-        """
-        Try to set a lock file at /var/run/stonix_resources.pid. If the lock
+        '''Try to set a lock file at /var/run/stonix_resources.pid. If the lock
         file already exists check to see if a stonix process with that PID is
         already running. If so exit with error else re-create lock file with
         our PID.
 
-        @return: void
+
+        :returns: void
         @author: David Kennel
-        """
+
+        '''
         lockmessage = """
 !WARNING! Another copy of STONIX appears to be running!
 Running more than one copy of STONIX at a time may result in
@@ -1272,24 +1295,27 @@ ABORTING EXECUTION!"""
             rw_lockfile.close()
 
     def safetycheck(self):
-        """
-        Check that the installation of STONIX is safe from a security
+        '''Check that the installation of STONIX is safe from a security
         perspective. All files must only be writable by root.
-
+        
         @author: David Kennel
-        @return: bool True if install passes checks
-        """
+
+
+        :returns: bool True if install passes checks
+
+        '''
         safe = True
         return safe
 
     def releaselock(self):
-        """
-        Cleans up the stonix lock file in the event of normal program
+        '''Cleans up the stonix lock file in the event of normal program
         exit.
 
-        @return: void
+
+        :returns: void
         @author: David Kennel
-        """
+
+        '''
 
         if os.path.exists(self.lockfile):
             try:
@@ -1300,13 +1326,15 @@ ABORTING EXECUTION!"""
                 pass
 
     def processargs(self):
-        """
-        This method calls the prog_args instance to process the command line
+        '''This method calls the prog_args instance to process the command line
         args and then jumps to the appropriate execution mode.
-
+        
         @author: Roy Nielsen, David Kennel
-        @return: void
-        """
+
+
+        :returns: void
+
+        '''
         self.environ.setverbosemode(self.prog_args.get_verbose())
         self.environ.setdebugmode(self.prog_args.get_debug())
         self.fix = self.prog_args.get_fix()
@@ -1355,13 +1383,15 @@ ABORTING EXECUTION!"""
             self.mode = 'cli'
 
     def setuptesting(self):
-        """
-        this method is called when the environment object determins that the
+        '''this method is called when the environment object determins that the
         controller is in test mode - e.g. running from a unittest.
-
+        
         @author: Ekkehard J. Koch
-        @return: void
-        """
+
+
+        :returns: void
+
+        '''
         self.environ.setverbosemode(True)
         self.environ.setdebugmode(True)
         self.fix = False
