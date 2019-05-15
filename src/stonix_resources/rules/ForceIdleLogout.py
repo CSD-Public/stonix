@@ -91,7 +91,6 @@ managers will not save work in progress when the logout occurs.
                            'fisma': 'high'}
         self.cmdhelper = CommandHelper(self.logger)
         self.guidance = ['NIST 800-53 AC-2(5)']
-        self.ph = Pkghelper(self.logger, self.environ)
         myos = self.environ.getostype().lower()
         self.gconf = ""
         if re.search("red hat", myos) or re.search("centos", myos):
@@ -112,12 +111,13 @@ FORCEIDLELOGOUT to False.'''
 FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
         default2 = 240
         self.timeoutci = self.initCi(datatype2, key2, instructions2, default2)
-
+        self.ph = Pkghelper(self.logger, self.environ)
         self.gnomesettingpath = "/etc/dconf/db/local.d/00-autologout"
         self.gnomelockpath = "/etc/dconf/db/local.d/locks/autologout"
         self.undotimeout = ""
         self.undoforcelogout = ""
         self.kdesddm = ""
+        self.gnomeInstalled, self.kdeInstalled = False, False
 
     def report(self):
         """
@@ -130,12 +130,17 @@ FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
         try:
             compliant = True
             self.detailedresults = ""
+            try:
+                self.seconds = self.timeoutci.getcurrvalue() * 60
+            except(TypeError):
+                self.detailedresults += "FORCEIDLELOGOUTTIMEOUT value is not " + \
+                                        "valid!\n"
+                return False
             if self.environ.osfamily == 'linux':
                 self.kdesddm = self.ph.check("sddm")
-                ph = Pkghelper(self.logger, self.environ)
-                if ph.check("gdm") or ph.check("gdm3"):
+                if self.ph.check("gdm") or self.ph.check("gdm3"):
                     self.gnomeInstalled = True
-                    if not self.chkgnome3():
+                    if not self.chkgnome():
                         self.detailedresults += "Gnome GUI environment " + \
                                                 "does not appear to be correctly configured " + \
                                                 "for automatic logout of idle sessions. This " + \
@@ -150,8 +155,8 @@ FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
                     self.gnomeInstalled = False
                     self.detailedresults += "Gnome not installed.  No need to configure for gnome\n"
 
-                if ph.check("kdm") or ph.check("kde-workspace") or \
-                                      ph.check("sddm") or self.ph.check("patterns-kde-kde_yast"):
+                if self.ph.check("kdm") or self.ph.check("kde-workspace") or \
+                        self.ph.check("sddm") or self.ph.check("patterns-kde-kde_yast"):
                     self.kdeInstalled = True
                     if not self.chkkde4():
                         self.detailedresults += "KDE GUI environment " + \
@@ -187,25 +192,14 @@ FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
 
-    def chkgnome3(self):
+    def chkgnome(self):
         """
-        Check that the GNOME 3 auto logout settings are set correctly
+        Check that the GNOME 3 or GNOME 2 auto logout settings
+        are set correctly
 
-        @return: boot - true if settings are set to logout
+        @return: bool - true if settings are set to logout
         @author: D. Kennel
         """
-
-        try:
-            seconds = self.timeoutci.getcurrvalue() * 60
-        except(TypeError):
-            self.detailedresults += "FORCEIDLELOGOUTTIMEOUT value is not " + \
-                "valid!\n"
-            return False
-
-        if not self.environ.geteuid() == 0:
-            # Short circuit for user mode run
-            # manipulating the GNOME settings requires privilege
-            return True
         compliant = True
         self.timeoutwrong = False
         self.logoutwrong = False
@@ -223,7 +217,7 @@ FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
                                       'Found Gnome settings file'])
                 contents = readFile(self.gnomesettingpath, self.logger)
                 for line in contents:
-                    if re.search('sleep-inactive-ac-timeout=' + str(seconds),
+                    if re.search('sleep-inactive-ac-timeout=' + str(self.seconds),
                                  line):
                         havetimeout = True
                         self.logdispatch.log(LogPriority.DEBUG,
@@ -260,7 +254,7 @@ FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
             if not havetimeout:
                 self.detailedresults += "GNOME 3 autologout timeout " + \
                     "not found or does not match expected value. Set " + \
-                    "sleep-inactive-ac-timeout=" + str(seconds) + \
+                    "sleep-inactive-ac-timeout=" + str(self.seconds) + \
                     " in /etc/dconf/db/local.d/00-autologout\n"
                 compliant = False
 
@@ -305,17 +299,17 @@ FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
                                   'Value of idle time ' + str(output)])
             if output:
                 try:
-                    if not int(output[0].strip()) == self.timeoutci.getcurrvalue():
+                    if int(output[0].strip()) != self.seconds:
                         compliant = False
                         self.timeoutwrong = True
                         if re.search("No value set", output[0]):
-                            self.detailedresults += "GNOME 3 autologout time not found\n"
+                            self.detailedresults += "GNOME autologout time not found\n"
                             self.undotimeout = "unset"
                         elif isinstance(output[0], int):
-                            self.detailedresults += "GNOME 3 autologout time not correct.\n"
+                            self.detailedresults += "GNOME autologout time not correct.\n"
                             self.undotimeout = output[0]
                         else:
-                            self.detailedresults += "GNOME 2 autologout time not correct\n"
+                            self.detailedresults += "GNOME autologout time not correct\n"
                             self.undotimeout = "''"
                 except(ValueError):
                     # value not found message
@@ -352,23 +346,17 @@ FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
         """
         debug = "Inside chkkde4 method"
         self.logger.log(LogPriority.DEBUG, debug)
-        try:
-            seconds = self.timeoutci.getcurrvalue() * 60
-        except(TypeError):
-            self.detailedresults += "FORCEIDLELOGOUTTIMEOUT value is not " + \
-                                    "valid!\n"
-            return False
 
         self.kdefix = {}
         if self.kdesddm:
             self.kdecheck = ".config/kdeglobals"
             self.rcpath = ".config/kscreenlockerrc"
-            self.kdeprops = {"ScreenSaver": {"Timeout": str(seconds)}}
+            self.kdeprops = {"ScreenSaver": {"Timeout": str(self.seconds)}}
         else:
             self.kdecheck = ".kde"
             self.rcpath = ".kde/share/config/kscreensaverrc"
             self.kdeprops = {"ScreenSaver": {"AutoLogout": "true",
-                                             "AutoLogoutTimeout": str(seconds)}}
+                                             "AutoLogoutTimeout": str(self.seconds)}}
 
         if self.environ.geteuid() == 0:
             contents = readFile("/etc/passwd", self.logger)
@@ -469,10 +457,10 @@ FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
                     self.statechglogger.deleteentry(event)
             if self.environ.getosfamily() == "linux":
                 if self.gnomeInstalled:
-                    if not self.fixgnome3():
+                    if not self.fixgnome():
                         success = False
                 if self.kdeInstalled:
-                    if not self.fixkde4():
+                    if not self.fixkde():
                         success = False
             elif self.environ.getosfamily() == "darwin":
                 success = self.fixosx()
@@ -487,15 +475,19 @@ FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.rulesuccess
 
-    def fixgnome3(self):
+    def fixgnome(self):
         """
         Configure GNOME 3 for automatic logout.
 
         @author: d.kennel
         """
 
-        if not self.environ.geteuid() == 0:
-            return
+        if self.environ.geteuid() != 0:
+            debug = "Configuring gnome requires root privileges\n"
+            self.logger.log(LogPriority.DEBUG, debug)
+            self.detailedresults += "Configuring gnome requires root " + \
+                "privileges\n"
+            return False
         success = True
         if os.path.exists('/etc/dconf/db/local.d'):
             created1, created2 = False, False
@@ -628,7 +620,7 @@ FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
                                                     self.gnomelockpath + " file\n"
                             success = False
 
-        elif self.ph.check(self.gconf):
+        if self.ph.check(self.gconf):
             self.logdispatch.log(LogPriority.DEBUG,
                                  ['ForceIdleLogout.__fixgnome3',
                                   'Working GNOME with gconf'])
@@ -685,7 +677,7 @@ FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
                     self.detailedresults += 'Idle forced-logout option configured successfully.\n'
         return success
 
-    def fixkde4(self):
+    def fixkde(self):
         """
         Configure KDE 4 for automatic logout.
 
