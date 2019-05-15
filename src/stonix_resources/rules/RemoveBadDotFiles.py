@@ -35,10 +35,11 @@ from ..stonixutilityfunctions import *
 
 
 class RemoveBadDotFiles(Rule):
-    '''
-    The RemoveBadDotFiles class is responsible for checking for and removing
+    '''The RemoveBadDotFiles class is responsible for checking for and removing
     any bad dot files that might reside in user home directories.
     @author: dkennel
+
+
     '''
 
     def __init__(self, config, environ, logger, statechglogger):
@@ -80,13 +81,15 @@ class RemoveBadDotFiles(Rule):
             pass
 
     def report(self):
-        """
-        Search for and report whether or not any .netrc files exist. This
+        '''Search for and report whether or not any .netrc files exist. This
         report is a little tricky because if euid == 0 then we can't read nfs
         mounted dirs.
-        @return: bool
+
+
+        :returns: bool
         @author: D.Kennel
-        """
+
+        '''
         try:
             compliant = True
             self.detailedresults = ""
@@ -128,11 +131,12 @@ class RemoveBadDotFiles(Rule):
         return self.compliant
 
     def fix(self):
-        """
-        Search and destroy any bad dot files. When running with euid == 0 we
+        '''Search and destroy any bad dot files. When running with euid == 0 we
         have no access to nfs mounted homes.
         @author: D. Kennel
-        """
+
+
+        '''
         self.detailedresults = ""
         if not self.nonetrc.getcurrvalue():
             self.formatDetailedResults("fix", self.rulesuccess,

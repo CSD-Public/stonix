@@ -39,13 +39,14 @@ from ..stonixutilityfunctions import iterate
 
 
 class MinimizeAcceptedDHCPOptions(Rule):
-    '''
-    By default, the DHCP client program, dhclient, requests and applies ten configuration options (in addition to the IP 
-address) from the DHCP server. subnet-mask, broadcast-address, time-offset, routers, domain-name, domain-name-servers, 
-host-name, nis-domain, nis-servers, and ntp-servers. Many of the options requested and applied by dhclient may be the 
-same for every system on a network. It is recommended that almost all configuration options be assigned statically, and 
-only options which must vary on a host-by-host basis be assigned via DHCP. This limits the damage which can be done by a
- rogue DHCP server
+    '''By default, the DHCP client program, dhclient, requests and applies ten configuration options (in addition to the IP
+    address) from the DHCP server. subnet-mask, broadcast-address, time-offset, routers, domain-name, domain-name-servers,
+    host-name, nis-domain, nis-servers, and ntp-servers. Many of the options requested and applied by dhclient may be the
+    same for every system on a network. It is recommended that almost all configuration options be assigned statically, and
+    only options which must vary on a host-by-host basis be assigned via DHCP. This limits the damage which can be done by a
+     rogue DHCP server
+
+
     '''
 
     def __init__(self, config, environ, logger, statechglogger):
@@ -72,11 +73,12 @@ only options which must vary on a host-by-host basis be assigned via DHCP. This 
         self.ci = self.initCi(datatype, key, instructions, default)
 
     def localize(self):
-        '''
-        set variables based on operating environment
+        '''set variables based on operating environment
 
-        @return: void
+
+        :returns: void
         @author: Breen Malmberg
+
         '''
 
         self.filepaths = []
@@ -109,12 +111,13 @@ only options which must vary on a host-by-host basis be assigned via DHCP. This 
             raise
 
     def getFileContents(self, filepath):
-        '''
-        get a file's contents and return them in list format
+        '''get a file's contents and return them in list format
 
-        @return: contents
-        @rtype: list
-        @author: Breen Malmberg
+        :param filepath: 
+        :returns: contents
+        :rtype: list
+@author: Breen Malmberg
+
         '''
 
         contents = []
@@ -147,14 +150,14 @@ only options which must vary on a host-by-host basis be assigned via DHCP. This 
         return contents
 
     def checkFile(self, filepath, checkfor):
-        '''
-        check a file's contents for a specific string or list of strings
+        '''check a file's contents for a specific string or list of strings
 
-        @param filepath: string full path to the file to check
-        @param checkfor: dict dictionary of key:value pairs to check for in file contents
-        @return: retval
-        @rtype: bool
-        @author: Breen Malmberg
+        :param filepath: string full path to the file to check
+        :param checkfor: dict dictionary of key:value pairs to check for in file contents
+        :returns: retval
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         retval = True
@@ -205,12 +208,14 @@ only options which must vary on a host-by-host basis be assigned via DHCP. This 
         return retval
 
     def report(self):
-        '''
-        verify whether the configuration for dhclient.conf is correct
+        '''verify whether the configuration for dhclient.conf is correct
 
-        @return: self.compliant
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: self.compliant
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         # UPDATE THIS SECTION IF YOU CHANGE THE CONSTANTS BEING USED IN THE RULE
@@ -262,13 +267,15 @@ only options which must vary on a host-by-host basis be assigned via DHCP. This 
         return self.compliant
 
     def fix(self):
-        '''
-        ensure that the file /etc/dhcp/dhclient.conf has the correct
+        '''ensure that the file /etc/dhcp/dhclient.conf has the correct
         configuration options and values defined in it
 
-        @return: self.rulesuccess
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: self.rulesuccess
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         # UPDATE THIS SECTION IF YOU CHANGE THE CONSTANTS BEING USED IN THE RULE

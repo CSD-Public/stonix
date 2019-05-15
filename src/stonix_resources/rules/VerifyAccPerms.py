@@ -42,9 +42,10 @@ from ..logdispatcher import LogPriority
 
 
 class VerifyAccPerms(Rule):
-    '''
-    Ensure that the user account databases (passwd, shadow, group, gshadow,
+    '''Ensure that the user account databases (passwd, shadow, group, gshadow,
     etc) have the correct (secure) permissions.
+
+
     '''
 
     def __init__(self, config, environ, logger, statechglogger):
@@ -84,14 +85,15 @@ class VerifyAccPerms(Rule):
 ###############################################################################
 
     def report(self):
-        '''
-        check to see if user account databases have the correct (secure)
+        '''check to see if user account databases have the correct (secure)
         permissions and ownership set. self.compliant, self.detailed results
         and self.currstate properties are updated to reflect the system status.
         self.rulesuccess will be updated if the rule does not succeed.
 
-        @return bool
+
+        :returns: bool
         @author bemalmbe
+
         '''
 
         #defaults
@@ -146,11 +148,12 @@ class VerifyAccPerms(Rule):
         return self.compliant
 
     def fix(self):
-        '''
-        The fix method will apply the required settings to the system.
+        '''The fix method will apply the required settings to the system.
         self.rulesuccess will be updated if the rule does not succeed.
-
+        
         @author bemalmbe
+
+
         '''
 
         try:

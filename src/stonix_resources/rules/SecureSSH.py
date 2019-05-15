@@ -52,12 +52,13 @@ from ..ServiceHelper import ServiceHelper
 
 
 class SecureSSH(Rule):
-    """
-    The SecureSSH class makes a number of configuration changes to SSH in \
+    '''The SecureSSH class makes a number of configuration changes to SSH in \
     order to ensure secure use of the functionality.
-
+    
     @author: Breen Malmberg
-    """
+
+
+    '''
 
     def __init__(self, config, environ, logger, statechglogger):
         """
@@ -88,19 +89,13 @@ class SecureSSH(Rule):
         self.set_paths()
 
     def init_objs(self):
-        """
-
-        @return:
-        """
+        ''' '''
 
         self.ph = Pkghelper(self.logger, self.environ)
         self.sh = ServiceHelper(self.environ, self.logger)
 
     def set_paths(self):
-        """
-
-        @return:
-        """
+        ''' '''
 
         self.osname = self.environ.getosname()
 
@@ -114,11 +109,11 @@ class SecureSSH(Rule):
             self.client_path = "/etc/ssh/ssh_config"
 
     def isinstalled(self, packagenames):
-        """
+        '''
 
-        @param packagenames:
-        @return:
-        """
+        :param packagenames: return:
+
+        '''
 
         self.installed = False
 
@@ -128,16 +123,18 @@ class SecureSSH(Rule):
 
 
     def report(self):
-        """
-        check if ssh is installed and if the correct configuration options
+        '''check if ssh is installed and if the correct configuration options
         are set in the configuration files
 
-        @return: self.compliant
-        @rtype: bool
-        @author: Breen Malmberg
-        @change: Breen Malmberg - 5/11/2017 - added checks for mac to ensure
-                that ssh is already loaded before we report on its configuration
-        """
+
+        :returns: self.compliant
+
+        :rtype: bool
+@author: Breen Malmberg
+@change: Breen Malmberg - 5/11/2017 - added checks for mac to ensure
+        that ssh is already loaded before we report on its configuration
+
+        '''
 
         self.detailedresults = ""
         packages = ["ssh", "openssh", "openssh-server", "openssh-client"]
@@ -235,16 +232,18 @@ class SecureSSH(Rule):
         return self.compliant
 
     def fix(self):
-        """
-        apply configuration options to config files
+        '''apply configuration options to config files
 
-        @return: self.rulesuccess
-        @rtype: bool
-        @author: Breen Malmberg
-        @change: Breen Malmberg - 5/11/2017 - added checks for mac to ensure
-                that ssh is already loaded before we attempt to configure it;
-                added logging
-        """
+
+        :returns: self.rulesuccess
+
+        :rtype: bool
+@author: Breen Malmberg
+@change: Breen Malmberg - 5/11/2017 - added checks for mac to ensure
+        that ssh is already loaded before we attempt to configure it;
+        added logging
+
+        '''
 
         self.detailedresults = ""
         self.iditerator = 0

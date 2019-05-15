@@ -55,18 +55,24 @@ class zzzTestSystemIntegrityProtection(RuleTest):
 
     def setConditionsForRule(self):
         '''
-        @param self: essential if you override this definition
-        @return: boolean - If successful True; If failure False
+
+        :param self: essential if you override this definition
+        :returns: boolean - If successful True; If failure False
         @author: ekkehard j. koch
+
         '''
         success = True
         return success
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
         '''
-        @param self: essential if you override this definition
-        @return: boolean - If successful True; If failure False
+
+        :param self: essential if you override this definition
+        :param pCompliance: 
+        :param pRuleSuccess: 
+        :returns: boolean - If successful True; If failure False
         @author: ekkehard j. koch
+
         '''
         self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " + \
                              str(pCompliance) + ".")

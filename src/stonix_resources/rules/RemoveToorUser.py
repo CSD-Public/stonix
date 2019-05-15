@@ -56,7 +56,10 @@ REMOVETOORUSER to False.'''
 
     def report(self):
         '''report will traverse through each entry in the /etc/passwd file.
-        will set self.compliant = False if toor user is found'''
+        will set self.compliant = False if toor user is found
+
+
+        '''
 
         try:
             found = False
@@ -91,7 +94,10 @@ and is not compliant, /etc/passwd file doesn't exist"
 
     def fix(self):
         '''the fix method with remove the user 'toor' if report indicated
-        that toor user is present'''
+        that toor user is present
+
+
+        '''
 
         try:
             if not self.ci.getcurrvalue():
@@ -119,8 +125,11 @@ but had a few problems"
 ###############################################################################
 
     def undo(self):
-        '''There is no undo method for this rule since we don't ever want a 
-        toor user for the system'''
+        '''There is no undo method for this rule since we don't ever want a
+        toor user for the system
+
+
+        '''
         try:
             self.detailedresults = "no undo available\n"
             self.detailedresults += traceback.format_exc()

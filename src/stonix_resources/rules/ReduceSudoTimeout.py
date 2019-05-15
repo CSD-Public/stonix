@@ -50,10 +50,11 @@ from ..logdispatcher import LogPriority
 
 
 class ReduceSudoTimeout(Rule):
-    '''
-    The ReduceSudoTimeout class removes the default 5 minute window of stored
+    '''The ReduceSudoTimeout class removes the default 5 minute window of stored
     sudo authorization after a successful sudo authorization is made.
     @author Breen Malmberg
+
+
     '''
 
     def __init__(self, config, environ, logdispatch, statechglogger):
@@ -92,13 +93,15 @@ class ReduceSudoTimeout(Rule):
         self.timeoutCI = self.initCi(todatatype, tokey, toinstructions, todefault)
 
     def report(self):
-        '''
-        determine whether the amount of time a stored sudo credential exists
+        '''determine whether the amount of time a stored sudo credential exists
         is limited to an appropriate value (0 minutes to 15 minutes)
 
-        @return: self.compliant
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: self.compliant
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         self.timeouttime = self.timeoutCI.getcurrvalue()
@@ -139,10 +142,11 @@ class ReduceSudoTimeout(Rule):
         return self.compliant
 
     def fix(self):
-        '''
-        set the sudo timeout to a pre-defined appropriate value
-
+        '''set the sudo timeout to a pre-defined appropriate value
+        
         @author Breen Malmberg
+
+
         '''
 
         self.detailedresults = ""

@@ -60,11 +60,12 @@ import inspect
 
 class Configuration:
 
-    """
-    Manages the stonix configuration data. Constructor takes no arguments.
+    '''Manages the stonix configuration data. Constructor takes no arguments.
     :version: 1.0
     :author: David Kennel
-    """
+
+
+    '''
 
     def __init__(self, environment):
         self.environment = environment
@@ -74,13 +75,16 @@ class Configuration:
         # print self.programconfig
 
     def getconfvalue(self, rulename, confkey):
-        """
-        Fetch the value for a given rule and key
-        @param string rulename : name of the rule
-        @param string confkey : Keyword for configuration value
-        @return string :
+        '''Fetch the value for a given rule and key
+
+        :param string: rulename : name of the rule
+        :param string: confkey : Keyword for configuration value
+        :param rulename: 
+        :param confkey: 
+        :returns: string :
         @author D. Kennel
-        """
+
+        '''
         try:
             value = self.programconfig[rulename][confkey]
         except KeyError:
@@ -89,22 +93,24 @@ class Configuration:
         return value
 
     def writeconfig(self, simpleconf, ruledata):
-        """
-        Writes current configuration data to the config file. If simpleconf is
+        '''Writes current configuration data to the config file. If simpleconf is
         True we only write values that are changed or values that are marked
         as being in the simple configuration.
 
-        @param bool simpleconf : Bool for whether or not the configuration file
+        :param bool: simpleconf : Bool for whether or not the configuration file
         generated should be simple or full.
-        @param dict: ruledata a dictionary of lists keyed by rulename and
+        :param dict: ruledata a dictionary of lists keyed by rulename and
         containing a packed list where index 0 is the rule help text and all
         remaining entries (if any) are configurationitem instances.
-        @return  : void
+        :param simpleconf: 
+        :param ruledata: 
+        :returns: void
         @author D. Kennel
         @change: 03/08/2018 - Breen Malmberg - changed 'uckey =' from
                 'UC' + key - to - key + "_UserComments" to be more user-friendly
                 in stonix.conf
-        """
+
+        '''
         confheader = """# STONIX.CONF
 # STONIX configuration file
 # This file is documented in the STONIX documentation. You may also review the
@@ -176,17 +182,19 @@ version = 100
             sys.exit(1)
 
     def getusercomment(self, rulename, confkey):
-        """
-        Returns the user comment text associated with a given rule and
+        '''Returns the user comment text associated with a given rule and
         configuration key.
 
-        @param string rulename : name of the rule
-        @param string confkey :
-        @return string :
+        :param string: rulename : name of the rule
+        :param string: confkey :
+        :param rulename: 
+        :param confkey: 
+        :returns: string :
         @author D. Kennel
         @change: 03/08/2018 - Breen Malmberg - changed uckey from 'uc' + confkey.lower() to
                 confkey.lower() + "_usercomments" so that entry in stonix.conf is more user-friendly
-        """
+
+        '''
 
         uckey = confkey.lower() + "_usercomments"
         usercomment = self.programconfig[rulename][uckey]

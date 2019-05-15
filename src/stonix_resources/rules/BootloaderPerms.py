@@ -42,13 +42,14 @@ import stat
 
 
 class BootloaderPerms(Rule):
-    '''
-    This rule will verify the permissions on the boot loader config file to be
+    '''This rule will verify the permissions on the boot loader config file to be
     root:root and 600
-
+    
     @author: Breen Malmberg
     @change: 04/18/2014 dkennel - Moved to new style CI. Fixed bug in fix
     method where CI was not referenced before executing fix actions.
+
+
     '''
 
     def __init__(self, config, environ, logger, statechglogger):
@@ -84,13 +85,15 @@ class BootloaderPerms(Rule):
                                    '/boot/grub2/grub.cfg']
 
     def isapplicable(self):
-        '''
-        Determine if this rule is applicable to the current system
+        '''Determine if this rule is applicable to the current system
 
-        @return: applicable
-        @rtype: bool
-        @author: Breen Malmberg
-        @change: 02/12/2014 ekkehard update to exclude old OS X version
+
+        :returns: applicable
+
+        :rtype: bool
+@author: Breen Malmberg
+@change: 02/12/2014 ekkehard update to exclude old OS X version
+
         '''
 
         # defaults
@@ -103,15 +106,17 @@ class BootloaderPerms(Rule):
         return applicable
 
     def report(self):
-        '''
-        Verify the ownership and permissions of the boot loader config file to
+        '''Verify the ownership and permissions of the boot loader config file to
         be root:root and 600 - respectively
         Return True if they are both set to these respective values
         Return False if one or more are not set to the respective owner and permissions values
 
-        @return: self.compliant
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: self.compliant
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         # defaults
@@ -155,15 +160,17 @@ class BootloaderPerms(Rule):
         return self.compliant
 
     def fix(self):
-        '''
-        Set the owner and group of the boot loader config file to root:root
+        '''Set the owner and group of the boot loader config file to root:root
         Set the permissions on the boot loader config file to 600
         Return True if no problems were encountered while setting these values
         Return False if any errors or problems were encountered while setting these values
 
-        @return: self.rulesuccess
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: self.rulesuccess
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         # defaults

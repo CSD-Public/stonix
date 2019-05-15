@@ -31,12 +31,13 @@ from logdispatcher import LogPriority
 
 
 class zzzTestRuleProperties(unittest.TestCase):
-    '''
-    test class designed to test certain properties common
+    '''test class designed to test certain properties common
     to each rule and determine if those properties:
     1) exist
     2) have duplications
     3) are properly formatted
+
+
     '''
 
     def setUp(self):

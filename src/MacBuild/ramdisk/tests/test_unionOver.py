@@ -36,26 +36,26 @@ elif sys.platform.startswith("linux"):
 
 @unittest.skip("Needs appropriate tests written...")
 class test_unionOver(GenericRamdiskTest):
-    """
-    Test unionfs functionality of ramdisks
-
+    '''Test unionfs functionality of ramdisks
+    
     @author: Roy Nielsen
-    """
+
+
+    '''
 
     @classmethod
     def setUpClassInstanceSpecifics(self):
-        """
-        Initializer
-        """
+        '''Initializer'''
 
         self.getLibc()
 
     def setUp(self):
-        """
-        This method runs before each test case.
-
+        '''This method runs before each test case.
+        
         @author: Roy Nielsen
-        """
+
+
+        '''
         pass
 
 
@@ -65,24 +65,20 @@ class test_unionOver(GenericRamdiskTest):
     ##################################
 
     def test_unionOverFirstTest(self):
-        """
-        """
+        ''' '''
         pass
 
     ##################################
 
     def test_unionOverSecondTest(self):
-        """
-        """
+        ''' '''
         pass
 
 ###############################################################################
 ##### unittest Tear down
     @classmethod
     def tearDownClassInstanceSpecifics(self):
-        """
-        disconnect ramdisk
-        """
+        '''disconnect ramdisk'''
         pass
 
 ###############################################################################

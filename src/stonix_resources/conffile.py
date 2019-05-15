@@ -28,14 +28,15 @@ from logdispatcher import LogPriority
 
 
 class ConfFile(object):
-    '''
-    The Conffile class is designed to handle common tasks involved in opening,
+    '''The Conffile class is designed to handle common tasks involved in opening,
     saving, auditing and correcting the contents of common Unix configuration
     files. This class can handle a few different variants of config files and
     the specific variant can be specified when the conffile object is
     instantiated.
-
+    
     @author: D. Kennel
+
+
     '''
 
     def __init__(self, filename, tempfile, filetype, directives, environment,
@@ -84,12 +85,13 @@ class ConfFile(object):
                 self.filedata = []
 
     def audit(self):
-        '''
-        Audit() This method will check the currently loaded file data for all
+        '''Audit() This method will check the currently loaded file data for all
         of the directives in the passed directives dictionary.
 
-        @return: Bool - True if all directives/values were found
+
+        :returns: Bool - True if all directives/values were found
         @author: D. Kennel
+
         '''
         compliant = True
         pattern = 'BOGUSdefaultPATTERN'
@@ -111,13 +113,14 @@ class ConfFile(object):
         return compliant
 
     def fix(self):
-        '''
-        Fix() This method will set all directives specified in the dictionary as
+        '''Fix() This method will set all directives specified in the dictionary as
         the current values in the working configuration set. This action
         does not change the file on disk. The writefile method must be called
         to change the file on disk.
-
+        
         @author: D. Kennel
+
+
         '''
         for directive in self.directives:
             newconf = []
@@ -152,9 +155,7 @@ class ConfFile(object):
             self.filedata = newconf
 
     def reread(self):
-        '''
-        Reread
-        '''
+        '''Reread'''
         if self.present:
             try:
                 rhandle = open(self.filename, 'r')
@@ -171,41 +172,35 @@ class ConfFile(object):
                 self.filedata = []
 
     def ispresent(self):
-        '''
-        IsPresent
-        '''
+        '''IsPresent'''
         return self.present
 
     def getfiledata(self):
-        '''
-        GetFileData
-        '''
+        '''GetFileData'''
         return self.filedata
 
     def setfiledata(self, filedata):
-        '''
-        SetFileData
+        '''SetFileData
 
-        @param filedata: List with embedded newlines
+        :param filedata: List with embedded newlines
+
         '''
         self.filedata = filedata
 
     def setDirectives(self, directives):
-        '''
-        SetDirectives(directives) This method in concert with getfiledata and
+        '''SetDirectives(directives) This method in concert with getfiledata and
         setfiledata can be used for advanced usage scenarios. E.G. processing
         one file with two different set of directives.
 
-        @param directives: Dict, dictionary of required directives in
+        :param directives: Dict, dictionary of required directives in
             key: value format. Keys and values must be strings.
         @author: dkennel
+
         '''
         self.directives = directives
 
     def writefile(self):
-        '''
-        WriteFile
-        '''
+        '''WriteFile'''
         whandle = open(self.tempfile, 'w')
         for line in self.filedata:
             whandle.write(line)

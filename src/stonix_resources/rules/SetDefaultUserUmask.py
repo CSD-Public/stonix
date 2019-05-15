@@ -52,12 +52,13 @@ from ..CommandHelper import CommandHelper
 
 
 class SetDefaultUserUmask(Rule):
-    '''
-    The SetDefaultUserUmask class sets the default user umask to 077. Also
+    '''The SetDefaultUserUmask class sets the default user umask to 077. Also
     accepts user input of alternate 027 umask.
-
+    
     For OS X documentation on this can be found at:
     http://support.apple.com/kb/HT2202
+
+
     '''
 
     def __init__(self, config, environ, logdispatch, statechglogger):
@@ -113,15 +114,16 @@ class SetDefaultUserUmask(Rule):
 ###############################################################################
 
     def report(self):
-        '''
-        The report method examines the current configuration and determines
+        '''The report method examines the current configuration and determines
         whether or not it is correct. If the config is correct then the
         self.compliant, self.detailedresults and self.currstate properties are
         updated to reflect the system status. self.rulesuccess will be updated
         if the rule does not succeed.
 
-        @return: bool
+
+        :returns: bool
         @author: Breen Malmberg
+
         '''
 
         # defaults
@@ -165,11 +167,12 @@ class SetDefaultUserUmask(Rule):
 ###############################################################################
 
     def reportmac(self):
-        '''
-        private method for reporting compliance status of darwin based systems
+        '''private method for reporting compliance status of darwin based systems
 
-        @return: bool
+
+        :returns: bool
         @author: Breen Malmberg
+
         '''
 
         # defaults
@@ -204,12 +207,14 @@ class SetDefaultUserUmask(Rule):
 ###############################################################################
 
     def reportnix(self):
-        '''
-        private method for reporting compliance status of *nix based systems
+        '''private method for reporting compliance status of *nix based systems
 
-        @return: configured
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: configured
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         # defaults
@@ -251,14 +256,16 @@ class SetDefaultUserUmask(Rule):
         return configured
 
     def reportmac1010_plus(self):
-        '''
-        the system's default user umask value (if set to something other than 022,
+        '''the system's default user umask value (if set to something other than 022,
         will be stored in the file /var/db/com.apple.xpc.launchd/config/user.plist
         on versions of mac os x equal to or greater than 10.10
 
-        @return: retval
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: retval
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         valid = False
@@ -295,14 +302,15 @@ class SetDefaultUserUmask(Rule):
 ###############################################################################
 
     def fix(self):
-        '''
-        The fix method will apply the required settings to the system.
+        '''The fix method will apply the required settings to the system.
         self.rulesuccess will be updated if the rule does not succeed.
         Method to set the default users umask to 077 (or 027 if specified in
         the related config file.
 
-        @return: bool
+
+        :returns: bool
         @author: Breen Malmberg
+
         '''
 
         # defaults
@@ -341,15 +349,16 @@ class SetDefaultUserUmask(Rule):
 ###############################################################################
 
     def fixmac(self):
-        '''
-        private method to apply umask config changes to mac systems
+        '''private method to apply umask config changes to mac systems
 
-        @return: bool
+
+        :returns: bool
         @author: Breen Malmberg
         @change: Breen Malmberg 09/02/2014 - added calls to hotfix code provided by
                 method removeStonixUMASKCodeFromFile()
         @change: 01/17/2018 - Breen Malmberg - added conditional call to new fixmac1010_plus()
                 method, for newer versions of mac os.
+
         '''
 
         # defaults
@@ -398,14 +407,16 @@ class SetDefaultUserUmask(Rule):
         return success
 
     def fixmac1010_plus(self):
-        '''
-        Canonical way of setting user umask in mac os x 10.10 and later
+        '''Canonical way of setting user umask in mac os x 10.10 and later
         reference: https://support.apple.com/en-us/HT201684
 
-        @return: retval
-        @rtype: bool
-        @author: Breen Malmberg
-        @change: 01/17/2018 - Breen Malmberg - added this method for newer mac os versions
+
+        :returns: retval
+
+        :rtype: bool
+@author: Breen Malmberg
+@change: 01/17/2018 - Breen Malmberg - added this method for newer mac os versions
+
         '''
 
         retval = True
@@ -428,12 +439,14 @@ class SetDefaultUserUmask(Rule):
 ###############################################################################
 
     def fixnix(self):
-        '''
-        private method to apply umask config changes to *nix systems
+        '''private method to apply umask config changes to *nix systems
 
-        @return: success
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: success
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         # defaults
@@ -460,14 +473,14 @@ class SetDefaultUserUmask(Rule):
 ###############################################################################
 
     def searchString(self, searchRE, filepath):
-        '''
-        private method for searching for a given string in a given file
+        '''private method for searching for a given string in a given file
 
-        @param: searchRE - regex string to search for in given filepath
-        @param: filepath - full path to the file, in which, to search
-        @return: retval
-        @rtype: bool
-        @author: Breen Malmberg
+        :param searchRE: 
+        :param filepath: 
+        :returns: retval
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         # defaults
@@ -515,14 +528,14 @@ class SetDefaultUserUmask(Rule):
 ###############################################################################
 
     def configFile(self, configString, filepath, perms, owner, create=False):
-        '''
-        private method for adding a configString to a given filepath
+        '''private method for adding a configString to a given filepath
 
-        @param: configString - the string to add to the filepath
-        @param: filepath - the full path of the file to edit
-        @param: perms - 4-digit 0-padded octal permissions (integer)
-        @param: owner - 2-element integer list, in format: [uid, gid]
-        @author: Breen Malmberg
+        :param configString: 
+        :param filepath: 
+        :param perms: 
+        :param owner: 
+        :param create:  (Default value = False)
+
         '''
 
         umask_entries = 0
@@ -591,6 +604,9 @@ class SetDefaultUserUmask(Rule):
 
     def appendDetailedResults(self, message):
         '''
+
+        :param message: 
+
         '''
 
         self.detailedresults += '\n' + str(message) + '\n'
@@ -598,12 +614,13 @@ class SetDefaultUserUmask(Rule):
 ###############################################################################
 
     def removeStonixUMASKCodeFromFile(self, filelist=[]):
-        '''
-        Removes the STONIX sets default umask block from list
+        '''Removes the STONIX sets default umask block from list
         of files presented
 
-        @return: bool
+        :param filelist:  (Default value = [])
+        :returns: bool
         @author: ekkehard
+
         '''
         success = True
         for myfile in filelist:

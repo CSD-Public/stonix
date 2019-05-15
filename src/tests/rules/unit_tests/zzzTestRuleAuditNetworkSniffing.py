@@ -54,32 +54,35 @@ class zzzTestRuleAuditNetworkSniffing(RuleTest):
         self.simpleRuleTest()
 
     def setConditionsForRule(self):
-        """
-        Configure system for the unit test
-        @param self: essential if you override this definition
-        @return: boolean - If successful True; If failure False
+        '''Configure system for the unit test
+
+        :param self: essential if you override this definition
+        :returns: boolean - If successful True; If failure False
         @author: ekkehard j. koch
-        """
+
+        '''
 
         success = True
         return success
 
     def test_initobjs(self):
-        """
-        test the validity of the class objects
-
+        '''test the validity of the class objects
+        
         @author: Breen Malmberg
-        """
+
+
+        '''
 
         self.rule.initobjs()
         self.assertTrue(self.rule.ch)
 
     def test_vars_initd(self):
-        """
-        test the functionality of the appendiName method
-
+        '''test the functionality of the appendiName method
+        
         @author: Breen Malmberg
-        """
+
+
+        '''
 
         self.rule.localize()
 
@@ -88,14 +91,15 @@ class zzzTestRuleAuditNetworkSniffing(RuleTest):
         self.assertTrue(isinstance(self.rule.searchterm, basestring))
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
-        """
-        check on whether report was correct
-        @param self: essential if you override this definition
-        @param pCompliance: the self.iscompliant value of rule
-        @param pRuleSuccess: did report run successfully
-        @return: boolean - If successful True; If failure False
+        '''check on whether report was correct
+
+        :param self: essential if you override this definition
+        :param pCompliance: the self.iscompliant value of rule
+        :param pRuleSuccess: did report run successfully
+        :returns: boolean - If successful True; If failure False
         @author: ekkehard j. koch
-        """
+
+        '''
         self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " + \
                              str(pCompliance) + ".")
         self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
@@ -104,26 +108,28 @@ class zzzTestRuleAuditNetworkSniffing(RuleTest):
         return success
 
     def checkFixForRule(self, pRuleSuccess):
-        """
-        check on whether fix was correct
-        @param self: essential if you override this definition
-        @param pRuleSuccess: did report run successfully
-        @return: boolean - If successful True; If failure False
+        '''check on whether fix was correct
+
+        :param self: essential if you override this definition
+        :param pRuleSuccess: did report run successfully
+        :returns: boolean - If successful True; If failure False
         @author: ekkehard j. koch
-        """
+
+        '''
         self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
                              str(pRuleSuccess) + ".")
         success = True
         return success
 
     def checkUndoForRule(self, pRuleSuccess):
-        """
-        check on whether undo was correct
-        @param self: essential if you override this definition
-        @param pRuleSuccess: did report run successfully
-        @return: boolean - If successful True; If failure False
+        '''check on whether undo was correct
+
+        :param self: essential if you override this definition
+        :param pRuleSuccess: did report run successfully
+        :returns: boolean - If successful True; If failure False
         @author: ekkehard j. koch
-        """
+
+        '''
         self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
                              str(pRuleSuccess) + ".")
         success = True

@@ -53,11 +53,12 @@ import traceback
 
 
 class SetFSMountOptions(Rule):
-    '''
-    SetFSMountOptions sets the file system mount options for non-Root local
+    '''SetFSMountOptions sets the file system mount options for non-Root local
     partitions, file systems mounted on removable media, removable storage
     partitions, and temporary storage partitions such as /tmp and /dev/shm in
     order to help protect against malicious code being run on the system.
+
+
     '''
 
     def __init__(self, config, environ, logger, statechglogger):
@@ -121,12 +122,13 @@ class SetFSMountOptions(Rule):
                 self.filepath = location
 
     def readFile(self, filename):
-        '''
-        read filname's contents and return a list of string of the output
+        '''read filname's contents and return a list of string of the output
 
-        @return: contentlines
-        @rtype: bool
-        @author: Breen Malmberg
+        :param filename: 
+        :returns: contentlines
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         contentlines = []
@@ -147,18 +149,20 @@ class SetFSMountOptions(Rule):
         return contentlines
 
     def report(self):
-        '''
-        The report method examines the current configuration and determines
+        '''The report method examines the current configuration and determines
         whether or not it is correct. If the config is correct then the
         self.compliant, self.detailed results and self.currstate properties are
         updated to reflect the system status. self.rulesuccess will be updated
         if the rule does not succeed.
 
-        @return: self.compliant
-        @rtype: bool
-        @author: Breen Malmberg
-        @change: Breen Malmberg 09/05/2014 rewritten rule to be more atomic, less
-                complex and more human-readable
+
+        :returns: self.compliant
+
+        :rtype: bool
+@author: Breen Malmberg
+@change: Breen Malmberg 09/05/2014 rewritten rule to be more atomic, less
+        complex and more human-readable
+
         '''
 
         # defaults
@@ -216,13 +220,15 @@ class SetFSMountOptions(Rule):
         return self.compliant
 
     def checknfs(self):
-        '''
-        check if all nfs mounts use packet signing
+        '''check if all nfs mounts use packet signing
         this is an audit-only action
 
-        @return: retval
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: retval
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         self.logger.log(LogPriority.DEBUG, "Running checknfs() method...")
@@ -309,12 +315,19 @@ class SetFSMountOptions(Rule):
         return retval
 
     def makeFileChanges(self, eventtype, filename, tmpfilename, contents, owner, group, perms):
-        '''
-        write the file changes to disk and record the change event
+        '''write the file changes to disk and record the change event
 
-        @return: success
-        @rtype: bool
-        @author: Breen Malmberg
+        :param eventtype: 
+        :param filename: 
+        :param tmpfilename: 
+        :param contents: 
+        :param owner: 
+        :param group: 
+        :param perms: 
+        :returns: success
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         success = True
@@ -385,12 +398,14 @@ class SetFSMountOptions(Rule):
         return success
 
     def writeFile(self, filename, contents):
-        '''
-        write given contents to a file
+        '''write given contents to a file
 
-        @return: success
-        @rtype: bool
-        @author: Breen Malmberg
+        :param filename: 
+        :param contents: 
+        :returns: success
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         success = True
@@ -422,16 +437,16 @@ class SetFSMountOptions(Rule):
         return success
 
     def fixPerms(self, filename, owner, group, perms):
-        '''
-        set permissions and ownership on a given filename
+        '''set permissions and ownership on a given filename
 
-        @param owner: int; desired owner uid
-        @param group: int; desired group gid
-        @param perms: oct; octal permissions
-        @param filename: string; file to change permissions/ownership on
-        @return: success
-        @rtype: bool
-        @author: Breen Malmberg
+        :param owner: int; desired owner uid
+        :param group: int; desired group gid
+        :param perms: oct; octal permissions
+        :param filename: string; file to change permissions/ownership on
+        :returns: success
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         success = True
@@ -456,10 +471,9 @@ class SetFSMountOptions(Rule):
         return success
 
     def fix(self):
-        '''
-        The fix method will apply the required settings to the system.
+        '''The fix method will apply the required settings to the system.
         self.rulesuccess will be updated if the rule does not succeed.
-
+        
         @author Breen Malmberg
         @change: 2014/06/02 dkennel - line 180 changed
         if os.path.exists():
@@ -467,6 +481,8 @@ class SetFSMountOptions(Rule):
         if os.path.exists(filename):
         @change: 2014/09/09 Breen Malmberg - method rewritten to use new method
                 dictFix()
+
+
         '''
 
         # defaults

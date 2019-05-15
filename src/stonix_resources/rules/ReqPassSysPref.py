@@ -44,9 +44,10 @@ import traceback
 
 
 class ReqPassSysPref(Rule):
-    '''
-    By requiring a password to unlock System Preferences, a casual user is less
+    '''By requiring a password to unlock System Preferences, a casual user is less
     likely to compromise the security of the Mac.
+
+
     '''
 
     def __init__(self, config, environ, logger, statechglogger):
@@ -188,10 +189,11 @@ class ReqPassSysPref(Rule):
         return success
 
     def undo(self):
-        '''
-        Due to the complicated (yet single-purpose) nature of this rule, a
+        '''Due to the complicated (yet single-purpose) nature of this rule, a
         custom undo function has been implemented.
         @author: Eric Ball
+
+
         '''
         try:
             self.detailedresults = ""

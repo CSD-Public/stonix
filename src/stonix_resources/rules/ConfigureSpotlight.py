@@ -40,9 +40,7 @@ from ..CommandHelper import CommandHelper
 
 
 class ConfigureSpotlight(Rule):
-    '''
-    @author: ekkehard j. koch
-    '''
+    '''@author: ekkehard j. koch'''
 
 ###############################################################################
 

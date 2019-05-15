@@ -33,14 +33,11 @@ elif sys.platform.startswith("linux"):
 
 @unittest.skip("Tests need to be written...")
 class test_libHelperExceptions(unittest.TestCase):
-    """
-    """
+    ''' '''
 
     @classmethod
     def setUpClass(self):
-        """
-        Initializer
-        """
+        '''Initializer'''
 
         # Start timer in miliseconds
         self.test_start_time = datetime.now()
@@ -51,11 +48,12 @@ class test_libHelperExceptions(unittest.TestCase):
 
 
     def setUp(self):
-        """
-        This method runs before each test run.
-
+        '''This method runs before each test run.
+        
         @author: Roy Nielsen
-        """
+
+
+        '''
         self.libcPath = None # initial initialization
         #####
         # setting up to call ctypes to do a filesystem sync
@@ -77,17 +75,20 @@ class test_libHelperExceptions(unittest.TestCase):
 ##### Helper Classes
 
     def setMessageLevel(self, msg_lvl="normal"):
-        """
-        Set the logging level to what is passed in.
-        """
+        '''Set the logging level to what is passed in.
+
+        :param msg_lvl:  (Default value = "normal")
+
+        '''
         self.message_level = msg_lvl
 
     def findLinuxLibC(self):
-        """
-        Find Linux Libc library...
-
+        '''Find Linux Libc library...
+        
         @author: Roy Nielsen
-        """
+
+
+        '''
         possible_paths = ["/lib/x86_64-linux-gnu/libc.so.6",
                           "/lib/i386-linux-gnu/libc.so.6"]
         for path in possible_paths:
@@ -97,9 +98,7 @@ class test_libHelperExceptions(unittest.TestCase):
                 break
 
     def _pass(self):
-        """
-        Filler if a library didn't load properly
-        """
+        '''Filler if a library didn't load properly'''
         pass
 
 ###############################################################################
@@ -108,8 +107,7 @@ class test_libHelperExceptions(unittest.TestCase):
     ##################################
 
     def test_init(self):
-        """
-        """
+        ''' '''
         pass
 
     ##################################
@@ -123,9 +121,7 @@ class test_libHelperExceptions(unittest.TestCase):
 ##### unittest Tear down
     @classmethod
     def tearDownClass(self):
-        """
-        disconnect ramdisk
-        """
+        '''disconnect ramdisk'''
         logger = CyLogger()
         #####
         # capture end time

@@ -65,8 +65,7 @@ from ..CommandHelper import CommandHelper
 
 
 class SecureMDNS(Rule):
-    '''
-    The Avahi daemon implements the DNS Service Discovery and Multicast DNS
+    '''The Avahi daemon implements the DNS Service Discovery and Multicast DNS
     protocols, which provide service and host discovery on a network. It allows
     a system to automatically identify resources on the network, such as
     printers or web servers. This capability is also known as mDNSresponder
@@ -74,6 +73,8 @@ class SecureMDNS(Rule):
     This rule makes a number of configuration changes to the avahi service
     in order to secure it.
     @change: 04/16/2014 ekkehard ci and self.setkvdefaultscurrenthost updates
+
+
     '''
 
     def __init__(self, config, environ, logger, statechglogger):
@@ -206,14 +207,14 @@ class SecureMDNS(Rule):
         self.iditerator = 0
 
     def report(self):
-        '''
-        The report method examines the current configuration and determines
+        '''The report method examines the current configuration and determines
         whether or not it is correct. If the config is correct then the
         self.compliant, self.detailed results and self.currstate properties are
         updated to reflect the system status. self.rulesuccess will be updated
         if the rule does not succeed.
 
-        @return bool
+
+        :returns: bool
         @author: Breen Malmberg
         @change: dwalker - added conditional call to reportmac()
         @change: Breen Malmberg - 12/05/2017 - removed unnecessary argument
@@ -221,6 +222,7 @@ class SecureMDNS(Rule):
                 assignment of unused local variable serviceTarget to self.servicename
                 since servicename is not assigned in the linux code logic path (which
                 was resulting in variable referenced before assignment error)
+
         '''
 
         try:
@@ -353,12 +355,13 @@ class SecureMDNS(Rule):
         return self.compliant
 
     def reportmac(self):
-        '''
-        check for configuration items needed for mac os x
+        '''check for configuration items needed for mac os x
 
-        @return bool
+
+        :returns: bool
         @author: Breen Malmberg
         @change: dwalker - implemented kveditor defaults
+
         '''
         try:
             self.detailedresults = ""
@@ -407,14 +410,14 @@ class SecureMDNS(Rule):
         return self.compliant
 
     def fix(self):
-        '''
-        The fix method will apply the required settings to the system.
+        '''The fix method will apply the required settings to the system.
         self.rulesuccess will be updated if the rule does not succeed.
-
+        
         @author: Breen Malmberg
         @change: dwalker - added statechglogger findrulechanges and deleteentry
         @changed: Breen Malmberg - 12/05/2017 - removed unnecessary servicetarget
-                arguments in linux-only calls to servicehelper
+
+
         '''
 
         try:
@@ -555,11 +558,12 @@ class SecureMDNS(Rule):
         return self.rulesuccess
 
     def fixmac(self):
-        '''
-        apply fixes needed for mac os x
-
+        '''apply fixes needed for mac os x
+        
         @author: Breen Malmberg
         @change: dwalker - implemented kveditor instead of direct editing
+
+
         '''
         try:
             self.detailedresults = ""
@@ -621,13 +625,13 @@ class SecureMDNS(Rule):
         return success
 
     def parseNumDependencies(self, pkgname):
-        '''
-        parse output of yum command to determine number of dependent packages
+        '''parse output of yum command to determine number of dependent packages
         to the given pkgname
 
-        @param: pkgname - string. Name of package to parse dependencies of
-        @return: int
+        :param pkgname: 
+        :returns: int
         @author: Breen Malmberg
+
         '''
         numdeps = 0
         flag = 0

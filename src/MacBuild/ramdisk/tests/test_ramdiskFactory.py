@@ -34,14 +34,11 @@ elif sys.platform.startswith("linux"):
 
 @unittest.skip("Tests need to be written...")
 class test_ramdiskFactory(unittest.TestCase, GenericTestUtilities):
-    """
-    """
+    ''' '''
 
     @classmethod
     def setUpClass(self):
-        """
-        Initializer
-        """
+        '''Initializer'''
 
         # Start timer in miliseconds
         self.test_start_time = datetime.now()
@@ -51,11 +48,12 @@ class test_ramdiskFactory(unittest.TestCase, GenericTestUtilities):
         self.libcPath = None # initial initialization
 
     def setUp(self):
-        """
-        This method runs before each test run.
-
+        '''This method runs before each test run.
+        
         @author: Roy Nielsen
-        """
+
+
+        '''
         pass
 
 ###############################################################################
@@ -64,15 +62,13 @@ class test_ramdiskFactory(unittest.TestCase, GenericTestUtilities):
     ##################################
 
     def test_ramdiskFactoryFirstTest(self):
-        """
-        """
+        ''' '''
         pass
 
     ##################################
 
     def test_ramdiskFactorySecondTest(self):
-        """
-        """
+        ''' '''
         pass
 
 ###############################################################################
@@ -82,9 +78,7 @@ class test_ramdiskFactory(unittest.TestCase, GenericTestUtilities):
 ##### unittest Tear down
     @classmethod
     def tearDownClass(self):
-        """
-        disconnect ramdisk
-        """
+        '''disconnect ramdisk'''
         self.logger = CyLogger()
         #####
         # capture end time

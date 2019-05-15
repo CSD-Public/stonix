@@ -46,9 +46,7 @@ from ..CommandHelper import CommandHelper
 
 
 class ConfigureAIDE(Rule):
-    '''
-    classdocs
-    '''
+    '''classdocs'''
 
     def __init__(self, config, environ, logger, statechglogger):
         '''
@@ -84,15 +82,16 @@ class ConfigureAIDE(Rule):
         self.aidetime.setregexpattern(pattern)
 
     def report(self):
-        '''
-        Check if AIDE is installed and properly configured.
+        '''Check if AIDE is installed and properly configured.
         If the config is correct then the self.compliant, self.detailed results
         and self.currstate properties are updated to reflect the system status.
         self.rulesuccess will be updated if the rule does not succeed.
 
-        @return bool
+
+        :returns: bool
         @author bemalmbe
         @change: dwalker - various bug fixes
+
         '''
 
         try:
@@ -160,13 +159,15 @@ class ConfigureAIDE(Rule):
 ###############################################################################
 
     def fix(self):
-        '''
-        Attempt to install and configure AIDE.
+        '''Attempt to install and configure AIDE.
         self.rulesuccess will be updated if the rule does not succeed.
-
+        
         @author bemalmbe
-        @return: bool
+
+
+        :returns: bool
         @change: dwalker - various bug fixes, added event deletions in fix
+
         '''
 
         self.detailedresults = ""

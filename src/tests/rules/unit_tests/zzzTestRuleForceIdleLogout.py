@@ -74,11 +74,12 @@ class zzzTestRuleForceIdleLogout(RuleTest):
         self.simpleRuleTest()
 
     def setConditionsForRule(self):
-        '''
-        Configure system for the unit test
-        @param self: essential if you override this definition
-        @return: boolean - If successful True; If failure False
+        '''Configure system for the unit test
+
+        :param self: essential if you override this definition
+        :returns: boolean - If successful True; If failure False
         @author: ekkehard j. koch
+
         '''
         success = True
         if self.environ.osfamily == 'linux':
@@ -93,13 +94,14 @@ class zzzTestRuleForceIdleLogout(RuleTest):
             self.gnomesettingpath = "/etc/dconf/db/local.d/00-autologout"
             desktopmgr = False
             desktopmgrs = ["gdm", "gdm3", "kdm", "kde-workspace"]
+            kde, gdm = False, False
             if self.ph.check("gdm") or self.ph.check("gdm3"):
                 desktopmgr = True
-                success = self.setgnome()
+                gdm = True
             if self.ph.check("kdm") or self.ph.check("kde-workspace")or \
                     self.ph.check("sddm") or self.ph.check("patterns-kde-kde_yast"):
                 desktopmgr = True
-                success = self.setkde()
+                kde = True
             if not desktopmgr:
                 for mgr in desktopmgrs:
                     if self.ph.checkAvailable(mgr):
@@ -109,6 +111,12 @@ class zzzTestRuleForceIdleLogout(RuleTest):
                     success = False
                     debug = "Unable to install a desktop manager for testing\n"
                     self.logger.log(LogPriority.DEBUG, debug)
+            if gdm:
+                print "going inside setgnome()\n\n"
+                success = self.setgnome()
+            if kde:
+                print "going inside setkde()\n\n"
+                success = self.setkde()
         elif self.environ.getosfamily() == 'darwin':
             if not self.setosx():
                 success = False
@@ -208,7 +216,8 @@ class zzzTestRuleForceIdleLogout(RuleTest):
                 if self.searchFile(kdefile):
                     if not self.messFile(kdefile):
                         success = False
-                        debug = "Unable to set incorrect values for kde in " + \
+                        debug = "Unable to set incorrect values for kde " + \
+                                "for user " + username + " in " + \
                                 "unit test preconditions\n"
                         self.logger.log(LogPriority.DEBUG, debug)
         return success
@@ -268,13 +277,14 @@ class zzzTestRuleForceIdleLogout(RuleTest):
 
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
-        '''
-        check on whether report was correct
-        @param self: essential if you override this definition
-        @param pCompliance: the self.iscompliant value of rule
-        @param pRuleSuccess: did report run successfully
-        @return: boolean - If successful True; If failure False
+        '''check on whether report was correct
+
+        :param self: essential if you override this definition
+        :param pCompliance: the self.iscompliant value of rule
+        :param pRuleSuccess: did report run successfully
+        :returns: boolean - If successful True; If failure False
         @author: ekkehard j. koch
+
         '''
         self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " +
                              str(pCompliance) + ".")
@@ -284,12 +294,13 @@ class zzzTestRuleForceIdleLogout(RuleTest):
         return success
 
     def checkFixForRule(self, pRuleSuccess):
-        '''
-        check on whether fix was correct
-        @param self: essential if you override this definition
-        @param pRuleSuccess: did report run successfully
-        @return: boolean - If successful True; If failure False
+        '''check on whether fix was correct
+
+        :param self: essential if you override this definition
+        :param pRuleSuccess: did report run successfully
+        :returns: boolean - If successful True; If failure False
         @author: ekkehard j. koch
+
         '''
         self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
@@ -297,12 +308,13 @@ class zzzTestRuleForceIdleLogout(RuleTest):
         return success
 
     def checkUndoForRule(self, pRuleSuccess):
-        '''
-        check on whether undo was correct
-        @param self: essential if you override this definition
-        @param pRuleSuccess: did report run successfully
-        @return: boolean - If successful True; If failure False
+        '''check on whether undo was correct
+
+        :param self: essential if you override this definition
+        :param pRuleSuccess: did report run successfully
+        :returns: boolean - If successful True; If failure False
         @author: ekkehard j. koch
+
         '''
         self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")

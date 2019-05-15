@@ -75,13 +75,15 @@ class SecureNFS(Rule):
         self.ci = self.initCi(datatype, key, instructions, default)
 
     def report(self):
-        '''
-        Run report actions for SecureNFS
+        '''Run report actions for SecureNFS
 
-        @return: self.compliant
-        @rtype: bool
-        @author: dwalker
-        @change: Breen Malmberg - 4/26/2016 - added check for nfs exports
+
+        :returns: self.compliant
+
+        :rtype: bool
+@author: dwalker
+@change: Breen Malmberg - 4/26/2016 - added check for nfs exports
+
         '''
 
         self.detailedresults = ""
@@ -237,13 +239,15 @@ class SecureNFS(Rule):
         return self.compliant
 
     def checkNFSexports(self):
-        '''
-        check the NFS export lines in the exports configuration file
+        '''check the NFS export lines in the exports configuration file
 
-        @return: retval
-        @rtype: bool
-        @author: Breen Malmberg
-        @change: method first added 4/26/2016
+
+        :returns: retval
+
+        :rtype: bool
+@author: Breen Malmberg
+@change: method first added 4/26/2016
+
         '''
 
         retval = True
@@ -277,13 +281,15 @@ class SecureNFS(Rule):
         return retval
 
     def checkNFScontents(self, contentlines, filename=""):
-        '''
-        check given list of contentlines for required nfs export formatting
+        '''check given list of contentlines for required nfs export formatting
 
-        @return: retval
-        @rtype: bool
-        @author: Breen Malmberg
-        @change: method first added 4/29/2016
+        :param contentlines: 
+        :param filename:  (Default value = "")
+        :returns: retval
+        :rtype: bool
+@author: Breen Malmberg
+@change: method first added 4/29/2016
+
         '''
 
         retval = True
@@ -326,17 +332,19 @@ class SecureNFS(Rule):
         return retval
 
     def fix(self):
-        '''
-        Run fix actions for SecureNFS
+        '''Run fix actions for SecureNFS
 
-        @return: self.rulesuccess
-        @rtype: bool
-        @author: dwalker
-        @change: Breen Malmberg - 4/26/2016 - changed location of defaults variables in method;
-                added detailedresults message if fix run while CI disabled; added formatdetailedresults update if fix called when CI disabled;
-                changed return value to always be self.rulesuccess; updated self.rulesuccess based on success variable as well
-        @change: Breen Malmberg - 7/11/2017 - added another service check on mac os x; no files will be created on mac if the service is not
-                enabled
+
+        :returns: self.rulesuccess
+
+        :rtype: bool
+@author: dwalker
+@change: Breen Malmberg - 4/26/2016 - changed location of defaults variables in method;
+        added detailedresults message if fix run while CI disabled; added formatdetailedresults update if fix called when CI disabled;
+        changed return value to always be self.rulesuccess; updated self.rulesuccess based on success variable as well
+@change: Breen Malmberg - 7/11/2017 - added another service check on mac os x; no files will be created on mac if the service is not
+        enabled
+
         '''
 
         self.logdispatch.log(LogPriority.DEBUG, "Entering SecureNFS.fix()...")

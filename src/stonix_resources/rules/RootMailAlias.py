@@ -57,9 +57,10 @@ import traceback
 
 
 class RootMailAlias(Rule):
-    '''
-    Set an alias for root mail on the system so that it is read by an actual
+    '''Set an alias for root mail on the system so that it is read by an actual
     human.
+
+
     '''
 
     def __init__(self, config, environ, logger, statechglogger):
@@ -99,9 +100,10 @@ class RootMailAlias(Rule):
 ###############################################################################
 
     def localization(self):
-        '''
-        set up common class variables
+        '''set up common class variables
         call os-specific variable configuration methods
+
+
         '''
 
         try:
@@ -121,9 +123,7 @@ class RootMailAlias(Rule):
             raise
 
     def setlinux(self):
-        '''
-        set up class variables for use with linux
-        '''
+        '''set up class variables for use with linux'''
 
         try:
 
@@ -145,9 +145,7 @@ class RootMailAlias(Rule):
             raise
 
     def setmac(self):
-        '''
-        set up class variables for use with mac os x
-        '''
+        '''set up class variables for use with mac os x'''
 
         try:
 
@@ -170,13 +168,13 @@ class RootMailAlias(Rule):
             raise
 
     def getFileContents(self, filepath):
-        '''
-        retrieve file contents of given file path; return them in a list
+        '''retrieve file contents of given file path; return them in a list
 
-        @param filepath: string full path to file to read
-        @return: contentlines
-        @rtype: list
-        @author: Breen Malmberg
+        :param filepath: string full path to file to read
+        :returns: contentlines
+        :rtype: list
+@author: Breen Malmberg
+
         '''
 
         contentlines = []
@@ -197,14 +195,14 @@ class RootMailAlias(Rule):
         return contentlines
 
     def checkContents(self, searchterm, contentlines):
-        '''
-        check the given search parameter for a match in given list
+        '''check the given search parameter for a match in given list
 
-        @param searchterm: string regex to look for a match for
-        @param contentlines: list list of strings to check for given search term
-        @return: found
-        @rtype: bool
-        @author: Breen Malmberg
+        :param searchterm: string regex to look for a match for
+        :param contentlines: list list of strings to check for given search term
+        :returns: found
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         found = False
@@ -229,15 +227,17 @@ class RootMailAlias(Rule):
         return found
 
     def report(self):
-        '''
-        Check the /etc/aliases file for the existence of an alias mail address
+        '''Check the /etc/aliases file for the existence of an alias mail address
         to send root's mail to
 
-        @return: self.compliant
-        @rtype: bool
-        @author: Breen Malmberg
-        @change: dwalker
-        @change: Breen Malmberg, 9/3/2015, complete re-write of method
+
+        :returns: self.compliant
+
+        :rtype: bool
+@author: Breen Malmberg
+@change: dwalker
+@change: Breen Malmberg, 9/3/2015, complete re-write of method
+
         '''
 
         self.detailedresults = ""
@@ -293,14 +293,16 @@ class RootMailAlias(Rule):
 ###############################################################################
 
     def fix(self):
-        '''
-        Add an alias for the root mail on the system to the /etc/aliases file
+        '''Add an alias for the root mail on the system to the /etc/aliases file
 
-        @return: fixsuccess
-        @rtype: bool
-        @author: Breen Malmberg
-        @change: dwalker
-        @change: Breen Malmberg, 9/3/2015, complete re-write of method
+
+        :returns: fixsuccess
+
+        :rtype: bool
+@author: Breen Malmberg
+@change: dwalker
+@change: Breen Malmberg, 9/3/2015, complete re-write of method
+
         '''
 
         fixsuccess = True
@@ -332,13 +334,13 @@ class RootMailAlias(Rule):
         return fixsuccess
 
     def fixFileContents(self, filepath):
-        '''
-        wrapper for the fix actions
+        '''wrapper for the fix actions
 
-        @param filepath: string full path to file to fix
-        @return: retval
-        @rtype: bool
-        @author: Breen Malmberg
+        :param filepath: string full path to file to fix
+        :returns: retval
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         retval = True
@@ -353,13 +355,13 @@ class RootMailAlias(Rule):
         return retval
 
     def replaceFileContents(self, filepath):
-        '''
-        replace any existing configuration of root mail alias
+        '''replace any existing configuration of root mail alias
 
-        @param filepath: string full path to the file to edit
-        @return: replaced
-        @rtype: bool
-        @author: Breen Malmberg
+        :param filepath: string full path to the file to edit
+        :returns: replaced
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         replaced = False
@@ -400,13 +402,13 @@ class RootMailAlias(Rule):
         return replaced
 
     def appendFileContents(self, filepath):
-        '''
-        if the root mail alias configuration line doesn't exist in the file, append it
+        '''if the root mail alias configuration line doesn't exist in the file, append it
 
-        @param filepath: string full path to file to edit
-        @return: appended
-        @rtype: bool
-        @author: Breen Malmberg
+        :param filepath: string full path to file to edit
+        :returns: appended
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         appended = False

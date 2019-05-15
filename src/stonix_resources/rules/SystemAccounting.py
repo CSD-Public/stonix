@@ -55,9 +55,7 @@ from ..stonixutilityfunctions import createFile, writeFile, iterate, resetsecon
 
 
 class SystemAccounting(Rule):
-    '''
-    classdocs
-    '''
+    '''classdocs'''
 
     def __init__(self, config, environ, logger, statechglogger):
         '''
@@ -86,12 +84,14 @@ class SystemAccounting(Rule):
         self.ci = self.initCi(datatype, key, instructions, default)
 
     def islinux(self):
-        '''
-        detect whether the current system is using linux
+        '''detect whether the current system is using linux
 
-        @return: retval
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: retval
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         # defaults
@@ -104,10 +104,11 @@ class SystemAccounting(Rule):
         return retval
 
     def setlinux(self):
-        '''
-        set variables specific to linux systems
-
+        '''set variables specific to linux systems
+        
         @author: Breen Malmberg
+
+
         '''
 
         self.setCmds()
@@ -116,10 +117,11 @@ class SystemAccounting(Rule):
         self.setObjs()
 
     def setmac(self):
-        '''
-        set variables specific to mac systems
-
+        '''set variables specific to mac systems
+        
         @author: Breen Malmberg
+
+
         '''
 
         self.setCmds('mac')
@@ -128,10 +130,12 @@ class SystemAccounting(Rule):
         self.setObjs('mac')
 
     def setCmds(self, ostype='linux'):
-        '''
-        set command path according to which os type the current system is
-
+        '''set command path according to which os type the current system is
+        
         @author: Breen Malmberg
+
+        :param ostype:  (Default value = 'linux')
+
         '''
 
         if ostype == 'linux':
@@ -140,10 +144,12 @@ class SystemAccounting(Rule):
             self.accon = '/usr/sbin/accton'
 
     def setPaths(self, ostype='linux'):
-        '''
-        set directory and file paths according to which os type the current system is
-
+        '''set directory and file paths according to which os type the current system is
+        
         @author: Breen Malmberg
+
+        :param ostype:  (Default value = 'linux')
+
         '''
 
         # defaults
@@ -165,10 +171,12 @@ class SystemAccounting(Rule):
             self.accpath = '/var/account/acct'
 
     def setOpts(self, ostype='linux'):
-        '''
-        set configuration options based on which os type the current system is
-
+        '''set configuration options based on which os type the current system is
+        
         @author: Breen Malmberg
+
+        :param ostype:  (Default value = 'linux')
+
         '''
 
         if ostype == 'linux':
@@ -177,10 +185,12 @@ class SystemAccounting(Rule):
             self.accopt = 'accounting_enable=YES'
 
     def setObjs(self, ostype='linux'):
-        '''
-        initialize objects for use, based on which os type the current system is
-
+        '''initialize objects for use, based on which os type the current system is
+        
         @author: Breen Malmberg
+
+        :param ostype:  (Default value = 'linux')
+
         '''
 
         if ostype == 'linux':
@@ -190,13 +200,15 @@ class SystemAccounting(Rule):
             self.cmdhelper = CommandHelper(self.logger)
 
     def report(self):
-        '''
-        decide which report actions to run, then call the corresponding methods and
+        '''decide which report actions to run, then call the corresponding methods and
         set compliance based on the return value(s)
 
-        @return: self.compliant
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: self.compliant
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         # defaults
@@ -228,13 +240,15 @@ class SystemAccounting(Rule):
         return self.compliant
 
     def reportlinux(self):
-        '''
-        run report actions specific to linux platforms
+        '''run report actions specific to linux platforms
         return configuration status boolean
 
-        @return: configured
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: configured
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         # defaults
@@ -281,13 +295,15 @@ class SystemAccounting(Rule):
         return configured
 
     def reportmac(self):
-        '''
-        run report actions specific to mac platforms
+        '''run report actions specific to mac platforms
         return configuration status boolean
 
-        @return: configured
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: configured
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         # defaults
@@ -318,14 +334,16 @@ class SystemAccounting(Rule):
         return configured
 
     def fix(self):
-        '''
-        decide which fix action to run based on os type of current system
+        '''decide which fix action to run based on os type of current system
         then call the corresponding method
         return success status of fix actions
 
-        @return: success
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: success
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         # defaults
@@ -355,14 +373,16 @@ class SystemAccounting(Rule):
         return success
 
     def fixlinux(self):
-        '''
-        run fix actions specific to linux platforms
+        '''run fix actions specific to linux platforms
         record undo actions for each fix action performed
         return success status of any fix actions run
 
-        @return: success
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: success
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         # defaults
@@ -474,14 +494,16 @@ class SystemAccounting(Rule):
         return success
 
     def fixmac(self):
-        '''
-        run fix actions specific to mac platforms
+        '''run fix actions specific to mac platforms
         record undo actions for any fix actions performed
         return success status of fix actions run
 
-        @return: success
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: success
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         success = True
@@ -539,13 +561,13 @@ class SystemAccounting(Rule):
         return success
 
     def getFileContents(self, filepath):
-        '''
-        retrieve and return the file contents of the file at location: filepath
+        '''retrieve and return the file contents of the file at location: filepath
 
-        @param filepath: string full path to the file, for which contents are to be read/returned
-        @return: contentlines
-        @rtype: list
-        @author: Breen Malmberg
+        :param filepath: string full path to the file, for which contents are to be read/returned
+        :returns: contentlines
+        :rtype: list
+@author: Breen Malmberg
+
         '''
 
         contentlines = []

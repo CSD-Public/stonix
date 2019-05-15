@@ -38,13 +38,13 @@ from logdispatcher import LogPriority
 from stonixutilityfunctions import set_no_proxy
 
 class InstallingHelper(object) :
-    """
-    Generic class using python native calls to download, check md5sums
+    '''Generic class using python native calls to download, check md5sums
     and unarchive files found on the server.
     
     @author: Roy Nielsen
-    
-    """
+
+
+    '''
     
     def __init__(self, environ, url, logger) :
         """
@@ -63,17 +63,14 @@ class InstallingHelper(object) :
         self.find_base_url()
 
     def un_archive(self, filename="", destination=".") :
-        """
-        Unarchive tar, tar.gz, tgz, tar.bz, and zip files.  Using tarfile and
-        zipfile libraries -- can't use shutil, as that functionality is 2.7 and 
+        '''Unarchive tar, tar.gz, tgz, tar.bz, and zip files.  Using tarfile and
+        zipfile libraries -- can't use shutil, as that functionality is 2.7 and
         beyond
-    
-        @param: file - full path to the file to unarchive
-        @param: destination - full path to where you want to extract to
 
-        @author: Roy Nielsen
-        
-        """
+        :param filename:  (Default value = "")
+        :param destination:  (Default value = ".")
+
+        '''
         retval = 0
         if re.match("^\s*$", filename) :
             self.logger.log(LogPriority.DEBUG, \
@@ -184,15 +181,12 @@ class InstallingHelper(object) :
         return retval
     
     def download_and_save_file(self, fpath="") :
-        """
-        Download a file from "url" to "fpath" location, a "chunk" at a time,
+        '''Download a file from "url" to "fpath" location, a "chunk" at a time,
         so we don't get a memory filling problem.
 
-        @param: fpath - path to save the file to
+        :param fpath:  (Default value = "")
 
-        @author: Roy Nielsen
-    
-        """
+        '''
         if not re.match("^$", self.url) or not re.match("^$", fpath) :
 
             set_no_proxy()
@@ -238,15 +232,16 @@ class InstallingHelper(object) :
     
     
     def download_and_prepare(self):
-        """
-        Download and unarchive a file into a temporary directory.
+        '''Download and unarchive a file into a temporary directory.
 
-        @returns: tmp_dir - the path where the archive was downloaded to
+
+        :returns: s: tmp_dir - the path where the archive was downloaded to
                   tmp_name - name of the downloaded archive, including the
                              tmp_dir
-    
+        
         @author: Roy Nielsen
-        """
+
+        '''
     
         if re.match("^\s*$", self.url) or re.match("^\s*$", self.package_name) :
             self.logger.log(LogPriority.DEBUG, 
@@ -319,19 +314,17 @@ class InstallingHelper(object) :
         return tmp_dir
 
     def get_string_from_url(self, url=""):
-        """
-        Read a string from a url (file) on the server.
-
+        '''Read a string from a url (file) on the server.
+        
         Purpose: to read a file on the server that contains the md5sum of a file
         that we are going to download for file integrity.
 
-        @param: url - place storing string we are looking for
-
-        @returns: string returned by the url
-
+        :param url:  (Default value = "")
+        :returns: s: string returned by the url
+        
         @author: Roy Nielsen
 
-        """
+        '''
         server_string = ""
 
         set_no_proxy()
@@ -352,18 +345,16 @@ class InstallingHelper(object) :
         return server_string.strip()
 
     def get_file_md5sum(self, filename=""):
-        """
-        Get the md5sum of a file on the local filesystem.  Calculate the data
+        '''Get the md5sum of a file on the local filesystem.  Calculate the data
         in chunks in case of large files.
-    
-        @param: filename - filename to check integrity of
-    
-        @returns: retval - the md5sum of the file, or -1 if unsuccessful in
+
+        :param filename:  (Default value = "")
+        :returns: s: retval - the md5sum of the file, or -1 if unsuccessful in
                            getting the md5sum
-                       
+        
         @author: Roy Nielsen
-    
-        """
+
+        '''
         import hashlib
 
         retval = -1
@@ -391,19 +382,18 @@ class InstallingHelper(object) :
 
 
     def get_file_old_md5sum(self, filename="") :
-        """
-        Get the md5 sum of the file for versions of python less than
+        '''Get the md5 sum of the file for versions of python less than
         2.5 - specifically Solaris 10.  Easy to add other systems
         by setting the cmd with the correct command to get the md5 sum on
         that OS.
-        
-        @param filename - name of the file to acquire the md5 hash for
-        
-        @returns: retval - the md5sum of the file, or -1 if unsuccessful in
+
+        :param filename: name of the file to acquire the md5 hash for (Default value = "")
+        :returns: s: retval - the md5sum of the file, or -1 if unsuccessful in
                            getting the md5sum
-                       
+        
         @author Roy Nielsen
-        """
+
+        '''
         retval = -1
         myretval = ""
         cmd = []
@@ -427,18 +417,16 @@ class InstallingHelper(object) :
 
 
     def check_md5(self, signature="", filename="") :
-        """
-        Check if the md5 is a match with the filename passed in.
-    
-        @param: signature - md5sum to check file's md5sum against
-        @param: filename - name of the file to get an md5sum of
-    
-        @returns: retval - -1 for mismatch
+        '''Check if the md5 is a match with the filename passed in.
+
+        :param signature:  (Default value = "")
+        :param filename:  (Default value = "")
+        :returns: s: retval - -1 for mismatch
                             0 for match
-                        
+        
         @author: Roy Nielsen
-    
-        """
+
+        '''
         pat = re.compile(str(signature))        
         
         if sys.hexversion < 0x02050000 :
@@ -457,12 +445,12 @@ class InstallingHelper(object) :
 
 
     def check_extension(self):
-        """
-        Check the url for a valid archive extension
+        '''Check the url for a valid archive extension
         
         @author: Roy Nielsen
-        
-        """
+
+
+        '''
         retval = True
         if self.url.endswith("tar.gz") :
             self.extension = "tar.gz"
@@ -493,12 +481,12 @@ class InstallingHelper(object) :
         return retval
 
     def find_package_name(self):
-        """
-        Get the name of the package without an archive extension
-
+        '''Get the name of the package without an archive extension
+        
         @author: Roy Nielsen
 
-        """
+
+        '''
         self.package_name = ""
         filename = re.compile("(\S*)\.(tar|tar.gz|tgz|tar.bz|tbz|zip|txt|pkg)\s*$")
 
@@ -528,11 +516,12 @@ class InstallingHelper(object) :
                              "package_name = " + self.package_name])
 
     def find_file_name(self):
-        """
-        Get the name of the file to download, from the url string
-
+        '''Get the name of the file to download, from the url string
+        
         @author: Roy Nielsen
-        """
+
+
+        '''
         self.file_name = ""
 
         name_list = self.url.split("/")
@@ -550,11 +539,12 @@ class InstallingHelper(object) :
                              "file_name = " + self.file_name])
 
     def find_base_url(self):
-        """
-        Get the base url, without the file_name
-
+        '''Get the base url, without the file_name
+        
         @author: Roy Nielsen
-        """
+
+
+        '''
         self.base_url = ""
         i = 0
 
@@ -574,12 +564,12 @@ class InstallingHelper(object) :
                          "base_url = " + self.base_url])
 
     def download_and_unarchive(self) :
-        """
-        Download and unarchive the package to be delivered.
+        '''Download and unarchive the package to be delivered.
         
         @author: Roy Nielsen
-        
-        """
+
+
+        '''
         # take name and create tmpdir
         # create string with tmpdir and filename
         # download and check integrity

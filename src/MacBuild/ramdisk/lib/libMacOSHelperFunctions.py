@@ -21,26 +21,28 @@ run = RunWith(logger)
 ###########################################################################
 
 class FoundException(Exception) :
-    """
-    Exeption to raise when the condition is met in a for/while
-
+    '''Exeption to raise when the condition is met in a for/while
+    
     Accompanying code (in collect_for_hostmaster.py) derived from example
     in "Rapid GUI Programming with Python and QT" pgs 66 - 71,
     by Mark Summerfeild
-
+    
     For more examples on python user defined exceptions:
     http://docs.python.org/2/tutorial/errors.html
-    """
+
+
+    '''
     pass
 
 ###########################################################################
 
 def get_os_vers() :
-    """
-    Get the version of OS X
+    '''Get the version of OS X
     
     @author: Roy Nielsen
-    """
+
+
+    '''
     os_vers = platform.mac_ver()[0] 
     if os_vers :
         return os_vers
@@ -50,9 +52,7 @@ def get_os_vers() :
 ###########################################################################
 
 def get_os_minor_vers() :
-    """
-    return the minor version of the OS.
-    """
+    ''' '''
     minor_vers = -1
     os_vers = get_os_vers()
     if os_vers:
@@ -69,19 +69,20 @@ def get_os_minor_vers() :
 ###########################################################################
 
 def get_darwin_mac() :
-    """
-    Get the mac address and place it in net_hw_addr 
-
+    '''Get the mac address and place it in net_hw_addr
+    
     Future METHOD: Use the "ifconfig" command - look for the "active" interface
     - collect "interface", "mac", "ipaddr" to return.  PATH to ifconfig may be
     specific to the Mac.
-
+    
     Description:   Runs the networksetup -listallhardwareports,
                    processing the output to get the network interface mac
                    address.  Specific to the Mac.
-
+    
     @author: Roy Nielsen
-    """
+
+
+    '''
     found = 0
 
     cmd = ["/usr/sbin/networksetup", "-listallhardwareports"]
@@ -118,11 +119,12 @@ def get_darwin_mac() :
 ###########################################################################
 
 def getResourcesDir() :
-    """
-    Get the full path to the Resources directory of the current app
-
+    '''Get the full path to the Resources directory of the current app
+    
     Author: Roy Nielsen
-    """
+
+
+    '''
     # Gets the <app-path>/Contents/MacOS full path
     selfdir = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0])))
     resource_dir = ""
@@ -143,11 +145,12 @@ def getResourcesDir() :
 ###########################################################################
 
 def getMacOSDir() :
-    """
-    Get the full path to the Resources directory of the current app
-
+    '''Get the full path to the Resources directory of the current app
+    
     Author: Roy Nielsen
-    """
+
+
+    '''
     # Gets the <app-path>/Contents/MacOS full path
     selfdir = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0])))
     macos_dir = ""
@@ -168,18 +171,18 @@ def getMacOSDir() :
 ###########################################################################
 
 def get_script() :
-    """
-    """
+    ''' '''
     return os.path.abspath(sys.argv[0])
 
 ###########################################################################
 
 def is_laptop() :
-    """
-    Determine if the machine this is currently running on is a laptop
-
+    '''Determine if the machine this is currently running on is a laptop
+    
     @author: Roy Nielsen
-    """
+
+
+    '''
     isThisALaptop = False
 
     cmd = ["/usr/sbin/system_profiler", "SPHardwareDataType"]
@@ -204,17 +207,20 @@ def is_laptop() :
 ###########################################################################
 
 def checkIfUserIsLocalAdmin(username="", message_level="normal") :
-    """
-    Check the local directory and see if a user is an admin on the system.
-
+    '''Check the local directory and see if a user is an admin on the system.
+    
     command:
     dscl . read /Groups/admin GroupMembership
-
+    
     above command returns:
     GroupMembership: root rsn
-
+    
     Author: Roy Nielsen
-    """
+
+    :param username:  (Default value = "")
+    :param message_level:  (Default value = "normal")
+
+    '''
 
     userFound = False
 

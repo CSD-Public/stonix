@@ -54,13 +54,14 @@ class zzzTestRuleShowBluetoothIcon(RuleTest):
             self.simpleRuleTest()
 
     def setConditionsForRule(self):
-        '''
-        This makes sure the initial report fails by executing the following
+        '''This makes sure the initial report fails by executing the following
         command:
         defaults -currentHost delete /Users/(username)/Library/Preferences/com.apple.systemuiserver menuExtras
-        @param self: essential if you override this definition
-        @return: boolean - If successful True; If failure False
+
+        :param self: essential if you override this definition
+        :returns: boolean - If successful True; If failure False
         @author: Brandon R. Gonzales
+
         '''
         success = True
         if success:

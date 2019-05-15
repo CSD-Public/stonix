@@ -33,10 +33,11 @@ from ..localize import APPLESOFTUPDATESERVER
 
 
 class ConfigureAppleAppStore(RuleKVEditor):
-    '''
-    defaults write /Library/Preferences/com.apple.commerce AutoUpdate -bool [TRUE|FALSE]
-
+    '''defaults write /Library/Preferences/com.apple.commerce AutoUpdate -bool [TRUE|FALSE]
+    
     @author: ekkehard j. koch
+
+
     '''
 
 ###############################################################################

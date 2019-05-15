@@ -43,8 +43,7 @@ from ..logdispatcher import LogPriority
 
 
 class ConfigurePowerManagement(Rule):
-    '''
-    This Mac Only rule does the following:
+    '''This Mac Only rule does the following:
     - Sets the Mac to stay awake if power is plugged-in.
     - Set the display to sleep after 30 minutes if inactivity (if plugged-in) or after 15 minutes of inactivity (if on laptop battery power)
     - Sets the hard drives to sleep after ten minutes of inactivity.
@@ -53,8 +52,10 @@ class ConfigurePowerManagement(Rule):
     - Sets the computer not to wake up if the computer is connected to a phone modem and the phone rings.
     - Sets the Mac's wake-on-magic-ping option (Wake for Network Access or WakeOnLAN) off.
     - Disables the Start up automatically after a power failure feature in the Energy Saver System Pref. This feature is not available on all computers. This rule should be called disableAutoRestart, but it's not. Sorry.
-
+    
     @author: ekkehard j. koch
+
+
     '''
 
 ###############################################################################
@@ -124,10 +125,11 @@ class ConfigurePowerManagement(Rule):
         self.ch = CommandHelper(self.logdispatch)
 
     def report(self):
-        '''
-        Go through power settings dictionary and see if they match
-        @param self:essential if you override this definition
-        @return: boolean - true if applicable false if not
+        '''Go through power settings dictionary and see if they match
+
+        :param self: essential if you override this definition
+        :returns: boolean - true if applicable false if not
+
         '''
         try:
             self.detailedresults = ""
@@ -165,10 +167,11 @@ class ConfigurePowerManagement(Rule):
 ###############################################################################
 
     def fix(self):
-        '''
-        Go through power settings and fix the one we are supposed to
-        @param self:essential if you override this definition
-        @return: boolean - true if applicable false if not
+        '''Go through power settings and fix the one we are supposed to
+
+        :param self: essential if you override this definition
+        :returns: boolean - true if applicable false if not
+
         '''
         try:
             self.detailedresults = ""
@@ -214,11 +217,12 @@ class ConfigurePowerManagement(Rule):
 ###############################################################################
 
     def initializePowerSetting(self, forceUpdate=False):
-        '''
-        Initialize Power Setting Dictionary (psd) with output from pmset command
-        @param self:essential if you override this definition
-        @param forceUpdate: Force Dictionary Reset
-        @return: boolean - true if applicable false if not
+        '''Initialize Power Setting Dictionary (psd) with output from pmset command
+
+        :param self: essential if you override this definition
+        :param forceUpdate: Force Dictionary Reset (Default value = False)
+        :returns: boolean - true if applicable false if not
+
         '''
         success = True
         if forceUpdate:
@@ -266,15 +270,16 @@ class ConfigurePowerManagement(Rule):
 ###############################################################################
 
     def getPowerSetting(self, powerType, powerSetting, forceUpdate=False):
-        '''
-        Get a power setting on a system
+        '''Get a power setting on a system
         @author: ekkehard j. koch
-        @param self:essential if you override this definition
-        @param powerType:Like AC Power or Battery Power
-        @param powerSetting:Like sleep or disksleep
-        @param forceUpdate:Get new values from system if true
-        @return: boolean - true
+
+        :param self: essential if you override this definition
+        :param powerType: Like AC Power or Battery Power
+        :param powerSetting: Like sleep or disksleep
+        :param forceUpdate: Get new values from system if true (Default value = False)
+        :returns: boolean - true
         @note: None
+
         '''
         try:
             self.initializePowerSetting(forceUpdate)
@@ -296,15 +301,16 @@ class ConfigurePowerManagement(Rule):
 ###############################################################################
 
     def setPowerSetting(self, powerType, powerSetting, powerSettingValue):
-        '''
-        Set a power setting on a system
+        '''Set a power setting on a system
         @author: ekkehard j. koch
-        @param self:essential if you override this definition
-        @param powerType:Like AC Power or Battery Power
-        @param powerSetting:Like sleep or disksleep
-        @param powerSettingValue:Value to set setting to
-        @return: boolean - true
+
+        :param self: essential if you override this definition
+        :param powerType: Like AC Power or Battery Power
+        :param powerSetting: Like sleep or disksleep
+        :param powerSettingValue: Value to set setting to
+        :returns: boolean - true
         @note: None
+
         '''
         success = False
         if not powerSettingValue == self.getPowerSetting(powerType, powerSetting):
@@ -323,12 +329,14 @@ class ConfigurePowerManagement(Rule):
 ###############################################################################
 
     def resultAppend(self, pMessage=""):
-        '''
-        reset the current kveditor values to their defaults.
+        '''reset the current kveditor values to their defaults.
         @author: ekkehard j. koch
-        @param self:essential if you override this definition
-        @return: boolean - true
+
+        :param self: essential if you override this definition
+        :param pMessage:  (Default value = "")
+        :returns: boolean - true
         @note: kveditorName is essential
+
         '''
         datatype = type(pMessage)
         if datatype == types.StringType:

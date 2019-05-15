@@ -40,20 +40,21 @@ class KVAProfiles():
         self.installcmd = ""
 
     def validate(self, output, key, val):
-        '''
-        @summary: Method checks if either profile is installed and/or contents of
+        '''@summary: Method checks if either profile is installed and/or contents of
         profile is up to par with our security standards
         @author: dwalker
-        @param output: The output from system_profiler 
-                SPConfigurationProfileDataType command 
-        @param key: The profile identifier we're looking for in the output.
+
+        :param output: The output from system_profiler
+                SPConfigurationProfileDataType command
+        :param key: The profile identifier we're looking for in the output.
                 Usually takes the form of com.apple.example
-        @param val: A dictionary which could contain other lists, dicts,
+        :param val: A dictionary which could contain other lists, dicts,
                 and/or tuples nested within.  Example:
                 {"allowsimple": ["1", "bool"],
                  "forcePIN": ["1", "bool"],
                  ...}
-        @return: bool - True or False
+        :returns: bool - True or False
+
         '''
         '''When passed through, key should be the identifier to be found
         such as com.apple.DiscRecording and val should be the rest of the
@@ -176,22 +177,23 @@ class KVAProfiles():
         return retval    
 
     def checkSimple(self, k, v, payloadblock):
-        '''
-        @summary: Method that checks payloadblock contents
+        '''@summary: Method that checks payloadblock contents
                 for k (key) and associated v (value)
         @author: dwalker
-        @param k: Not to be confused with the key in the calling
+
+        :param k: Not to be confused with the key in the calling
                 method which was our identifier before the payload.
                 This key is now the key in the inner dictionary
                 passed through as val from the calling method
-        @param v: Not to be confused with the value in the calling
+        :param v: Not to be confused with the value in the calling
                 method which was our inner dictionary passed through
                 as val. This val is now the list associated with our
                 k value.
-        @param payloadblock: A list of lines from our payload
+        :param payloadblock: A list of lines from our payload
                 portion of the output from the system_profiler
                 command
-        @return: bool - True or False
+        :returns: bool - True or False
+
         '''
         founditem = False
         retval = True
@@ -267,22 +269,23 @@ class KVAProfiles():
         return retval
     
     def checkTuple(self, k, v, payloadblock):
-        '''
-        @summary: Method that checks payloadblock contents
+        '''@summary: Method that checks payloadblock contents
                 for k (key) and associated v (value)
         @author: dwalker
-        @param k: Not to be confused with the key in the calling
+
+        :param k: Not to be confused with the key in the calling
                 method which was our identifier before the payload.
                 This key is now the key in the inner dictionary
                 passed through as val from the calling method
-        @param v: Not to be confused with the value in the calling
+        :param v: Not to be confused with the value in the calling
                 method which was our inner dictionary passed through
                 as val. This val is now the tuple associated with
                 our k value.
-        @param payloadblock: A list of lines from our payload
+        :param payloadblock: A list of lines from our payload
                 portion of the output from the system_profiler
                 command
-        @return: bool - True or False
+        :returns: bool - True or False
+
         '''
         retval = True
         iterator = 0
@@ -348,22 +351,23 @@ class KVAProfiles():
         return retval
      
     def checkDict(self, k, v, payloadblock):
-        '''
-        @summary: Method that checks payloadblock contents
+        '''@summary: Method that checks payloadblock contents
                 for k (key) and associated v (value)
         @author: dwalker
-        @param k: Not to be confused with the key in the calling
+
+        :param k: Not to be confused with the key in the calling
                 method which was our identifier before the payload.
                 This key is now the key in the inner dictionary
                 passed through as val from the calling method
-        @param v: Not to be confused with the value in the calling
+        :param v: Not to be confused with the value in the calling
                 method which was our inner dictionary passed through
                 as val. This val is now the dict associated with
                 our k value.
-        @param payloadblock: A list of lines from our payload
+        :param payloadblock: A list of lines from our payload
                 portion of the output from the system_profiler
                 command
-        @return: bool - True or False
+        :returns: bool - True or False
+
         '''
         retval = True
         iterator = 0
@@ -391,50 +395,57 @@ class KVAProfiles():
         return retval
     
     def setUndoCmd(self, undocmd):
-        '''
-        @summary: Mutator method to set self.undocmd to the
+        '''@summary: Mutator method to set self.undocmd to the
                 passed in undo command.
         @author: dwalker
-        @param undocmd: undo command passed through from 
+
+        :param undocmd: undo command passed through from
                 update method
-        
+
         '''
         self.undocmd = undocmd
     
     def setInstallCmd(self, installcmd):
-        '''
-        @summary: Mutator method to set self.installcmd to
+        '''@summary: Mutator method to set self.installcmd to
                 thev passed in install command.
         @author: dwalker
-        @param installcmd: install command passed through from 
+
+        :param installcmd: install command passed through from
                 update method
+
         '''
         self.installcmd = installcmd
     
     def getUndoCmd(self):
-        '''
-        @summary: Accessor method to retrieve self.undocmd
+        '''@summary: Accessor method to retrieve self.undocmd
         @author: dwalker
-        @return: self.undocmd
+
+
+        :returns: self.undocmd
+
         '''
         return self.undocmd
     
     def getInstallCmd(self):
-        '''
-        @summary: Accessor method to retrieve self.installcmd
+        '''@summary: Accessor method to retrieve self.installcmd
         @author: dwalker
-        @return: self.installcmd
+
+
+        :returns: self.installcmd
+
         '''
         return self.installcmd
         
     def update(self):
-        '''
-        @summary: Method to set the install command for 
+        '''@summary: Method to set the install command for
         installing the profile for the fix method and set
         the remove command for removing the profile for the
         undo method in upper implementing classes
         @author: dwalker
-        @return: bool - True
+
+
+        :returns: bool - True
+
         '''
         cmd = ["/usr/bin/profiles", "-I", "-F", self.path]
         self.setInstallCmd(cmd)
@@ -443,12 +454,14 @@ class KVAProfiles():
         return True
     
     def commit(self):
-        '''
-        @summary: Method that performs the install command
+        '''@summary: Method that performs the install command
                 to install the appropriate profile for the
                 calling rule.
         @author: dwalker
-        @return: bool - True or False
+
+
+        :returns: bool - True or False
+
         '''
         self.ch = CommandHelper(self.logger)
         if self.installcmd:

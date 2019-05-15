@@ -55,12 +55,13 @@ import time
 
 
 class Environment:
-    """
-    The Environment class collects commonly used information about the
+    '''The Environment class collects commonly used information about the
     execution platform and makes it available to the rules.
     :version: 1.0
     :author: Dave Kennel
-    """
+
+
+    '''
 
     def __init__(self):
         self.operatingsystem = ''
@@ -84,14 +85,15 @@ class Environment:
         self.collectinfo()
 
     def setinstallmode(self, installmode):
-        """
-        Set the install mode bool value. Should be true if the prog should run
+        '''Set the install mode bool value. Should be true if the prog should run
         in install mode.
 
-        @param bool: installmode
-        @return: void
+        :param bool: installmode
+        :param installmode: 
+        :returns: void
         @author: Dave Kennel
-        """
+
+        '''
 
         try:
             if type(installmode) is types.BooleanType:
@@ -101,25 +103,27 @@ class Environment:
             pass
 
     def getinstallmode(self):
-        """
-        Return the current value of the install mode bool. Should be true if
+        '''Return the current value of the install mode bool. Should be true if
         the program is to run in install mode.
 
-        @return: bool : installmode
+
+        :returns: bool : installmode
         @author: Dave Kennel
-        """
+
+        '''
 
         return self.installmode
 
     def setverbosemode(self, verbosemode):
-        """
-        Set the verbose mode bool value. Should be true if the prog should run
+        '''Set the verbose mode bool value. Should be true if the prog should run
         in verbose mode.
 
-        @param bool: verbosemode
-        @return: void
+        :param bool: verbosemode
+        :param verbosemode: 
+        :returns: void
         @author: Dave Kennel
-        """
+
+        '''
 
         try:
             if type(verbosemode) is types.BooleanType:
@@ -129,25 +133,27 @@ class Environment:
             pass
 
     def getverbosemode(self):
-        """
-        Return the current value of the verbose mode bool. Should be true if
+        '''Return the current value of the verbose mode bool. Should be true if
         the program is to run in verbose mode.
 
-        @return: bool : verbosemode
+
+        :returns: bool : verbosemode
         @author: Dave Kennel
-        """
+
+        '''
 
         return self.verbosemode
 
     def setdebugmode(self, debugmode):
-        """
-        Set the verbose mode bool value. Should be true if the prog should run
+        '''Set the verbose mode bool value. Should be true if the prog should run
         in verbose mode.
 
-        @param bool: debugmode
-        @return: void
+        :param bool: debugmode
+        :param debugmode: 
+        :returns: void
         @author: Dave Kennel
-        """
+
+        '''
 
         try:
             if type(debugmode) is types.BooleanType:
@@ -157,112 +163,125 @@ class Environment:
             pass
 
     def getdebugmode(self):
-        """
-        Return the current value of the debug mode bool. Should be true if the
+        '''Return the current value of the debug mode bool. Should be true if the
         program is to run in debug mode.
 
-        @return: bool : debugmode
+
+        :returns: bool : debugmode
         @author: Dave Kennel
-        """
+
+        '''
 
         return self.debugmode
 
     def getostype(self):
-        """
-        Return the detailed operating system type.
+        '''Return the detailed operating system type.
 
-        @return string :
+
+        :returns: string :
         @author Dave Kennel
-        """
+
+        '''
 
         return self.operatingsystem
 
     def getosreportstring(self):
-        """
-        Return the detailed operating system type with full version info.
+        '''Return the detailed operating system type with full version info.
 
-        @return string :
+
+        :returns: string :
         @author Dave Kennel
-        """
+
+        '''
 
         return self.osreportstring
 
     def getosfamily(self):
-        """Return the value of self.osfamily which should be linux, darwin,
+        '''Return the value of self.osfamily which should be linux, darwin,
         solaris or freebsd.
-        @return string :
+
+
+        :returns: string :
         @author: Dave Kennel
-        """
+
+        '''
 
         return self.osfamily
 
     def getosver(self):
-        """
-        Return the OS version as a string.
+        '''Return the OS version as a string.
 
-        @return string :
+
+        :returns: string :
         @author Dave Kennel
-        """
+
+        '''
 
         return self.osversion
 
     def gethostname(self):
-        """
-        Return the hostname of the system.
+        '''Return the hostname of the system.
 
-        @return: string
+
+        :returns: string
         @author: Dave Kennel
-        """
+
+        '''
 
         return self.hostname
 
     def getipaddress(self):
-        """
-        Return the IP address associated with the host name.
+        '''Return the IP address associated with the host name.
 
-        @return string :
+
+        :returns: string :
         @author Dave Kennel
-        """
+
+        '''
 
         return self.ipaddress
 
     def getmacaddr(self):
-        """
-        Return the mac address in native format.
+        '''Return the mac address in native format.
 
-        @return string :
+
+        :returns: string :
         @author Dave Kennel
-        """
+
+        '''
 
         return self.macaddress
 
     def geteuid(self):
-        """
-        Return the effective user ID
+        '''Return the effective user ID
 
-        @return int :
+
+        :returns: int :
         @author Dave Kennel
-        """
+
+        '''
 
         return self.euid
 
     def geteuidhome(self):
-        """
-        Returns the home directory of the current effective user ID.
+        '''Returns the home directory of the current effective user ID.
 
-        @return: string
+
+        :returns: string
         @author: Dave Kennel
-        """
+
+        '''
 
         return self.homedir
 
     def collectinfo(self):
-        """
-        Method to populate data.
+        '''Method to populate data.
 
-        @return: void
+
+        :returns: void
         @author Dave Kennel
-        """
+
+        '''
 
         # print 'Environment Running discoveros'
         self.discoveros()
@@ -273,11 +292,13 @@ class Environment:
         self.collectpaths()
 
     def discoveros(self):
-        """
-        Discover the operating system type and version
-        @return : void
+        '''Discover the operating system type and version
+
+
+        :returns: void
         @author: Dave Kennel
-        """
+
+        '''
 
         # Alternative (better) implementation for Linux
         if os.path.exists('/usr/bin/lsb_release'):
@@ -359,10 +380,11 @@ class Environment:
             self.osreportstring = opsys
 
     def setosfamily(self):
-        """
-        Private method to detect and set the self.osfamily property. This is a
+        '''Private method to detect and set the self.osfamily property. This is a
         fuzzy classification of the OS.
-        """
+
+
+        '''
 
         uname = sys.platform
         if uname == 'linux2':
@@ -375,14 +397,16 @@ class Environment:
             self.osfamily = 'freebsd'
 
     def getmacaddress(self):
-        '''
-        return the current system's mac address
+        '''return the current system's mac address
         set the class variable self.macaddress
 
-        @return: macaddr
-        @rtype: string
-        @author: Dave Kennel
-        @author: Breen Malmberg
+
+        :returns: macaddr
+
+        :rtype: string
+@author: Dave Kennel
+@author: Breen Malmberg
+
         '''
 
         netutil = self.getnetutil()
@@ -427,18 +451,20 @@ class Environment:
         return macaddr
 
     def getnetutil(self):
-        '''
-        return the full path to the net utility tool used
+        '''return the full path to the net utility tool used
         by the current system
-
+        
         can detect the following net util's:
         * ip
         * ifconfig
         * nmcli
 
-        @return: netutil
-        @rtype: string
-        @author: Breen Malmberg
+
+        :returns: netutil
+
+        :rtype: string
+@author: Breen Malmberg
+
         '''
 
         netutil = ""
@@ -459,14 +485,16 @@ class Environment:
         return netutil
 
     def getipaddress(self):
-        '''
-        return the current system's ip address
+        '''return the current system's ip address
         set the class variable self.ipaddress
 
-        @return: ipaddr
-        @rtype: string
-        @author: Dave Kennel
-        @author: Breen Malmberg
+
+        :returns: ipaddr
+
+        :rtype: string
+@author: Dave Kennel
+@author: Breen Malmberg
+
         '''
 
         ipaddr = ""
@@ -496,15 +524,17 @@ class Environment:
         return ipaddr
 
     def gethostname(self):
-        '''
-        get the current system's host name
+        '''get the current system's host name
         (fully qualified domain name)
         set the class variable self.hostname
 
-        @return: hostfqdn
-        @rtype: string
-        @author: Dave Kennel
-        @author: Breen Malmberg
+
+        :returns: hostfqdn
+
+        :rtype: string
+@author: Dave Kennel
+@author: Breen Malmberg
+
         '''
 
         hostfqdn = ""
@@ -520,31 +550,34 @@ class Environment:
         return hostfqdn
 
     def guessnetwork(self):
-        """
-        This method checks the configured interfaces and tries to
+        '''This method checks the configured interfaces and tries to
         make an educated guess as to the correct network data. The
         following class variables will be updated by this method:
         * self.hostname
         * self.ipaddress
         * self.macaddress
-
+        
         @author: Dave Kennel
         @author: Breen Malmberg
-        """
+
+
+        '''
 
         self.gethostname()
         self.getipaddress()
         self.getmacaddr()
 
     def getdefaultip(self):
-        """
-        This method will return the ip address of the interface
+        '''This method will return the ip address of the interface
         associated with the current default route.
 
-        @return: ipaddr
-        @rtype: string
-        @author: Dave Kennel
-        """
+
+        :returns: ipaddr
+
+        :rtype: string
+@author: Dave Kennel
+
+        '''
 
         ipaddr = '127.0.0.1'
         gateway = ''
@@ -597,22 +630,25 @@ class Environment:
         return ipaddr
 
     def matchip(self, target, iplist, level=1):
-        """
-        This method will when given an IP try to find matching ip
+        '''This method will when given an IP try to find matching ip
         from a list of IP addresses. Matching will work from left to right
         according to the level param. If no match is found
         the loopback address will be returned.
 
-        @param string: ipaddress
-        @param list: list of ipaddresses
-        @param int: level
-        @return: matchlist
-        @rtype: list
-        @author: Dave Kennel
-        @change: Breen Malmberg - 07/19/2018 - slightly changed return logic
-                so that return value type would be consistent; moved default variable
-                inits to top of method; wrapped all code which could fail in try/except
-        """
+        :param string: ipaddress
+        :param list: list of ipaddresses
+        :param int: level
+        :param target: 
+        :param iplist: 
+        :param level:  (Default value = 1)
+        :returns: matchlist
+        :rtype: list
+@author: Dave Kennel
+@change: Breen Malmberg - 07/19/2018 - slightly changed return logic
+        so that return value type would be consistent; moved default variable
+        inits to top of method; wrapped all code which could fail in try/except
+
+        '''
 
         network = "127.0.0.1"
         matchlist = []
@@ -644,16 +680,18 @@ class Environment:
         return matchlist
 
     def getallips(self):
-        """
-        This method returns all ip addresses on all interfaces on the system.
+        '''This method returns all ip addresses on all interfaces on the system.
 
-        @return: iplist
-        @rtype: list
-        @author: Dave Kennel
-        @change: Breen Malmberg - 07/29/2018 - re-factored rule to account for ifconfig
-                not being installed, and the use case where ifconfig is located at
-                /sbin/ifconfig and the output does not contain "addr:"
-        """
+
+        :returns: iplist
+
+        :rtype: list
+@author: Dave Kennel
+@change: Breen Malmberg - 07/29/2018 - re-factored rule to account for ifconfig
+        not being installed, and the use case where ifconfig is located at
+        /sbin/ifconfig and the output does not contain "addr:"
+
+        '''
 
         iplist = []
         ifconfig = ""
@@ -722,15 +760,17 @@ class Environment:
         return iplist
 
     def get_property_number(self):
-        """
-        Find and return the
+        '''Find and return the
         Property number of the local machine
 
-        @return: propnum
-        @rtype: int
-        @author: scmcleni
-        @author: Dave Kennel
-        """
+
+        :returns: propnum
+
+        :rtype: int
+@author: scmcleni
+@author: Dave Kennel
+
+        '''
 
         propnum = 0
 
@@ -758,14 +798,16 @@ class Environment:
         return propnum
 
     def get_system_serial_number(self):
-        """
-        Find and return the
+        '''Find and return the
         Serial number of the local machine
 
-        @return: systemserial
-        @rtype: string
-        @author: Dave Kennel
-        """
+
+        :returns: systemserial
+
+        :rtype: string
+@author: Dave Kennel
+
+        '''
 
         systemserial = '0'
 
@@ -787,16 +829,18 @@ class Environment:
         return systemserial
 
     def get_sys_uuid(self):
-        """
-        Find and return a unique identifier for the system. On most systems
+        '''Find and return a unique identifier for the system. On most systems
         this will be the UUID of the system. On Solaris SPARC this will be
         a number that is _hopefully_ unique as that platform doesn't have
         UUID numbers.
 
-        @return: uuid
-        @rtype: string
-        @author: Dave Kennel
-        """
+
+        :returns: uuid
+
+        :rtype: string
+@author: Dave Kennel
+
+        '''
 
         uuid = '0'
 
@@ -836,14 +880,16 @@ class Environment:
         return uuid
 
     def ismobile(self):
-        '''
-        Returns a bool indicating whether or not the system in question is a
+        '''Returns a bool indicating whether or not the system in question is a
         laptop. The is mobile method is used by some rules that have alternate
         settings for laptops.
 
-        @return: ismobile
-        @rtype: bool
-        @author: Dave Kennel
+
+        :returns: ismobile
+
+        :rtype: bool
+@author: Dave Kennel
+
         '''
 
         ismobile = False
@@ -865,15 +911,17 @@ class Environment:
         return ismobile
 
     def issnitchactive(self):
-        """
-        Returns a bool indicating whether or not the little snitch program is
+        '''Returns a bool indicating whether or not the little snitch program is
         active. Little snitch is a firewall utility used on Mac systems and can
         interfere with STONIX operations.
 
-        @return: issnitchactive
-        @rtype: bool
-        @author: ekkehard
-        """
+
+        :returns: issnitchactive
+
+        :rtype: bool
+@author: ekkehard
+
+        '''
 
         issnitchactive = False
 
@@ -894,16 +942,17 @@ class Environment:
         return issnitchactive
 
     def collectpaths(self):
-        """
-        Determine how stonix is run and return appropriate paths for:
-
+        '''Determine how stonix is run and return appropriate paths for:
+        
         icons
         rules
         conf
         logs
-
+        
         @author: Roy Nielsen
-        """
+
+
+        '''
 
         script_path_zero = os.path.realpath(sys.argv[0])
 
@@ -1001,84 +1050,92 @@ class Environment:
             self.conf_path = "/etc/stonix.conf"
 
     def get_test_mode(self):
-        """
-        Getter test mode flag
-
+        '''Getter test mode flag
+        
         @author: Roy Nielsen
-        """
+
+
+        '''
 
         return self.test_mode
 
     def get_script_path(self):
-        """
-        Getter for the script path
-
+        '''Getter for the script path
+        
         @author: Roy Nielsen
-        """
+
+
+        '''
 
         return self.script_path
 
     def get_icon_path(self):
-        """
-        Getter for the icon path
-
+        '''Getter for the icon path
+        
         @author: Roy Nielsen
-        """
+
+
+        '''
 
         return self.icon_path
 
     def get_rules_path(self):
-        """
-        Getter for rules path
-
+        '''Getter for rules path
+        
         @author: Roy Nielsen
-        """
+
+
+        '''
 
         return self.rules_path
 
     def get_config_path(self):
-        """
-        Getter for conf file path
-
+        '''Getter for conf file path
+        
         @author: Roy Nielsen
-        """
+
+
+        '''
 
         return self.conf_path
 
     def get_log_path(self):
-        """
-        Getter for log path
-
+        '''Getter for log path
+        
         @author: Roy Nielsen
-        """
+
+
+        '''
 
         return self.log_path
 
     def get_resources_path(self):
-        """
-        Getter for stonix resources directory
-
+        '''Getter for stonix resources directory
+        
         @author: Roy Nielsen
-        """
+
+
+        '''
 
         return self.resources_path
 
     def getruntime(self):
         '''
-        Return the runtime recorded.
 
-        @author: Dave Kennel
+
+        :returns: @author: Dave Kennel
+
         '''
 
         return self.runtime
 
     def setnumrules(self, num):
-        '''
-        Set the number of rules that apply to the system. This information is
+        '''Set the number of rules that apply to the system. This information is
         used by the log dispatcher in the run metadata.
-        
-        @param num: int - number of rules that apply to this host
+
+        :param num: int - number of rules that apply to this host
         @author: Dave Kennel
+
         '''
 
         if type(num) is not int:
@@ -1090,9 +1147,10 @@ class Environment:
 
     def getnumrules(self):
         '''
-        Return the number of rules that apply to this host.
-        
-        @author: Dave Kennel
+
+
+        :returns: @author: Dave Kennel
+
         '''
 
         return self.numrules

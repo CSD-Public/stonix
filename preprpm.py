@@ -35,9 +35,11 @@ import shutil
 
 
 def readversion(srcpath):
-    '''
-    Pull the version string out of the source code. Return version as a
+    '''Pull the version string out of the source code. Return version as a
     string.
+
+    :param srcpath: 
+
     '''
 
     papath = os.path.join(srcpath, 'stonix_resources/localize.py')
@@ -58,9 +60,12 @@ def readversion(srcpath):
     return ver
 
 def checkspec(srcpath, ver):
-    '''
-    Check the spec file to make sure it has the right version number. Exit
+    '''Check the spec file to make sure it has the right version number. Exit
     if it does not.
+
+    :param srcpath: 
+    :param ver: 
+
     '''
 
     print("Checking if program versions in localize and stonix.spec file match...")
@@ -86,8 +91,11 @@ def checkspec(srcpath, ver):
         print("Versions match. Proceeding...")
 
 def maketarball(srcpath, ver):
-    '''
-    Pull together the required files into a tarball.
+    '''Pull together the required files into a tarball.
+
+    :param srcpath: 
+    :param ver: 
+
     '''
 
     pathelements = srcpath.split('/')
@@ -99,9 +107,7 @@ def maketarball(srcpath, ver):
     tarproc = subprocess.call(tarcmd, shell=True)
 
 def main():
-    '''
-    main
-    '''
+    '''main'''
 
     myusage = 'usage: %prog [options] path to STONIX src'
     parser = optparse.OptionParser(usage=myusage)

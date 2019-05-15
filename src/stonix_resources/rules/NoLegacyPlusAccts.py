@@ -41,9 +41,7 @@ import os, re, pwd, grp, traceback #grp is a valid python package
 class NoLegacyPlusAccts(Rule):
 
     def __init__(self, config, environ, logger, statechglogger):
-        '''
-        Constructor
-        '''
+        '''Constructor'''
         Rule.__init__(self, config, environ, logger, statechglogger)
         self.logger = logger
         self.rulenumber = 43
@@ -72,8 +70,12 @@ class NoLegacyPlusAccts(Rule):
     def report(self):
         '''checks to see if a plus entry exists, returns True if a plus entry
         exists and False if not
-        @return: bool
-        @author: D.Walker'''
+
+
+        :returns: bool
+        @author: D.Walker
+
+        '''
         try:
             self.detailedresults = ""
             compliant = True
@@ -118,8 +120,11 @@ class NoLegacyPlusAccts(Rule):
 ###############################################################################
 
     def fix(self):
-        ''' will check if the shadow, passwd, or group file is present and
-        if so remove the plus(+) account located in the file'''
+        '''will check if the shadow, passwd, or group file is present and
+        if so remove the plus(+) account located in the file
+
+
+        '''
 
         try:
             if not self.ci.getcurrvalue():

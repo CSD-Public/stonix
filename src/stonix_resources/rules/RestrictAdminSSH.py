@@ -62,11 +62,13 @@ RESTRICTADMINSSH to False.'''
                            'os': {'Mac OS X': ['10.12', 'r', '10.14.10']}}
 
     def usesSip(self):
-        """
-        Determines whether this is Mac OS X >= v10.11
+        '''Determines whether this is Mac OS X >= v10.11
         @author: Eric Ball
-        @return: True if this is Mac OS X >= v10.11
-        """
+
+
+        :returns: True if this is Mac OS X >= v10.11
+
+        '''
         if self.environ.getosfamily() == "darwin":
             versplit = self.environ.getosver().split(".")
             verlist = []

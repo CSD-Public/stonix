@@ -16,8 +16,7 @@ from .. libHelperExceptions import UnsupportedOSError, NotACyLoggerError
 
 
 class ManageUser(object):
-    """
-    """
+    ''' '''
 
     #----------------------------------------------------------------------
 
@@ -44,9 +43,7 @@ class ManageUser(object):
     # helper Methods
     #----------------------------------------------------------------------
     def getSpecificManager(self):
-        """
-        Getter to acqure the specific keychain manager
-        """
+        '''Getter to acqure the specific keychain manager'''
         return self.userMgr
 
     #----------------------------------------------------------------------
@@ -80,12 +77,13 @@ class ManageUser(object):
     #----------------------------------------------------------------------
 
     def findUniqueUid(self):
-        """
-        Find an unused uid (unique ID) for the user, this method will list all
+        '''Find an unused uid (unique ID) for the user, this method will list all
         the existing users, an unused number above 1000 is good.
-
+        
         @author: Roy Nielsen
-        """
+
+
+        '''
         success = False
         #####
         # Preprocess logging
@@ -102,11 +100,13 @@ class ManageUser(object):
     #----------------------------------------------------------------------
 
     def uidTaken(self, uid):
-        """
-        See if the UID requested has been taken.  Only approve uid's over 1k
-
+        '''See if the UID requested has been taken.  Only approve uid's over 1k
+        
         @author: Roy Nielsen
-        """
+
+        :param uid: 
+
+        '''
         success = False
         #####
         # Preprocess logging
@@ -123,9 +123,11 @@ class ManageUser(object):
     #----------------------------------------------------------------------
 
     def getUser(self, userName=""):
-        """
-        Get information about the passed in user.
-        """
+        '''Get information about the passed in user.
+
+        :param userName:  (Default value = "")
+
+        '''
         success = False
         #####
         # Preprocess logging
@@ -142,9 +144,11 @@ class ManageUser(object):
     #----------------------------------------------------------------------
 
     def getUserProperties(self, userName=""):
-        """
-        Get information about the passed in user.
-        """
+        '''Get information about the passed in user.
+
+        :param userName:  (Default value = "")
+
+        '''
         success = False
         properties = {}
         #####
@@ -162,9 +166,11 @@ class ManageUser(object):
     #----------------------------------------------------------------------
 
     def getUserShell(self, userName=""):
-        """
-        Retrieve the passed in user's shell.
-        """
+        '''Retrieve the passed in user's shell.
+
+        :param userName:  (Default value = "")
+
+        '''
         success = False
         #####
         # Preprocess logging
@@ -181,9 +187,11 @@ class ManageUser(object):
     #----------------------------------------------------------------------
 
     def getUserComment(self, userName=""):
-        """
-        Retrieve the passed in user's "user comment", or real name.
-        """
+        '''Retrieve the passed in user's "user comment", or real name.
+
+        :param userName:  (Default value = "")
+
+        '''
         success = False
         #####
         # Preprocess logging
@@ -200,9 +208,11 @@ class ManageUser(object):
     #----------------------------------------------------------------------
 
     def getUserUid(self, userName=""):
-        """
-        Retrieve the passed in user's UID.
-        """
+        '''Retrieve the passed in user's UID.
+
+        :param userName:  (Default value = "")
+
+        '''
         success = False
         #####
         # Preprocess logging
@@ -219,9 +229,11 @@ class ManageUser(object):
     #----------------------------------------------------------------------
 
     def getUserPriGid(self, userName=""):
-        """
-        Retrieve the passed in user's primary GID
-        """
+        '''Retrieve the passed in user's primary GID
+
+        :param userName:  (Default value = "")
+
+        '''
         success = False
         #####
         # Preprocess logging
@@ -238,9 +250,11 @@ class ManageUser(object):
     #----------------------------------------------------------------------
 
     def getUserHomeDir(self, userName=""):
-        """
-        Retrieve the passed in user's home directory
-        """
+        '''Retrieve the passed in user's home directory
+
+        :param userName:  (Default value = "")
+
+        '''
         success = False
         #####
         # Preprocess logging
@@ -257,11 +271,13 @@ class ManageUser(object):
     #----------------------------------------------------------------------
 
     def isUserInstalled(self, user=""):
-        """
-        Check if the user "user" is installed on the system.
-
+        '''Check if the user "user" is installed on the system.
+        
         @author Roy Nielsen
-        """
+
+        :param user:  (Default value = "")
+
+        '''
         success = False
         #####
         # Preprocess logging
@@ -278,11 +294,14 @@ class ManageUser(object):
     #----------------------------------------------------------------------
 
     def isUserInGroup(self, userName="", groupName=""):
-        """
-        Check if this user is in this group
-
+        '''Check if this user is in this group
+        
         @author: Roy Nielsen
-        """
+
+        :param userName:  (Default value = "")
+        :param groupName:  (Default value = "")
+
+        '''
         success = False
         #####
         # Preprocess logging
@@ -299,11 +318,13 @@ class ManageUser(object):
     #----------------------------------------------------------------------
 
     def isUserInSudoers(self, userName=""):
-        """
-        Check if this user is in the sudoers file - requires root access to run.
-
+        '''Check if this user is in the sudoers file - requires root access to run.
+        
         @author: Roy Nielsen
-        """
+
+        :param userName:  (Default value = "")
+
+        '''
         success = False
         #####
         # Preprocess logging
@@ -321,12 +342,19 @@ class ManageUser(object):
 
     def validateUser(self, userName=False, userShell=False, userComment=False,
                      userUid=False, userPriGid=False, userHomeDir=False):
-        """
-        Future functionality... validate that the passed in parameters to the
+        '''Future functionality... validate that the passed in parameters to the
         class instanciation match.
-
+        
         @author:
-        """
+
+        :param userName:  (Default value = False)
+        :param userShell:  (Default value = False)
+        :param userComment:  (Default value = False)
+        :param userUid:  (Default value = False)
+        :param userPriGid:  (Default value = False)
+        :param userHomeDir:  (Default value = False)
+
+        '''
         success = False
         #####
         # Preprocess logging
@@ -345,11 +373,13 @@ class ManageUser(object):
     #----------------------------------------------------------------------
 
     def isQualifiedLiftAttendant(self, userName=""):
-        """
-        Check if this user is in the sudoers file - requires root access to run.
-
+        '''Check if this user is in the sudoers file - requires root access to run.
+        
         @author: Roy Nielsen
-        """
+
+        :param userName:  (Default value = "")
+
+        '''
         success = False
         #####
         # Preprocess logging
@@ -368,17 +398,20 @@ class ManageUser(object):
     #----------------------------------------------------------------------
 
     def createStandardUser(self, userName, password):
-        """
-        Creates a user that has the "next" uid in line to be used, then puts
+        '''Creates a user that has the "next" uid in line to be used, then puts
         in in a group of the same id.  Uses /bin/bash as the standard shell.
         The userComment is left empty.  Primary use is managing a user
         during test automation, when requiring a "user" context.
-
+        
         It does not set a login keychain password as that is created on first
         login to the GUI.
-
+        
         @author: Roy Nielsen
-        """
+
+        :param userName: 
+        :param password: 
+
+        '''
         success = False
         #####
         # Preprocess logging
@@ -394,15 +427,17 @@ class ManageUser(object):
 
     
     def createBasicUser(self, userName=""):
-        """
-        Create a username with just a moniker.  Allow the system to take care of
+        '''Create a username with just a moniker.  Allow the system to take care of
         the rest.
-
+        
         Only allow usernames with letters and numbers.
         (see ParentManageUser regex for allowable characters)
-
+        
         @author: Roy Nielsen
-        """
+
+        :param userName:  (Default value = "")
+
+        '''
         success = False
         #####
         # Preprocess logging
@@ -419,11 +454,13 @@ class ManageUser(object):
     #----------------------------------------------------------------------
 
     def setUserName(self, user):
-        """
-        Setter for the class variable userName
+        '''Setter for the class variable userName
         
         @author: Roy Nielsen
-        """
+
+        :param user: 
+
+        '''
         success = False
         if self.userMgr.isSaneUserName(user):
             success = self.userMgr.setUserName(user)
@@ -432,13 +469,16 @@ class ManageUser(object):
     #----------------------------------------------------------------------
 
     def setUserShell(self, user="", shell=""):
-        """
-        Set a user's shell
-
+        '''Set a user's shell
+        
         (see ParentManageUser regex for allowable characters)
-
+        
         @author: Roy Nielsen
-        """
+
+        :param user:  (Default value = "")
+        :param shell:  (Default value = "")
+
+        '''
         success = False
         #####
         # Preprocess logging
@@ -455,13 +495,16 @@ class ManageUser(object):
     #----------------------------------------------------------------------
 
     def setUserComment(self, user="", comment=""):
-        """
-        Set the "user comment" field that normally holds the user's real name
-
+        '''Set the "user comment" field that normally holds the user's real name
+        
         (see ParentManageUser regex for allowable characters)
-
+        
         @author: Roy Nielsen
-        """
+
+        :param user:  (Default value = "")
+        :param comment:  (Default value = "")
+
+        '''
         success = False
         #####
         # Preprocess logging
@@ -478,11 +521,14 @@ class ManageUser(object):
     #----------------------------------------------------------------------
 
     def setUserUid(self, user="", uid=""):
-        """
-        Set the user UID on the system.
-
+        '''Set the user UID on the system.
+        
         @author: Roy Nielsen
-        """
+
+        :param user:  (Default value = "")
+        :param uid:  (Default value = "")
+
+        '''
         success = False
         #####
         # Preprocess logging
@@ -499,11 +545,14 @@ class ManageUser(object):
     #----------------------------------------------------------------------
 
     def setUserPriGid(self, user="", priGid=""):
-        """
-        Set the user's primary group ID on the system.
-
+        '''Set the user's primary group ID on the system.
+        
         @author: Roy Nielsen
-        """
+
+        :param user:  (Default value = "")
+        :param priGid:  (Default value = "")
+
+        '''
         success = False
         #####
         # Preprocess logging
@@ -520,13 +569,16 @@ class ManageUser(object):
     #----------------------------------------------------------------------
 
     def setUserHomeDir(self, user="", userHome=""):
-        """
-        Create a "local" home directory.  This may or may not create the user's
+        '''Create a "local" home directory.  This may or may not create the user's
         home directory from the system's user template/skel for standard user
         settings.
-
+        
         @author: Roy Nielsen
-        """
+
+        :param user:  (Default value = "")
+        :param userHome:  (Default value = "")
+
+        '''
         success = False
         #####
         # Preprocess logging
@@ -543,14 +595,16 @@ class ManageUser(object):
     #----------------------------------------------------------------------
 
     def createHomeDirectory(self, user=""):
-        """
-        Create a "local" home directory.
-
+        '''Create a "local" home directory.
+        
         This should use the system "User Template" or "/etc/skel" for standard
         system user settings.
-
+        
         @author: Roy Nielsen
-        """
+
+        :param user:  (Default value = "")
+
+        '''
         success = False
         #####
         # Preprocess logging
@@ -567,11 +621,14 @@ class ManageUser(object):
     #----------------------------------------------------------------------
 
     def addUserToGroup(self, user="", group=""):
-        """
-        Add a user to a group, not their primary group.
-
+        '''Add a user to a group, not their primary group.
+        
         @author: Roy Nielsen
-        """
+
+        :param user:  (Default value = "")
+        :param group:  (Default value = "")
+
+        '''
         success = False
         #####
         # Preprocess logging
@@ -588,11 +645,15 @@ class ManageUser(object):
     #----------------------------------------------------------------------
 
     def setUserPassword(self, user="", password="", oldPassword=""):
-        """
-        Set a user's password.
-
+        '''Set a user's password.
+        
         @author: Roy Nielsen
-        """
+
+        :param user:  (Default value = "")
+        :param password:  (Default value = "")
+        :param oldPassword:  (Default value = "")
+
+        '''
         success = False
         #####
         # Preprocess logging
@@ -609,11 +670,13 @@ class ManageUser(object):
     #----------------------------------------------------------------------
 
     def rmUser(self, user=""):
-        """
-        Remove a user from the system.
-
+        '''Remove a user from the system.
+        
         @author: Roy Nielsen
-        """
+
+        :param user:  (Default value = "")
+
+        '''
         success = False
         #####
         # Preprocess logging
@@ -630,13 +693,15 @@ class ManageUser(object):
     #----------------------------------------------------------------------
 
     def rmUserHome(self, user=""):
-        """
-        Remove the user home... right now only default location, but should
+        '''Remove the user home... right now only default location, but should
         look up the user home in the directory service and remove that
         specifically.
-
+        
         @author: Roy Nielsen
-        """
+
+        :param user:  (Default value = "")
+
+        '''
         success = False
         #####
         # Preprocess logging
@@ -653,11 +718,14 @@ class ManageUser(object):
     #----------------------------------------------------------------------
 
     def rmUserFromGroup(self, user="", group=""):
-        """
-        Remove a user from a group, not their primary group.
-
+        '''Remove a user from a group, not their primary group.
+        
         @author: Roy Nielsen
-        """
+
+        :param user:  (Default value = "")
+        :param group:  (Default value = "")
+
+        '''
         success = False
         #####
         # Preprocess logging
@@ -674,13 +742,15 @@ class ManageUser(object):
     #----------------------------------------------------------------------
 
     def fixUserHome(self, userName=""):
-        """
-        Get the user information from the local directory and fix the user
+        '''Get the user information from the local directory and fix the user
         ownership and group of the user's home directory to reflect
         what is in the local directory service.
-
+        
         @author: Roy Nielsen
-        """
+
+        :param userName:  (Default value = "")
+
+        '''
         success = False
         #####
         # Preprocess logging
@@ -697,8 +767,12 @@ class ManageUser(object):
     #----------------------------------------------------------------------
 
     def authenticate(self, user="", password=""):
-        """
-        """
+        '''
+
+        :param user:  (Default value = "")
+        :param password:  (Default value = "")
+
+        '''
         success = False
         #####
         # Preprocess logging

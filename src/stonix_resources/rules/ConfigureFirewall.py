@@ -44,10 +44,7 @@ from re import search
 import traceback
 
 class ConfigureFirewall(RuleKVEditor):
-    '''
-
-    @author: ekkehard j. koch
-    '''
+    '''@author: ekkehard j. koch'''
 
 ###############################################################################
 
@@ -143,10 +140,12 @@ class ConfigureFirewall(RuleKVEditor):
             self.appci = self.initCi(datatype, key, instructions, default)
 
     def report(self):
-        '''
-        @summary: Checks compliancy of system according to this rule
+        '''@summary: Checks compliancy of system according to this rule
         @author: dwalker
-        @return: bool - True or False
+
+
+        :returns: bool - True or False
+
         '''
         try:
             self.iditerator = 0
@@ -227,10 +226,12 @@ class ConfigureFirewall(RuleKVEditor):
         return self.compliant
 
     def fix(self):
-        '''
-        @summary: Fixes the system is report returns False
+        '''@summary: Fixes the system is report returns False
         @author: dwalker
-        @return: bool - True or False
+
+
+        :returns: bool - True or False
+
         '''
         try:
             success = True

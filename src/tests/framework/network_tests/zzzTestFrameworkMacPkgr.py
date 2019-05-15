@@ -41,21 +41,16 @@ from src.tests.lib.logdispatcher_lite import LogDispatcher, LogPriority
 
 
 class NotApplicableToThisOS(Exception):
-    """
-    Custom Exception
-    """
+    '''Custom Exception'''
     def __init__(self, *args, **kwargs):
         Exception.__init__(self, *args, **kwargs)
 
 @unittest.skipUnless(sys.platform.startswith("darwin"), "RamDisk does not support this OS family")
 class zzzTestFrameworkMacPkgr(unittest.TestCase):
-    """
-    Class for testing the macpkgr.
-    """
+    '''Class for testing the macpkgr.'''
     @classmethod
     def setUpClass(self):
-        """
-        """
+        ''' '''
         self.environ = Environment()
         self.logger = LogDispatcher(self.environ)
 
@@ -128,20 +123,19 @@ class zzzTestFrameworkMacPkgr(unittest.TestCase):
     
     @classmethod
     def tearDownClass(self):
-        """
-        Make sure the appropriate files are removed..
-        """
+        '''Make sure the appropriate files are removed..'''
         pass
         
     ############################################################################
     
     def test_inLinearFlow(self):
-        """
-        Run methods or functionality that requires order, ie a happens before b
+        '''Run methods or functionality that requires order, ie a happens before b
         Like ensure a package is installed before testing if uninstall works.
         
         @author: Roy Nielsen
-        """
+
+
+        '''
         if sys.version_info < (2, 7):
             return
         if not self.connection.isPageAvailable():
@@ -193,8 +187,7 @@ class zzzTestFrameworkMacPkgr(unittest.TestCase):
     ############################################################################
         
     def testCheckInstall(self):
-        """
-        Test the checkInstall method.
+        '''Test the checkInstall method.
         
         1 - make sure the test .pkg is NOT installed
         2 - download the package and check the md5
@@ -202,7 +195,9 @@ class zzzTestFrameworkMacPkgr(unittest.TestCase):
         4 - call the checkInstall method
         
         @author: Roy Nielsen
-        """
+
+
+        '''
         if sys.version_info < (2, 7):
             return
         if not self.connection.isPageAvailable():
@@ -232,8 +227,7 @@ class zzzTestFrameworkMacPkgr(unittest.TestCase):
     ############################################################################
 
     def testCheckAvailable(self):
-        """
-        Check if a package is available on the reporoot.
+        '''Check if a package is available on the reporoot.
         
         Must have both the file AND the md5 checksum file on the server of the
         format:
@@ -253,7 +247,9 @@ class zzzTestFrameworkMacPkgr(unittest.TestCase):
         downloadPackage
         
         @author: Roy Nielsen
-        """
+
+
+        '''
         if sys.version_info < (2, 7):
             return
         if not self.connection.isPageAvailable():
@@ -275,17 +271,18 @@ class zzzTestFrameworkMacPkgr(unittest.TestCase):
     ############################################################################
 
     def testFindDomain(self):
-        """
-        Test the findDomain function.  The domain is required to do a reverse 
+        '''Test the findDomain function.  The domain is required to do a reverse
         lookup in the local client package receipt database.  It should find
-        all the files that have been installed by the PACKAGE, not the 
+        all the files that have been installed by the PACKAGE, not the
         postflight.
         
         Will remove the test package if it exists, install the package then
         use the test package to make sure the package file list is accurate.
         
         @author: Roy Nielsen
-        """
+
+
+        '''
         if sys.version_info < (2, 7):
             return
         if not self.connection.isPageAvailable():
@@ -306,8 +303,7 @@ class zzzTestFrameworkMacPkgr(unittest.TestCase):
     ############################################################################
     
     def testUnArchive(self):
-        """
-        Download a tar package with the test pkg in it.
+        '''Download a tar package with the test pkg in it.
         
         Will test doing a download and checksum of the following by downloading
         the file and doing a checksum, then unzipping the file, and check
@@ -318,32 +314,34 @@ class zzzTestFrameworkMacPkgr(unittest.TestCase):
         @Note: *** Functionality needs approval ***
         
         @author: Roy Nielsen
-        """
+
+
+        '''
         pass
         
     ############################################################################
     
     def testCopyInstall(self):
-        """
-        Tests the copyInstall method.
+        '''Tests the copyInstall method.
         
         Will test by:
         
         Downloading the test .tar file with a .app in it, doing a checksum of
         the .tar file then performing a copyInstall.
         
-        Will test by checking the existence of the .app being in the right 
+        Will test by checking the existence of the .app being in the right
         place.
         
         @author: Roy Nielsen
-        """ 
+
+
+        '''
         pass
         
     ############################################################################
     
     def testInstallPkg(self):
-        """
-        Tests the installPkg method.
+        '''Tests the installPkg method.
         
         Will:
         Make sure the test pkg is not installed
@@ -351,7 +349,9 @@ class zzzTestFrameworkMacPkgr(unittest.TestCase):
         install the .pkg with the installPkg method.
         
         @author: Roy Nielsen
-        """
+
+
+        '''
         if sys.version_info < (2, 7):
             return
         success = False
@@ -434,11 +434,12 @@ class zzzTestFrameworkMacPkgr(unittest.TestCase):
     ############################################################################
     
     def testIsMacPlatform(self):
-        """
-        Make sure we are on the Mac platform.
+        '''Make sure we are on the Mac platform.
         
         @author: Roy Nielsen
-        """
+
+
+        '''
         if sys.version_info < (2, 7):
             return
         if not self.connection.isPageAvailable():
@@ -452,16 +453,17 @@ class zzzTestFrameworkMacPkgr(unittest.TestCase):
     ############################################################################
     
     def isFullInstall(self):
-        """
-        Make sure that all files and directories including those installed from
+        '''Make sure that all files and directories including those installed from
         the package and the postinstall script exist.
         
-        @Note: In future, this should also do a receipt test as well.  This 
+        @Note: In future, this should also do a receipt test as well.  This
                would include getting the files from the receipt and checking
                for their existence and perhaps their permissions.
         
         @author: Roy Nielsen
-        """
+
+
+        '''
 
         files = self.doFilesExistTest(self.all_files)
         dirs = self.doDirsExist(self.all_dirs)
@@ -473,13 +475,14 @@ class zzzTestFrameworkMacPkgr(unittest.TestCase):
     ############################################################################
     
     def isInstalled(self):
-        """
-        Test to make sure just the files and directories installed by the
+        '''Test to make sure just the files and directories installed by the
         package are installed. Doesn't care about the files and directories
-        installed by the postinstall script. 
+        installed by the postinstall script.
         
         @author: Roy Nielsen
-        """
+
+
+        '''
         files = self.doFilesExistTest([self.pkg_files])
         dirs = self.doDirsExist([self.pkg_dirs])
         
@@ -490,20 +493,21 @@ class zzzTestFrameworkMacPkgr(unittest.TestCase):
     ############################################################################
     
     def isMissing(self):
-        """
-        Test to make sure all the files have been removed that were Installed
+        '''Test to make sure all the files have been removed that were Installed
         by the package.  Ignore, but note directories installed by the package
-        that exist, as well as files and directories installed by the 
+        that exist, as well as files and directories installed by the
         postinstall script.
         
-        @Note: In future, this test should check for a package receipt, and 
+        @Note: In future, this test should check for a package receipt, and
                make sure the files in the package receipt do not exist.  This
                is only valid for this package, as in the case of some software,
-               like Adobe products, some of the files are shared libraries 
+               like Adobe products, some of the files are shared libraries
                between different products.
         
         @author: Roy Nielsen
-        """
+
+
+        '''
         removed = []
         exists = []
         
@@ -533,11 +537,12 @@ class zzzTestFrameworkMacPkgr(unittest.TestCase):
     ############################################################################
     
     def removeCompletePackage(self):
-        """
-        Remove all files, used to set the stage for install tests.
+        '''Remove all files, used to set the stage for install tests.
         
         @author:  Roy Nielsen
-        """
+
+
+        '''
         success = False
         try:
             testPath = "/tmp/testStonixMacPkgr-0.0.3"
@@ -572,11 +577,13 @@ class zzzTestFrameworkMacPkgr(unittest.TestCase):
     ############################################################################
     
     def doFilesExistTest(self, files=[False]):
-        """
-        Test the directories in the passed in list to see if they all exist.
+        '''Test the directories in the passed in list to see if they all exist.
         
         @author: Roy Nielsen
-        """
+
+        :param files:  (Default value = [False])
+
+        '''
         not_installed = []
         exists = []
         #####
@@ -599,11 +606,13 @@ class zzzTestFrameworkMacPkgr(unittest.TestCase):
     ############################################################################
     
     def doDirsExist(self, dirs=[False]):
-        """
-        Check the directories in the passed in list to see if they all exist.
+        '''Check the directories in the passed in list to see if they all exist.
         
         @author: Roy Nielsen
-        """
+
+        :param dirs:  (Default value = [False])
+
+        '''
         not_installed = []
         exists = []
         #####

@@ -36,9 +36,11 @@ from src.stonix_resources.environment import Environment
 from connectivity_test_data import test_case_data_site_socket_online
 
 def name_test_template_one(*args):
-    """ 
-    decorator for monkeypatching
-    """
+    '''decorator for monkeypatching
+
+    :param *args: 
+
+    '''
     def foo(self):
         self.assert_value(*args)
     return foo 

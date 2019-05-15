@@ -35,9 +35,7 @@ from ..logdispatcher import LogPriority
 
 
 class DisableTouchID(Rule):
-    '''
-    classdocs
-    '''
+    '''classdocs'''
 
     def __init__(self, config, environ, logger, statechglogger):
         '''
@@ -64,22 +62,25 @@ class DisableTouchID(Rule):
         self.initobjs()
 
     def initobjs(self):
-        '''
-        init objects used by this class
-
+        '''init objects used by this class
+        
         @author: Breen Malmberg
+
+
         '''
 
         self.ch = CommandHelper(self.logger)
         self.fixed = False
 
     def report(self):
-        '''
-        check status of touch id
+        '''check status of touch id
 
-        @return: self.compliant
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: self.compliant
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         self.detailedresults = ""
@@ -140,12 +141,14 @@ class DisableTouchID(Rule):
         return self.compliant
 
     def fix(self):
-        '''
-        turn off touch id functionality
+        '''turn off touch id functionality
 
-        @return: self.rulesuccess
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: self.rulesuccess
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         self.detailedresults = ""
@@ -212,12 +215,14 @@ class DisableTouchID(Rule):
         return self.rulesuccess
 
     def undo(self):
-        '''
-        reverse the fix actions which were applied
+        '''reverse the fix actions which were applied
 
-        @return: success
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: success
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         self.detailedresults = ""

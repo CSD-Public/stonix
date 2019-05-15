@@ -42,9 +42,7 @@ from ..stonixutilityfunctions import iterate, readFile, writeFile, resetsecon
 
 
 class LinuxPackageSigning(RuleKVEditor):
-    '''
-    classdocs
-    '''
+    '''classdocs'''
 
     def __init__(self, config, environ, logger, statechglogger):
         '''
@@ -73,13 +71,15 @@ class LinuxPackageSigning(RuleKVEditor):
         self.localize()
 
     def isapplicable(self):
-        '''
-        override of normal isapplicable()
+        '''override of normal isapplicable()
 
-        @return: retval
-        @rtype: bool
-        @author: Breen Malmberg
-        @change: 2016/09/12 eball Changed from blacklist to whitelist
+
+        :returns: retval
+
+        :rtype: bool
+@author: Breen Malmberg
+@change: 2016/09/12 eball Changed from blacklist to whitelist
+
         '''
         retval = False
         ostype = self.environ.getostype()
@@ -90,8 +90,7 @@ class LinuxPackageSigning(RuleKVEditor):
         return retval
 
     def localize(self):
-        '''
-        '''
+        ''' '''
 
         self.logger.log(LogPriority.DEBUG, "Running localize() method for " +
                         "LinuxPackageSigning ...")
@@ -114,8 +113,7 @@ class LinuxPackageSigning(RuleKVEditor):
             self.logger.log(LogPriority.DEBUG, "Unable to determine OS type.")
 
     def setRhel(self):
-        '''
-        '''
+        ''' '''
         self.rhel = True
         self.logger.log(LogPriority.DEBUG, "Detected OS as: Red Hat")
 
@@ -125,8 +123,7 @@ class LinuxPackageSigning(RuleKVEditor):
             self.repos.append("/etc/yum.repos.d/" + repo)
 
     def setFedora(self):
-        '''
-        '''
+        ''' '''
         self.fedora = True
         self.logger.log(LogPriority.DEBUG, "Detected OS as: Fedora")
 
@@ -140,8 +137,7 @@ class LinuxPackageSigning(RuleKVEditor):
             self.repos.append("/etc/yum.repos.d/" + repo)
 
     def setOpensuse(self):
-        '''
-        '''
+        ''' '''
 
         self.suse = True
         self.logger.log(LogPriority.DEBUG, "Detected OS as: OpenSuSE")
@@ -170,8 +166,7 @@ class LinuxPackageSigning(RuleKVEditor):
                         self.repolist.append(sline[0].strip())
 
     def report(self):
-        '''
-        '''
+        ''' '''
         self.detailedresults = ""
         self.compliant = True
 
@@ -197,8 +192,7 @@ class LinuxPackageSigning(RuleKVEditor):
         return self.compliant
 
     def reportSUSE(self):
-        '''
-        '''
+        ''' '''
 
         retval = True
         cmd2 = "/usr/bin/zypper lr"
@@ -252,8 +246,7 @@ class LinuxPackageSigning(RuleKVEditor):
         return compliant
 
     def fix(self):
-        '''
-        '''
+        ''' '''
 
         self.detailedresults = ""
         success = True

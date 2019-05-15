@@ -23,16 +23,17 @@ from lib.loggers import CyLogger
 from lib.get_libc import getLibc
 
 def OSNotValidForRunWith(Exception):
-    """
-    Custom Exception
-    """
+    '''Custom Exception
+
+    :param Exception: 
+
+    '''
     def __init__(self, *args, **kwargs):
         Exception.__init__(self, *args, **kwargs)
 
 class RunWith(object):
-    """
-    Class that will run commands in various ways.
-
+    '''Class that will run commands in various ways.
+    
     @method setCommand(self, command=[])
     @method communicate(self)
     @method wait(self)
@@ -42,11 +43,13 @@ class RunWith(object):
     @method getStdout(self)
     @method getStderr(self)
     @method getReturnCode(self)
-
+    
     @WARNING - Known to work on Mac, may or may not work on other platforms
-
+    
     @author: Roy Nielsen
-    """
+
+
+    '''
     def __init__(self, logger=False):
         if not logger:
             self.logger = CyLogger()
@@ -64,11 +67,14 @@ class RunWith(object):
         self.libc = getLibc()
 
     def setCommand(self, command, myshell=False):
-        """
-        initialize a command to run
-
+        '''initialize a command to run
+        
         @author: Roy Nielsen
-        """
+
+        :param command: 
+        :param myshell:  (Default value = False)
+
+        '''
         if command:
             self.command = command
         #####
@@ -83,43 +89,47 @@ class RunWith(object):
     ############################################################################
 
     def getStdout(self):
-        """
-        Getter for the standard output of the last command.
-
+        '''Getter for the standard output of the last command.
+        
         @author: Roy Nielsen
-        """
+
+
+        '''
         return self.output
 
     ############################################################################
 
     def getStderr(self):
-        """
-        Getter for the standard error of the last command.
-
+        '''Getter for the standard error of the last command.
+        
         @author: Roy Nielsen
-        """
+
+
+        '''
         return self.error
 
     ############################################################################
 
     def getReturnCode(self):
-        """
-        Getter for the return code of the last command.
-
+        '''Getter for the return code of the last command.
+        
         @author: Roy Nielsen
-        """
+
+
+        '''
         return self.returncode
 
     ############################################################################
 
     def getNlogReturns(self):
-        """
-        Getter for the retval, reterr & retcode of the last command.
-
+        '''Getter for the retval, reterr & retcode of the last command.
+        
         Will also log the values
-
+        
         @author: Roy Nielsen
-        """
+
+
+        '''
         self.logger.log(lp.INFO, "Output: " + str(self.output))
         self.logger.log(lp.INFO, "Error: " + str(self.error))
         self.logger.log(lp.INFO, "Return code: " + str(self.returncode))
@@ -128,13 +138,14 @@ class RunWith(object):
     ############################################################################
 
     def getNprintReturns(self):
-        """
-        Getter for the retval, reterr & retcode of the last command.
-
+        '''Getter for the retval, reterr & retcode of the last command.
+        
         Will also print the values
-
+        
         @author: Roy Nielsen
-        """
+
+
+        '''
         print "Output: " + str(self.output)
         print "Error: " + str(self.error)
         print "Return code: " + str(self.returncode)
@@ -143,12 +154,13 @@ class RunWith(object):
     ############################################################################
 
     def communicate(self) :
-        """
-        Use the subprocess module to execute a command, returning
+        '''Use the subprocess module to execute a command, returning
         the output of the command
-
+        
         @author: Roy Nielsen
-        """
+
+
+        '''
         if self.command:
             try:
                 proc = Popen(self.command, stdout=PIPE, stderr=PIPE, shell=self.myshell)
@@ -175,12 +187,13 @@ class RunWith(object):
     ############################################################################
 
     def wait(self) :
-        """
-        Use subprocess to call a command and wait until it is finished before
+        '''Use subprocess to call a command and wait until it is finished before
         moving on...
-
+        
         @author: Roy Nielsen
-        """
+
+
+        '''
         if self.command :
             try:
                 proc = Popen(self.command,
@@ -213,27 +226,31 @@ class RunWith(object):
     ############################################################################
 
     def killProc(self, proc, timeout) :
-        """
-        Support function for the "runWithTimeout" function below
-
+        '''Support function for the "runWithTimeout" function below
+        
         @author: Roy Nielsen
-        """
+
+        :param proc: 
+        :param timeout: 
+
+        '''
         timeout["value"] = True
         proc.kill()
 
     ############################################################################
 
     def timeout(self, timout_sec) :
-        """
-        Run a command with a timeout - return:
-        Returncode of the process
-        stdout of the process
+        '''Run a command with a timeout - return:
+
+        :param timout_sec: 
+        :returns: stdout of the process
         stderr of the process
         timout - True if the command timed out
                  False if the command completed successfully
-
+        
         @author: Roy Nielsen
-        """
+
+        '''
         if self.command:
             try:
                 proc = Popen(self.command,
@@ -269,13 +286,16 @@ class RunWith(object):
     ############################################################################
 
     def runAs(self, user="", password="") :
-        """
-        Use pexpect to run "su" to run a command as another user...
-
+        '''Use pexpect to run "su" to run a command as another user...
+        
         Required parameters: user, password, command
-
+        
         @author: Roy Nielsen
-        """
+
+        :param user:  (Default value = "")
+        :param password:  (Default value = "")
+
+        '''
         if re.match("^\s*$", user) or \
            re.match("^\s*$", password) or \
            not self.command :
@@ -346,12 +366,15 @@ class RunWith(object):
     ############################################################################
 
     def getecho (self, fileDescriptor):
-        """This returns the terminal echo mode. This returns True if echo is
+        '''This returns the terminal echo mode. This returns True if echo is
         on or False if echo is off. Child applications that are expecting you
         to enter a password often set ECHO False. See waitnoecho().
-
+        
         Borrowed from pexpect - acceptable to license
-        """
+
+        :param fileDescriptor: 
+
+        '''
         attr = termios.tcgetattr(fileDescriptor)
         if attr[3] & termios.ECHO:
             return True
@@ -360,21 +383,25 @@ class RunWith(object):
     ############################################################################
 
     def waitnoecho (self, fileDescriptor, timeout=3):
-        """This waits until the terminal ECHO flag is set False. This returns
+        '''This waits until the terminal ECHO flag is set False. This returns
         True if the echo mode is off. This returns False if the ECHO flag was
         not set False before the timeout. This can be used to detect when the
         child is waiting for a password. Usually a child application will turn
         off echo mode when it is waiting for the user to enter a password. For
         example, instead of expecting the "password:" prompt you can wait for
         the child to set ECHO off::
-
+        
             see below in runAsWithSudo
-
+        
         If timeout is None or negative, then this method to block forever until
         ECHO flag is False.
-
+        
         Borrowed from pexpect - acceptable to license
-        """
+
+        :param fileDescriptor: 
+        :param timeout:  (Default value = 3)
+
+        '''
         if timeout is not None and timeout > 0:
             end_time = time.time() + timeout
         while True:
@@ -389,13 +416,16 @@ class RunWith(object):
     ############################################################################
 
     def runAsWithSudo(self, user="", password="") :
-        """
-        Use pty method to run "su" to run a command as another user...
-
+        '''Use pty method to run "su" to run a command as another user...
+        
         Required parameters: user, password, command
-
+        
         @author: Roy Nielsen
-        """
+
+        :param user:  (Default value = "")
+        :param password:  (Default value = "")
+
+        '''
         self.logger.log(lp.DEBUG, "Starting runAsWithSudo: ")
         self.logger.log(lp.DEBUG, "\tuser: \"" + str(user) + "\"")
         self.logger.log(lp.DEBUG, "\tcmd : \"" + str(self.command) + "\"")
@@ -518,18 +548,19 @@ class RunWith(object):
 ##############################################################################
 
 class RunThread(threading.Thread) :
-    """
-    Use a thread & subprocess.Popen to run something
-
+    '''Use a thread & subprocess.Popen to run something
+    
     To use - where command could be an array, or a string... :
-
+    
     run_thread = RunThread(<command>, message_level)
     run_thread.start()
     run_thread.join()
     print run_thread.stdout
-
+    
     @author: Roy Nielsen
-    """
+
+
+    '''
     def __init__(self, command=[], logger=None) :
         """
         Initialization method
@@ -582,33 +613,38 @@ class RunThread(threading.Thread) :
     ##########################################################################
 
     def getStdout(self) :
-        """
-        Getter for standard output
-
+        '''Getter for standard output
+        
         @author: Roy Nielsen
-        """
+
+
+        '''
         self.logger.log(lp.INFO, "Getting stdout...")
         return self.retout
 
     ##########################################################################
 
     def getStderr(self) :
-        """
-        Getter for standard err
-
+        '''Getter for standard err
+        
         @author: Roy Nielsen
-        """
+
+
+        '''
         self.logger.log(lp.DEBUG, "Getting stderr...")
         return self.reterr
 
 ##############################################################################
 
 def runMyThreadCommand(cmd=[], logger=None) :
-    """
-    Use the RunThread class to get the stdout and stderr of a command
-
+    '''Use the RunThread class to get the stdout and stderr of a command
+    
     @author: Roy Nielsen
-    """
+
+    :param cmd:  (Default value = [])
+    :param logger:  (Default value = None)
+
+    '''
     retval = None
     reterr = None
     if cmd and logger :

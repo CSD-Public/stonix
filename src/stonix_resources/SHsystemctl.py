@@ -35,10 +35,11 @@ from ServiceHelperTemplate import ServiceHelperTemplate
 
 
 class SHsystemctl(ServiceHelperTemplate):
-    """
-    SHsystemctl is the Service Helper for systems using the systemctl command to
+    '''SHsystemctl is the Service Helper for systems using the systemctl command to
     configure services. (Fedora and future RHEL and variants)
-    """
+
+
+    '''
 
     def __init__(self, environment, logdispatcher):
         """
@@ -52,10 +53,7 @@ class SHsystemctl(ServiceHelperTemplate):
         self.localize()
 
     def localize(self):
-        """
-
-        @return:
-        """
+        ''' '''
 
         systemctl_paths = ["/usr/bin/systemctl", "/bin/systemctl"]
         self.sysctl = ""
@@ -72,16 +70,17 @@ class SHsystemctl(ServiceHelperTemplate):
         self.handsoff = ["static", "transient", "generated", "masked", "masked-runtime"]
 
     def disableService(self, service, **kwargs):
-        """
-        Disables the service and terminates it if it is running.
+        '''Disables the service and terminates it if it is running.
 
-        @param service: string; Name of the service to be disabled
-        @return: disabled
-        @rtype: bool
-        @author: ???
-        @change: Breen Malmberg - 04/10/2019 - method refactor;
-                doc string edit; logging edit
-        """
+        :param service: string; Name of the service to be disabled
+        :param **kwargs: 
+        :returns: disabled
+        :rtype: bool
+@author: ???
+@change: Breen Malmberg - 04/10/2019 - method refactor;
+        doc string edit; logging edit
+
+        '''
 
         disabled = True
     
@@ -98,17 +97,18 @@ class SHsystemctl(ServiceHelperTemplate):
         return disabled
 
     def enableService(self, service, **kwargs):
-        """
-        Enables a service and starts it if it is not running as long as we are
+        '''Enables a service and starts it if it is not running as long as we are
         not in install mode
 
-        @param service: string; Name of the service to be disabled
-        @return: enabled
-        @rtype: bool
-        @author: ???
-        @change: Breen Malmberg - 04/10/2019 - method refactor;
-                doc string edit; logging edit
-        """
+        :param service: string; Name of the service to be disabled
+        :param **kwargs: 
+        :returns: enabled
+        :rtype: bool
+@author: ???
+@change: Breen Malmberg - 04/10/2019 - method refactor;
+        doc string edit; logging edit
+
+        '''
 
         enabled = True
 
@@ -126,14 +126,15 @@ class SHsystemctl(ServiceHelperTemplate):
         return enabled
 
     def auditService(self, service, **kwargs):
-        """
-        Checks the status of a service and returns a bool indicating whether or
+        '''Checks the status of a service and returns a bool indicating whether or
         not the service is configured to run or not.
 
-        @param service: string; Name of the service to audit
-        @return: enabled
-        @rtype: bool
-        """
+        :param service: string; Name of the service to audit
+        :param **kwargs: 
+        :returns: enabled
+        :rtype: bool
+
+        '''
 
         enabled = False
 
@@ -148,18 +149,19 @@ class SHsystemctl(ServiceHelperTemplate):
         return enabled
 
     def isRunning(self, service, **kwargs):
-        """
-        Check to see if a service is currently running. The enable service uses
+        '''Check to see if a service is currently running. The enable service uses
         this so that we're not trying to start a service that is already
         running.
 
-        @param service: string; name of service to check
-        @return: running
-        @rtype: bool
-        @author: ???
-        @change: Breen Malmberg - 04/10/2019 - method refactor; doc string edit;
-                debug logging edit
-        """
+        :param service: string; name of service to check
+        :param **kwargs: 
+        :returns: running
+        :rtype: bool
+@author: ???
+@change: Breen Malmberg - 04/10/2019 - method refactor; doc string edit;
+        debug logging edit
+
+        '''
 
         running = True
         inactive_keys = ["inactive", "unknown"]
@@ -172,18 +174,19 @@ class SHsystemctl(ServiceHelperTemplate):
         return running
 
     def reloadService(self, service, **kwargs):
-        """
-        Reload (HUP) a service so that it re-reads it's config files. Called
+        '''Reload (HUP) a service so that it re-reads it's config files. Called
         by rules that are configuring a service to make the new configuration
         active.
 
-        @param service: string; Name of the service to reload
-        @return: success
-        @rtype: bool
-        @author: ???
-        @change: Breen Malmberg - 04/10/2019 - method refactor; doc string edit;
-                debug logging edit
-        """
+        :param service: string; Name of the service to reload
+        :param **kwargs: 
+        :returns: success
+        :rtype: bool
+@author: ???
+@change: Breen Malmberg - 04/10/2019 - method refactor; doc string edit;
+        debug logging edit
+
+        '''
 
         success = True
 
@@ -203,15 +206,16 @@ class SHsystemctl(ServiceHelperTemplate):
         return success
 
     def listServices(self, **kwargs):
-        """
-        Return a list containing strings that are service names.
+        '''Return a list containing strings that are service names.
 
-        @return: service_list
-        @rtype: bool
-        @author: ???
-        @change: Breen Malmberg - 04/10/2019 - method refactor; debug logging
-                edit; doc string edit
-        """
+        :param **kwargs: 
+        :returns: service_list
+        :rtype: bool
+@author: ???
+@change: Breen Malmberg - 04/10/2019 - method refactor; debug logging
+        edit; doc string edit
+
+        '''
 
         service_list = []
 
@@ -235,15 +239,15 @@ class SHsystemctl(ServiceHelperTemplate):
         return service_list
 
     def startService(self, service, **kwargs):
-        """
-        start given service
+        '''start given service
 
-        @param service:
-        @param kwargs:
-        @return: started
-        @rtype: bool
-        @author: Breen Malmberg
-        """
+        :param service: param kwargs:
+        :param **kwargs: 
+        :returns: started
+        :rtype: bool
+@author: Breen Malmberg
+
+        '''
 
         started = True
 
@@ -261,15 +265,15 @@ class SHsystemctl(ServiceHelperTemplate):
         return started
 
     def stopService(self, service, **kwargs):
-        """
-        stop given service
+        '''stop given service
 
-        @param service:
-        @param kwargs:
-        @return: stopped
-        @rtype: bool
-        @author: Breen Malmberg
-        """
+        :param service: param kwargs:
+        :param **kwargs: 
+        :returns: stopped
+        :rtype: bool
+@author: Breen Malmberg
+
+        '''
 
         stopped = True
 
@@ -291,10 +295,9 @@ class SHsystemctl(ServiceHelperTemplate):
         return stopped
 
     def getServiceStatus(self, service, **kwargs):
-        """
-        return is-enabled status output
+        '''return is-enabled status output
         possible return values:
-
+        
         enabled
         enabled-runtime
         linked
@@ -308,12 +311,13 @@ class SHsystemctl(ServiceHelperTemplate):
         transient
         unknown (custom status defined in STONIX; not generated by systemctl)
 
-        @param service:
-        @param kwargs:
-        @return: status
-        @rtype: string
-        @author: Breen Malmberg
-        """
+        :param service: param kwargs:
+        :param **kwargs: 
+        :returns: status
+        :rtype: string
+@author: Breen Malmberg
+
+        '''
 
         status = ""
         known_statuses = ["enabled", "enabled-runtime", "linked", "linked-runtime",
@@ -344,33 +348,41 @@ class SHsystemctl(ServiceHelperTemplate):
         return status
 
     def getStartCommand(self, service):
-        '''
-        retrieve the start command.  Mostly used by event recording
-        @return: string - start command
+        '''retrieve the start command.  Mostly used by event recording
+
+        :param service: 
+        :returns: string - start command
         @author: dwalker
+
         '''
         return self.sysctl + " start " + service
 
     def getStopCommand(self, service):
-        '''
-        retrieve the stop command.  Mostly used by event recording
-        @return: string - stop command
+        '''retrieve the stop command.  Mostly used by event recording
+
+        :param service: 
+        :returns: string - stop command
         @author: dwalker
+
         '''
         return self.sysctl + " stop " + service
 
     def getEnableCommand(self, service):
-        '''
-        retrieve the enable command.  Mostly used by event recording
-        @return: string - enable command
+        '''retrieve the enable command.  Mostly used by event recording
+
+        :param service: 
+        :returns: string - enable command
         @author: dwalker
+
         '''
         return self.sysctl + " enable " + service
 
     def getDisableCommand(self, service):
-        '''
-        retrieve the start command.  Mostly used by event recording
-        @return: string - disable command
+        '''retrieve the start command.  Mostly used by event recording
+
+        :param service: 
+        :returns: string - disable command
         @author: dwalker
+
         '''
         return self.sysctl + " disable " + service

@@ -37,9 +37,7 @@ import re
 class NoCachedFDEKeys(Rule):
 
     def __init__(self, config, environ, logdispatch, statechglogger):
-        '''
-        Constructor
-        '''
+        '''Constructor'''
         Rule.__init__(self, config, environ, logdispatch, statechglogger)
 
         self.logger = logdispatch
@@ -58,6 +56,10 @@ class NoCachedFDEKeys(Rule):
         self.ci = self.initCi(datatype, key, instructions, default)
 
     def report(self):
+        '''
+
+        :return:
+        '''
         try:
             self.detailedresults = ""
             compliant = True

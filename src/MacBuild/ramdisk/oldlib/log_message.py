@@ -12,22 +12,27 @@ import inspect
 from subprocess import call
 
 def logMessage(message="", level="normal", priority="debug", syslog_level=None) :
-    """
-    Logs a message to both stdout and to syslog via logger
-
+    '''Logs a message to both stdout and to syslog via logger
+    
     message - the message to log
     
     level - print the message if this value is less than or equal to
-            the \"priority\" 
+            the \"priority\"
     
-    priority - defined value to used to compare with the \"level\".  If 
+    priority - defined value to used to compare with the \"level\".  If
                the level is less than or equal to the priority value,
                the message will be printed to stdout and via logger
     
     syslog_level - the syslog level to log with
-
+    
     Author: Roy Nielsen
-    """
+
+    :param message:  (Default value = "")
+    :param level:  (Default value = "normal")
+    :param priority:  (Default value = "debug")
+    :param syslog_level:  (Default value = None)
+
+    '''
     if syslog_level is None :
         syslog_level = ""
     else :

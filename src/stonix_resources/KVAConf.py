@@ -28,28 +28,29 @@ import traceback
 import re
 
 class KVAConf():
-    '''
-    This class checks files for correctness that consist of key:value pairs
+    '''This class checks files for correctness that consist of key:value pairs
     either in the form of closed equal separated (k=v), open separated (k = v),
-    or space separated (k v).  To implement this class, the calling KVEditor 
-    class must have already had the path set and the intent set.  The intent 
+    or space separated (k v).  To implement this class, the calling KVEditor
+    class must have already had the path set and the intent set.  The intent
     should either be a value of 'present' or not 'present'.  The purpose of the
-    intent is to determine whether the values you are setting are desired in 
+    intent is to determine whether the values you are setting are desired in
     configuration file or not desired, where present = desired and notpresent
     = not desired.  If the same key appears more than once, this helper class
     will ensure only one value remains with the correct value in the end.
     The value associated with a key can either be a string or a list.  When
     the value is a list, this means that someone is passing in a key value set
-    where the key is allowed to be the same over and over again such as a 
-    blacklist file where you may see: 
+    where the key is allowed to be the same over and over again such as a
+    blacklist file where you may see:
     blacklist bluetooth
     blacklist rivafb
     blacklist hisax
     ...
-    in which the dictionary would be in the form of: 
+    in which the dictionary would be in the form of:
     {"blacklist:["bluetooth",
                  "rivafb",
                  "hisax"]}
+
+
     '''
 
     def __init__(self, path, tmpPath, intent, configType, logger):
@@ -75,40 +76,47 @@ class KVAConf():
         self.detailedresults = ""
 
     def setPath(self, path):
-        '''
-        Private method to set the path of the configuration file
+        '''Private method to set the path of the configuration file
         @author: Derek Walker
-        @param path: the path to file to be handled
+
+        :param path: the path to file to be handled
+
         '''
         self.path = path
         self.storeContents(self.path)
 
     def getPath(self):
-        '''
-        Private method to retrieve the path of the configuration file
-
+        '''Private method to retrieve the path of the configuration file
+        
         @author: Derek Walker
-        @return: Bool
+
+
+        :returns: self.path
+        :rtype: bool
+
         '''
         return self.path
 
     def setTmpPath(self, tmpPath):
-        '''
-        Private method to set the temporary path of the configuration file
+        '''Private method to set the temporary path of the configuration file
         for writing before renaming to original file again
-
+        
         @author: Derek Walker
-        @param tmpPath: the path to the temporary file to be written to
+
+        :param tmpPath: the path to the temporary file to be written to
+
         '''
         self.tmpPath = tmpPath
 
     def getTmpPath(self):
-        '''
-        Private method to retrieve the temporary path of the configuration
+        '''Private method to retrieve the temporary path of the configuration
         file to be written to before renaming to original file again
-
+        
         @author: Derek Walker
-        @return: Bool
+
+
+        :returns: Bool
+
         '''
         return self.tmpPath
 
@@ -116,29 +124,34 @@ class KVAConf():
         '''Private method to set the intent of self.data.  Should either be a
         value of "present" or "notpresent" to indicate whether key value pairs
         in self.data are desired or not desired in the configuration file
-        respectively.  The point of this variable is to change from present 
-        to notpresent when needed to set desirable and non desireable key 
+        respectively.  The point of this variable is to change from present
+        to notpresent when needed to set desirable and non desireable key
         value pairs back and forth until update method is run.
-
+        
         @author: Derek Walker
-        @param intent: present | notpresent
+
+        :param intent: present | notpresent
+
         '''
         self.intent = intent
 
     def getIntent(self):
-        '''
-        Private method to retrieve the current intent
-
+        '''Private method to retrieve the current intent
+        
         @author: Derek Walker
-        @return: present|notpresent
+
+
+        :returns: self.intent; present | not present
+        :rtype: basestring
+
         '''
         return self.intent
 
     def setConfigType(self, configType):
         '''
 
-        :param configType:
-        :return:
+        :param configType: ???
+
         '''
 
         self.configType = configType
@@ -146,21 +159,22 @@ class KVAConf():
 
     def getConfigType(self):
         '''
-
-        :return:
+        :returns: self.configType
+        :rtype: ???
         '''
 
         return self.configType
 
     def validate(self, key, val):
-        '''
-        Private outer method to call submethod getOpenClosedValue() or
+        '''Private outer method to call submethod getOpenClosedValue() or
         getSpaceValue() depending on the value of self.configType.
-
+        
         @author: Derek Walker
-        @param key: key in a dictionary passed from calling class
-        @param val: value part in dictionary passed from calling class
-        @return: Bool
+
+        :param key: key in a dictionary passed from calling class
+        :param val: value part in dictionary passed from calling class
+        :returns: Bool
+
         '''
         if self.configType in ['openeq', 'closedeq']:
             return self.getOpenClosedValue(key, val)
@@ -170,21 +184,23 @@ class KVAConf():
             return "invalid"
 
     def getOpenClosedValue(self, key, value):
-        '''
-        Private inner method called by validate that populates self.fixables
+        '''Private inner method called by validate that populates self.fixables
         and/or self.removeables lists.  self.fixables list will be populated
         if configuration file has either the correct key but the wrong value
-        or the key is not there at all.  A key that is commented out will be 
-        considered not present. self.removeables list will be populated if 
+        or the key is not there at all.  A key that is commented out will be
+        considered not present. self.removeables list will be populated if
         configuration file has keys that are not desired.  The value of these
-        keys is irrelevant since the key shouldn't be there at all.  This 
-        method specifcally handles files with an equal sign separating the key 
+        keys is irrelevant since the key shouldn't be there at all.  This
+        method specifcally handles files with an equal sign separating the key
         and the val, both open and closed type
-
+        
         @author: Derek Walker
-        @param key: key in a dictionary passed from calling class
-        @param val: value part in dictionary passed from calling class
-        @return: Bool
+
+        :param key: key in a dictionary passed from calling class
+        :param val: value part in dictionary passed from calling class
+        :param value: 
+        :returns: Bool
+
         '''
         if self.contents:
             if self.intent == "present":  # self.data contains key val pairs we want in the file
@@ -218,8 +234,7 @@ class KVAConf():
                 return found
 
     def getSpaceValue(self, key, value):
-        '''
-        Private inner method called by validate that populates self.fixables
+        '''Private inner method called by validate that populates self.fixables
         and/or self.removeables lists.  self.fixables list will be populated
         if configuration file has either the correct key but the wrong value
         or the key is not there at all.  A key that is commented out will be
@@ -227,11 +242,14 @@ class KVAConf():
         configuration file has keys that are not desired.This method
         specifcally handles files where a space separates key value pairs
         within the same line.
-
+        
         @author: Derek Walker
-        @param key: key in a dictionary passed from calling class
-        @param val: value part in dictionary passed from calling class
-        @return: Bool
+
+        :param key: key in a dictionary passed from calling class
+        :param val: value part in dictionary passed from calling class
+        :param value: 
+        :returns: Bool
+
         '''
         fixables = []
         removeables = []
@@ -416,14 +434,15 @@ class KVAConf():
                         return False
 
     def update(self, fixables, removeables):
-        '''
-        Private outer method to call submethod setOpenClosedValue() or
+        '''Private outer method to call submethod setOpenClosedValue() or
         setSpaceValue() depending on the value of self.configType.
-
+        
         @author: Derek Walker
-        @param fixables: a dictionary of key val pairs desired in file
-        @param removeables: a dictionary of key val pairs not desired in file
-        @return: Bool
+
+        :param fixables: a dictionary of key val pairs desired in file
+        :param removeables: a dictionary of key val pairs not desired in file
+        :returns: Bool
+
         '''
 
         # changed by Breen Malmberg 03/14/2019; condensed repeated code
@@ -436,18 +455,19 @@ class KVAConf():
             return False
 
     def setOpenClosedValue(self, fixables, removeables):
-        '''
-        Private inner method called by update that makes a list to conform
+        '''Private inner method called by update that makes a list to conform
         to desireable (fixables) key val pairs and undesireable (removeables)
         key val pairs in the config file while also keeping any other
         contents intact that aren't affected.  This method specifically handles
         files with an equal sign separating the key and the val, both open
         and closed
-
+        
         @author: Derek Walker
-        @param fixables: a dictionary of key val paris desired in file
-        @param removeables: a dictionary of key val paris not desired in file
-        @return: Bool
+
+        :param fixables: a dictionary of key val paris desired in file
+        :param removeables: a dictionary of key val paris not desired in file
+        :returns: Bool
+
         '''
         self.storeContents(self.path)  # re-read the contents of the desired file
         contents = self.contents
@@ -491,17 +511,18 @@ class KVAConf():
         return True
 
     def setSpaceValue(self, fixables, removeables):
-        '''
-        Private inner method called by update that makes a list to conform
+        '''Private inner method called by update that makes a list to conform
         to desireable (fixables) key val pairs and undesireable (removeables)
         key val pairs in the config file while also keeping any other
         contents intact that aren't affected.  This method specifcally handles
         files where a space separates key value pairs within the same line
-
+        
         @author: Derek Walker
-        @param fixables: a dictionary of key val paris desired in file
-        @param removeables: a dictionary of key val pairs not desired in file
-        @return: Bool
+
+        :param fixables: a dictionary of key val paris desired in file
+        :param removeables: a dictionary of key val pairs not desired in file
+        :returns: Bool
+
         '''
         # re-read the contents of the desired file
         self.storeContents(self.path)
@@ -594,14 +615,16 @@ class KVAConf():
         return True
 
     def commit(self):
-        '''
-        Private method that actually writes the configuration file as desired
+        '''Private method that actually writes the configuration file as desired
         including fixables and removing desireables.  This method is called
         in the calling class that instantiated the object after the update
         methods have been called.
-
+        
         @author: Derek Walker
-        @return: Bool
+
+
+        :returns: Bool
+
         '''
         for line in self.contents:
             self.tempstring += line
@@ -609,13 +632,14 @@ class KVAConf():
         return success
 
     def storeContents(self, path):
-        '''
-        Private method that reads in the self.path variable's contents and
+        '''Private method that reads in the self.path variable's contents and
         stores in public variable self.contents
-
+        
         @author: Derek Walker
-        @param path: The path which contents need to be read
+
+        :param path: The path which contents need to be read
         @change bgonz12 - 2018/1/18 - added handling for 'path' not existing
+
         '''
 
         self.contents = []
@@ -630,15 +654,17 @@ class KVAConf():
             self.logger.log(LogPriority.DEBUG, "Failed to retrieve contents of file: " + str(path))
 
     def getValue(self):
-        '''
-        Private method that puts any items that don't exist or have the wrong
+        '''Private method that puts any items that don't exist or have the wrong
         value (fixables) and any items that do exist but shouldn't
         (removeables) in string form for retrieving.  This method is more for
         debugging to make sure KVAConf is doing the right thing during when
         reporting (validate)
-
+        
         @author: Derek Walker
-        @return: str
+
+
+        :returns: str
+
         '''
         output = ""
         if self.fixables:

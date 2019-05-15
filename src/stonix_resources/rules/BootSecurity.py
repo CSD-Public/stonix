@@ -47,10 +47,11 @@ from ..ServiceHelper import ServiceHelper
 
 
 class BootSecurity(Rule):
-    '''
-    The Boot Security rule configures the system to run a job at system boot
+    '''The Boot Security rule configures the system to run a job at system boot
     time that handles turning off potential vulnerability points such as: wifi,
     bluetooth, microphones, and cameras.
+
+
     '''
 
     def __init__(self, config, environ, logger, statechglogger):

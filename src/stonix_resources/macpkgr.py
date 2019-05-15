@@ -38,25 +38,19 @@ from ssl import SSLError
 
 
 class NoRepoException(Exception):
-    """
-    Custom Exception
-    """
+    '''Custom Exception'''
     def __init__(self, *args, **kwargs):
         Exception.__init__(self, *args, **kwargs)
 
 
 class InvalidURL(Exception):
-    """
-    Custom Exception
-    """
+    '''Custom Exception'''
     def __init__(self, *args, **kwargs):
         Exception.__init__(self, *args, **kwargs)
 
 
 class NotApplicableToThisOS(Exception):
-    """
-    Custom Exception
-    """
+    '''Custom Exception'''
     def __init__(self, *args, **kwargs):
         Exception.__init__(self, *args, **kwargs)
 
@@ -71,19 +65,10 @@ class MacPkgr(object):
         install .zip, .tar, .tar.gz, .pkg and .mpkg files via an http or
         https URL
 
-        @parameter: Instanciated stonix Environment object
-        @parameter: Instanciated stonix LogDispatcher object
-        @parameter: Takes an https link as a repository.
-
-        @method: installpackage(package) - install a package
-        @method: removepackage(package) - remove a package
-        @method: checkInstall(package) - is the package installed?
-        @method: checkAvailable(package) - is it available on the repository?
-        @method: getInstall(package) -
-        @method: getRemove(package) -
+        :param environ: environment object
+        :param logger: logdispatcher object
 
         # Methods specific to Mac.
-        @method: findDomain(package) - see docstring
 
         @note: Uses the stonix IHmac and InstallingHelper Libraries.  They can
                install .zip, .tar, .tar.gz, .pkg and .mpkg files via an http or
@@ -128,32 +113,31 @@ class MacPkgr(object):
         self.ch = CommandHelper(self.logger)
         self.connection = Connectivity(self.logger)
 
-    ###########################################################################
-
     def installPackage(self, package):
         '''
         Install a package. Return a bool indicating success or failure.
 
-        @param string package : Path to the package past the REPOROOT
-
+        :param package: Path to the package past the REPOROOT
+        
         IE. package would be: QuickAdd.Stonix.pkg rather than:
             https://jss.lanl.gov/CasperShare/QuickAdd.Stonix.pkg
             \_____________________________/ \________________/
                             |                        |
                         REPOROOT                  package
-
+        
         Where REPOROOT is initialized in the class __init__, and package is
         passed in to this method
-
+        
         This assumes that all packages installed via an instance of this class
         will be retrieved from the same REPOROOT.  If you need to use another
         REPOROOT, please use another instance of this class.
 
-        @return success
-        @rtype: bool
-        @author: dwalker, Roy Nielsen
-        @change: Breen Malmberg - 2/28/2017 - added logic to handle case where
-                self.reporoot is undefined; added logging; minor doc string edit
+        :returns: success
+        :rtype: bool
+@author: dwalker, Roy Nielsen
+@change: Breen Malmberg - 2/28/2017 - added logic to handle case where
+        self.reporoot is undefined; added logging; minor doc string edit
+
         '''
 
         success = False
@@ -246,37 +230,41 @@ class MacPkgr(object):
     ###########################################################################
 
     def getPkgUrl(self):
-        """
-        Setter for the class varialbe pkgUrl
-
+        '''Setter for the class varialbe pkgUrl
+        
         @author: Roy Nielsen
-        """
+
+
+        '''
         return self.pkgUrl
 
     ###########################################################################
 
     def setPkgUrl(self, pkgUrl=""):
-        """
-        Setter for the class varialbe pkgUrl
-
+        '''Setter for the class varialbe pkgUrl
+        
         @author: Roy Nielsen
-        """
+
+        :param pkgUrl:  (Default value = "")
+
+        '''
         self.pkgUrl = pkgUrl
 
     ###########################################################################
 
     def removePackage(self, package="", install_root="/"):
-        '''
-        Remove a package domain. Return a bool indicating success or failure.
+        '''Remove a package domain. Return a bool indicating success or failure.
         Not yet implemented...
-
+        
         Will use pkgutil to determine domain, then delete files in receipt..
 
-        @param string package : Name of the package to be removed, must be
+        :param string: package : Name of the package to be removed, must be
             recognizable to the underlying package manager.
-
-        @return bool :
+        :param package:  (Default value = "")
+        :param install_root:  (Default value = "/")
+        :returns: bool :
         @author: rsn
+
         '''
         success = False
         self.package = package
@@ -406,18 +394,18 @@ class MacPkgr(object):
     ###########################################################################
 
     def checkInstall(self, package):
-        '''
-        Check the installation status of a package. Return a bool; True if
+        '''Check the installation status of a package. Return a bool; True if
         the package is installed.
-
+        
         Use pkgutil to determine if package has been installed or not.
 
-        @param string package : Name of the package whose installation status
+        :param string: package : Name of the package whose installation status
             is to be checked, must be recognizable to the underlying package
             manager.
-
-        @return bool :
+        :param package: 
+        :returns: bool :
         @author: rsn
+
         '''
         success = False
         self.package = package
@@ -443,15 +431,16 @@ class MacPkgr(object):
     ###########################################################################
 
     def checkAvailable(self, package):
-        """
-        Check if a package is available at the "reporoot"
+        '''Check if a package is available at the "reporoot"
 
-        @return: success
-        @rtype: bool
-        @author: Roy Nielsen
-        @change: Breen Malmberg - 2/28/2017 - added logic to handle case where
-                self.reporoot is undefined; added logging; minor doc string edit
-        """
+        :param package: 
+        :returns: success
+        :rtype: bool
+@author: Roy Nielsen
+@change: Breen Malmberg - 2/28/2017 - added logic to handle case where
+        self.reporoot is undefined; added logging; minor doc string edit
+
+        '''
 
         success = False
         self.package = package
@@ -504,27 +493,28 @@ class MacPkgr(object):
     ###########################################################################
 
     def findDomain(self, pkg=""):
-        """
-        Go through the package receipts database to find a package, and return
+        '''Go through the package receipts database to find a package, and return
         a domain.  Apple stores package information in "domain" format, rather
         than a package name format. Accessing the package name means we need to
         look through all the ".plist" files in /var/db/receipts to find the
         package name, then we can return the domain so that can be used for
         package management.
-
+        
         Install package receipts can be found in /var/db/receipts.
-
+        
         A domain is the filename in the receipts database without the ".plist"
         or ".bom".
-
+        
         An example is org.macports.MacPorts
 
-        @parameters: pkg - the name of the install package that we need the
+        :param eters: pkg - the name of the install package that we need the
                      domain for.
-        @returns: domains - the first domain in a possible list of domains.
-
+        :param pkg:  (Default value = "")
+        :returns: s: domains - the first domain in a possible list of domains.
+        
         @author: Roy Nielsen
-        """
+
+        '''
         try:
             self.logger.log(LogPriority.DEBUG, "Looking for: " + str(pkg))
             path = "/var/db/receipts/"
@@ -598,15 +588,16 @@ class MacPkgr(object):
     ###########################################################################
 
     def downloadPackage(self):
-        """
-        Download the package in the self.package URL to a temporary directory
+        '''Download the package in the self.package URL to a temporary directory
         created by tempfile.mkdtemp.  Does not checked for a cached file.
-
+        
         @Note: path to downloaded file will be in the self.tmpLocalPkg variable
                for use by other class methods.
-
+        
         @author: Roy Nielsen
-        """
+
+
+        '''
         success = False
         urlfile = None
         try:
@@ -716,21 +707,22 @@ class MacPkgr(object):
     ###########################################################################
 
     def checkMd5(self):
-        """
-        Validate that the MD5 of the file is the same as the one on the server,
+        '''Validate that the MD5 of the file is the same as the one on the server,
         for consistency's sake, ie we got a good download.
-
+        
         Takes an MD5 of the local file, then appends it to the filename with a
         ".", then does a request and getreqpose and checks for a "200 in the
         response.status field.
-
+        
         .<filename>.<UPPER-md5sum>
-
+        
         Specific to the Casper server for Macs.  If you want to override this
         method for another OS, subclass this class, or rewrite the function.
-
+        
         @author: Roy Nielsen
-        """
+
+
+        '''
         success = False
         try:
             hashSuccess, myhash = self.getDownloadedFileMd5sum()
@@ -770,17 +762,16 @@ class MacPkgr(object):
     ###########################################################################
 
     def getDownloadedFileMd5sum(self):
-        """
-        Get the md5sum of a file on the local filesystem.  Calculate the data
+        '''Get the md5sum of a file on the local filesystem.  Calculate the data
         in chunks in case of large files.
 
-        @param: filename - filename to check integrity of
 
-        @returns: retval - the md5sum of the file, or -1 if unsuccessful in
+        :returns: s: retval - the md5sum of the file, or -1 if unsuccessful in
                            getting the md5sum
-
+        
         @author: Roy Nielsen
-        """
+
+        '''
         success = False
         try:
             retval = None
@@ -820,23 +811,24 @@ class MacPkgr(object):
     ###########################################################################
 
     def unArchive(self):
-        """
-        Unarchive tar, tar.gz, tgz, tar.bz, and zip files.  Using tarfile and
+        '''Unarchive tar, tar.gz, tgz, tar.bz, and zip files.  Using tarfile and
         zipfile libraries
-
+        
         @Note: Will look for the first "*.app" or "*.pkg", and use that as the
                self.tmpLocalPkg that the rest of the class will use to try to
                install.  This way the compressed file can be named something
                different than the actual package to install.  This means that
                the compressed package can be named generically and a specified
                version is in the compressed file.
-
+        
                Caution - This means when removing the package means you need to
                know the name of the package inside the compressed file to
                remove the installed file.
-
+        
         @author: Roy Nielsen
-        """
+
+
+        '''
         try:
             retval = 0
             ##############################################
@@ -997,34 +989,16 @@ class MacPkgr(object):
 
     def copyInstall(self, dest="/Applications", isdir=True, mode=0775,
                     owner="root", group="admin"):
-        """
-        Copies a directory tree, or contents of a directory to "dest"
+        '''Copies a directory tree, or contents of a directory to "dest"
         destination.
 
-        @param: dest - the destination to copy to
-        @param: isdir - do we recursively copy the source directory, or the
-                        files inside the source directory (not including
-                        recursive directories)
-        @param: mode - the mode of the destination directory (it is assumed
-                       that the files/tree inside that directory have the
-                       correct permissions) - only valid if isdir=True
-        @param: owner - the owner of the destination directory (it is assumed
-                       that the files/tree inside that directory have the
-                       correct permissions) - only valid if isdir=True
-        @param: group - the group of the destination directory (it is assumed
-                       that the files/tree inside that directory have the
-                       correct permissions) - only valid if isdir=True
+        :param dest:  (Default value = "/Applications")
+        :param isdir:  (Default value = True)
+        :param mode:  (Default value = 0775)
+        :param owner:  (Default value = "root")
+        :param group:  (Default value = "admin")
 
-        local vars:
-        self.tmpDir = the temporary directory that is created for the
-                      downloaded file, and to unarchive it into.
-        self.sig_match = A variable that tells if the signature of the
-                         downloaded file and the server string match.  Set
-                         in the download_and_prepare method of the parent
-                         class
-
-        @author: Roy Nielsen
-        """
+        '''
         try:
             if re.match("^\s*$", self.tmpDir):
                 self.tmpDir = "."
@@ -1112,14 +1086,13 @@ class MacPkgr(object):
     ##########################################################################
 
     def installPkg(self):
-        """
-        This function references generic methods from the InstallingHelper
+        '''This function references generic methods from the InstallingHelper
         class to download an archived .pkg or .mpkg file, check md5sum of
         the file against the md5 on the server, unarchive the file and
         install the package. It will remove the temporary directory that
         the file was downloaded and unarchived to when the install is
         complete.
-
+        
         local vars:
         tmp_dir = the temporary directory that is created for the downloaded
                   file, and to unarchive it into.
@@ -1132,9 +1105,11 @@ class MacPkgr(object):
         self.package_name = the name of the package to be downloaded, without
                             the archive extension.  Set in the InstallingHelper
                             class.
-
+        
         @author: Roy Nielsen
-        """
+
+
+        '''
         success = False
         try:
             #####

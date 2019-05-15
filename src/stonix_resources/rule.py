@@ -46,6 +46,7 @@ from types import *
 import os
 import re
 from distutils.version import LooseVersion
+from shutil import rmtree
 
 from stonixutilityfunctions import isServerVersionHigher
 from subprocess import call
@@ -61,15 +62,16 @@ from CheckApplicable import CheckApplicable
 
 class Rule (Observable):
 
-    """
-    Abstract class for all Rule objects.
-
+    '''Abstract class for all Rule objects.
+    
     @version: 1.0
     @author:  D. Kennel
     @change: Breen Malmberg - 7/18/2017 - added method getauditonly();
             added and initialized variable self.auditonly to False (default);
             fixed doc string
-    """
+
+
+    '''
 
     def __init__(self, config, environ, logger, statechglogger):
         Observable.__init__(self)
@@ -103,12 +105,13 @@ LANL-stonix."""
         self.auditonly = False
 
     def fix(self):
-        """
-        The fix method will apply the required settings to the system.
+        '''The fix method will apply the required settings to the system.
         self.rulesuccess will be updated if the rule does not succeed.
-
+        
         @author
-        """
+
+
+        '''
 # This must be implemented later once the parameter option or observable
 # pattern for taking control of self.detailedresults refresh is implemented
 # see artf30937 : self.detailedresults through application flow for details
@@ -117,15 +120,16 @@ LANL-stonix."""
         pass
 
     def report(self):
-        """
-        The report method examines the current configuration and determines
+        '''The report method examines the current configuration and determines
         whether or not it is correct. If the config is correct then the
         self.compliant, self.detailed results and self.currstate properties are
         updated to reflect the system status. self.rulesuccess will be updated
         if the rule does not succeed.
-
+        
         @author D. Kennel
-        """
+
+
+        '''
 # This must be implemented later once the parameter option or observable
 # pattern for taking control of self.detailedresults refresh is implemented
 # see artf30937 : self.detailedresults through application flow for details
@@ -134,16 +138,17 @@ LANL-stonix."""
         pass
 
     def undo(self):
-        """
-        Undo changes made by this rule. Some rules may not be undone.
+        '''Undo changes made by this rule. Some rules may not be undone.
         self.rulesuccess will be updated if the rule does not succeed.
-
+        
         @author D. Kennel & D. Walker
-        @change: - modified to new service helper interface - NOTE - 
+        @change: - modified to new service helper interface - NOTE -
                    Mac rules will need to set the self.serviceTarget
                    variable in their __init__ method after runing
                    "super" on this parent class.
-        """
+
+
+        '''
         # pass
         if not self.environ.geteuid() == 0:
             self.detailedresults = "Root access required to revert changes."
@@ -182,6 +187,7 @@ LANL-stonix."""
                                 "command to undo\n"
                             self.logdispatch.log(LogPriority.DEBUG,
                                                  self.detailedresults)
+                            undosuccessful = False
 
                     elif event["eventtype"] == "creation":
                         try:
@@ -192,12 +198,20 @@ LANL-stonix."""
                             if oser.errno == 21:
                                 try:
                                     os.rmdir(event["filepath"])
+                                    debug = "Sucessfully deleted " + event["fileppath"] + "\n"
+                                    self.logdispatch.log(LogPriority.DEBUG, debug)
                                 except OSError as oserr:
                                     if oserr.errno == 39:
-                                        self.logdispatch.log(LogPriority.DEBUG,
-                                                             "Cannot remove file path: " +
-                                                             str(event["filepath"]) +
-                                                             " because it is a non-empty directory.")
+                                        # self.logdispatch.log(LogPriority.DEBUG,
+                                        #                      "Cannot remove file path: " +
+                                        #                      str(event["filepath"]) +
+                                        #                      " because it is a non-empty directory.")
+                                        try:
+                                            rmtree(event["filepath"])
+                                        except OSError as oserrr:
+                                            debug = "Unable to remove " + event["filepath"] + "\n"
+                                            self.logdispatch.log(LogPriority.DEBUG, debug)
+                                            undosuccessful = False
                             elif oser.errno == 2:
                                 self.logdispatch.log(LogPriority.DEBUG,
                                                      "Cannot remove file path: " +
@@ -249,115 +263,126 @@ LANL-stonix."""
         return undosuccessful
 
     def getrulenum(self):
-        """
-        Return the rule number
+        '''Return the rule number
 
-        @return int :
+
+        :returns: int :
         @author D. Kennel
-        """
+
+        '''
         return self.rulenumber
 
     def getrulename(self):
-        """
-        Return the name of the rule
+        '''Return the name of the rule
 
-        @return string :
+
+        :returns: string :
         @author D. Kennel
-        """
+
+        '''
         return self.rulename
 
     def getmandatory(self):
-        """
-        Return true if the rule in question represents a mandatory
+        '''Return true if the rule in question represents a mandatory
         configuration. False indicates that the rule is optional.
 
-        @return bool :
+
+        :returns: bool :
         @author D. Kennel
-        """
+
+        '''
         return self.mandatory
 
     def iscompliant(self):
-        """
-        This returns true if the configuration in question is compliant with
+        '''This returns true if the configuration in question is compliant with
         the rule's required settings. The associated property is set by the
         report method.
 
-        @return bool :
+
+        :returns: bool :
         @author D. Kennel
-        """
+
+        '''
         return self.compliant
 
     def getisrootrequired(self):
-        """
-        Return true if the rule requires root privileges to execute correctly.
+        '''Return true if the rule requires root privileges to execute correctly.
         Rules that return true for this will not run when stonix is run without
         privileges.
 
-        @return bool :
+
+        :returns: bool :
         @author D. Kennel
-        """
+
+        '''
         return self.rootrequired
 
     def gethelptext(self):
-        """
-        Return the help text for the rule.
+        '''Return the help text for the rule.
 
-        @return string :
+
+        :returns: string :
         @author D. Kennel
-        """
+
+        '''
         return self.helptext
 
     def processconfig(self):
-        """
-        This is primarily a private method but may be called if the
+        '''This is primarily a private method but may be called if the
         configuration has changed after the rules have been instantiated. This
         method will cause the rule to process it's entries from the
         configuration file object and instantiate it's dependent
         configuration item objects. Instantiated configurationitems will be
         added to the self.confitems property.
 
-        @return void :
+
+        :returns: void :
         @author D. Kennel
-        """
+
+        '''
         pass
 
     def getconfigitems(self):
-        """
-        This method will return all instantiated configitems for the rule.
+        '''This method will return all instantiated configitems for the rule.
 
-        @return list : configurationitem instances
+
+        :returns: list : configurationitem instances
         @author D. Kennel
-        """
+
+        '''
         return self.confitems
 
     def getdetailedresults(self):
-        """
-        Return the detailed results string.
+        '''Return the detailed results string.
 
-        @return string :
+
+        :returns: string :
         @author D. Kennel
-        """
+
+        '''
         return self.detailedresults
 
     def getrulesuccess(self):
-        """
-        Return true if the rule executed successfully. 
+        '''Return true if the rule executed successfully.
 
-        @return bool :
+
+        :returns: bool :
         @author D. Kennel
-        """
+
+        '''
         return self.rulesuccess
 
     def checkconfigopts(self):
-        """
-        This method will call the validate routine on all CI objects held by
+        '''This method will call the validate routine on all CI objects held by
         the rule. If any CI fails the validation we will return false. Rules
         with complicated CI's may want to override this to do more in-depth
         checks as the default CI checks are rudimentary.
 
-        @return bool : True is all CI objs check out OK
+
+        :returns: bool : True is all CI objs check out OK
         @author D. Kennel
-        """
+
+        '''
         allvalid = True
         for ciobj in self.confitems:
             currentval = ciobj.getcurrvalue()
@@ -367,24 +392,24 @@ LANL-stonix."""
         return allvalid
 
     def isdatabaserule(self):
-        """
-        Return true if the rule in question maintains a database on disk. E.g.
+        '''Return true if the rule in question maintains a database on disk. E.g.
         a rule that tracks programs installed with SUID permissions.
 
-        @return bool :
+
+        :returns: bool :
         @author D. Kennel
-        """
+
+        '''
         return self.databaserule
 
     def isapplicable(self):
-        """
-        This method returns true if the rule applies to the platform on which
+        '''This method returns true if the rule applies to the platform on which
         stonix is currently running. The method in this template class will
         return true by default. The class property applicable will be
         referenced when this method is called and should be set by classes
         inheriting from the rule class including sub-template rules and
         concrete rule implementations.
-
+        
         The format for the applicable property is a dictionary. The dictionary
         will be interpreted as follows:
         Key    Values        Meaning
@@ -433,7 +458,7 @@ LANL-stonix."""
                             always causes the method to return true. The
                             default only takes affect if the family and os keys
                             are not defined.
-
+        
         An Example dictionary might look like this:
         self.applicable = {'type': 'white',
                            'family': Linux,
@@ -442,22 +467,24 @@ LANL-stonix."""
                            'noroot': True}
         That example whitelists all Linux operating systems and Mac OS X from
         10.11.0 to 10.14.10.
-
+        
         The family and os keys may be combined. Note that specifying a family
         will mask the behavior of the more specific os key.
-
+        
         Note that version comparison is done using the distutils.version
         module. If the stonix environment module returns a 3 place version
         string then you need to provide a 3 place version string. I.E. in this
         case 10.11 only matches 10.11.0 and does not match 10.11.3 or 10.11.5.
-
+        
         This method may be overridden if required.
 
-        @return bool :
+
+        :returns: bool :
         @author D. Kennel
         @change: 2015/04/13 added this method to template class
         @change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
-        """
+
+        '''
         # return True
         # Shortcut if we are defaulting to true
         self.logdispatch.log(LogPriority.DEBUG,
@@ -595,18 +622,19 @@ LANL-stonix."""
         return applies
 
     def checkConsts(self, constlist=[]):
-        """
-        This method returns True or False depending
+        '''This method returns True or False depending
         on whether the list of constants passed to it
         are defined or not (if they are == None)
         This method was implemented to handle the
         default undefined state of constants in localize.py
         when operating in the public environment
 
-        @return: retval
-        @rtype: bool
-        @author: Breen Malmberg
-        """
+        :param constlist:  (Default value = [])
+        :returns: retval
+        :rtype: bool
+@author: Breen Malmberg
+
+        '''
 
         retval = True
 
@@ -634,42 +662,47 @@ LANL-stonix."""
         return retval
 
     def addresses(self):
-        """
-        This method returns the list of guidance elements addressed by the
+        '''This method returns the list of guidance elements addressed by the
         rule.
 
-        @return: list
+
+        :returns: list
         @author: D. Kennel
-        """
+
+        '''
         return self.guidance
 
     def getcurrstate(self):
-        """
-        This method returns the current state. This information is only valid
+        '''This method returns the current state. This information is only valid
         after the report() method is run.
 
-        @return: string
+
+        :returns: string
         @author: D. Kennel
-        """
+
+        '''
         return self.currstate
 
     def gettargetstate(self):
-        """
-        This method returns the target state.
+        '''This method returns the target state.
 
-        @return: string
+
+        :returns: string
         @author: D. Kennel
-        """
+
+        '''
         return self.targetstate
 
     def settargetstate(self, state):
-        """
-        This method updates the value of the target state. By default the
+        '''This method updates the value of the target state. By default the
         target state is 'configured' but when undoing a rule the target state
         will be set to 'notconfigured'.
-
+        
         @author: D. Kennel
-        """
+
+        :param state: 
+
+        '''
 
         assert state in ['configured', 'notconfigured'], 'Invalid state: ' + \
         state
@@ -677,18 +710,18 @@ LANL-stonix."""
         self.targetstate = state
 
     def initCi(self, datatype, key, instructions, default):
-        """
-        This method constructs a ConfigurationItem for the rule. This is a
+        '''This method constructs a ConfigurationItem for the rule. This is a
         shorthand method for instantiating a CI that should cover most cases.
         All parameters are required.
 
-        @param datatype: string indicating data type - string, bool, int,
+        :param datatype: string indicating data type - string, bool, int,
         float, list
-        @param key: The Name of the CI as it appears in the GUI and Conf file.
-        @param instructions: Text instructions to be shown to the user.
-        @param default: default value for the rule.
+        :param key: The Name of the CI as it appears in the GUI and Conf file.
+        :param instructions: Text instructions to be shown to the user.
+        :param default: default value for the rule.
         @author: dkennel
-        """
+
+        '''
         myci = ConfigurationItem(datatype)
         myci.setkey(key)
         myci.setinstructions(instructions)
@@ -709,15 +742,19 @@ LANL-stonix."""
         return myci
 
     def formatDetailedResults(self, mode, result=True, detailedresults=""):
-        """
-        Description: This get a yes/no configuration item by name
-
+        '''Description: This get a yes/no configuration item by name
+        
         @author: ekkehard j. koch
         @note: This must be improve later once the parameter option or
         observable pattern for taking control of self.detailedresults refresh
         is implemented. see artf30937 : self.detailedresults through
         application flow for details
-        """
+
+        :param mode: 
+        :param result:  (Default value = True)
+        :param detailedresults:  (Default value = "")
+
+        '''
         try:
             formattedDetailedResults = ""
             prefix = "Rule " + str(self.rulename) + "(" + \
@@ -776,28 +813,29 @@ LANL-stonix."""
         return formattedDetailedResults
 
     def getauditonly(self):
-        '''
-        Return the audit only status boolean.
+        '''Return the audit only status boolean.
         This class variable (self.auditonly) is
         meant to indicate whether a particular
         rule is intended to be audit-only or not.
         Default = False.
 
-        @return: self.auditonly
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: self.auditonly
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         return self.auditonly
 
     def sethelptext(self):
-        '''
-        Set the help text for the current rule.
+        '''Set the help text for the current rule.
         Help text is retrieved from help/stonix_helptext.
-
+        
         The help text blocks within stonix_helptext must
         always follow 4 basic rules in formatting:
-
+        
         1) Each new help text block must begin with the
         rule's rulenumber in diamond brackets - e.g. <123>
         followed by an opening double quote
@@ -806,8 +844,10 @@ LANL-stonix."""
         3) Each help text block must not contain any "
         (double quotes) other than starting and ending
 
-        @return: void
+
+        :returns: void
         @author: Breen Malmberg
+
         '''
 
         # change helpdir variable if you change where the help text is stored!

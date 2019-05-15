@@ -43,10 +43,7 @@ from src.stonix_resources.rules.ConfigureProcessAccounting import ConfigureProce
 class zzzTestRuleConfigureProcessAccounting(RuleTest):
 
     def setUp(self):
-        """
-
-        @return:
-        """
+        ''' '''
 
         RuleTest.setUp(self)
         self.rule = ConfigureProcessAccounting(self.config, self.environ,
@@ -56,46 +53,35 @@ class zzzTestRuleConfigureProcessAccounting(RuleTest):
         self.rulenumber = self.rule.rulenumber
 
     def setConditionsForRule(self):
-        """
-        Configure system for the unit test
+        '''Configure system for the unit test
 
-        @return: boolean - If successful True; If failure False
-        """
+
+        :returns: boolean - If successful True; If failure False
+
+        '''
 
         success = True
         return success
 
     def tearDown(self):
-        """
-
-        @return: 
-        """
+        ''' '''
 
         self.rule.ci.updatecurrvalue(True)
 
     def runTest(self):
-        """
-
-        @return:
-        """
+        ''' '''
 
         self.simpleRuleTest()
 
     def test_pkg_report(self):
-        """
-
-        @return:
-        """
+        ''' '''
 
         self.rule.packages = []
 
         self.assertFalse(self.rule.report())
 
     def test_pkg_fix(self):
-        """
-
-        @return:
-        """
+        ''' '''
 
         self.rule.packages = []
 
@@ -103,10 +89,7 @@ class zzzTestRuleConfigureProcessAccounting(RuleTest):
         self.assertEqual(self.rule.iditerator, 0)
 
     def test_ci(self):
-        """
-
-        @return:
-        """
+        ''' '''
 
         self.assertNotEqual(self.rule.ci, None)
         self.assertNotEqual(self.rule.ci.getcurrvalue(), None)
@@ -117,10 +100,7 @@ class zzzTestRuleConfigureProcessAccounting(RuleTest):
         self.assertEqual(self.rule.iditerator, 0)
 
     def test_init(self):
-        """
-
-        @return:
-        """
+        ''' '''
 
         self.assertIsNotNone(self.rule.ph)
         self.assertIsNotNone(self.rule.sh)
@@ -128,14 +108,14 @@ class zzzTestRuleConfigureProcessAccounting(RuleTest):
         self.assertEqual(self.rule.rulenumber, 97)
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
-        """
-        check on whether report was correct
+        '''check on whether report was correct
 
-        @param pCompliance: the self.iscompliant value of rule
-        @param pRuleSuccess: did report run successfully
-        @return: boolean - If successful True; If failure False
+        :param pCompliance: the self.iscompliant value of rule
+        :param pRuleSuccess: did report run successfully
+        :returns: boolean - If successful True; If failure False
         @author: ekkehard j. koch
-        """
+
+        '''
 
         self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " + str(pCompliance) + ".")
         self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + str(pRuleSuccess) + ".")
@@ -143,26 +123,26 @@ class zzzTestRuleConfigureProcessAccounting(RuleTest):
         return success
 
     def checkFixForRule(self, pRuleSuccess):
-        """
-        check on whether fix was correct
+        '''check on whether fix was correct
 
-        @param pRuleSuccess: did report run successfully
-        @return: boolean - If successful True; If failure False
+        :param pRuleSuccess: did report run successfully
+        :returns: boolean - If successful True; If failure False
         @author: ekkehard j. koch
-        """
+
+        '''
 
         self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + str(pRuleSuccess) + ".")
         success = True
         return success
 
     def checkUndoForRule(self, pRuleSuccess):
-        """
-        check on whether undo was correct
+        '''check on whether undo was correct
 
-        @param pRuleSuccess: did report run successfully
-        @return: boolean - If successful True; If failure False
+        :param pRuleSuccess: did report run successfully
+        :returns: boolean - If successful True; If failure False
         @author: ekkehard j. koch
-        """
+
+        '''
 
         self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + str(pRuleSuccess) + ".")
         success = True

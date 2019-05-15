@@ -34,35 +34,37 @@ from subprocess import call
 class KVADefault():
 
     def __init__(self, path, logger, data):
+        '''Helper class to assist with Apple Mac OS X default command.
+            data should be a dictionary where the value is a list with two values
+            minimum, 3 values maximum, the third value is optional.
+            {key:[val1, val2, val3]:
+            key - the key that is used with the defaults command
+            val1 - a regular expression used to determine if the output after the
+                command is run represents what we're looking for in a compliant
+                system.  It is up to the implementor of this class, i.e. the
+                developer to make the regex concrete and exact in order to
+                accurately compare the output to the expected output.
+            val2 - the actual end portion of the command that will be attached
+                to the end of the full default command if the output doesn't
+                represent what we're looking for in a compliant system
+            val3 - a regular expression flag to increase the accuracy of your
+                regex in val1 which will be used in CommandHelper object in this
+                class.  This is an optional item and this class will not
+                throw an error if it is ommitted.
+            The default command does allow for an actual plist value to be
+                attached to the end of the command rather than the space separated
+                -datatype val -datatype -val scheme
+            Please read the default man page but here is an example of how it
+                would appear in your data structure:
+                The [1] placeholder should be in double quotes along with single
+                quotes immediately nested inside them in the format of:
+                    "\'{\"key1\" = val1;\"key2\" = val2;}';
+                or can be nested such as:
+                    "\'{\"Enabled\" = {\"Hello\" = 1;};}\';"
+            making sure to escape literal inner quotes as has been done above
+
+
         '''
-        Helper class to assist with Apple Mac OS X default command.
-        data should be a dictionary where the value is a list with two values
-        minimum, 3 values maximum, the third value is optional.
-        {key:[val1, val2, val3]:
-        key - the key that is used with the defaults command
-        val1 - a regular expression used to determine if the output after the
-            command is run represents what we're looking for in a compliant
-            system.  It is up to the implementor of this class, i.e. the
-            developer to make the regex concrete and exact in order to
-            accurately compare the output to the expected output.
-        val2 - the actual end portion of the command that will be attached
-            to the end of the full default command if the output doesn't
-            represent what we're looking for in a compliant system
-        val3 - a regular expression flag to increase the accuracy of your
-            regex in val1 which will be used in CommandHelper object in this
-            class.  This is an optional item and this class will not
-            throw an error if it is ommitted.
-        The default command does allow for an actual plist value to be
-            attached to the end of the command rather than the space separated
-            -datatype val -datatype -val scheme
-        Please read the default man page but here is an example of how it
-            would appear in your data structure:
-            The [1] placeholder should be in double quotes along with single
-            quotes immediately nested inside them in the format of:
-                "\'{\"key1\" = val1;\"key2\" = val2;}';
-            or can be nested such as:
-                "\'{\"Enabled\" = {\"Hello\" = 1;};}\';"
-        making sure to escape literal inner quotes as has been done above'''
         self.host = "-currentHost"
         self.commandlist = []
         self.logger = logger
@@ -80,19 +82,22 @@ class KVADefault():
         self.currentHost = True
 
     def setPath(self, path):
-        '''
-        Private method to set the path of the configuration file
+        '''Private method to set the path of the configuration file
         @author: dwalker
-        @param path: the path to file to be handled
+
+        :param path: the path to file to be handled
+
         '''
         self.path = path
         return True
 
     def getPath(self):
-        '''
-        Private method to retrieve the path of the configuration file
+        '''Private method to retrieve the path of the configuration file
         @author: dwalker
-        @return: Bool
+
+
+        :returns: Bool
+
         '''
         return self.path
 
@@ -121,7 +126,10 @@ class KVADefault():
         -currentHost flag causing issues with some systems for that
         particular command.
         @author: dwalker
-        @return: Bool
+
+
+        :returns: Bool
+
         '''
         for key in self.data:
             if self.currentHost:
@@ -186,11 +194,14 @@ necessary values for the full function of KVADefault\n"
 ###############################################################################
 
     def update(self):
-        '''
-        Private method to set the write and undo commands associated with
+        '''Private method to set the write and undo commands associated with
         this object.  Will not run the command until the commit() method
         is run.
-        @return: bool'''
+
+
+        :returns: bool
+
+        '''
         outputstr, errorstr, msg = "", "", ""
         templist, templist1, templist2 = [], [], []
         for key in self.data:
@@ -491,10 +502,13 @@ necessary values for the full function of KVADefault\n"
 ###############################################################################
 
     def commit(self):
-        '''
-        Private method that commits the defaults write command for this
+        '''Private method that commits the defaults write command for this
         object.
-        @return: bool'''
+
+
+        :returns: bool
+
+        '''
         writecmd = self.getWriteCmd()
         if not writecmd:
             msg = "Write command was not able to be set due to passed \
@@ -518,11 +532,14 @@ dictionary not containing a write value.  Unable to run write command\n"
 ###############################################################################
 
     def getInnerList(self, data):
-        '''
-        Private recursive method that returns the inner most list to compare
+        '''Private recursive method that returns the inner most list to compare
         desired values with actual values.
-        @return: list
-        @requires: dict'''
+
+        :param data: 
+        :returns: list
+        @requires: dict
+
+        '''
         if isinstance(data, list):
             if len(data) >= 2:
                 if self.checkListContents(data):
@@ -552,12 +569,14 @@ dictionary not containing a write value.  Unable to run write command\n"
 ###############################################################################
 
     def checkListContents(self, data):
-        '''
-        Private method that checks to make sure the list is in correct format
+        '''Private method that checks to make sure the list is in correct format
         @author: dwalker
-        @param data: the innerlist that should reside in the dictionary
+
+        :param data: the innerlist that should reside in the dictionary
             @requires: list
-        @return: bool'''
+        :returns: bool
+
+        '''
         try:
             temp = ""
             if isinstance(data[0], str):
@@ -592,12 +611,13 @@ dictionary not containing a write value.  Unable to run write command\n"
 ###############################################################################
 
     def setWriteCmd(self, writecmd):
-        '''
-        Private method to set the defaults write command assigned to this
+        '''Private method to set the defaults write command assigned to this
         object.
         @author: dwalker
-        @param writecmd: the command set to do a default write
+
+        :param writecmd: the command set to do a default write
             @requires: list or str
+
         '''
         self.write = writecmd
         self.logger.log(LogPriority.DEBUG,
@@ -605,64 +625,72 @@ dictionary not containing a write value.  Unable to run write command\n"
 ###############################################################################
 
     def getWriteCmd(self):
-        '''
-        Private method to retrieve the defaults write command assigned to this
+        '''Private method to retrieve the defaults write command assigned to this
         object.
         @author: dwalker
-        @return: list or str
+
+
+        :returns: list or str
+
         '''
         return self.write
 ###############################################################################
 
     def setUndoCmd(self, undocmd):
-        '''
-        Private method to set the defaults write command to undo the changes
+        '''Private method to set the defaults write command to undo the changes
         made by this object
         @author: dwalker
-        @param undocmd: the command set to do a write or delete, undoing
+
+        :param undocmd: the command set to do a write or delete, undoing
                previous write or delete command
             @requires: list or str
+
         '''
         self.undocmd = undocmd
 ###############################################################################
 
     def getundoCmd(self):
-        '''
-        Private method to retrieve the defaults write command to undo the
+        '''Private method to retrieve the defaults write command to undo the
         changes made by this object
         @author: dwalker
-        @return: list or str
+
+
+        :returns: list or str
+
         '''
         return self.undocmd
 ###############################################################################
 
     def updateData(self, data):
-        '''
-        Private method to update the value of self.data in case the kveditor
+        '''Private method to update the value of self.data in case the kveditor
         implementor changes values after the rule's initial report method.
         @author: dwalker
-        @param data:
-            @requires: dictionary in the form {key:[val1:val2]}
+
+        :param data: requires: dictionary in the form {key:[val1:val2]}
+
         '''
         self.data = data
         return True
 ###############################################################################
 
     def getValue(self):
-        '''
-        Private method to retrieve self.output, a variable that should contain
+        '''Private method to retrieve self.output, a variable that should contain
         stdout and/or stderr after validate method is run
         @author: dwalker
-        @return: str
+
+
+        :returns: str
+
         '''
         return self.output
 ###############################################################################
 
     def delete(self):
-        '''
-        Private method to perform a defaults delete command on the previously
+        '''Private method to perform a defaults delete command on the previously
         instantiated path and key
         @author: dwalker
+
+
         '''
         for key in self.data:
             if self.currentHost:

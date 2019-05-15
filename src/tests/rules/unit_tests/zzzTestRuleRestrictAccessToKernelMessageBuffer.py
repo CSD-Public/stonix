@@ -54,11 +54,12 @@ class zzzTestRuleRestrictAccessToKernelMessageBuffer(RuleTest):
         self.simpleRuleTest()
 
     def setConditionsForRule(self):
-        '''
-        Configure system for the unit test
-        @param self: essential if you override this definition
-        @return: boolean - If successful True; If failure False
+        '''Configure system for the unit test
+
+        :param self: essential if you override this definition
+        :returns: boolean - If successful True; If failure False
         @author: ekkehard j. koch
+
         '''
 
         success = True
@@ -66,17 +67,13 @@ class zzzTestRuleRestrictAccessToKernelMessageBuffer(RuleTest):
         return success
 
     def test_initobjs(self):
-        '''
-        test initobjs method of RestrictAccessToKernelMessageBuffer
-        '''
+        '''test initobjs method of RestrictAccessToKernelMessageBuffer'''
 
         self.rule.initobjs()
         self.assertFalse(self.rule.ch == None, "initobjs method should successfully initialize the command helper object self.ch within the rule.")
 
     def test_localize(self):
-        '''
-        test localize method of RestrictAccessToKernelMessageBuffer
-        '''
+        '''test localize method of RestrictAccessToKernelMessageBuffer'''
 
         self.rule.localize()
         self.assertFalse(self.rule.fixcommand == "", "localize should set the fixcommand variable to the correct command string.")
@@ -85,29 +82,26 @@ class zzzTestRuleRestrictAccessToKernelMessageBuffer(RuleTest):
         self.assertFalse(self.rule.reportcommand == None, "localize should set the reportcommand variable to the correct command string.")
 
     def test_reportFalse(self):
-        '''
-        test report return value in case of non compliant state
-        '''
+        '''test report return value in case of non compliant state'''
 
         self.ch.executeCommand("sysctl -w kernel.dmesg_restrict=0")
         self.assertFalse(self.rule.report(), "when the kernel.dmesg_restrict option is set to 0, report should always return False")
 
     def test_reportTrue(self):
-        '''
-        test report return value in case of compliant state
-        '''
+        '''test report return value in case of compliant state'''
 
         self.ch.executeCommand("sysctl -w kernel.dmesg_restrict=1")
         self.assertTrue(self.rule.report(), "when the kernel.dmesg_restrict option is set to 1, report should always return True")
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
-        '''
-        check on whether report was correct
-        @param self: essential if you override this definition
-        @param pCompliance: the self.iscompliant value of rule
-        @param pRuleSuccess: did report run successfully
-        @return: boolean - If successful True; If failure False
+        '''check on whether report was correct
+
+        :param self: essential if you override this definition
+        :param pCompliance: the self.iscompliant value of rule
+        :param pRuleSuccess: did report run successfully
+        :returns: boolean - If successful True; If failure False
         @author: ekkehard j. koch
+
         '''
         self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " + \
                              str(pCompliance) + ".")
@@ -117,12 +111,13 @@ class zzzTestRuleRestrictAccessToKernelMessageBuffer(RuleTest):
         return success
 
     def checkFixForRule(self, pRuleSuccess):
-        '''
-        check on whether fix was correct
-        @param self: essential if you override this definition
-        @param pRuleSuccess: did report run successfully
-        @return: boolean - If successful True; If failure False
+        '''check on whether fix was correct
+
+        :param self: essential if you override this definition
+        :param pRuleSuccess: did report run successfully
+        :returns: boolean - If successful True; If failure False
         @author: ekkehard j. koch
+
         '''
         self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
                              str(pRuleSuccess) + ".")
@@ -130,12 +125,13 @@ class zzzTestRuleRestrictAccessToKernelMessageBuffer(RuleTest):
         return success
 
     def checkUndoForRule(self, pRuleSuccess):
-        '''
-        check on whether undo was correct
-        @param self: essential if you override this definition
-        @param pRuleSuccess: did report run successfully
-        @return: boolean - If successful True; If failure False
+        '''check on whether undo was correct
+
+        :param self: essential if you override this definition
+        :param pRuleSuccess: did report run successfully
+        :returns: boolean - If successful True; If failure False
         @author: ekkehard j. koch
+
         '''
         self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
                              str(pRuleSuccess) + ".")

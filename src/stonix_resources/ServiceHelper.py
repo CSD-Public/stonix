@@ -52,17 +52,18 @@ from get_libc import getLibc
 
 
 class ServiceHelper(object):
-    """
-    The ServiceHelper class serves as an abstraction layer between rules that
+    '''The ServiceHelper class serves as an abstraction layer between rules that
     need to manipulate services and the actual implementation of changing
     service status on various operating systems.
-
+    
     @Note: Interface methods abstracted to allow for different parameter
-           lists for different helpers.  This moves the requirement for 
+           lists for different helpers.  This moves the requirement for
            input validation the the concrete helpers.
-
+    
     @author: Dave Kennel
-    """
+
+
+    '''
 
     def __init__(self, environ, logger):
         """
@@ -239,33 +240,41 @@ class ServiceHelper(object):
                                str(self.isdualparameterservice))
 
     def getService(self):
-        """
+        '''
 
-        @return: self.service
-        @rtype: string
-        @author: Roy Nielsen
-        """
+
+        :returns: self.service
+
+        :rtype: string
+@author: Roy Nielsen
+
+        '''
 
         return self.service
 
     def getServiceName(self):
-        """
+        '''
 
-        @return: self.servicename
-        @rtype: string
-        @author: Roy Nielsen
-        """
+
+        :returns: self.servicename
+
+        :rtype: string
+@author: Roy Nielsen
+
+        '''
 
         return self.servicename
 
     def isServiceVarValid(self, service):
-        """
-        Input validator for the service variable
-
+        '''Input validator for the service variable
+        
         @author: Roy Nielsen
-        @return: serviceValid
-        @rtype: bool
-        """
+
+        :param service: 
+        :returns: serviceValid
+        :rtype: bool
+
+        '''
 
         serviceValid = False
 
@@ -297,39 +306,15 @@ class ServiceHelper(object):
         return serviceValid
 
     def setService(self, service, **kwargs):
-        """
-        Update the name of the service being worked with.
+        '''Update the name of the service being worked with.
 
-        @param: service - Name of the service being audited or modified
-                    Mac - Full path to the service plist
-        @param: serviceTarget - should contain an empty string, unless the
-                              concrete service helper requires it
-        Note: for macOS-
-        @param: service: String bearing the full path to the service plist
-        @param: serviceTarget: what launchctl would consider a service-target
-                or a domain-target.  See below:
+        :param service: 
+        :param **kwargs: 
+        :returns: setServiceSuccess
+        :rtype: bool
+@author: Roy Nielsen
 
-                system/[service-name]
-                  Targets the system domain or a service within the system
-                  domain. The system domain manages the root Mach bootstrap
-                  and is considered a privileged execution context.
-                  Anyone may read or query the system domain, but root privileges
-                  are required to make modifications.
-
-                user/<uid>/[service-name]
-                  Targets the user domain for the given UID or a service
-                  within that domain. A user domain may exist independently
-                  of a logged-in user. User domains do not exist on iOS.
-
-                For instance, when referring to a service with the identifier
-                com.apple.example loaded into the GUI domain of a user with UID 501,
-                domain-target is gui/501/, service-name is com.apple.example,
-                and service-target is gui/501/com.apple.example.
-
-        @return: setServiceSuccess
-        @rtype: bool
-        @author: Roy Nielsen
-        """
+        '''
 
         self.logdispatcher.log(LogPriority.DEBUG, "Setting service name")
 
@@ -358,37 +343,13 @@ class ServiceHelper(object):
         return setServiceSuccess
 
     def disableService(self, service, **kwargs):
-        """
-        Disables the service and terminates it if it is running.
+        '''Disables the service and terminates it if it is running.
 
-        @param service string: Name of the service to be disabled
-        @param: serviceTarget - should contain an empty string, unless the
-                              concrete service helper requires it
+        :param service: string: Name of the service to be disabled
+        :param **kwargs: 
+        :returns: Bool indicating success status
 
-        Note: for macOS-
-        @param: service: String bearing the full path to the service plist
-        @param: serviceTarget: what launchctl would consider a service-target
-                or a domain-target.  See below:
-
-                system/[service-name]
-                  Targets the system domain or a service within the system
-                  domain. The system domain manages the root Mach bootstrap
-                  and is considered a privileged execution context.
-                  Anyone may read or query the system domain, but root privileges
-                  are required to make modifications.
-
-                user/<uid>/[service-name]
-                  Targets the user domain for the given UID or a service
-                  within that domain. A user domain may exist independently
-                  of a logged-in user. User domains do not exist on iOS.
-
-                For instance, when referring to a service with the identifier
-                com.apple.example loaded into the GUI domain of a user with UID 501,
-                domain-target is gui/501/, service-name is com.apple.example,
-                and service-target is gui/501/com.apple.example.
-
-        @return: Bool indicating success status
-        """
+        '''
 
         disabled = True
         systemctl_disabled = False
@@ -439,40 +400,16 @@ class ServiceHelper(object):
         return disabled
 
     def enableService(self, service, **kwargs):
-        """
-        Enables a service and starts it if it is not running as long as we are
+        '''Enables a service and starts it if it is not running as long as we are
         not in install mode
 
-        @param service string: Name of the service to be disabled
-        @param: serviceTarget - should contain an empty string, unless the
-                              concrete service helper requires it
+        :param service: string: Name of the service to be disabled
+        :param **kwargs: 
+        :returns: enabledSuccess
+        :rtype: bool
+@author: Roy Nielsen
 
-        Note: for macOS-
-        @param: service: String bearing the full path to the service plist
-        @param: serviceTarget: what launchctl would consider a service-target
-                or a domain-target.  See below:
-
-                system/[service-name]
-                  Targets the system domain or a service within the system
-                  domain. The system domain manages the root Mach bootstrap
-                  and is considered a privileged execution context.
-                  Anyone may read or query the system domain, but root privileges
-                  are required to make modifications.
-
-                user/<uid>/[service-name]
-                  Targets the user domain for the given UID or a service
-                  within that domain. A user domain may exist independently
-                  of a logged-in user. User domains do not exist on iOS.
-
-                For instance, when referring to a service with the identifier
-                com.apple.example loaded into the GUI domain of a user with UID 501,
-                domain-target is gui/501/, service-name is com.apple.example,
-                and service-target is gui/501/com.apple.example.
-
-        @return: enabledSuccess
-        @rtype: bool
-        @author: Roy Nielsen
-        """
+        '''
 
         enabledSuccess = True
         systemctl_enabled = False
@@ -521,40 +458,16 @@ class ServiceHelper(object):
         return enabledSuccess
 
     def auditService(self, service, **kwargs):
-        """
-        Checks the status of a service and returns a bool indicating whether or
+        '''Checks the status of a service and returns a bool indicating whether or
         not the service is configured to run or not.
 
-        @param service string: Name of the service to be disabled
-        @param: serviceTarget - should contain an empty string, unless the
-                              concrete service helper requires it
+        :param service: string: Name of the service to be disabled
+        :param **kwargs: 
+        :returns: enabled
+        :rtype: bool
+@author: Roy Nielsen
 
-        Note: for macOS-
-        @param: service: String bearing the full path to the service plist
-        @param: serviceTarget: what launchctl would consider a service-target
-                or a domain-target.  See below:
-
-                system/[service-name]
-                  Targets the system domain or a service within the system
-                  domain. The system domain manages the root Mach bootstrap
-                  and is considered a privileged execution context.
-                  Anyone may read or query the system domain, but root privileges
-                  are required to make modifications.
-
-                user/<uid>/[service-name]
-                  Targets the user domain for the given UID or a service
-                  within that domain. A user domain may exist independently
-                  of a logged-in user. User domains do not exist on iOS.
-
-                For instance, when referring to a service with the identifier
-                com.apple.example loaded into the GUI domain of a user with UID 501,
-                domain-target is gui/501/, service-name is com.apple.example,
-                and service-target is gui/501/com.apple.example.
-
-        @return: enabled
-        @rtype: bool
-        @author: Roy Nielsen
-        """
+        '''
 
         enabled = True
         systemctl_audit = False
@@ -584,41 +497,17 @@ class ServiceHelper(object):
         return enabled
 
     def isRunning(self, service, **kwargs):
-        """
-        Check to see if a service is currently running. The enable service uses
+        '''Check to see if a service is currently running. The enable service uses
         this so that we're not trying to start a service that is already
         running.
 
-        @param service string: Name of the service to be disabled
-        @param: serviceTarget - should contain an empty string, unless the
-                              concrete service helper requires it
+        :param service: string: Name of the service to be disabled
+        :param **kwargs: 
+        :returns: isRunning
+        :rtype: bool
+@author: Roy Nielsen
 
-        Note: for macOS-
-        @param: service: String bearing the full path to the service plist
-        @param: serviceTarget: what launchctl would consider a service-target
-                or a domain-target.  See below:
-
-                system/[service-name]
-                  Targets the system domain or a service within the system
-                  domain. The system domain manages the root Mach bootstrap
-                  and is considered a privileged execution context.
-                  Anyone may read or query the system domain, but root privileges
-                  are required to make modifications.
-
-                user/<uid>/[service-name]
-                  Targets the user domain for the given UID or a service
-                  within that domain. A user domain may exist independently
-                  of a logged-in user. User domains do not exist on iOS.
-
-                For instance, when referring to a service with the identifier
-                com.apple.example loaded into the GUI domain of a user with UID 501,
-                domain-target is gui/501/, service-name is com.apple.example,
-                and service-target is gui/501/com.apple.example.
-
-        @return: isRunning
-        @rtype: bool
-        @author: Roy Nielsen
-        """
+        '''
 
         isrunning = True
         systemctl_running = False
@@ -648,44 +537,20 @@ class ServiceHelper(object):
         return isrunning
 
     def reloadService(self, service, **kwargs):
-        """
-        Reload (HUP) a service so that it re-reads it's config files. Called
+        '''Reload (HUP) a service so that it re-reads it's config files. Called
         by rules that are configuring a service to make the new configuration
         active. This method ignores services that do not return true when
         self.isrunning() is called. The assumption being that this method is
         being called due to a change in a conf file, and a service that isn't
         currently running will pick up the change when (if) it is started.
 
-        @param service string: Name of the service to be disabled
-        @param: serviceTarget - should contain an empty string, unless the
-                              concrete service helper requires it
+        :param service: string: Name of the service to be disabled
+        :param **kwargs: 
+        :returns: reloadSuccess
+        :rtype: bool
+@author: Roy Nielsen
 
-        Note: for macOS-
-        @param: service: String bearing the full path to the service plist
-        @param: serviceTarget: what launchctl would consider a service-target
-                or a domain-target.  See below:
-
-                system/[service-name]
-                  Targets the system domain or a service within the system
-                  domain. The system domain manages the root Mach bootstrap
-                  and is considered a privileged execution context.
-                  Anyone may read or query the system domain, but root privileges
-                  are required to make modifications.
-
-                user/<uid>/[service-name]
-                  Targets the user domain for the given UID or a service
-                  within that domain. A user domain may exist independently
-                  of a logged-in user. User domains do not exist on iOS.
-
-                For instance, when referring to a service with the identifier
-                com.apple.example loaded into the GUI domain of a user with UID 501,
-                domain-target is gui/501/, service-name is com.apple.example,
-                and service-target is gui/501/com.apple.example.
-
-        @return: reloadSuccess
-        @rtype: bool
-        @author: Roy Nielsen
-        """
+        '''
 
         servicenames = ["serviceName", "servicename"]
         self.servicename = ""
@@ -726,13 +591,15 @@ class ServiceHelper(object):
         return reloadSuccess
 
     def listServices(self):
-        """
-        List the services installed on the system.
+        '''List the services installed on the system.
 
-        @return: serviceList
-        @rtype: list
-        @author: Roy Nielsen
-        """
+
+        :returns: serviceList
+
+        :rtype: list
+@author: Roy Nielsen
+
+        '''
 
         self.logdispatcher.log(LogPriority.DEBUG, "Getting list of services")
 
@@ -760,15 +627,16 @@ class ServiceHelper(object):
         return serviceList
 
     def startService(self, service, **kwargs):
-        """
-        start the given service
+        '''start the given service
 
-        @param service: string; name of service
-        @param kwargs:
-        @return: started
-        @rtype: bool
-        @author: Breen Malmberg
-        """
+        :param service: string; name of service
+        :param kwargs: return: started
+        :param **kwargs: 
+        :returns: started
+        :rtype: bool
+@author: Breen Malmberg
+
+        '''
 
         self.logdispatcher.log(LogPriority.DEBUG, "Starting service: " + service)
 
@@ -810,15 +678,16 @@ class ServiceHelper(object):
         return started
 
     def stopService(self, service, **kwargs):
-        """
-        stop the given service
+        '''stop the given service
 
-        @param service: string; name of service
-        @param kwargs:
-        @return: stopped
-        @rtype: bool
-        @author: Breen Malmberg
-        """
+        :param service: string; name of service
+        :param kwargs: return: stopped
+        :param **kwargs: 
+        :returns: stopped
+        :rtype: bool
+@author: Breen Malmberg
+
+        '''
 
         self.logdispatcher.log(LogPriority.DEBUG, "Stopping service: " + service)
 
@@ -862,33 +731,41 @@ class ServiceHelper(object):
         return stopped
 
     def getStartCommand(self, service):
-        '''
-        retrieve the start command.  Mostly used by event recording
-        @return: string - start command
+        '''retrieve the start command.  Mostly used by event recording
+
+        :param service: 
+        :returns: string - start command
         @author: dwalker
+
         '''
         return self.svchelper.getStartCommand(service)
 
     def getStopCommand(self, service):
-        '''
-        retrieve the stop command.  Mostly used by event recording
-        @return: string - stop command
+        '''retrieve the stop command.  Mostly used by event recording
+
+        :param service: 
+        :returns: string - stop command
         @author: dwalker
+
         '''
         return self.svchelper.getStopCommand(service)
 
     def getEnableCommand(self, service):
-        '''
-        retrieve the enable command.  Mostly used by event recording
-        @return: string - enable command
+        '''retrieve the enable command.  Mostly used by event recording
+
+        :param service: 
+        :returns: string - enable command
         @author: dwalker
+
         '''
         return self.svchelper.getEnableCommand(service)
 
     def getDisableCommand(self, service):
-        '''
-        retrieve the start command.  Mostly used by event recording
-        @return: string - disable command
+        '''retrieve the start command.  Mostly used by event recording
+
+        :param service: 
+        :returns: string - disable command
         @author: dwalker
+
         '''
         return self.svchelper.getDisableCommand(service)

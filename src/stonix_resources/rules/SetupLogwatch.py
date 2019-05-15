@@ -36,9 +36,7 @@ from ..stonixutilityfunctions import iterate
 
 
 class SetupLogwatch(Rule):
-    '''
-    classdocs
-    '''
+    '''classdocs'''
 
     def __init__(self, config, environ, logger, statechglogger):
         '''
@@ -63,10 +61,7 @@ class SetupLogwatch(Rule):
                            'family': ['linux', 'freebsd']}
 
     def report(self):
-        '''
-
-        @author bemalmbe
-        '''
+        '''@author bemalmbe'''
 
         try:
             self.detailedresults = ""
@@ -88,10 +83,7 @@ class SetupLogwatch(Rule):
         return self.compliant
 
     def fix(self):
-        '''
-
-        @author bemalmbe
-        '''
+        '''@author bemalmbe'''
         try:
             if not self.ci.getcurrvalue():
                 return

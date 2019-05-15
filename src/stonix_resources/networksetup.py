@@ -47,11 +47,12 @@ from .logdispatcher import LogPriority
 
 
 class networksetup():
-    '''
-    This objects encapsulates the complexities of the networksetup command
+    '''This objects encapsulates the complexities of the networksetup command
     on macOS (OS X)
-
+    
     @author: ekkehard j. koch
+
+
     '''
 
 ###############################################################################
@@ -112,15 +113,15 @@ class networksetup():
 ###############################################################################
 
     def report(self):
-        '''
-        report is designed to implement the report portion of the stonix rule
+        '''report is designed to implement the report portion of the stonix rule
 
-        @return: compliant
-        @rtype: bool
-        @param self:essential if you override this definition
+        :param self: essential if you override this definition
         @author: ekkehard j. koch
         @change: Breen Malmberg - 12/21/2016 - doc string revision; minor refactor;
                 try/except
+        :returns: compliant
+        :rtype: bool
+
         '''
 
         self.logdispatch.log(LogPriority.DEBUG, "Entering networksetup.report()...\n")
@@ -183,14 +184,16 @@ class networksetup():
 ###############################################################################
 
     def fix(self):
-        '''
-        fix is designed to implement the fix portion of the stonix rule
+        '''fix is designed to implement the fix portion of the stonix rule
 
-        @return: fixed
-        @rtype: bool
-        @author: ekkehard j. koch
-        @change: Breen Malmberg - 1/12/2017 - added debug logging; doc string edit;
-                added try/except
+
+        :returns: fixed
+
+        :rtype: bool
+@author: ekkehard j. koch
+@change: Breen Malmberg - 1/12/2017 - added debug logging; doc string edit;
+        added try/except
+
         '''
 
         self.logdispatch.log(LogPriority.DEBUG, "Entering networksetup.fix()...")
@@ -261,19 +264,20 @@ class networksetup():
 ###############################################################################
 
     def disableNetworkService(self, pNetworkName):
-        '''
-        disable network service
-
+        '''disable network service
+        
         @author: ekkehard j. koch
-        @param self:essential if you override this definition
-        @param pNetworkName:name of network
-        @return: boolean - true
+
+        :param self: essential if you override this definition
+        :param pNetworkName: name of network
+        :returns: boolean - true
         @note: None
         @change: Breen Malmberg - 3/23/2016 - wifi will now be disabled via
                 setairportpower if not found in the service list.
         @change: Breen Malmberg - 12/20/2016 - minor refactor; parameter validation
                 ;logging
         @change: Breen Malmberg - 1/12/2017 - added more debug logging
+
         '''
 
         self.logdispatch.log(LogPriority.DEBUG, "Entering networksetup.disableNetworkService()...")
@@ -330,18 +334,19 @@ class networksetup():
 ###############################################################################
 
     def enableNetwork(self, pNetworkName):
-        '''
-        enable network service
-
+        '''enable network service
+        
         @author: ekkehard j. koch
-        @param self:essential if you override this definition
-        @param pNetworkName:name of network
-        @return: boolean - true
+
+        :param self: essential if you override this definition
+        :param pNetworkName: name of network
+        :returns: boolean - true
         @note: None
         @change: Breen Malmberg - 3/23/2016 - wifi will now be enabled via
             setairportpower if not found in the service list.
         @change: Breen Malmberg - 12/20/2016 - minor refactor; parameter validation
                 ;logging
+
         '''
 
         self.logdispatch.log(LogPriority.DEBUG, "Entering networksetup.enableNetwork()...")
@@ -392,27 +397,29 @@ class networksetup():
 ###############################################################################
 
     def getDetailedresults(self):
-        '''
-        get the detailed results text
+        '''get the detailed results text
         
         @author: ekkehard j. koch
-        @param self:essential if you override this definition
-        @param pLocationName:location name
-        @return: string: detailedresults
+
+        :param self: essential if you override this definition
+        :param pLocationName: location name
+        :returns: string: detailedresults
         @note: None
+
         '''
         return self.detailedresults
 
 ###############################################################################
 
     def getLocation(self):
-        '''
-        get the location used by on the mac
+        '''get the location used by on the mac
         
         @author: ekkehard j. koch
-        @param self:essential if you override this definition
-        @return: boolean - true
+
+        :param self: essential if you override this definition
+        :returns: boolean - true
         @note: None
+
         '''
         try:
             success = True
@@ -436,14 +443,17 @@ class networksetup():
 ###############################################################################
 
     def initialize(self):
-        '''
-        initialize the object
-
+        '''initialize the object
+        
         @author: ekkehard j. koch
-        @return: self.initalized
-        @rtype: bool
-        @change: Breen Malmberg - 1/12/2017 doc string fix; default init self.initialized to False;
-                added try/except
+
+
+        :returns: self.initalized
+
+        :rtype: bool
+@change: Breen Malmberg - 1/12/2017 doc string fix; default init self.initialized to False;
+        added try/except
+
         '''
 
         self.initialized = False
@@ -462,14 +472,15 @@ class networksetup():
 ###############################################################################
 
     def isValidLocationName(self, pLocationName=""):
-        '''
-        determine if this is a valid wifi location
-
+        '''determine if this is a valid wifi location
+        
         @author: ekkehard j. koch
-        @param self:essential if you override this definition
-        @param pLocationName:location name
-        @return: boolean - true
+
+        :param self: essential if you override this definition
+        :param pLocationName: location name (Default value = "")
+        :returns: boolean - true
         @note: None
+
         '''
         success = False
         pLocationName = pLocationName.strip()
@@ -675,13 +686,14 @@ class networksetup():
 ###############################################################################
 
     def resultAppend(self, pMessage=""):
-        '''
-        reset the current kveditor values to their defaults.
+        '''reset the current kveditor values to their defaults.
         @author: ekkehard j. koch
-        @param self:essential if you override this definition
-        @param pMessage:message to be appended
-        @return: boolean - true
+
+        :param self: essential if you override this definition
+        :param pMessage: message to be appended (Default value = "")
+        :returns: boolean - true
         @note: None
+
         '''
         datatype = type(pMessage)
         if datatype == types.StringType:
@@ -711,28 +723,31 @@ class networksetup():
 ###############################################################################
 
     def resultReset(self):
-        '''
-        reset the current kveditor values to their defaults.
+        '''reset the current kveditor values to their defaults.
         @author: ekkehard j. koch
-        @param self:essential if you override this definition
-        @return: boolean - true
+
+        :param self: essential if you override this definition
+        :returns: boolean - true
         @note: kveditorName is essential
+
         '''
         self.detailedresults = ""
 
 ###############################################################################
 
     def setAdvancedNetworkSetup(self, pHardwarePort = None):
-        """
-        Set proxies up for normal first configuration that has a network
+        '''Set proxies up for normal first configuration that has a network
         connection.
-
+        
         @author: Roy Nielsen
-        @param self:essential if you override this definition
-        @param pNetworkName:name of the network to fix
-        @return: boolean - true
+
+        :param self: essential if you override this definition
+        :param pNetworkName: name of the network to fix
+        :param pHardwarePort:  (Default value = None)
+        :returns: boolean - true
         @note: None
-        """
+
+        '''
         success = True
         if pHardwarePort == None:
             self.initialize()
@@ -820,8 +835,7 @@ class networksetup():
 ###############################################################################
 
     def setNetworkServiceOrder(self):
-        '''
-        '''
+        ''' '''
         #####
         # Find the interface that needs to be at the top of the self.nso order
         cmd = ["/sbin/route", "get", "default"]
@@ -910,10 +924,11 @@ class networksetup():
 ###############################################################################
 
     def startup(self):
-        '''
-        startup is designed to implement the startup portion of the stonix rule
-
+        '''startup is designed to implement the startup portion of the stonix rule
+        
         @author: ekkehard j. koch
+
+
         '''
         disabled = True
         self.initialize()
@@ -950,15 +965,16 @@ class networksetup():
 ###############################################################################
 
     def updateCurrentNetworkConfigurationDictionary(self):
-        '''
-        update the network configuration dictianry
-
+        '''update the network configuration dictianry
+        
         @author: ekkehard j. koch
-        @param self:essential if you override this definition
-        @return: boolean - true
+
+        :param self: essential if you override this definition
+        :returns: boolean - true
         @note: None
         @change: Breen Malmberg - 3/23/2016 - added code to find and disable
                 wi-fi on el capitan, via hardware ports instead of just service
+
         '''
 
         self.logdispatch.log(LogPriority.DEBUG, "Entering updateCurrentNetworkConfigurationDictionary()...")
@@ -997,17 +1013,18 @@ class networksetup():
 ###############################################################################
 
     def updateNetworkConfigurationDictionaryEntry(self, pKey):
-        '''
-        update a single network configuration dictionary entry 
-
+        '''update a single network configuration dictionary entry
+        
         @author: ekkehard j. koch
-        @param self:essential if you override this definition
-        @param pkey:key for the dictinary entry
-        @return: boolean - true
+
+        :param self: essential if you override this definition
+        :param pkey: key for the dictinary entry
+        :param pKey: 
+        :returns: boolean - true
         @note: None
         @change: Breen Malmberg - 1/12/2017 - doc string edit; added debug logging;
                 default var init success to True; added code to update the Wi-Fi entry;
-        @change: Roy Nielsen - 3/6/2018 - Changed algo to look at 
+        @change: Roy Nielsen - 3/6/2018 - Changed algo to look at
                                           'Device' rather than 'name'
                                           when getting the airport power
                                           status

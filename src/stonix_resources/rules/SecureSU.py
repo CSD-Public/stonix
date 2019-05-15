@@ -49,8 +49,7 @@ from ..CommandHelper import CommandHelper
 
 
 class SecureSU(Rule):
-    '''
-    The su command allows a user to gain the privileges of another user by
+    '''The su command allows a user to gain the privileges of another user by
     entering the password for that user's account. It is desirable to restrict
     the root user so that only known administrators are ever allowed to access
     the root account. This restricts password-guessing against the root account
@@ -58,6 +57,8 @@ class SecureSU(Rule):
     convention, the group wheel contains all users who are allowed to run
     privileged commands. The PAM module pam_wheel.so is used to restrict root
     access to this set of users.
+
+
     '''
 
     def __init__(self, config, environ, logger, statechglogger):
@@ -85,15 +86,16 @@ class SecureSU(Rule):
                            'family': ['linux']}
 
     def report(self):
-        '''
-        The report method examines the current configuration and determines
+        '''The report method examines the current configuration and determines
         whether or not it is correct. If the config is correct then the
         self.compliant, self.detailedresults and self.currstate properties are
         updated to reflect the system status. self.rulesuccess will be updated
         if the rule does not succeed.
 
-        @return bool
+
+        :returns: bool
         @author bemalmbe
+
         '''
 
         try:
@@ -206,11 +208,12 @@ pam su\n"
 ###############################################################################
 
     def fix(self):
-        '''
-        The fix method will apply the required settings to the system.
+        '''The fix method will apply the required settings to the system.
         self.rulesuccess will be updated if the rule does not succeed.
-
+        
         @author bemalmbe
+
+
         '''
 
         try:

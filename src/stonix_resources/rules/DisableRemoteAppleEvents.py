@@ -47,9 +47,7 @@ from ..CommandHelper import CommandHelper
 
 
 class DisableRemoteAppleEvents(Rule):
-    '''
-    classdocs
-    '''
+    '''classdocs'''
 
     def __init__(self, config, environ, logger, statechglogger):
         '''
@@ -85,13 +83,15 @@ class DisableRemoteAppleEvents(Rule):
         self.secureremoteevents = self.initCi(datatype2, key2, instructions2, default2)
 
     def report(self):
-        '''
-        return the compliance status of the system with this rule
+        '''return the compliance status of the system with this rule
 
-        @return: self.compliant
-        @rtype: bool
 
-        @author: Breen Malmberg
+        :returns: self.compliant
+
+        :rtype: bool
+
+@author: Breen Malmberg
+
         '''
 
         self.detailedresults = ""
@@ -121,10 +121,7 @@ class DisableRemoteAppleEvents(Rule):
         return self.compliant
 
     def reportDisabled(self):
-        '''
-
-        @return:
-        '''
+        ''' '''
 
         self.logger.log(LogPriority.DEBUG, "Checking if remote apple events are disabled...")
 
@@ -146,10 +143,7 @@ class DisableRemoteAppleEvents(Rule):
         return retval
 
     def reportSecured(self):
-        '''
-
-        @return:
-        '''
+        ''' '''
 
         self.logger.log(LogPriority.DEBUG, "Checking if remote apple events is secured...")
 
@@ -166,11 +160,10 @@ class DisableRemoteAppleEvents(Rule):
         return retval
 
     def getRemoteAEUsers(self):
-        '''
-        return a list of uuid's of current remote ae users
+        '''return a list of uuid's of current remote ae users
         (mac os x stores the remote ae users as uuid's in a plist)
 
-        @return:
+
         '''
 
         get_remote_ae_users = "/usr/bin/dscl . read /Groups/com.apple.access_remote_ae GroupMembers"
@@ -192,14 +185,16 @@ class DisableRemoteAppleEvents(Rule):
         return remote_ae_users
 
     def fix(self):
-        '''
-        run commands needed to bring the system to a compliant state with this
+        '''run commands needed to bring the system to a compliant state with this
         rule
 
-        @return: self.rulesuccess
-        @rtype: bool
 
-        @author: Breen Malmberg
+        :returns: self.rulesuccess
+
+        :rtype: bool
+
+@author: Breen Malmberg
+
         '''
 
         self.iditerator = 0
@@ -225,10 +220,7 @@ class DisableRemoteAppleEvents(Rule):
         return self.rulesuccess
 
     def disable_remote_ae(self):
-        '''
-
-        @return:
-        '''
+        ''' '''
 
         retval = True
 
@@ -249,10 +241,7 @@ class DisableRemoteAppleEvents(Rule):
         return retval
 
     def secure_remote_ae(self):
-        '''
-
-        @return:
-        '''
+        ''' '''
 
         retval = True
         desired_remote_ae_users = self.getUUIDs(self.secureremoteevents.getcurrvalue())
@@ -297,11 +286,11 @@ class DisableRemoteAppleEvents(Rule):
         return retval
 
     def getUUIDs(self, userlist):
-        '''
-        convert the desired (user-specified) list of ae user names
+        '''convert the desired (user-specified) list of ae user names
         into uuid's; return as list
 
-        @return:
+        :param userlist: 
+
         '''
 
         uuidlist = []
