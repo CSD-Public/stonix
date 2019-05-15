@@ -78,11 +78,12 @@ class zzzTestRuleDisableGUILogon(RuleTest):
             self.ph.install(pkg)
 
     def setConditionsForRule(self):
-        '''
-        Configure system for the unit test
-        @param self: essential if you override this definition
-        @return: boolean - If successful True; If failure False
+        '''Configure system for the unit test
+
+        :param self: essential if you override this definition
+        :returns: boolean - If successful True; If failure False
         @author: Eric Ball
+
         '''
         success = True
         # Enable CIs

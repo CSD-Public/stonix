@@ -50,13 +50,14 @@ from src.stonix_resources.StateChgLogger import StateChgLogger
 
 
 class ConsoleAndFileWriter():
-    '''
-    This class provides an object that can be passed to
+    '''This class provides an object that can be passed to
     unittest.TextTestRunner as a stream, providing both
     stderr out to the console and output to a logfile
     @author: Eric Ball
     @note: None
     @change: 2015-03-12 - EB - Original implementation
+
+
     '''
     def __init__(self, filename):
         self.filename = filename
@@ -72,15 +73,16 @@ class ConsoleAndFileWriter():
 
 
 def name_test_template(moduletestfound, reportstring):
-    """
-    The name_test_template provides a method that can be used, via monkey
+    '''The name_test_template provides a method that can be used, via monkey
     patching, to add test cases to the test_ruleNtestConsistency class
     dynamically from within the ConsistencyCheck class.
     @author: Roy Nielsen, Eric Ball
-    @param moduletestfound: boolean indicating if a test was found for a given
+
+    :param moduletestfound: boolean indicating if a test was found for a given
         module
-    @param reportstring: string to print if the test assertion fails
-    """
+    :param reportstring: string to print if the test assertion fails
+
+    '''
     def checkConsistency(self):
         self.assert_value(moduletestfound, reportstring)
     return checkConsistency
@@ -97,12 +99,13 @@ class test_ruleNtestConsistency(unittest.TestCase):
 
 
 class ConsistencyCheck():
-    '''
-    This class is designed to make sure there is a unit test
+    '''This class is designed to make sure there is a unit test
     for every rule and a rule for every unit test
     @author: ekkehard j. koch
     @note: Make sure it can handle entire rule testing suite
     @change: 2015-02-25 - ekkehard - Original Implementation
+
+
     '''
 
     def __init__(self):
@@ -122,9 +125,7 @@ class ConsistencyCheck():
         self.set_up_tests()
 
     def set_up_tests(self):
-        """
-        Run tests based on the data structure that has the test data
-        """
+        '''Run tests based on the data structure that has the test data'''
         for behavior, test_cases in self.tests.items():
             for test_case_data in test_cases:
                 moduletestfound, name, _ = test_case_data
@@ -226,10 +227,12 @@ class FrameworkDictionary():
         return self.frameworkdictionary
 
     def initializeDictionary(self, modules):
-        '''
-        Fill in all the rule information
+        '''Fill in all the rule information
         @author: ekkehard j. koch
         @note: None
+
+        :param modules: 
+
         '''
         success = True
         messagestring = "--------------------------------- start"
@@ -350,10 +353,12 @@ class UtilsDictionary():
         return self.utilsDictionary
 
     def initializeDictionary(self, modules):
-        '''
-        Fill in all the rule information
+        '''Fill in all the rule information
         @author: ekkehard j. koch
         @note: None
+
+        :param modules: 
+
         '''
         success = True
         messagestring = "--------------------------------- start"
@@ -407,12 +412,13 @@ class UtilsDictionary():
 
 
 class RuleDictionary ():
-    '''
-    This class is designed encapsulate the dictionary object for
+    '''This class is designed encapsulate the dictionary object for
     rules.
     @author: ekkehard j. koch
     @note: None
     @change: 2015-02-25 - ekkehard - Original Implementation
+
+
     '''
     def __init__(self, unit=True, network=True, interactive=True, modules=[]):
         self.unit = unit
@@ -505,11 +511,12 @@ class RuleDictionary ():
         return self.ruleList
 
     def getRuleFileNames(self):
-        '''
-        Get a list of applicable files for testing
-
+        '''Get a list of applicable files for testing
+        
         @author: Roy Nielsen
         @note: none
+
+
         '''
         applicable_tests = []
         runit = []
@@ -551,10 +558,12 @@ class RuleDictionary ():
         return applicable_tests
 
     def initializeRuleInfo(self, modules):
-        '''
-        Fill in all the rule information
+        '''Fill in all the rule information
         @author: ekkehard j. koch
         @note: None
+
+        :param modules: 
+
         '''
         success = True
         messagestring = "--------------------------------- start"
@@ -731,10 +740,11 @@ class RuleDictionary ():
         return success
 
     def initializeRuleContextData(self):
-        '''
-        Make sure you have all the contextual data for rules
+        '''Make sure you have all the contextual data for rules
         @author: ekkehard j. koch
         @note: None
+
+
         '''
         success = True
         messagestring = "--------------------------------- start"
@@ -858,10 +868,18 @@ class RuleDictionary ():
 
 def assemble_suite(framework=True, rule=True, utils=True, unit=True,
                    network=True, interactive=False, modules=[]):
-    '''
-    This sets up the test suite
+    '''This sets up the test suite
     @author: ekkehard j. koch
     @note: Make sure it can handle entire rule scenario
+
+    :param framework:  (Default value = True)
+    :param rule:  (Default value = True)
+    :param utils:  (Default value = True)
+    :param unit:  (Default value = True)
+    :param network:  (Default value = True)
+    :param interactive:  (Default value = False)
+    :param modules:  (Default value = [])
+
     '''
     testList = []
     # If using modules, use module names to set test types
@@ -1206,12 +1224,13 @@ STATECHANGELOGGER = StateChgLogger(LOGGER, ENVIRON)
 
 
 def setUpModule():
-    """
-    Function made available to the whole module - holds globals
+    '''Function made available to the whole module - holds globals
     instanciated once for all unittests contained within the module.
-
+    
     @author: Roy Nielsen
-    """
+
+
+    '''
     global ENVIRON
     global LOGGER
     global SYSCONFIG

@@ -55,10 +55,11 @@ from grp import getgrgid
 
 
 class SecureATCRON(Rule):
-    '''
-    This class restricts permissions on files and directories associated with
+    '''This class restricts permissions on files and directories associated with
     AT and CRON to authorized users only and enables and configures logging for
     these daemons.
+
+
     '''
 
     def __init__(self, config, environ, logger, statechglogger):
@@ -96,11 +97,12 @@ CRON utilities, set the value of SECUREATCRON to False.'''
         self.localize()
 
     def localize(self):
-        '''
-        set class vars appropriate to whichever platform is currently running
+        '''set class vars appropriate to whichever platform is currently running
 
-        @return: void
+
+        :returns: void
         @author: Breen Malmberg
+
         '''
 
         atallowdirs = ['/etc/at.allow', '/var/at/at.allow']
@@ -231,12 +233,13 @@ CRON utilities, set the value of SECUREATCRON to False.'''
                                   self.cronallow, self.atallow]
 
     def verifyVars(self):
-        '''
-        verify class vars are properly defined.
+        '''verify class vars are properly defined.
         log debug for each that is not.
 
-        @return: void
+
+        :returns: void
         @author: Breen Malmberg
+
         '''
 
         if not self.cronddir:
@@ -280,28 +283,31 @@ CRON utilities, set the value of SECUREATCRON to False.'''
                             "cron monthly directory not defined")
 
     def initobjs(self):
-        '''
-        initialize objects to be used by this class
+        '''initialize objects to be used by this class
 
-        @return: void
+
+        :returns: void
         @author: Breen Malmberg
+
         '''
 
         self.ch = CommandHelper(self.logger)
 
     def report(self):
-        '''
-        The report method examines the current configuration and determines
+        '''The report method examines the current configuration and determines
         whether or not it is correct. If the config is correct then the
         self.compliant, self.detailed results and self.currstate properties are
         updated to reflect the system status. self.rulesuccess will be updated
         if the rule does not succeed.
 
-        @return: self.compliant
-        @rtype: bool
-        @author: Breen Malmberg
-        @change: 2016/08/09 Breen Malmberg - Refactored method; fixed typos in
-        doc block
+
+        :returns: self.compliant
+
+        :rtype: bool
+@author: Breen Malmberg
+@change: 2016/08/09 Breen Malmberg - Refactored method; fixed typos in
+doc block
+
         '''
 
         # defaults
@@ -328,13 +334,14 @@ CRON utilities, set the value of SECUREATCRON to False.'''
         return self.compliant
 
     def find_ownership(self, filename):
-        '''
-        return dict containing user and group
+        '''return dict containing user and group
         owner name of specified filename
 
-        @return: ownership
-        @rtype: dict
-        @author: Breen Malmberg
+        :param filename: 
+        :returns: ownership
+        :rtype: dict
+@author: Breen Malmberg
+
         '''
         ownership = {}
 
@@ -347,12 +354,14 @@ CRON utilities, set the value of SECUREATCRON to False.'''
         return ownership
 
     def reportDarwin(self):
-        '''
-        run report actions specific to mac os x (darwin)
+        '''run report actions specific to mac os x (darwin)
 
-        @return: retval
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: retval
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         retval = True
@@ -406,13 +415,14 @@ CRON utilities, set the value of SECUREATCRON to False.'''
         return retval
 
     def getPerms(self, filepath):
-        '''
-        return the octal representation of the permissions
+        '''return the octal representation of the permissions
         (4 digit number, 0 padded)
 
-        @return: perms
-        @rtype: string
-        @author: Breen Malmberg
+        :param filepath: 
+        :returns: perms
+        :rtype: string
+@author: Breen Malmberg
+
         '''
         # init the return variable to
         # some initial default value
@@ -428,12 +438,14 @@ CRON utilities, set the value of SECUREATCRON to False.'''
         return perms
 
     def reportLinux(self):
-        '''
-        run report actions for linux systems
+        '''run report actions for linux systems
 
-        @return: retval
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: retval
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         retval = True
@@ -536,15 +548,17 @@ CRON utilities, set the value of SECUREATCRON to False.'''
         return retval
 
     def fix(self):
-        '''
-        The fix method will apply the required settings to the system.
+        '''The fix method will apply the required settings to the system.
         self.rulesuccess will be updated if the rule does not succeed.
 
-        @return: self.rulesuccess
-        @rtype: bool
-        @author: Breen Malmberg
-        @change: 2016/08/09 Breen Malmberg - Refactored method; fixed typos in
-        doc block
+
+        :returns: self.rulesuccess
+
+        :rtype: bool
+@author: Breen Malmberg
+@change: 2016/08/09 Breen Malmberg - Refactored method; fixed typos in
+doc block
+
         '''
 
         # defaults
@@ -583,14 +597,16 @@ CRON utilities, set the value of SECUREATCRON to False.'''
         return self.rulesuccess
 
     def fixDarwin(self):
-        '''
-        run fix actions specific to darwin systems
+        '''run fix actions specific to darwin systems
 
-        @return: retval
-        @rtype: bool
-        @author: Breen Malmberg
-        @change: Breen Malmberg - 3/15/2017 - changed group id in os.chown
-                calls (80=admin) from 0 (wheel)
+
+        :returns: retval
+
+        :rtype: bool
+@author: Breen Malmberg
+@change: Breen Malmberg - 3/15/2017 - changed group id in os.chown
+        calls (80=admin) from 0 (wheel)
+
         '''
 
         success = True
@@ -650,12 +666,14 @@ CRON utilities, set the value of SECUREATCRON to False.'''
         return success
 
     def fixLinux(self):
-        '''
-        run fix actions specific to linux systems
+        '''run fix actions specific to linux systems
 
-        @return: retval
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: retval
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         cronremovelist = [self.crondeny, self.atdeny]

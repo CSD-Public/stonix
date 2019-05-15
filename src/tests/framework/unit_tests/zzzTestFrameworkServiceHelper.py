@@ -45,15 +45,10 @@ from src.stonix_resources.ServiceHelper import ServiceHelper
 
 
 class zzzTestFrameworkServiceHelper(unittest.TestCase):
-    """
-    Class docs
-    """
+    '''Class docs'''
 
     def setUp(self):
-        """
-        initialize and set class variables and objects
-
-        """
+        '''initialize and set class variables and objects'''
 
         self.environ = Environment()
         self.environ.setdebugmode(True)
@@ -88,10 +83,7 @@ class zzzTestFrameworkServiceHelper(unittest.TestCase):
         self.orig_enabled = self.mysh.auditService(*self.service)
 
     def tearDown(self):
-        """
-        restore system initial state
-
-        """
+        '''restore system initial state'''
 
         if self.orig_enabled:
             self.mysh.enableService(*self.service)
@@ -99,10 +91,7 @@ class zzzTestFrameworkServiceHelper(unittest.TestCase):
             self.mysh.disableService(*self.service)
 
     def testListServices(self):
-        """
-        test listing of services
-
-        """
+        '''test listing of services'''
 
         services = self.mysh.listServices()
 
@@ -110,11 +99,11 @@ class zzzTestFrameworkServiceHelper(unittest.TestCase):
         self.assertIsInstance(services, list)
 
     def testDisable(self):
-        """
-        test disabling a service from initial state:
+        '''test disabling a service from initial state:
         enabled
 
-        """
+
+        '''
 
         # make sure service is started, so stopping it will be a valid test of the function
         if not self.mysh.auditService(*self.service):
@@ -124,11 +113,11 @@ class zzzTestFrameworkServiceHelper(unittest.TestCase):
         self.assertTrue(disabled)
 
     def testEnable(self):
-        """
-        test enabling a service from initial state:
+        '''test enabling a service from initial state:
         disabled
 
-        """
+
+        '''
 
         # make sure service is stopped, so starting it will be a valid test of the function
         if self.mysh.auditService(*self.service):
@@ -138,12 +127,12 @@ class zzzTestFrameworkServiceHelper(unittest.TestCase):
         self.assertTrue(enabled)
 
     def testReloadService(self):
-        """
-        test reloading a service from both initial states:
+        '''test reloading a service from both initial states:
         enabled
         disabled
 
-        """
+
+        '''
 
         self.mysh.disableService(*self.service)
         reloaded1 = self.mysh.reloadService(*self.service)
@@ -154,12 +143,12 @@ class zzzTestFrameworkServiceHelper(unittest.TestCase):
         self.assertTrue(reloaded2)
 
     def testIsRunning(self):
-        """
-        test status checking to see if a service
+        '''test status checking to see if a service
         is running
         (start and stop not implemented in all helpers)
 
-        """
+
+        '''
 
         if self.mysh.startService(*self.service):
             self.assertTrue(self.mysh.isRunning(*self.service))

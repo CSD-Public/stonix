@@ -47,10 +47,7 @@ from src.stonix_resources.ServiceHelper import ServiceHelper
 class zzzTestRuleRestrictMounting(RuleTest):
 
     def setUp(self):
-        """
-
-        @return: 
-        """
+        ''' '''
 
         RuleTest.setUp(self)
         self.rule = RestrictMounting(self.config, self.environ, self.logdispatch, self.statechglogger)
@@ -63,34 +60,22 @@ class zzzTestRuleRestrictMounting(RuleTest):
         self.serviceTarget = ""
 
     def tearDown(self):
-        """
-
-        @return: 
-        """
+        ''' '''
 
         pass
 
     def runTest(self):
-        """
-
-        @return: 
-        """
+        ''' '''
 
         self.simpleRuleTest()
 
     def setConditionsForRule(self):
-        """
-
-        @return:
-        """
+        ''' '''
 
         pass
 
     def test_required_paths(self):
-        """
-
-        @return:
-        """
+        ''' '''
 
         required_paths = ["/usr/bin/gsettings", "/usr/bin/gconftool-2", "/usr/bin/dbus-launch"]
         paths_exist = [p for p in required_paths if os.path.exists(p)]
@@ -98,40 +83,32 @@ class zzzTestRuleRestrictMounting(RuleTest):
         self.assertNotEqual(paths_exist, [])
 
     def test_rulenumber(self):
-        """
-
-        @return:
-        """
+        ''' '''
 
         self.assertEqual(112, self.rulenumber)
 
     def test_rulename(self):
-        """
-
-        @return:
-        """
+        ''' '''
 
         self.assertEqual("RestrictMounting", self.rulename)
 
     def test_CIs(self):
-        """
-
-        @return:
-        """
+        ''' '''
 
         self.assertIsNotNone(self.rule.consoleCi)
         self.assertIsNotNone(self.rule.autofsCi)
         self.assertIsNotNone(self.rule.gnomeCi)
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
-        """
-        check on whether report was correct
-        @param self: essential if you override this definition
-        @param pCompliance: the self.iscompliant value of rule
-        @param pRuleSuccess: did report run successfully
-        @return: boolean - If successful True; If failure False
+        '''check on whether report was correct
+
+        :param self: essential if you override this definition
+        :param pCompliance: the self.iscompliant value of rule
+        :param pRuleSuccess: did report run successfully
+        :returns: boolean - If successful True; If failure False
         @author: ekkehard j. koch
-        """
+
+        '''
         self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " +
                              str(pCompliance) + ".")
         self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
@@ -140,26 +117,28 @@ class zzzTestRuleRestrictMounting(RuleTest):
         return success
 
     def checkFixForRule(self, pRuleSuccess):
-        """
-        check on whether fix was correct
-        @param self: essential if you override this definition
-        @param pRuleSuccess: did report run successfully
-        @return: boolean - If successful True; If failure False
+        '''check on whether fix was correct
+
+        :param self: essential if you override this definition
+        :param pRuleSuccess: did report run successfully
+        :returns: boolean - If successful True; If failure False
         @author: ekkehard j. koch
-        """
+
+        '''
         self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True
         return success
 
     def checkUndoForRule(self, pRuleSuccess):
-        """
-        check on whether undo was correct
-        @param self: essential if you override this definition
-        @param pRuleSuccess: did report run successfully
-        @return: boolean - If successful True; If failure False
+        '''check on whether undo was correct
+
+        :param self: essential if you override this definition
+        :param pRuleSuccess: did report run successfully
+        :returns: boolean - If successful True; If failure False
         @author: ekkehard j. koch
-        """
+
+        '''
         self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True

@@ -75,23 +75,19 @@ def singleton_decorator(class_):
 
 @singleton_decorator
 class LogDispatcher ():
-    """
-    Responsible for taking any log data and formating both a human readable 
+    '''Responsible for taking any log data and formating both a human readable
     log containing machine info and run errors.
 
-    Parameters -
-      environment: Environment object from Stonix - optional parameter.
-      
-      debug_mode: Whether or not to turn on debug mode.  Bool
-      
-      verbose_mode: Whether or not to turn on verbose mode.  Bool
-       
-    :version: 1
-    :author: scmcleni
-    :note: rsn - 2015-09-19 Adding additional parameters and extensions to 
-                            log files.  Also added log rotation.  Removed mail
-                            and xml functionality.  
-    """
+    :param environment: Environment object from Stonix
+    :param debug_mode: Whether or not to turn on debug mode
+    :param verbose_mode: Whether or not to turn on verbose mode
+    :param version: 
+    :param author: scmcleni
+    :param note: rsn
+    :param log: files
+    :param and: xml functionality
+
+    '''
 
     def __init__(self, environment=None, debug_mode=False, verbose_mode=False):
         if environment:
@@ -105,13 +101,14 @@ class LogDispatcher ():
    ##########################################################################
 
     def logEnv(self):
-        """
-        Log environment information to the console.  Taken from original
+        '''Log environment information to the console.  Taken from original
         __initializeLogs method, this needs to be an optional method for
         logdispatcher_lite
         
         @author: Roy Nielsen
-        """
+
+
+        '''
         if self.environment:
             # start machine specific information
             self.log(LogPriority.WARNING,
@@ -162,47 +159,51 @@ class LogDispatcher ():
     ##########################################################################
 
     def setDebug(self, debug):
-        """
-        Setter for debug mode
+        '''Setter for debug mode
         
         @author: Roy Nielsen
-        """
+
+        :param debug: 
+
+        '''
         self.debug = debug
 
     ##########################################################################
 
     def setVerbose(self, verbose):
-        """
-        Setter for verbose mode
+        '''Setter for verbose mode
         
         @author: Roy Nielsen
-        """
+
+        :param verbose: 
+
+        '''
         self.verbose = verbose
 
     ##########################################################################
 
     def log(self, priority, msg_data):
-        """
-        Handles all writing of logger data to files. `msg_data` should be
+        '''Handles all writing of logger data to files. `msg_data` should be
         passed as an array of [tag, message_details] where tag is a
         descriptive string for the detailed message and XML log. For example
-
+        
         ['StonixRunDateTime', '2000-01-11 11:40:01']
-
+        
         If msg_data is passed as only a string then it will be tagged as "None"
-
+        
         For STONIX logging purposes all essential notifications should come in
         on the "WARNING" channel. All informational notifications should come
         in on the "INFO" channel. Debug messages should use "DEBUG". Program
         errors should be sent to the "ERROR" facility. "CRITICAL" is reserved
         for events that stop the stonix program.
 
-        @param: enum priority
-        @param: string msg_data
-        @return: void
+        :param priority: 
+        :param msg_data: 
+        :returns: void
         @author scmcleni
         @author: dkennel
-        """
+
+        '''
 
         entry = self.formatMessageData(msg_data)
 
@@ -255,15 +256,17 @@ class LogDispatcher ():
     ##########################################################################
 
     def formatMessageData(self, msg_data):
-        """
-        If the expected 2 item array is passed then attach those items to
+        '''If the expected 2 item array is passed then attach those items to
         a MessageData object. Index 0 is expected to be a tag, Index 1 is
         expected to be the detail. If an array is not passed then it is assumed
         that there is no tag (defaults to 'None') and the passed data is set
         as the Detail of the MessageData object.
-        @return MessageData
+
+        :param msg_data: 
+        :returns: MessageData
         @author: scmcleni
-        """
+
+        '''
         entry = MessageData()
         if isinstance(msg_data, list):
             entry.Tag = msg_data[0].strip()
@@ -277,33 +280,36 @@ class LogDispatcher ():
     ##########################################################################
 
     def getconsolemessage(self):
-        """
-        Returns the current message if called while in a dirty state.
+        '''Returns the current message if called while in a dirty state.
 
-        @return: MessageData
+
+        :returns: MessageData
         @author: scmcleni
-        """
+
+        '''
         return self.last_message_received
 
     ##########################################################################
 
     def getmessageprio(self):
-        """
-        Returns the message priority of the last message received.
+        '''Returns the message priority of the last message received.
 
-        @return: LogPriority instance
+
+        :returns: LogPriority instance
         @author: dkennel
-        """
+
+        '''
         return self.last_prio
     
     ##########################################################################
 
     def rotateLog(self):
-        """
-        Rotate the log if the log handler has been set up
+        '''Rotate the log if the log handler has been set up
         
         @author: Roy Nielsen
-        """
+
+
+        '''
         try:
             if self.rotHandler:
                 self.rotHandler.doRollover()
@@ -314,33 +320,36 @@ class LogDispatcher ():
     ##########################################################################
 
     def markStartLog(self):
-        """
-        Mark the beginning of a log session.  Rely on if/when a programmer wants
+        '''Mark the beginning of a log session.  Rely on if/when a programmer wants
         to use this functionality.
-
+        
         @author: Roy Nielsen
-        """        
+
+
+        '''
         logging.warning("############### Starting Log... ##################")
 
     ##########################################################################
 
     def markEndLog(self):
-        """
-        Mark the end of a log session.  Rely on if/when a programmer wants
+        '''Mark the end of a log session.  Rely on if/when a programmer wants
         to use this functionality.
-
+        
         @author: Roy Nielsen
-        """
+
+
+        '''
         logging.warning("################## End Log... ####################")
 
     ##########################################################################
 
     def markSeparator(self):
-        """
-        Mark a separator in the log.
+        '''Mark a separator in the log.
         
         @author: Roy Nielsen
-        """
+
+
+        '''
         logging.warning("##################################################")
     
     ##########################################################################
@@ -351,34 +360,40 @@ class LogDispatcher ():
                              size=10000000, 
                              syslog=True,
                              myconsole=True):
-        """
-        Parameters -
+        '''Parameters -
           filename: Name of the file you would like to log to. String
-          
+        
           extension_type: type of extension to use on the filename. String
                   none: overwrite the file currently with the passed in name
                  epoch: time since epoch
                   time: date/time stamp .ccyymmdd.hhmm.ss in military time
                    inc: will increment log number similar to logrotate.
-                           
+        
           log_count:  if "inc" is used above, the count of logs to keep
                       Default keep the last 10 logs.  Int
-
+        
           size     :  if "inc", the size to allow logs to get. Default 10Mb. Int
-          
+        
           syslog: Whether or not to log to syslog. Bool
-          
+        
           console: Whether or not to log to the console. Bool
-
-        Open a handle to a text file making it available for writing (append) 
-        mode. Also need to look for an old log file (prior run) and move it 
+        
+        Open a handle to a text file making it available for writing (append)
+        mode. Also need to look for an old log file (prior run) and move it
         to stonix_last.log.
 
-        @return: void
+        :param filename:  (Default value = "")
+        :param extension_type:  (Default value = "inc")
+        :param log_count:  (Default value = 10)
+        :param size:  (Default value = 10000000)
+        :param syslog:  (Default value = True)
+        :param myconsole:  (Default value = True)
+        :returns: void
         @author: scmcleni
         @author: D. Kennel
         @note: R. Nielsen - Making console, rotate and syslog optional
-        """
+
+        '''
         rotate = False
         
         if not filename:
@@ -478,21 +493,23 @@ class LogDispatcher ():
 ##############################################################################
 
 class MessageData:
-    """
-    Simple object for handling Message Data in a concrete fashion.
+    '''Simple object for handling Message Data in a concrete fashion.
     @author: scmcleni
-    """
+
+
+    '''
     Tag = "None"
     Detail = "None"
 
 ##############################################################################
 
 class LogPriority:
-    """
-    Enum (python way) of log levels.
-
+    '''Enum (python way) of log levels.
+    
     @author: scmcleni
-    """
+
+
+    '''
 
     # I'm not really happy about doing it this way, but it's the shortest
     # way to be able to compare and get a string name back from an 'enum'

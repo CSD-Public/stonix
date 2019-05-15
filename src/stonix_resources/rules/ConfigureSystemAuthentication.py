@@ -121,12 +121,13 @@ class ConfigureSystemAuthentication(Rule):
             self.session = SESSION_YUM
 
     def report(self):
-        '''
-        ConfigureSystemAuthentication() report method to report if system
+        '''ConfigureSystemAuthentication() report method to report if system
         is compliant with authentication and password settings
         @author: dwalker
-        @param self - essential if you override this definition
-        @return: bool - True if system is compliant, False if it isn't
+
+        :param self: essential if you override this definition
+        :returns: bool - True if system is compliant, False if it isn't
+
         '''
         try:
             self.ci2comp, self.ci3comp, self.ci4comp = True, True, True
@@ -151,12 +152,13 @@ class ConfigureSystemAuthentication(Rule):
 ###############################################################################
 
     def fix(self):
-        '''
-        ConfigureSystemAuthentication.fix() method to fix the system to be
+        '''ConfigureSystemAuthentication.fix() method to fix the system to be
         compliant with authentication and password settings
         @author: dwalker
-        @param self - essential if you override this definition
-        @return: bool - True if fix is successful, False if it isn't
+
+        :param self: essential if you override this definition
+        :returns: bool - True if fix is successful, False if it isn't
+
         '''
         self.detailedresults = ""
         try:
@@ -192,8 +194,10 @@ class ConfigureSystemAuthentication(Rule):
     def reportLinux(self):
         '''Linux specific submethod for linux distributions.
         @author: dwalker
-        @param self - essential if you override this definition
-        @return: bool - True if system is compliant, False if it isn't
+
+        :param self: essential if you override this definition
+        :returns: bool - True if system is compliant, False if it isn't
+
         '''
         self.logindefs = "/etc/login.defs"
         debug = ""
@@ -245,15 +249,16 @@ class ConfigureSystemAuthentication(Rule):
 ###############################################################################
 
     def fixLinux(self):
-        '''
-        Linux specific submethod to correct linux distributions.  If your
+        '''Linux specific submethod to correct linux distributions.  If your
         system is portage based, i.e. gentoo, you will need to do a manual
         fix for everything except the login.defs file
         @author: dwalker
-        @param self - essential if you override this definition
-        @return: bool - True if fix is successful, False if it isn't
+
+        :param self: essential if you override this definition
+        :returns: bool - True if fix is successful, False if it isn't
         @change: Breen Malmberg - 9/26/2018 - added a check and installation of a
                 necessary package for fedora 28, in order for the fix to continue
+
         '''
 
         success = True
@@ -352,11 +357,13 @@ class ConfigureSystemAuthentication(Rule):
         return success
 
     def checkpasswordreqs(self):
-        '''
-        Method to check which password checking program the system
+        '''Method to check which password checking program the system
         is or should be using.
         @author: dwalker
-        @return: bool
+
+
+        :returns: bool
+
         '''
         self.pwqinstalled, self.clinstalled = False, False
         self.pwqpkg, self.crackpkg = "", ""
@@ -421,11 +428,12 @@ class ConfigureSystemAuthentication(Rule):
             return False
     
     def checkpasswordsetup(self, package):
-        '''
-        Method called from within checkpasswordreqs method
+        '''Method called from within checkpasswordreqs method
         @author: dwalker
-        @param package: pwquality or cracklib
-        @return: bool
+
+        :param package: pwquality or cracklib
+        :returns: bool
+
         '''
         compliant = True
         if package == "pwquality":
@@ -658,11 +666,13 @@ class ConfigureSystemAuthentication(Rule):
 #                                     "correct permissions on " + pamfile + "\n"
 
     def checkaccountlockout(self):
-        '''
-        Method to determine which account locking program to
+        '''Method to determine which account locking program to
         use if any.
         @author: dwalker
-        @return: bool
+
+
+        :returns: bool
+
         '''
         which = "/usr/bin/which "
         cmd1 = which + "faillock"
@@ -836,7 +846,10 @@ class ConfigureSystemAuthentication(Rule):
         '''Systemauth.__chklockout() Private method to check the account lock
         out settings that should be enforced via pam_tally2. There are two
         potential styles of lockout, the old style setup by STOR 4.0 and the
-        new style setup by STOR 4.1. Either version is valid.'''
+        new style setup by STOR 4.1. Either version is valid.
+
+
+        '''
         # the first auth line should be the pam_tally2.so line
         if self.ph.manager == "solaris":
             compliant = True
@@ -863,8 +876,11 @@ class ConfigureSystemAuthentication(Rule):
 ###############################################################################
 
     def checklogindefs(self):
-        '''Method to check the password hash algorithm settings in 
-        login.defs.'''
+        '''Method to check the password hash algorithm settings in
+        login.defs.
+
+
+        '''
         compliant = True
         debug = ""
         if os.path.exists(self.logindefs):
@@ -937,10 +953,14 @@ class ConfigureSystemAuthentication(Rule):
 ###############################################################################
 
     def checklibuser(self):
-        '''Private method to check the password hash algorithm settings in 
+        '''Private method to check the password hash algorithm settings in
         libuser.conf.
         @author: dwalker
-        @return: bool'''
+
+
+        :returns: bool
+
+        '''
         compliant = True
         '''check if libuser is intalled'''
         if not self.ph.check("libuser"):
@@ -1247,11 +1267,13 @@ class ConfigureSystemAuthentication(Rule):
 ###############################################################################
 
     def setlibuser(self):
-        '''
-        Method to check if libuser is installed and the contents of libuser
+        '''Method to check if libuser is installed and the contents of libuser
         file.
         @author: dwalker
-        @return: bool
+
+
+        :returns: bool
+
         '''
         created = False
         success = True

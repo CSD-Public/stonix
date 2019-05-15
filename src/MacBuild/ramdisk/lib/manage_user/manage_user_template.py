@@ -19,43 +19,47 @@ from ..environment import Environment
 
 
 class BadUserInfoError(Exception):
-    """
-    Meant for being thrown when an action/class being run/instanciated is not
+    '''Meant for being thrown when an action/class being run/instanciated is not
     applicable for the running operating system.
-
+    
     @author: Roy Nielsen
-    """
+
+
+    '''
     def __init__(self, *args, **kwargs):
         Exception.__init__(self, *args, **kwargs)
 
 
 class DsclError(Exception):
-    """
-    Meant for being thrown when an action/class being run/instanciated is not
+    '''Meant for being thrown when an action/class being run/instanciated is not
     applicable for the running operating system.
-
+    
     @author: Roy Nielsen
-    """
+
+
+    '''
     def __init__(self, *args, **kwargs):
         Exception.__init__(self, *args, **kwargs)
 
 
 class RootAccessRequired(Exception):
-    """
-    Meant for being thrown when a uid is not zero.
-
+    '''Meant for being thrown when a uid is not zero.
+    
     @author: Roy Nielsen
-    """
+
+
+    '''
     def __init__(self, *args, **kwargs):
         Exception.__init__(self, *args, **kwargs)
 
 
 class ManageUserTemplate(object):
-    """
-    Class to manage user properties.
-
+    '''Class to manage user properties.
+    
     @author: Roy Nielsen
-    """
+
+
+    '''
     def __init__(self, **kwargs):
         """
         Variables that can be passed in:
@@ -131,11 +135,13 @@ class ManageUserTemplate(object):
     #----------------------------------------------------------------------
 
     def isSaneFilePath(self, filepath):
-        """
-        Check for a good file path in the passed in string.
+        '''Check for a good file path in the passed in string.
         
         @author: Roy Nielsen
-        """
+
+        :param filepath: 
+
+        '''
         sane = False
         if isinstance(filepath, basestring):
             if re.match("^[A-Za-z/\.][A-Za-z0-9/\.]*", filepath):
@@ -145,12 +151,14 @@ class ManageUserTemplate(object):
     #----------------------------------------------------------------------
 
     def isSaneUserName(self, userName=""):
-        """
-        Check to make sure the username fits this specific definition/specification
+        '''Check to make sure the username fits this specific definition/specification
         for a username.
         
         @author: Roy Nielsen
-        """
+
+        :param userName:  (Default value = "")
+
+        '''
         sane = False
         if userName and isinstance(userName, basestring):
             if re.match("^[A-Za-z][A-Za-z0-9]*", userName):
@@ -160,12 +168,14 @@ class ManageUserTemplate(object):
     #----------------------------------------------------------------------
 
     def isSaneGroupName(self, groupName=""):
-        """
-        Check to make sure the groupName fits this specific
+        '''Check to make sure the groupName fits this specific
         definition/specification for a username.
         
         @author: Roy Nielsen
-        """
+
+        :param groupName:  (Default value = "")
+
+        '''
         sane = False
         if groupName and isinstance(groupName, basestring):
             if re.match("^[A-Za-z][A-Za-z0-9]*", groupName):
@@ -175,11 +185,13 @@ class ManageUserTemplate(object):
     #----------------------------------------------------------------------
 
     def isSaneUserShell(self, userShell=""):
-        """
-        Check to make sure that the "userShell" variable is a valid file path
+        '''Check to make sure that the "userShell" variable is a valid file path
         
         @author: Roy Nielsen
-        """
+
+        :param userShell:  (Default value = "")
+
+        '''
         sane = False
         if self.isSaneFilePath(userShell):
             sane = True
@@ -188,11 +200,13 @@ class ManageUserTemplate(object):
     #----------------------------------------------------------------------
 
     def isSaneUserComment(self, userComment=""):
-        """
-        User Comment field, usually for a user's "Long" or full name.
+        '''User Comment field, usually for a user's "Long" or full name.
         
         @author: Roy Nielsen
-        """
+
+        :param userComment:  (Default value = "")
+
+        '''
         sane = False
         if userComment and isinstance(userComment, basestring):
             if re.match("^[A-Za-z][A-Za-z0-9]*", userComment):
@@ -202,11 +216,13 @@ class ManageUserTemplate(object):
     #----------------------------------------------------------------------
 
     def isSaneUserUid(self, userUid=""):
-        """
-        Check to make sure the userUid is a string or a number.
+        '''Check to make sure the userUid is a string or a number.
         
         @author: Roy Nielsen
-        """
+
+        :param userUid:  (Default value = "")
+
+        '''
         sane = False
         if userUid and isinstance(userUid, [basestring, int]):
             if re.match("^\d+", str(userUid)):
@@ -216,11 +232,13 @@ class ManageUserTemplate(object):
     #----------------------------------------------------------------------
 
     def isSaneUserPriGid(self, userPriGid=1000):
-        """
-        Check to make sure the user's primary group ID is valid.
+        '''Check to make sure the user's primary group ID is valid.
         
         @author: Roy Nielsen
-        """
+
+        :param userPriGid:  (Default value = 1000)
+
+        '''
         sane = False
         if userPriGid and isinstance(userPriGid, [basestring, int]):
             if re.match("^\d+", str(userPriGid)):
@@ -230,11 +248,13 @@ class ManageUserTemplate(object):
     #----------------------------------------------------------------------
 
     def isSaneUserHomeDir(self, userHomeDir=""):
-        """
-        Check to make sure the user's home directory is a valid file path.
+        '''Check to make sure the user's home directory is a valid file path.
         
         @author: Roy Nielsen
-        """
+
+        :param userHomeDir:  (Default value = "")
+
+        '''
         sane = False
         if self.isSaneFilePath(userHomeDir):
             sane = True
@@ -243,11 +263,13 @@ class ManageUserTemplate(object):
     #----------------------------------------------------------------------
 
     def setUserName(self, userName=""):
-        """
-        Setter for the user's username.
+        '''Setter for the user's username.
         
         @author: Roy Nielsen
-        """
+
+        :param userName:  (Default value = "")
+
+        '''
         sane = False
         if self.isSaneUserName(userName):
             sane = True
@@ -257,28 +279,12 @@ class ManageUserTemplate(object):
     #----------------------------------------------------------------------
 
     def setPasswordCompliance(self, complianceType=0):
-        """
-        Set type type of compliance that user's password needs to be validated
+        '''Set type type of compliance that user's password needs to be validated
         with.
 
-        @param: complianceType: must be a number, in the validation list.
+        :param complianceType:  (Default value = 0)
 
-        @note: Valid numbers and their meanings are:
-               0: Must be eight characters long, any combination of letters,
-                  numbers and special characters
-
-               1: Must have three of: Upper case, Lower case letters, numbers,
-                  and special characters, and be eight characters long, and
-                  be in the 0 compliance set.  Must be a minimum of ten
-                  characters long.
-
-               2: Must have a minimum of one of each of Upper case, Lower case
-                  letters, numbers and special characters.  Must be a minimum of
-                  14 characters long, and all characters be in the 0 compliance
-                  set.
-
-        @author: Roy Nielsen
-        """
+        '''
         success = False
         validCompliance = [0, 1, 2]
 
@@ -291,18 +297,17 @@ class ManageUserTemplate(object):
     #----------------------------------------------------------------------
 
     def isPasswordCompliant(self, password=""):
-        """
-        Check if the password is compliant with the set password policy.
+        '''Check if the password is compliant with the set password policy.
         
         @Note: this is for ASCII text only.
-        
-        @param: password - password to check for compliance
-        
-        @returns: a list of which compliant types succeed.  The index of the
-                  list is the compliance type.
 
+        :param password:  (Default value = "")
+        :returns: s: a list of which compliant types succeed.  The index of the
+                  list is the compliance type.
+        
         @author: Roy Nielsen
-        """
+
+        '''
         #####
         # From the ASCII character map:
         NUMLOWER    = 48  # 48 = 0
@@ -372,11 +377,13 @@ class ManageUserTemplate(object):
     #----------------------------------------------------------------------
 
     def isUserInSudoers(self, userName=""):
-        """
-        Check if user can sudo.
-
+        '''Check if user can sudo.
+        
         @author: Roy Nielsen
-        """
+
+        :param userName:  (Default value = "")
+
+        '''
         success = False
         users = []
         groups = []
@@ -444,15 +451,17 @@ class ManageUserTemplate(object):
         return success
 
     def isQualifiedLiftAttendant(self, userName=""):
-        """
-        Will return true if the user running the script is in a default
-        operating system group that can elevate privilege.  Traditionally 
+        '''Will return true if the user running the script is in a default
+        operating system group that can elevate privilege.  Traditionally
         'wheel' on Linux and 'admin' on Mac.
         
         A 'lift attendant' is an elevator operator in fancy hotels.
         
         @author: Roy Nielsen
-        """
+
+        :param userName:  (Default value = "")
+
+        '''
         success = False
 
         if self.isSaneUserName(userName):
@@ -489,78 +498,109 @@ class ManageUserTemplate(object):
     #----------------------------------------------------------------------
 
     def findUniqueUid(self):
-        """
-        """
+        ''' '''
         pass
 
     #----------------------------------------------------------------------
 
     def uidTaken(self, uid):
-        """
-        """
+        '''
+
+        :param uid: 
+
+        '''
         pass
 
     #----------------------------------------------------------------------
 
     def getUser(self, userName=""):
-        """
-        """
+        '''
+
+        :param userName:  (Default value = "")
+
+        '''
         pass
 
     #----------------------------------------------------------------------
 
     def getUserShell(self, userName=""):
-        """
-        """
+        '''
+
+        :param userName:  (Default value = "")
+
+        '''
         pass
 
     #----------------------------------------------------------------------
 
     def getUserComment(self, userName=""):
-        """
-        """
+        '''
+
+        :param userName:  (Default value = "")
+
+        '''
         pass
 
     #----------------------------------------------------------------------
 
     def getUserUid(self, userName=""):
-        """
-        """
+        '''
+
+        :param userName:  (Default value = "")
+
+        '''
         pass
 
     #----------------------------------------------------------------------
 
     def getUserPriGid(self, userName=""):
-        """
-        """
+        '''
+
+        :param userName:  (Default value = "")
+
+        '''
         pass
 
     #----------------------------------------------------------------------
 
     def getUserHomeDir(self, userName=""):
-        """
-        """
+        '''
+
+        :param userName:  (Default value = "")
+
+        '''
         pass
 
     #----------------------------------------------------------------------
 
     def isUserInstalled(self, user=""):
-        """
-        """
+        '''
+
+        :param user:  (Default value = "")
+
+        '''
         pass
 
     #----------------------------------------------------------------------
 
     def isUserInGroup(self, userName="", groupName=""):
-        """
-        """
+        '''
+
+        :param userName:  (Default value = "")
+        :param groupName:  (Default value = "")
+
+        '''
         pass
 
     #----------------------------------------------------------------------
 
     def authenticate(self, user="", password=""):
-        """
-        """
+        '''
+
+        :param user:  (Default value = "")
+        :param password:  (Default value = "")
+
+        '''
         pass
 
     #----------------------------------------------------------------------
@@ -568,95 +608,134 @@ class ManageUserTemplate(object):
     #----------------------------------------------------------------------
 
     def createStandardUser(self, userName, password):
-        """
-        Creates a user that has the "next" uid in line to be used, then puts
+        '''Creates a user that has the "next" uid in line to be used, then puts
         in in a group of the same id.  Uses /bin/bash as the standard shell.
         The userComment is left empty.  Primary use is managing a user
         during test automation, when requiring a "user" context.
-
+        
         @author: Roy Nielsen
-        """
+
+        :param userName: 
+        :param password: 
+
+        '''
         pass
 
     #----------------------------------------------------------------------
 
     def createBasicUser(self, userName=""):
-        """
-        Create a username with just a moniker.  Allow the system to take care of
+        '''Create a username with just a moniker.  Allow the system to take care of
         the rest.
-
+        
         Only allow usernames with letters and numbers.
-
+        
         @author: Roy Nielsen
-        """
+
+        :param userName:  (Default value = "")
+
+        '''
         pass
 
     #----------------------------------------------------------------------
 
     def setUserShell(self, user="", shell=""):
-        """
-        """
+        '''
+
+        :param user:  (Default value = "")
+        :param shell:  (Default value = "")
+
+        '''
         pass
 
     #----------------------------------------------------------------------
 
     def setUserComment(self, user="", comment=""):
-        """
-        """
+        '''
+
+        :param user:  (Default value = "")
+        :param comment:  (Default value = "")
+
+        '''
         pass
 
     #----------------------------------------------------------------------
 
     def setUserUid(self, user="", uid=""):
-        """
-        """
+        '''
+
+        :param user:  (Default value = "")
+        :param uid:  (Default value = "")
+
+        '''
         pass
 
     #----------------------------------------------------------------------
 
     def setUserPriGid(self, user="", priGid=""):
-        """
-        """
+        '''
+
+        :param user:  (Default value = "")
+        :param priGid:  (Default value = "")
+
+        '''
         pass
 
     #----------------------------------------------------------------------
 
     def setUserHomeDir(self, user="", userHome=""):
-        """
-        """
+        '''
+
+        :param user:  (Default value = "")
+        :param userHome:  (Default value = "")
+
+        '''
         pass
 
     #----------------------------------------------------------------------
 
     def addUserToGroup(self, user="", group=""):
-        """
-        """
+        '''
+
+        :param user:  (Default value = "")
+        :param group:  (Default value = "")
+
+        '''
         pass
 
     #----------------------------------------------------------------------
 
     def rmUserFromGroup(self, user="", group=""):
-        """
-        """
+        '''
+
+        :param user:  (Default value = "")
+        :param group:  (Default value = "")
+
+        '''
         pass
 
     #----------------------------------------------------------------------
 
     def setUserPassword(self, user="", password=""):
-        """
-        """
+        '''
+
+        :param user:  (Default value = "")
+        :param password:  (Default value = "")
+
+        '''
         pass
 
     #----------------------------------------------------------------------
 
     def fixUserHome(self, userName=""):
-        """
-        Get the user information from the local directory and fix the user
+        '''Get the user information from the local directory and fix the user
         ownership and group of the user's home directory to reflect
         what is in the local directory service.
-
+        
         @author: Roy Nielsen
-        """
+
+        :param userName:  (Default value = "")
+
+        '''
         pass
 
     #----------------------------------------------------------------------
@@ -664,18 +743,23 @@ class ManageUserTemplate(object):
     #----------------------------------------------------------------------
 
     def rmUser(self, user=""):
-        """
-        """
+        '''
+
+        :param user:  (Default value = "")
+
+        '''
         pass
 
     #----------------------------------------------------------------------
 
     def rmUserHome(self, user=""):
-        """
-        Get the user information from the local directory and fix the user
+        '''Get the user information from the local directory and fix the user
         ownership and group of the user's home directory to reflect
         what is in the local directory service.
-
+        
         @author: Roy Nielsen
-        """
+
+        :param user:  (Default value = "")
+
+        '''
         pass

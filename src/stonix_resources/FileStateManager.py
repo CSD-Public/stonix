@@ -17,27 +17,27 @@ from distutils.version import LooseVersion
 from logdispatcher import LogPriority as lp
 
 class FileStateManager(object):
-    '''
-    Handles state management of files based on directory path.
-
+    '''Handles state management of files based on directory path.
+    
     Directory path is based on:
-
+    
     <prefix>/<version>/<state>/<map>
-
+    
     prefix: root of location to look for file states
     version: version of the software managing the state
     state: Name of state to compare against
     map: In the case of this state manager, is the file
          path to the file relative to the root oirectory of
          tile to compare against.
-
+    
     each of the above variables  is based on a 'mode' or
-    recipe provided by the class for building that 
+    recipe provided by the class for building that
     variable.  For instance, the <state> variable may contain
     both an OS version and an actual state to check.
-
+    
     please see the setMode method for more information on
     this class's building of these variables.
+
 
     '''
 
@@ -54,22 +54,28 @@ class FileStateManager(object):
         self.backupPrefix = None
 
     def setMode(self, mode=''):
-        '''
-        Setter for the mode of differential checking
+        '''Setter for the mode of differential checking
+
+        :param mode:  (Default value = '')
+
         '''
         modes = ["unified", "ndiff", "filecmp"]
         if isinstance(mode, basestring) and mode in modes:
             self.mode = mode
 
     def getMode(self, mode=''):
-        '''
-        Getter for the mode of differential checking
+        '''Getter for the mode of differential checking
+
+        :param mode:  (Default value = '')
+
         '''
         return self.mode
 
     def setPrefix(self, prefix=''):
-        '''
-        Setter for the prefix used in building the compare path.
+        '''Setter for the prefix used in building the compare path.
+
+        :param prefix:  (Default value = '')
+
         '''
         success = False
         if isinstance(prefix, basestring) and self.isSaneFilePath(prefix):
@@ -87,8 +93,11 @@ class FileStateManager(object):
         return success
 
     def setBackupPrefix(self, prefix='', inspectLevel=1):
-        '''
-        Setter for the prefix used in building the compare path.
+        '''Setter for the prefix used in building the compare path.
+
+        :param prefix:  (Default value = '')
+        :param inspectLevel:  (Default value = 1)
+
         '''
         success = False
 
@@ -138,14 +147,14 @@ class FileStateManager(object):
         return success
 
     def getPrefix(self):
-        '''
-        Getter for the prefix used in building the compare path.
-        '''
+        '''Getter for the prefix used in building the compare path.'''
         return self.prefix
 
     def setVersion(self, version=""):
-        '''
-        Setter for the version to check against)
+        '''Setter for the version to check against)
+
+        :param version:  (Default value = "")
+
         '''
         success = False
         lv = LooseVersion()
@@ -155,17 +164,17 @@ class FileStateManager(object):
         return success
 
     def getVersion(self):
-        '''
-        Getter for the version to check against)
-        '''
+        '''Getter for the version to check against)'''
         return self.version
 
     def isSaneFilePath(self, filepath):
-        """
-        Check for a good file path in the passed in string.
+        '''Check for a good file path in the passed in string.
         
         @author: Roy Nielsen
-        """
+
+        :param filepath: 
+
+        '''
         sane = False
         if isinstance(filepath, basestring):
             if re.match("^[A-Za-z0-9/.][A-Za-z0-9/_.\-]*", filepath):
@@ -174,14 +183,18 @@ class FileStateManager(object):
         return sane
 
     def warnOfMissMatch(self, message=''):
-        '''
-        Build a warning string for reporting purposes.
+        '''Build a warning string for reporting purposes.
+
+        :param message:  (Default value = '')
+
         '''
         pass
 
     def getLatestStatePath(self, state=''):
-        '''
-        Get the path to the latest version of a specified state.
+        '''Get the path to the latest version of a specified state.
+
+        :param state:  (Default value = '')
+
         '''
         statePath = ''
         stateSearchList = self.buildSearchList([state])
@@ -192,8 +205,10 @@ class FileStateManager(object):
         return state
 
     def getLatestFileSet(self, state=''):
-        '''
-        Get the latest file set from a specific state.
+        '''Get the latest file set from a specific state.
+
+        :param state:  (Default value = '')
+
         '''
         fileList = []
         lastState = ''
@@ -231,6 +246,9 @@ class FileStateManager(object):
 
     def buildTextFilesOutput(self, files=[]):
         '''
+
+        :param files:  (Default value = [])
+
         '''
         isValid = []
         text = ""
@@ -258,13 +276,19 @@ class FileStateManager(object):
 
     def buildHtmlFilesOutput(self, files=[]):
         '''
+
+        :param files:  (Default value = [])
+
         '''
         pass
 
     def acquireReferenceFilesSets(self, afterState='', beforeState=''):
-        '''
-        Get three files lists.  First, the expected state, second the current
+        '''Get three files lists.  First, the expected state, second the current
         state, third the passed in 'before' state.
+
+        :param afterState:  (Default value = '')
+        :param beforeState:  (Default value = '')
+
         '''
         latestAfterState, self.afterStateFiles = self.getLatestFileSet(afterState)
 
@@ -279,21 +303,13 @@ class FileStateManager(object):
         return latestAfterState, currentFiles, latestBeforeState
 
     def isKnownStateMatch(self, targetStateFile='', fileName=''):
-        '''
-        Checks the state of filename (full path to a file) against 
+        '''Checks the state of filename (full path to a file) against
         <metaState>/<filename>, where metaState is the path to a mirror
         of the full path file name provided.  The metaState is described below.
-        
-        @param: metaState - Instead of where the description of the file path 
-        is as in the header for the class:
-            Directory path is based on:
 
-            <prefix>/<version>/<state>/<map>
+        :param targetStateFile:  (Default value = '')
+        :param fileName:  (Default value = '')
 
-        the metaState must equal the combination of <prefix>/<version>/<state>
-        @param: fileName - full path to a filename to check the state of.
-
-        @author: Roy Nielsen
         '''
         fromFile = ""
         toFile = ""
@@ -339,8 +355,11 @@ class FileStateManager(object):
         return isSame, diff
 
     def areFilesInState(self, metaState='', files=[]):
-        '''
-        Are all files in the list in a known metaState
+        '''Are all files in the list in a known metaState
+
+        :param metaState:  (Default value = '')
+        :param files:  (Default value = [])
+
         '''
         success = False
         filesState = []
@@ -363,8 +382,11 @@ class FileStateManager(object):
         return success
 
     def areFilesInStates(self, states=[], files=[]):
-        '''
-        Make sure all files in the files list identify as from the same list.
+        '''Make sure all files in the files list identify as from the same list.
+
+        :param states:  (Default value = [])
+        :param files:  (Default value = [])
+
         '''
         success = False
         filesState = []
@@ -393,18 +415,14 @@ class FileStateManager(object):
         return success, stateListItem
 
     def isFileInStates(self, states=[], fileName=''):
-        '''
-        Check Item State, will check for the latest known good state, by way
+        '''Check Item State, will check for the latest known good state, by way
         of the fromState, and current version of the application using this
         library, then iterate backwards through known good versions defined by
         the directory path in the class header.
 
-        @param: fromState - first expected known good state to check.
-        @param: toState - expected state based on passed in state and
-                          application version.
-        @param: filename - full path to a file on the filesystem.
+        :param states:  (Default value = [])
+        :param fileName:  (Default value = '')
 
-        @author: Roy Nielsen
         '''
         success = False
         metaState = None
@@ -432,6 +450,10 @@ class FileStateManager(object):
 
     def backupFile(self, fileName='', inspectIndex=2):
         '''
+
+        :param fileName:  (Default value = '')
+        :param inspectIndex:  (Default value = 2)
+
         '''
         self.logger.log(lp.DEBUG, "Entering backupFile...")
         success = False
@@ -460,13 +482,11 @@ class FileStateManager(object):
         return success
     
     def changeFileState(self, fromMetaState='', fileName=''):
-        '''
-        Change the file state from the "fromState" to the fileName.
+        '''Change the file state from the "fromState" to the fileName.
 
-        @param: fromState - known good reference state of a file.
-        @param: filename - the name of the filename to change.
+        :param fromMetaState:  (Default value = '')
+        :param fileName:  (Default value = '')
 
-        @author: Roy Nielsen
         '''
         success = False
 
@@ -494,13 +514,11 @@ class FileStateManager(object):
         return success
 
     def changeFilesState(self, fromMetaState='', files=[]):
-        '''
-        Change the file state from the "fromState" to the fileName.
+        '''Change the file state from the "fromState" to the fileName.
 
-        @param: fromState - known good reference state of a file.
-        @param: filename - the name of the filename to change.
+        :param fromMetaState:  (Default value = '')
+        :param files:  (Default value = [])
 
-        @author: Roy Nielsen
         '''
         success = False
         copyResults = []
@@ -543,14 +561,13 @@ class FileStateManager(object):
         return success
 
     def buildSearchList(self, states=[], map=''):
-        """
-        Use predefined prefix, version along with the state and filename
+        '''Use predefined prefix, version along with the state and filename
         to build a list of potential meta-states, sorted by version number.
 
-        @param: state - a state to use to create a list of possible meta states
+        :param states:  (Default value = [])
+        :param map:  (Default value = '')
 
-        @author: Roy Nielsen
-        """
+        '''
         versions = []
         fullPath = ''
         states2check = []
@@ -630,14 +647,12 @@ class FileStateManager(object):
     # Quick sort algorithm for sorting a list of version number as defined by
     # the distutils.version.LooseVersion
     def partition(self, data=[], pivot=""):
-        '''
-        Partitioning data based on the passed in pivot value.  Partition defined
+        '''Partitioning data based on the passed in pivot value.  Partition defined
         from the generic computer science QSORT algorithm varient.
 
-        @param: data - the data to sort.  Expected data must be a string that
-                       looks like a version number as defined by:
-                       distutils.version.LooseVersion
-        @param: pivot - a list value as determined by the calling method/function.
+        :param data:  (Default value = [])
+        :param pivot:  (Default value = "")
+
         '''
         self.logger.log(lp.DEBUG, "data: " + str(data))
         self.logger.log(lp.DEBUG, "pivot: " + str(pivot))
@@ -655,8 +670,10 @@ class FileStateManager(object):
         return less, equal, greater
 
     def qsort(self, data=[]):
-        '''
-        Generic computer science QSORT divide and conquer algorithm.
+        '''Generic computer science QSORT divide and conquer algorithm.
+
+        :param data:  (Default value = [])
+
         '''
         success = False
         less = ['0']

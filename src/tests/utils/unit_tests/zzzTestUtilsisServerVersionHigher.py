@@ -75,26 +75,31 @@ version_test_case_data = \
 }
 
 def version_test_template(*args):
-    """
-    template for monkeypatching
-    """
+    '''template for monkeypatching
+
+    :param *args: 
+
+    '''
     def foo(self):
         self.assert_version_check(*args)
     return foo
 
 
 class zzzTestUtilsisServerVersionHigher(unittest.TestCase) :
-    """
-    Attempt to do a pytest friendly test
-    """
+    '''Attempt to do a pytest friendly test'''
     #def setUp(self):
     #    self.environment = Environment()
     #    self.logger = LogDispatcher(self.environment)
         
     def assert_version_check(self, expected_result, version, server_version, comment):
-        """
-        for assessing the version comparison
-        """
+        '''for assessing the version comparison
+
+        :param expected_result: 
+        :param version: 
+        :param server_version: 
+        :param comment: 
+
+        '''
         self.assertEquals(expected_result, isServerVersionHigher(version, server_version))
 
 

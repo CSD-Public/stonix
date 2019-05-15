@@ -28,9 +28,10 @@ from ServiceHelperTemplate import ServiceHelperTemplate
 
 
 class SHsvcadm(ServiceHelperTemplate):
-    '''
-    SHsvcadm is the Service Helper for systems using the svcadm command to
+    '''SHsvcadm is the Service Helper for systems using the svcadm command to
     configure services. (Solaris)
+
+
     '''
 
     def __init__(self, environment, logdispatcher):
@@ -44,11 +45,13 @@ class SHsvcadm(ServiceHelperTemplate):
         self.svc = '/usr/bin/svcs '
 
     def disableService(self, service, **kwargs):
-        '''
-        Disables the service and terminates it if it is running.
+        '''Disables the service and terminates it if it is running.
 
-        @param string: Name of the service to be disabled
-        @return: Bool indicating success status
+        :param string: Name of the service to be disabled
+        :param service: 
+        :param **kwargs: 
+        :returns: Bool indicating success status
+
         '''
         self.logdispatcher.log(LogPriority.DEBUG,
                                'SHsvcadm.disable ' + service)
@@ -64,12 +67,14 @@ class SHsvcadm(ServiceHelperTemplate):
         return confsuccess
 
     def enableService(self, service, **kwargs):
-        '''
-        Enables a service and starts it if it is not running as long as we are
+        '''Enables a service and starts it if it is not running as long as we are
         not in install mode
 
-        @param string: Name of the service to be enabled
-        @return: Bool indicating success status
+        :param string: Name of the service to be enabled
+        :param service: 
+        :param **kwargs: 
+        :returns: Bool indicating success status
+
         '''
         self.logdispatcher.log(LogPriority.DEBUG,
                                'SHsvcadm.enable ' + service)
@@ -85,12 +90,14 @@ class SHsvcadm(ServiceHelperTemplate):
         return confsuccess
 
     def auditService(self, service, **kwargs):
-        '''
-        Checks the status of a service and returns a bool indicating whether or
+        '''Checks the status of a service and returns a bool indicating whether or
         not the service is configured to run or not.
 
-        @param string: Name of the service to audit
-        @return: Bool, True if the service is configured to run
+        :param string: Name of the service to audit
+        :param service: 
+        :param **kwargs: 
+        :returns: Bool, True if the service is configured to run
+
         '''
         self.logdispatcher.log(LogPriority.DEBUG,
                                'SHsvcadm.audit ' + service)
@@ -109,15 +116,17 @@ class SHsvcadm(ServiceHelperTemplate):
         return running
 
     def isRunning(self, service, **kwargs):
-        '''
-        Check to see if a service is currently running. The enable service uses
+        '''Check to see if a service is currently running. The enable service uses
         this so that we're not trying to start a service that is already
         running.
-
+        
         Like BSD this fails the unittest but works IRL.
 
-        @param sting: Name of the service to check
-        @return: bool, True if the service is already running
+        :param sting: Name of the service to check
+        :param service: 
+        :param **kwargs: 
+        :returns: bool, True if the service is already running
+
         '''
         self.logdispatcher.log(LogPriority.DEBUG,
                                'SHsvcadm.isrunning ' + service)
@@ -136,13 +145,15 @@ class SHsvcadm(ServiceHelperTemplate):
         return running
 
     def reloadService(self, service, **kwargs):
-        '''
-        Reload (HUP) a service so that it re-reads it's config files. Called
+        '''Reload (HUP) a service so that it re-reads it's config files. Called
         by rules that are configuring a service to make the new configuration
         active.
 
-        @param string: Name of the service to reload
-        @return: bool indicating success status
+        :param string: Name of the service to reload
+        :param service: 
+        :param **kwargs: 
+        :returns: bool indicating success status
+
         '''
         self.logdispatcher.log(LogPriority.DEBUG,
                                'SHsvcadm.reload ' + service)
@@ -159,10 +170,11 @@ class SHsvcadm(ServiceHelperTemplate):
                 return True
 
     def listServices(self, **kwargs):
-        '''
-        Return a list containing strings that are service names.
+        '''Return a list containing strings that are service names.
 
-        @return: list
+        :param **kwargs: 
+        :returns: list
+
         '''
         self.logdispatcher.log(LogPriority.DEBUG,
                                'SHsvcadm.listservices')

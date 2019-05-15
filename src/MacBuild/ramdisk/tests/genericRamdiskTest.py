@@ -29,18 +29,18 @@ elif sys.platform.startswith("linux"):
     from linuxTmpfsRamdisk import RamDisk, unmount
 
 class GenericRamdiskTest(unittest.TestCase, GenericTestUtilities):
-    """
-    Holds helper methods.  DO NOT create an init
-
+    '''Holds helper methods.  DO NOT create an init
+    
     Inspiration for using classmethod:
     http://simeonfranklin.com/testing2.pdf
-
+    
     @author: Roy Nielsen
-    """
+
+
+    '''
     @classmethod
     def setUpClass(self):
-        """
-        """
+        ''' '''
         #self.getLibc()
         self.subdirs = ["two", "three" "one/four"]
         self.logger = CyLogger()
@@ -83,21 +83,21 @@ class GenericRamdiskTest(unittest.TestCase, GenericTestUtilities):
 
     @classmethod
     def setUpInstanceSpecifics(self):
-        """
-        Call the child class setUpClass initializer, if possible..
-
+        '''Call the child class setUpClass initializer, if possible..
+        
         Here to be over-ridden by a child class.
-
+        
         @author: Roy Nielsen
-        """
+
+
+        '''
         pass
 
     ################################################
     ##### Helper Methods
 
     def _unloadRamdisk(self):
-        """
-        """
+        ''' '''
         if self.my_ramdisk.unmount():
             self.logger.log(lp.INFO, r"Successfully detached disk: " + \
                        str(self.my_ramdisk.mntPoint).strip())
@@ -115,9 +115,7 @@ class GenericRamdiskTest(unittest.TestCase, GenericTestUtilities):
     ##################################
 
     def test_files_n_dirs(self):
-        """
-        Should work when files exist in ramdisk.
-        """
+        '''Should work when files exist in ramdisk.'''
         # Do file setup for this test
         for subdir in self.subdirs:
             dirpath = self.mountPoint + "/" + subdir
@@ -135,9 +133,7 @@ class GenericRamdiskTest(unittest.TestCase, GenericTestUtilities):
     ##################################
 
     def test_four_file_sizes(self):
-        """
-        Test file creation of various sizes, ramdisk vs. filesystem
-        """
+        '''Test file creation of various sizes, ramdisk vs. filesystem'''
         #####
         # Clean up the ramdisk
         self.my_ramdisk._format()
@@ -176,8 +172,7 @@ class GenericRamdiskTest(unittest.TestCase, GenericTestUtilities):
     ##################################
 
     def test_many_small_files_creation(self):
-        """
-        """
+        ''' '''
         #####
         # Clean up the ramdisk
         self.my_ramdisk._format()
@@ -203,17 +198,17 @@ class GenericRamdiskTest(unittest.TestCase, GenericTestUtilities):
 
     @classmethod
     def tearDownInstanceSpecifics(self):
-        """
-        Skeleton method in case a child class wants/needs to override it.
-
+        '''Skeleton method in case a child class wants/needs to override it.
+        
         @author: Roy Nielsen
-        """
+
+
+        '''
         pass
 
     @classmethod
     def tearDownClass(self):
-        """
-        """
+        ''' '''
         self.tearDownInstanceSpecifics()
         if unmount(self.mount):
             self.logger.log(lp.INFO, r"Successfully detached disk: " + \

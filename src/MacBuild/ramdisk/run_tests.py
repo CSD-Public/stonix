@@ -22,8 +22,10 @@ from lib.loggers import LogPriority as lp
 class BuildAndRunSuite(object):
 
     def __init__(self, logger):
-        """
-        """
+        '''
+
+        :param logger:
+        '''
         if logger:
             self.logger = logger
         else:
@@ -34,9 +36,11 @@ class BuildAndRunSuite(object):
     ##############################################
 
     def setPrefix(self, prefix=[]):
-        """
-        Setter for the prefix variable...
-        """
+        '''Setter for the prefix variable...
+
+        :param prefix:  (Default value = [])
+
+        '''
         if prefix and isinstance(prefix, list):
             self.prefix = prefix
         else:
@@ -45,11 +49,13 @@ class BuildAndRunSuite(object):
     ##############################################
 
     def get_all_tests(self, prefix=[]):
-        """
-        Collect all available tests using the test prefix(s)
-
+        '''Collect all available tests using the test prefix(s)
+        
         @author: Roy Nielsen
-        """
+
+        :param prefix:  (Default value = [])
+
+        '''
         test_list = []
         if not self.modules:
             allfiles = os.listdir(testdir)
@@ -68,11 +74,13 @@ class BuildAndRunSuite(object):
     ##############################################
 
     def run_suite(self, modules=[]):
-        """
-        Gather all the tests from this module in a test suite.
-
+        '''Gather all the tests from this module in a test suite.
+        
         @author: Roy Nielsen
-        """
+
+        :param modules:  (Default value = [])
+
+        '''
         self.test_dir_name = testdir.split("/")[1]
         self.modules = modules
 
@@ -114,9 +122,7 @@ class BuildAndRunSuite(object):
     ##############################################
 
     def run_action(self):
-        """
-        Run the Suite.
-        """
+        '''Run the Suite.'''
         runner = unittest.TextTestRunner()
         runner.run(self.test_suite)
 

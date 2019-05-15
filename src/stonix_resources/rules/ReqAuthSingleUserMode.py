@@ -49,11 +49,12 @@ from ..pkghelper import Pkghelper
 
 
 class ReqAuthSingleUserMode(Rule):
-    '''
-    The ReqAuthSingleUserMode class checks if the system currently requires
+    '''The ReqAuthSingleUserMode class checks if the system currently requires
     authentication for single-user mode or not, and if it does not then it makes
     the necessary config file changes to require authentication for single-user
     mode.
+
+
     '''
 
     def __init__(self, config, environ, logger, statechglogger):
@@ -82,15 +83,16 @@ single-user mode, set the value of REQAUTHSINGLEUSERMODE to False.'''
 ###############################################################################
 
     def report(self):
-        '''
-        The report method examines the current configuration and determines
+        '''The report method examines the current configuration and determines
         whether or not it is correct. If the config is correct then the
         self.compliant, self.detailedresults and self.currstate properties are
         updated to reflect the system status. self.rulesuccess will be updated
         if the rule does not succeed.
 
-        @return bool
+
+        :returns: bool
         @author bemalmbe
+
         '''
 
         compliant = True
@@ -209,14 +211,15 @@ for: " + fp + " are not correct\n"
 ###############################################################################
 
     def fix(self):
-        '''
-        The fix method will apply the required settings to the system. 
+        '''The fix method will apply the required settings to the system.
         self.rulesuccess will be updated if the rule does not succeed.
-        Enter the correct config entry in EITHER /etc/inittab OR 
-        /etc/default/sulogin OR /etc/ttys OR /etc/sysconfig/init to require 
+        Enter the correct config entry in EITHER /etc/inittab OR
+        /etc/default/sulogin OR /etc/ttys OR /etc/sysconfig/init to require
         authentication with single-user mode.
-
+        
         @author bemalmbe
+
+
         '''
         try:
             if not self.ci.getcurrvalue():

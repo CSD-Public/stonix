@@ -30,28 +30,29 @@ from logdispatcher import LogPriority
 
 
 class MethodNotImplementedError(Exception):
-    """
-    Meant for being thrown in the template, for when a class that 
+    '''Meant for being thrown in the template, for when a class that
     inherits ServiceHelperTemplate does not implement a method, this
-    exception will be raised by default.
 
-    @author: Roy Nielsen
-    """
+
+    :raises author: Roy Nielsen
+
+    '''
     def __init__(self, *args, **kwargs):
         super(MethodNotImplementedError, self).__init__(self, *args, **kwargs)
 
 
 class ServiceHelperTemplate(object):
-    '''
-    The ServiceHelper class serves as an abstraction layer between rules that
+    '''The ServiceHelper class serves as an abstraction layer between rules that
     need to manipulate services and the actual implementation of changing
     service status on various operating systems.
-
+    
     @Note: Interface methods abstracted to allow for different parameter
            lists for different helpers.  This moves the requirement for
            input validation the the concrete helpers.
-
+    
     @author: dkennel
+
+
     '''
 
     def __init__(self, environment, logger):
@@ -69,9 +70,7 @@ class ServiceHelperTemplate(object):
     #----------------------------------------------------------------------
 
     def getHelper(self):
-        """
-        Getter to acqure the currently specified service helper
-        """
+        '''Getter to acqure the currently specified service helper'''
         return self
 
     #----------------------------------------------------------------------
@@ -97,10 +96,12 @@ class ServiceHelperTemplate(object):
     #----------------------------------------------------------------------
 
     def setService(self, service, **kwargs):
-        '''
-        Update the name of the service being worked with.
+        '''Update the name of the service being worked with.
 
-        @return: Bool indicating success status
+        :param service: 
+        :param **kwargs: 
+        :returns: Bool indicating success status
+
         '''
         self.logdispatcher.log(LogPriority.INFO,
                                '--This service helper not yet in production.')
@@ -112,10 +113,12 @@ class ServiceHelperTemplate(object):
     #----------------------------------------------------------------------
 
     def disableService(self, service, **kwargs):
-        '''
-        Disables the service and terminates it if it is running.
+        '''Disables the service and terminates it if it is running.
 
-        @return: Bool indicating success status
+        :param service: 
+        :param **kwargs: 
+        :returns: Bool indicating success status
+
         '''
         self.logdispatcher.log(LogPriority.INFO,
                                '--This method not yet in production.')
@@ -125,11 +128,13 @@ class ServiceHelperTemplate(object):
     #----------------------------------------------------------------------
 
     def enableService(self, service, **kwargs):
-        '''
-        Enables a service and starts it if it is not running as long as we are
+        '''Enables a service and starts it if it is not running as long as we are
         not in install mode
 
-        @return: Bool indicating success status
+        :param service: 
+        :param **kwargs: 
+        :returns: Bool indicating success status
+
         '''
         self.logdispatcher.log(LogPriority.INFO,
                                '--This method not yet in production.')
@@ -139,11 +144,13 @@ class ServiceHelperTemplate(object):
     #----------------------------------------------------------------------
 
     def auditService(self, service, **kwargs):
-        '''
-        Checks the status of a service and returns a bool indicating whether or
+        '''Checks the status of a service and returns a bool indicating whether or
         not the service is configured to run or not.
 
-        @return: Bool, True if the service is configured to run
+        :param service: 
+        :param **kwargs: 
+        :returns: Bool, True if the service is configured to run
+
         '''
         self.logdispatcher.log(LogPriority.INFO,
                                '--This method not yet in production.')
@@ -153,12 +160,14 @@ class ServiceHelperTemplate(object):
     #----------------------------------------------------------------------
 
     def isRunning(self, service, **kwargs):
-        '''
-        Check to see if a service is currently running. The enable service uses
+        '''Check to see if a service is currently running. The enable service uses
         this so that we're not trying to start a service that is already
         running.
 
-        @return: bool, True if the service is already running
+        :param service: 
+        :param **kwargs: 
+        :returns: bool, True if the service is already running
+
         '''
         self.logdispatcher.log(LogPriority.INFO,
                                '--This method not yet in production.')
@@ -168,15 +177,17 @@ class ServiceHelperTemplate(object):
     #----------------------------------------------------------------------
 
     def reloadService(self, service, **kwargs):
-        '''
-        Reload (HUP) a service so that it re-reads it's config files. Called
+        '''Reload (HUP) a service so that it re-reads it's config files. Called
         by rules that are configuring a service to make the new configuration
         active. This method ignores services that do not return true when
         self.isrunning() is called. The assumption being that this method is
         being called due to a change in a conf file, and a service that isn't
         currently running will pick up the change when (if) it is started.
 
-        @return: bool indicating success status
+        :param service: 
+        :param **kwargs: 
+        :returns: bool indicating success status
+
         '''
         self.logdispatcher.log(LogPriority.INFO,
                                '--This method not yet in production.')
@@ -186,10 +197,11 @@ class ServiceHelperTemplate(object):
     #----------------------------------------------------------------------
 
     def listServices(self, **kwargs):
-        '''
-        List the services installed on the system.
+        '''List the services installed on the system.
 
-        @return: list of strings
+        :param **kwargs: 
+        :returns: list of strings
+
         '''
         self.logdispatcher.log(LogPriority.INFO,
                                '--This method not yet in production.')
@@ -199,10 +211,13 @@ class ServiceHelperTemplate(object):
     #----------------------------------------------------------------------
 
     def start(self, service, *args, **kwargs):
-        '''
-        Start a service installed on the system.
+        '''Start a service installed on the system.
 
-        @return: list of strings
+        :param service: 
+        :param *args: 
+        :param **kwargs: 
+        :returns: list of strings
+
         '''
         self.logdispatcher.log(LogPriority.INFO,
                                '--This method not yet in production.')
@@ -212,10 +227,13 @@ class ServiceHelperTemplate(object):
     #----------------------------------------------------------------------
 
     def stop(self, service, *args, **kwargs):
-        '''
-        Stop a service installed on the system.
+        '''Stop a service installed on the system.
 
-        @return: list of strings
+        :param service: 
+        :param *args: 
+        :param **kwargs: 
+        :returns: list of strings
+
         '''
         self.logdispatcher.log(LogPriority.INFO,
                                '--This method not yet in production.')
@@ -223,9 +241,11 @@ class ServiceHelperTemplate(object):
         raise MethodNotImplementedError
 
     def getStartCommand(self, service):
-        '''
-        retrieve the start command.  Mostly used by event recording
-        @return: string - start command
+        '''retrieve the start command.  Mostly used by event recording
+
+        :param service: 
+        :returns: string - start command
+
         '''
         self.logdispatcher.log(LogPriority.INFO,
                                '--This method not yet in production.')
@@ -233,10 +253,12 @@ class ServiceHelperTemplate(object):
         raise MethodNotImplementedError
 
     def getStopCommand(self, service):
-        '''
-        retrieve the stop command.  Mostly used by event recording
-        @return: string - stop command
+        '''retrieve the stop command.  Mostly used by event recording
+
+        :param service: 
+        :returns: string - stop command
         @author: dwalker
+
         '''
         self.logdispatcher.log(LogPriority.INFO,
                                '--This method not yet in production.')
@@ -244,10 +266,12 @@ class ServiceHelperTemplate(object):
         raise MethodNotImplementedError
 
     def getEnableCommand(self, service):
-        '''
-        retrieve the enable command.  Mostly used by event recording
-        @return: string - enable command
+        '''retrieve the enable command.  Mostly used by event recording
+
+        :param service: 
+        :returns: string - enable command
         @author: dwalker
+
         '''
         self.logdispatcher.log(LogPriority.INFO,
                                '--This method not yet in production.')
@@ -255,10 +279,12 @@ class ServiceHelperTemplate(object):
         raise MethodNotImplementedError
 
     def getDisableCommand(self, service):
-        '''
-        retrieve the start command.  Mostly used by event recording
-        @return: string - disable command
+        '''retrieve the start command.  Mostly used by event recording
+
+        :param service: 
+        :returns: string - disable command
         @author: dwalker
+
         '''
         self.logdispatcher.log(LogPriority.INFO,
                                '--This method not yet in production.')

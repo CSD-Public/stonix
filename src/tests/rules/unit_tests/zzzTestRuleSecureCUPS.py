@@ -65,18 +65,19 @@ class zzzTestRuleSecureCUPS(RuleTest):
             copyfile(self.cupsdconf, self.cupsdconfbak)
 
     def tearDown(self):
-        '''
-        '''
+        ''' '''
 
         pass
 
     def setConditionsForRule(self):
-        '''
-        Configure system for the unit test
+        '''Configure system for the unit test
 
-        @return: success
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: success
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         success = True
@@ -95,11 +96,12 @@ class zzzTestRuleSecureCUPS(RuleTest):
         return success
 
     def test_secure_print_browse_on(self):
-        '''
-        disableprintbrowsing and printbrowsesubnet are mutually
+        '''disableprintbrowsing and printbrowsesubnet are mutually
         exclusive CIs and must be tested in separate configurations
-
+        
         @author: Breen Malmberg
+
+
         '''
 
         self.setConditionsForRule
@@ -113,11 +115,12 @@ class zzzTestRuleSecureCUPS(RuleTest):
                 copyfile(self.cupsdconfbak, self.cupsdconf)
 
     def test_secure_print_browse_off(self):
-        '''
-        disableprintbrowsing and printbrowsesubnet are mutually
+        '''disableprintbrowsing and printbrowsesubnet are mutually
         exclusive CIs and must be tested in separate configurations
-
+        
         @author: Breen Malmberg
+
+
         '''
 
         self.setConditionsForRule
@@ -131,10 +134,11 @@ class zzzTestRuleSecureCUPS(RuleTest):
                 copyfile(self.cupsdconfbak, self.cupsdconf)
 
     def test_disable(self):
-        '''
-        test rule with only disablecups CI enabled
-
+        '''test rule with only disablecups CI enabled
+        
         @author: Breen Malmberg
+
+
         '''
 
         self.setConditionsForRule
@@ -153,14 +157,15 @@ class zzzTestRuleSecureCUPS(RuleTest):
                 copyfile(self.cupsdconfbak, self.cupsdconf)
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
-        '''
-        check on whether report was correct
-        @param self: essential if you override this definition
-        @param pCompliance: the self.iscompliant value of rule
-        @param pRuleSuccess: did report run successfully
-        @return: success
-        @rtype: bool
-        @author: ekkehard j. koch
+        '''check on whether report was correct
+
+        :param self: essential if you override this definition
+        :param pCompliance: the self.iscompliant value of rule
+        :param pRuleSuccess: did report run successfully
+        :returns: success
+        :rtype: bool
+@author: ekkehard j. koch
+
         '''
         self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " + \
                              str(pCompliance) + ".")
@@ -170,13 +175,14 @@ class zzzTestRuleSecureCUPS(RuleTest):
         return success
 
     def checkFixForRule(self, pRuleSuccess):
-        '''
-        check on whether fix was correct
-        @param self: essential if you override this definition
-        @param pRuleSuccess: did report run successfully
-        @return: success
-        @rtype: bool
-        @author: ekkehard j. koch
+        '''check on whether fix was correct
+
+        :param self: essential if you override this definition
+        :param pRuleSuccess: did report run successfully
+        :returns: success
+        :rtype: bool
+@author: ekkehard j. koch
+
         '''
         self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
                              str(pRuleSuccess) + ".")
@@ -184,13 +190,14 @@ class zzzTestRuleSecureCUPS(RuleTest):
         return success
 
     def checkUndoForRule(self, pRuleSuccess):
-        '''
-        check on whether undo was correct
-        @param self: essential if you override this definition
-        @param pRuleSuccess: did report run successfully
-        @return: success
-        @rtype: bool
-        @author: ekkehard j. koch
+        '''check on whether undo was correct
+
+        :param self: essential if you override this definition
+        :param pRuleSuccess: did report run successfully
+        :returns: success
+        :rtype: bool
+@author: ekkehard j. koch
+
         '''
         self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
                              str(pRuleSuccess) + ".")

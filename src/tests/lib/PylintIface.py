@@ -30,9 +30,9 @@ def _patch_streams(out):
         sys.stdout = old_stderr
 
 class AjsonReporter(JSONReporter):
-    """ Add a getter for messages..."""
+    '''Add a getter for messages...'''
     def get_messages(self):
-        """ Getter for messages """
+        '''Getter for messages'''
         return self.messages
 
 '''
@@ -62,12 +62,13 @@ def processFile(filename, compiledPackages="PyQt5,PyQt4"):
     return jsonOut
 
 class PylintIface():
-    '''
-    The variable below - compiledPackage:
+    '''The variable below - compiledPackage:
     A comma-separated list of package or module names
     from where C extensions may be loaded. Extensions are
     loading into the active Python interpreter and may run
     arbitrary code
+
+
     '''
 
     acquiredData = {}
@@ -95,14 +96,16 @@ class PylintIface():
             sys.stdout = old_stderr
 
     class AjsonReporter(JSONReporter):
-        """ Add a getter for messages..."""
+        '''Add a getter for messages...'''
         def get_messages(self):
-            """ Getter for messages """
+            '''Getter for messages'''
             return self.messages
 
     def processFile(self, filename):
-        '''
-        Process a file and aquire data from the pylint parser
+        '''Process a file and aquire data from the pylint parser
+
+        :param filename: 
+
         '''
         jsonOut = {}
 

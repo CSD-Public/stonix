@@ -56,9 +56,7 @@ import re
 class SecureIPV4(Rule):
 
     def __init__(self, config, environ, logger, statechglogger):
-        '''
-        Constructor
-        '''
+        '''Constructor'''
         Rule.__init__(self, config, environ, logger, statechglogger)
         self.logger = logger
         self.rulenumber = 15
@@ -109,7 +107,11 @@ class SecureIPV4(Rule):
 
     def report(self):
         '''Main parent report method that calls the sub report methods
-        @return: bool'''
+
+
+        :returns: bool
+
+        '''
         try:
             self.detailedresults = ""
             if self.environ.getosfamily() == "linux":
@@ -150,7 +152,11 @@ class SecureIPV4(Rule):
         '''Linux specific report method that ensures the items in fileContents
         exist in /etc/sysctl.conf.  Sets self.compliant to True if all items
         exist in the file.  Returns True if successful in updating the file
-        @return: bool'''
+
+
+        :returns: bool
+
+        '''
         compliant = True
         if not os.path.exists(self.path):
             self.detailedresults += self.path + " does not exist\n"
@@ -185,7 +191,11 @@ class SecureIPV4(Rule):
         '''Linux specific report method2 that ensures the items in fileContents
         exist in /etc/sysctl.conf.  Sets self.compliant to True if all items
         exist in the file.  Returns True if successful in updating the file
-        @return: bool'''
+
+
+        :returns: bool
+
+        '''
         compliant = True
         if not os.path.exists(self.path):
             compliant = False
@@ -203,17 +213,19 @@ class SecureIPV4(Rule):
         return compliant
 
     def reportMac(self):
-        '''
-        Mac specific report method1 that ensures the items in fileContents
+        '''Mac specific report method1 that ensures the items in fileContents
         exist in /etc/sysctl.conf.  Sets self.compliant to True if all items
         exist in the file.
 
-        @return: compliant
-        @rtype: bool
-        @author: dwalker
-        @change: Breen Malmberg - 1/10/2017 - minor doc string adjustments; fixed
-                permissions on file /etc/sysctl.conf (needs to be 0o600; was 0o644);
-                try/except
+
+        :returns: compliant
+
+        :rtype: bool
+@author: dwalker
+@change: Breen Malmberg - 1/10/2017 - minor doc string adjustments; fixed
+        permissions on file /etc/sysctl.conf (needs to be 0o600; was 0o644);
+        try/except
+
         '''
 
         compliant = True
@@ -253,7 +265,11 @@ class SecureIPV4(Rule):
         '''Freebsd specific report method1 that ensures the items in the file
         exist in /etc/sysctl.conf.  Sets self.compliant to True if all items
         exist in the file.  Returns True if successful in updating the file
-        @return: bool'''
+
+
+        :returns: bool
+
+        '''
         compliant = True
         if not os.path.exists(self.path):
             self.detailedresults += self.path + " does not exist\n"
@@ -284,7 +300,11 @@ class SecureIPV4(Rule):
         fileContents exist in /etc/sysctl.conf. Sets self.compliant to True
         if all items exist in the file. Returns True if successful in updating
         the file
-        @return: bool'''
+
+
+        :returns: bool
+
+        '''
         compliant = True
         if not os.path.exists(self.path):
             self.detailedresults += self.path + " does not exist\n"
@@ -311,7 +331,11 @@ class SecureIPV4(Rule):
 
     def fix(self):
         '''Main parent fix method that calls the sub fix methods
-        @return: bool'''
+
+
+        :returns: bool
+
+        '''
         try:
             if not self.networkTuning1 and not self.networkTuning2:
                 return
@@ -416,14 +440,16 @@ class SecureIPV4(Rule):
         return success
 
     def fixMac(self):
-        '''
-        run fix actions for mac systems
+        '''run fix actions for mac systems
 
-        @return: success
-        @rtype: bool
-        @author: dwalker
-        @change: Breen Malmberg - 1/10/2017 - added doc string; try/except;
-                fixed perms for file sysctl.conf (should be 0o600; was 0o644)
+
+        :returns: success
+
+        :rtype: bool
+@author: dwalker
+@change: Breen Malmberg - 1/10/2017 - added doc string; try/except;
+        fixed perms for file sysctl.conf (should be 0o600; was 0o644)
+
         '''
 
         success = True

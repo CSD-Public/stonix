@@ -18,11 +18,12 @@ from lib.loggers import CyLogger
 from lib.loggers import LogPriority as lp
 
 class GenericTestUtilities(object):
-    """
-    Generic class based Yutilities for ramdisk testing...
+    '''Generic class based Yutilities for ramdisk testing...
     
     @author: Roy Nielsen
-    """
+
+
+    '''
     def __init__(self):
         """
         Initialization Method...
@@ -34,8 +35,7 @@ class GenericTestUtilities(object):
     ##### Helper Methods
     @classmethod
     def getLibc(self):
-        """
-        """
+        ''' '''
         self.osFamily = sys.platform.lower()
 
         if self.osFamily and  self.osFamily.startswith("darwin"):
@@ -74,11 +74,12 @@ class GenericTestUtilities(object):
     ################################################
 
     def findLinuxLibC(self):
-        """
-        Find Linux Libc library...
-
+        '''Find Linux Libc library...
+        
         @author: Roy Nielsen
-        """
+
+
+        '''
         possible_paths = ["/lib/x86_64-linux-gnu/libc.so.6",
                           "/lib/i386-linux-gnu/libc.so.6"]
         for path in possible_paths:
@@ -91,19 +92,20 @@ class GenericTestUtilities(object):
     ################################################
     @classmethod
     def _pass(self):
-        """
-        Filler if a library didn't load properly
-        """
+        '''Filler if a library didn't load properly'''
         pass
 
     ################################################
 
     def touch(self, fname="", message_level="normal"):
-        """
-        Python implementation of the touch command..
-
+        '''Python implementation of the touch command..
+        
         @author: Roy Nielsen
-        """
+
+        :param fname:  (Default value = "")
+        :param message_level:  (Default value = "normal")
+
+        '''
         if re.match("^\s*$", str(fname)):
             self.logger.log(lp.WARNING, "Cannot touch a file without a filename....")
         else:
@@ -118,9 +120,11 @@ class GenericTestUtilities(object):
     ################################################
 
     def mkdirs(self, path=""):
-        """
-        A function to do an equivalent of "mkdir -p"
-        """
+        '''A function to do an equivalent of "mkdir -p"
+
+        :param path:  (Default value = "")
+
+        '''
         if not path:
             self.logger.log(lp.WARNING, "Bad path...")
         else:
@@ -136,21 +140,25 @@ class GenericTestUtilities(object):
     ################################################
 
     def mkfile(self, file_path="", file_size=0, pattern="rand", block_size=512, mode=0o777):
-        """
-        Create a file with "file_path" and "file_size".  To be used in
+        '''Create a file with "file_path" and "file_size".  To be used in
         file creation benchmarking - filesystem vs ramdisk.
 
-        @parameter: file_path - Full path to the file to create
-        @parameter: file_size - Size of the file to create, in Mba
-        @parameter: pattern - "rand": write a random pattern
+        :param eter: file_path - Full path to the file to create
+        :param eter: file_size - Size of the file to create, in Mba
+        :param eter: pattern - "rand": write a random pattern
                               "0xXX": where XX is a hex value for a byte
-        @parameter: block_size - size of blocks to write in bytes
-        @parameter: mode - file mode, default 0o777
-
-        @returns: time in miliseconds the write took
-
+        :param eter: block_size - size of blocks to write in bytes
+        :param eter: mode - file mode, default 0o777
+        :param file_path:  (Default value = "")
+        :param file_size:  (Default value = 0)
+        :param pattern:  (Default value = "rand")
+        :param block_size:  (Default value = 512)
+        :param mode:  (Default value = 0o777)
+        :returns: s: time in miliseconds the write took
+        
         @author: Roy Nielsen
-        """
+
+        '''
         total_time = 0
         if file_path and file_size:
             self.libc.sync()

@@ -38,9 +38,10 @@ from ..CommandHelper import CommandHelper
 
 
 class VerifySysFilePerms(Rule):
-    '''
-    This rule will check the default owners and access permissions for all
+    '''This rule will check the default owners and access permissions for all
     system packages and their associated files as well as the file contents.
+
+
     '''
 
     def __init__(self, config, environ, logger, statechglogger):
@@ -77,9 +78,12 @@ class VerifySysFilePerms(Rule):
     def report(self):
         '''
 
-        @return: self.compliant
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: self.compliant
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         # defaults
@@ -155,12 +159,14 @@ class VerifySysFilePerms(Rule):
         return self.compliant
 
     def reportCapitan(self):
-        '''
-        run report actions specific to mac os x el capitan
+        '''run report actions specific to mac os x el capitan
 
-        @return: retval
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: retval
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         retval = True
@@ -201,9 +207,12 @@ class VerifySysFilePerms(Rule):
     def fix(self):
         '''
 
-        @return: success
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: success
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         # defaults
@@ -242,12 +251,14 @@ class VerifySysFilePerms(Rule):
         return success
 
     def fixCapitan(self):
-        '''
-        run fix actions specific to mac os x el capitan
+        '''run fix actions specific to mac os x el capitan
 
-        @return: retval
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: retval
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         success = True
@@ -271,10 +282,7 @@ class VerifySysFilePerms(Rule):
         return success
 
     def undo(self):
-        '''
-
-        @author: Breen Malmberg
-        '''
+        '''@author: Breen Malmberg'''
 
         self.detailedresults += '\nThere is no undo function for this rule'
         self.logger.log(LogPriority.INFO, self.detailedresults)

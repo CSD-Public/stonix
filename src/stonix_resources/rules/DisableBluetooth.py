@@ -46,13 +46,14 @@ from ..stonixutilityfunctions import iterate, setPerms, checkPerms, resetsecon
 
 
 class DisableBluetooth(Rule):
-    '''
-    The DisableBluetooth rule does all of the following:
+    '''The DisableBluetooth rule does all of the following:
     Disable all bluetooth services
     Blacklist all bluetooth drivers
     Remove all bluetooth packages
     Check to see if all of the above operations have been done or
     not - report()
+
+
     '''
 
     def __init__(self, config, environ, logger, statechglogger):
@@ -89,18 +90,19 @@ class DisableBluetooth(Rule):
         self.sethelptext()
 
     def report(self):
-        '''
-        The report method examines the current configuration and determines
+        '''The report method examines the current configuration and determines
         whether or not it is correct. If the config is correct then the
         self.compliant, self.detailed results and self.currstate properties are
         updated to reflect the system status. self.rulesuccess will be updated
         if the rule does not succeed.
 
-        @return bool
+
+        :returns: bool
         @author bemalmbe
         @change: dwalker - implemented kveditor
         @change: dwalker - 9-3-2014 commented out bluetooth package removal
             sections due to issues with redhat7 and fedora20
+
         '''
         try:
             self.detailedresults = ""
@@ -166,16 +168,18 @@ Bluetooth\n"
 ###############################################################################
 
     def fix(self):
-        '''
-        disable all bluetooth services
+        '''disable all bluetooth services
         remove all bluetooth packages
         blacklist all bluetooth drivers
-
+        
         @author bemalmbe
         @change: dwalker - implemented kveditor
-        @return: bool
+
+
+        :returns: bool
         @change: dwalker - 9-3-2014 commented out bluetooth package removal
             sections due to issues with redhat7 and fedora20
+
         '''
         try:
             if not self.ci.getcurrvalue():

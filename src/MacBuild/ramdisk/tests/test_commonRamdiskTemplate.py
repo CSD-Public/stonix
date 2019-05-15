@@ -33,25 +33,23 @@ elif sys.platform.startswith("linux"):
     from linuxTmpfsRamdisk import RamDisk, unmount
 
 class test_commonRamdiskTemplate(unittest.TestCase):
-    """
-    """
+    ''' '''
 
     @classmethod
     def setUpClass(self):
-        """
-        Runs once before any tests start
-        """
+        '''Runs once before any tests start'''
         # Start timer in miliseconds
         self.test_start_time = datetime.now()
 
     ##################################
 
     def setUp(self):
-        """
-        This method runs before each test run.
-
+        '''This method runs before each test run.
+        
         @author: Roy Nielsen
-        """
+
+
+        '''
         pass
 
 ###############################################################################
@@ -60,15 +58,13 @@ class test_commonRamdiskTemplate(unittest.TestCase):
     ##################################
 
     def test_init(self):
-        """
-        """
+        ''' '''
         pass
 
     ##################################
 
     def test_get_data(self):
-        """
-        """
+        ''' '''
         pass
 
 
@@ -82,9 +78,7 @@ class test_commonRamdiskTemplate(unittest.TestCase):
 ##### unittest Tear down
     @classmethod
     def tearDownClass(self):
-        """
-        Final cleanup actions...
-        """
+        '''Final cleanup actions...'''
         self.logger = CyLogger()
         #####
         # capture end time

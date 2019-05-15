@@ -222,7 +222,10 @@ class DisableScreenSavers(Rule):
 
     def undo(self):
         '''There is no undo method for this rule since we don't ever want
-        these screensaver files to exist'''
+        these screensaver files to exist
+
+
+        '''
         try:
             self.detailedresults = "no undo available\n"
             self.logger.log(LogPriority.INFO, self.detailedresults)

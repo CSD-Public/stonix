@@ -17,10 +17,11 @@
 
 
 class Environment:
-    """
-    Mock for the environment class
+    '''Mock for the environment class
     @author: Roy Nielsen
-    """
+
+
+    '''
 
     def __init__(self):
         """
@@ -28,13 +29,9 @@ class Environment:
         """
 
     def getosfamily(self):
-        """
-        Interface for getosfamily
-        """
+        '''Interface for getosfamily'''
         return "darwin"
 
     def get_config_path(self):
-        """
-        Interface for the get_config_path
-        """
+        '''Interface for the get_config_path'''
         return "./"        

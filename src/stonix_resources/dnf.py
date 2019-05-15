@@ -32,10 +32,9 @@ from StonixExceptions import repoError
 
 
 class Dnf(object):
-    '''
-    The template class that provides a framework that must be implemented by
+    '''The template class that provides a framework that must be implemented by
     all platform specific pkgmgr classes.  Specifically for Fedora
-
+    
     :version:
     @author: Derek T Walker 08-13-2015
     @change: Breen Malmberg - 4/18/2017 - refactor of multiple methods;
@@ -43,6 +42,8 @@ class Dnf(object):
             (non-interactive) flag to install and remove command var's;
             added a dnf info command var;
             added parameter validation to each method
+
+
     '''
 
     def __init__(self, logger):
@@ -60,17 +61,17 @@ class Dnf(object):
         self.lockfiles = ["/var/run/dnf.lock", "/var/run/dnf.pid", "/run/dnf.lock", "/run/dnf.pid"]
 
     def installpackage(self, package):
-        '''
-        Install a package. Return a bool indicating success or failure.
+        '''Install a package. Return a bool indicating success or failure.
 
-        @param package: string; Name of the package to be installed, must be
+        :param package: string; Name of the package to be installed, must be
                 recognizable to the underlying package manager.
-        @return installed
-        @rtype: bool
-        @author: Derek T. Walker
-        @change: Breen Malmberg - 4/18/2017 - refactored method; added logging; replaced
-                detailedresults with logging
-        @change: Breen Malmberg - 10/1/2018 - added check for package manager lock and retry loop
+        :returns: installed
+        :rtype: bool
+@author: Derek T. Walker
+@change: Breen Malmberg - 4/18/2017 - refactored method; added logging; replaced
+        detailedresults with logging
+@change: Breen Malmberg - 10/1/2018 - added check for package manager lock and retry loop
+
         '''
 
         installed = True
@@ -108,15 +109,15 @@ class Dnf(object):
         return installed
 
     def removepackage(self, package):
-        '''
-        Remove a package. Return a bool indicating success or failure.
+        '''Remove a package. Return a bool indicating success or failure.
 
-        @param package: string; Name of the package to be removed, must be
+        :param package: string; Name of the package to be removed, must be
                 recognizable to the underlying package manager.
-        @return: removed
-        @rtype: bool
-        @author: Derek T. Walker
-        @change: Breen Malmberg - 4/18/2017
+        :returns: removed
+        :rtype: bool
+@author: Derek T. Walker
+@change: Breen Malmberg - 4/18/2017
+
         '''
 
         removed = True
@@ -154,17 +155,15 @@ class Dnf(object):
         return removed
 
     def checkInstall(self, package):
-        '''
-        Check the installation status of a package. Return a bool; True if
+        '''Check the installation status of a package. Return a bool; True if
         the package is installed.
 
-        @param: package: string; Name of the package whose installation status
-                is to be checked, must be recognizable to the underlying package
-                manager.
-        @return: installed
-        @rtype: bool
-        @author: Derek T. Walker
-        @change: Breen Malmberg - 4/18/2017
+        :param package: 
+        :returns: installed
+        :rtype: bool
+@author: Derek T. Walker
+@change: Breen Malmberg - 4/18/2017
+
         '''
 
         installed = False
@@ -225,14 +224,14 @@ class Dnf(object):
         return installed
 
     def checkAvailable(self, package):
-        '''
-        check if the given package is available to install
+        '''check if the given package is available to install
 
-        @param package: string; name of package to check for
-        @return: found
-        @rtype: bool
-        @author: Derek T. Walker
-        @change: Breen Malmberg - 4/18/2017 - added doc string; refactor of method
+        :param package: string; name of package to check for
+        :returns: found
+        :rtype: bool
+@author: Derek T. Walker
+@change: Breen Malmberg - 4/18/2017 - added doc string; refactor of method
+
         '''
 
         found = False
@@ -280,17 +279,17 @@ class Dnf(object):
         return found
 
     def checkUpdate(self, package=""):
-        '''
-        check the specified package for updates
+        '''check the specified package for updates
         if no package is specified, check for all/any
         updates on the system
         return True if there are updates available
         return False if there are no updates available
 
-        @param package: string; name of package to check
-        @return: updatesavail
-        @rtype: bool
-        @author: Breen Malmberg
+        :param package: string; name of package to check (Default value = "")
+        :returns: updatesavail
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         updatesavail = False
@@ -326,15 +325,15 @@ class Dnf(object):
         return updatesavail
 
     def Update(self, package=""):
-        '''
-        update the specified package
+        '''update the specified package
         if no package is specified, update
         all packages on the system
 
-        @param package: string; name of package to update
-        @return: updated
-        @rtype: bool
-        @author: Breen Malmberg
+        :param package: string; name of package to update (Default value = "")
+        :returns: updated
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         updated = True
@@ -372,15 +371,15 @@ class Dnf(object):
         return updated
 
     def getPackageFromFile(self, filename):
-        '''
-        return a string with the name of the parent package
+        '''return a string with the name of the parent package
         in it
 
-        @param: filename: string; The name or path of the file to resolve
-        @return: packagename
-        @rtype: string
-        @author: Eric Ball
-        @change: Breen Malmberg - 4/18/2017 - fixed doc string; refactored method
+        :param filename: 
+        :returns: packagename
+        :rtype: string
+@author: Eric Ball
+@change: Breen Malmberg - 4/18/2017 - fixed doc string; refactored method
+
         '''
 
         packagename = ""

@@ -30,7 +30,10 @@ class Solaris(object):
     
     def __init__(self,logger):
         '''Remember, for solaris sparc systems, the package names will typically
-        begin with SUNW'''
+            begin with SUNW
+
+
+        '''
         self.logger = logger
         self.detailedresults = ""
         self.sparc = "(.)*sparc(.)*" 
@@ -40,13 +43,15 @@ class Solaris(object):
         self.info = "/usr/bin/pkginfo "
 ###############################################################################
     def installpackage(self, package):
-        '''
-         Install a package. Return a bool indicating success or failure.
+        '''Install a package. Return a bool indicating success or failure.
 
-        @param string package : Name of the package to be installed, must be 
+        :param string: package : Name of the package to be installed, must be
             recognizable to the underlying package manager.
-        @return bool :
-        @author'''
+        :param package: 
+        :returns: bool :
+        @author
+
+        '''
         try:
 #             retval = call(self.install + package,stdout=None,shell=True)
 #             if retval == 0:
@@ -75,10 +80,13 @@ class Solaris(object):
     def removepackage(self,package):
         '''Remove a package. Return a bool indicating success or failure.
 
-        @param string package : Name of the package to be removed, must be 
+        :param string: package : Name of the package to be removed, must be
             recognizable to the underlying package manager.
-        @return bool :
-        @author'''
+        :param package: 
+        :returns: bool :
+        @author
+
+        '''
         
         try:
 #             retval = call(self.remove + package,stdout=None,shell=True)
@@ -106,14 +114,17 @@ class Solaris(object):
                             ["Solaris.remove",self.detailedresults])
 ###############################################################################
     def checkInstall(self, package):
-        '''Check the installation status of a package. Return a bool; True if 
+        '''Check the installation status of a package. Return a bool; True if
         the packageis installed.
 
-        @param string package : Name of the package whose installation status 
-            is to be checked, must be recognizable to the underlying package 
+        :param string: package : Name of the package whose installation status
+            is to be checked, must be recognizable to the underlying package
             manager.
-        @return bool :
-        @author'''
+        :param package: 
+        :returns: bool :
+        @author
+
+        '''
         try:
             if search("^SUNW",package):
                 retval = call(["/usr/bin/pkginfo",package],stdout=None,

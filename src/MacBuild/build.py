@@ -53,20 +53,22 @@ from ramdisk.lib.manage_keychain.manage_keychain import ManageKeychain
 #####
 # Exception for when the conf file can't be grokked.
 class ConfusingConfigurationError(BaseException):
-    """
-    Meant for being thrown when the MacBuilder can't determine configuration
+    '''Meant for being thrown when the MacBuilder can't determine configuration
     information.
-
+    
     @author: Roy Nielsen
-    """
+
+
+    '''
     def __init__(self, *args, **kwargs):
         BaseException.__init__(self, *args, **kwargs)
 
 
 class SoftwareBuilder():
-    '''
-    Class to manage the build process.  Initially used with the Stonix project
+    '''Class to manage the build process.  Initially used with the Stonix project
     on the Mac platform, will be used for others as well.
+
+
     '''
     def __init__(self,
                  options=optparse.Values({"compileGui": False, "version": "0",
@@ -207,10 +209,12 @@ class SoftwareBuilder():
         exit(exitcode)
 
     def _configSectionMap(self, section):
-        '''
-        Acquire values from the config file and store in a dictionary.
-
+        '''Acquire values from the config file and store in a dictionary.
+        
         @author: rsn
+
+        :param section: 
+
         '''
         dict1 = {}
         options = self.parser.options(section)
@@ -226,9 +230,10 @@ class SoftwareBuilder():
         return dict1
 
     def _configParser(self):
-        '''
-        Parse config file and instanciate/initialize class variables from
+        '''Parse config file and instanciate/initialize class variables from
         config file data.
+
+
         '''
         success = False
 
@@ -304,13 +309,12 @@ class SoftwareBuilder():
         return success
 
     def getOrdPass(self, passwd=''):
-        '''
-        Get the password translated to a direct ascii pattern of:
-
+        '''Get the password translated to a direct ascii pattern of:
+        
             "[\d+:]\d+"
-
+        
         for use when in the need of passing it via self.rw.liftDown()
-
+        
         #####
         # Prepare for transport of the password to the xcodebuild.py
         # builder.  This is not encryption, this is just encoding, using
@@ -319,9 +323,9 @@ class SoftwareBuilder():
         # characters to be passed, that may be consumed by a shell in
         # the process of passing the password to the other python script.
 
-        @param: password to translate
+        :param passwd:  (Default value = '')
+        :returns: s: translated password
 
-        @returns: translated password
         '''
         i = 0
         ordPass = ""
@@ -339,9 +343,7 @@ class SoftwareBuilder():
     # Main controller/driver for the class
 
     def driver(self):
-        '''
-        The driver orchestrates the build process.
-        '''
+        '''The driver orchestrates the build process.'''
         # Check that user building stonix has uid 0
         current_user, _ = self.mbl.checkBuildUser()
 
@@ -385,9 +387,7 @@ class SoftwareBuilder():
     # Interface support methods
 
     def setUp(self):
-        '''
-        Performing build setup for the whole process.
-        '''
+        '''Performing build setup for the whole process.'''
         success = False
         try:
             # Check that user building stonix has uid 0
@@ -437,6 +437,10 @@ class SoftwareBuilder():
 
     def preCompile(self, appName, prepPath):
         '''
+
+        :param appName: 
+        :param prepPath: 
+
         '''
         success = False
         self.libc.sync()
@@ -540,15 +544,15 @@ class SoftwareBuilder():
         return success
 
     def compile(self, appName, appVersion, appIcon, appPath):
-        '''
-        Perform compile - to create an 'app' for the applications directory
+        '''Perform compile - to create an 'app' for the applications directory
 
-        @param appName: Name of application as it should appear on OS X systems
-        @param appVersion: Version of app being built
-        @param appIcon: File name of icon for OS X app
-        @param appPath: Path to [stonixroot]/src/MacBuild/[appName]
-
+        :param appName: Name of application as it should appear on OS X systems
+        :param appVersion: Version of app being built
+        :param appIcon: File name of icon for OS X app
+        :param appPath: Path to [stonixroot]/src/MacBuild/[appName]
+        
         @author: Eric Ball, Roy Nielsen
+
         '''
         print "Started compileApp with " + appName + ", " + appVersion + \
             ", " + appIcon
@@ -642,10 +646,13 @@ class SoftwareBuilder():
         print "compileApp with " + appName + ", " + appVersion + " Finished..."
 
     def postCompile(self, appName, prepPath):
-        '''
-        Perform post-compile processing.
-
+        '''Perform post-compile processing.
+        
         @author: Eric Ball, Roy Nielsen
+
+        :param appName: 
+        :param prepPath: 
+
         '''
         print "Started postCompile..."
         returnDir = os.getcwd()
@@ -721,14 +728,14 @@ class SoftwareBuilder():
         print "buildStonix4MacAppResources Finished..."
 
     def signObject(self, workingDir, objectParentDir, objectName):
-        '''
-        Uses xcodebuild to sign a file or bundle.
+        '''Uses xcodebuild to sign a file or bundle.
 
-        @param workingDir: The working directory that the process will take place
-        @param objectParentDir: The directory that contains the object to be signed
-        @param objectName: The name of the object to be signed
-
+        :param workingDir: The working directory that the process will take place
+        :param objectParentDir: The directory that contains the object to be signed
+        :param objectName: The name of the object to be signed
+        
         @author: Brandon R. Gonzales
+
         '''
         self.logger.log(lp.DEBUG, "\n##################################################")
         self.logger.log(lp.DEBUG, "##################################################")
@@ -773,15 +780,15 @@ class SoftwareBuilder():
         sleep(3)
 
     def makeInstaller(self, appName, appVersion, appPath):
-        '''
-        Create an installer.  As of Nov 2016, use luggage to create a
-       <appName>.pkg
+        '''Create an installer.  As of Nov 2016, use luggage to create a
+               <appName>.pkg
 
-        @param appName: Name of application as it should appear on OS X systems
-        @param appVersion: Version of app being built
-        @param appPath: Path to [stonixroot]/src/MacBuild
-
+        :param appName: Name of application as it should appear on OS X systems
+        :param appVersion: Version of app being built
+        :param appPath: Path to [stonixroot]/src/MacBuild
+        
         @authors: Eric Ball, Roy Nielsen
+
         '''
         #####
         # run make to create a pkg installer
@@ -882,14 +889,11 @@ class SoftwareBuilder():
         print "buildStonix4MacAppPkg... Finished"
 
     def backup(self):
-        '''
-        '''
+        ''' '''
         pass
 
     def tearDown(self):
-        '''
-        Disconnect ramdisk, unloading data to pre-build location.
-        '''
+        '''Disconnect ramdisk, unloading data to pre-build location.'''
         self.logger.log(lp.DEBUG, "===== Entering tearDown =====")
         self.mbl.chownR(self.keyuser, self.tmphome + "/src")
 

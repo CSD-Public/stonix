@@ -20,9 +20,7 @@ class zzzTestFrameworkRamdisk(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
-        """
-        Initializer
-        """
+        '''Initializer'''
 
         self.environ = Environment()
 
@@ -82,11 +80,12 @@ class zzzTestFrameworkRamdisk(unittest.TestCase):
         self.fs_dir = tempfile.mkdtemp()
 
     def setUp(self):
-        """
-        This method runs before each test run.
-
+        '''This method runs before each test run.
+        
         @author: Roy Nielsen
-        """
+
+
+        '''
         self.libcPath = None # initial initialization
         #####
         # setting up to call ctypes to do a filesystem sync
@@ -108,11 +107,12 @@ class zzzTestFrameworkRamdisk(unittest.TestCase):
 ##### Helper Classes
 
     def findLinuxLibC(self):
-        """
-        Find Linux Libc library...
-
+        '''Find Linux Libc library...
+        
         @author: Roy Nielsen
-        """
+
+
+        '''
         possible_paths = ["/lib/x86_64-linux-gnu/libc.so.6",
                           "/lib/i386-linux-gnu/libc.so.6"]
         for path in possible_paths:
@@ -122,19 +122,20 @@ class zzzTestFrameworkRamdisk(unittest.TestCase):
                 break
 
     def _pass(self):
-        """
-        Filler if a library didn't load properly
-        """
+        '''Filler if a library didn't load properly'''
         pass
 
     def touch(self, fname="", message_level="normal") :
-        """
-        Python implementation of the touch command..
-
+        '''Python implementation of the touch command..
+        
         inspiration: http://stackoverflow.com/questions/1158076/implement-touch-using-python
-
+        
         @author: Roy Nielsen
-        """
+
+        :param fname:  (Default value = "")
+        :param message_level:  (Default value = "normal")
+
+        '''
         if re.match("^\s*$", str(fname)):
             self.logger.log(LogPriority.DEBUG, "Cannot touch a file without a filename....")
         else :
@@ -148,9 +149,11 @@ class zzzTestFrameworkRamdisk(unittest.TestCase):
 
 
     def mkdirs(self, path="") :
-        """
-        A function to do an equivalent of "mkdir -p"
-        """
+        '''A function to do an equivalent of "mkdir -p"
+
+        :param path:  (Default value = "")
+
+        '''
         if not path :
             self.logger.log(LogPriority.INFO,"Bad path...")
         else :
@@ -165,21 +168,25 @@ class zzzTestFrameworkRamdisk(unittest.TestCase):
 
 
     def mkfile(self, file_path="", file_size=0, pattern="rand", block_size=512, mode=0o777):
-        """
-        Create a file with "file_path" and "file_size".  To be used in 
+        '''Create a file with "file_path" and "file_size".  To be used in
         file creation benchmarking - filesystem vs ramdisk.
 
-        @parameter: file_path - Full path to the file to create
-        @parameter: file_size - Size of the file to create, in Mba
-        @parameter: pattern - "rand": write a random pattern
+        :param eter: file_path - Full path to the file to create
+        :param eter: file_size - Size of the file to create, in Mba
+        :param eter: pattern - "rand": write a random pattern
                               "0xXX": where XX is a hex value for a byte
-        @parameter: block_size - size of blocks to write in bytes
-        @parameter: mode - file mode, default 0o777
-
-        @returns: time in miliseconds the write took
-
+        :param eter: block_size - size of blocks to write in bytes
+        :param eter: mode - file mode, default 0o777
+        :param file_path:  (Default value = "")
+        :param file_size:  (Default value = 0)
+        :param pattern:  (Default value = "rand")
+        :param block_size:  (Default value = 512)
+        :param mode:  (Default value = 0o777)
+        :returns: s: time in miliseconds the write took
+        
         @author: Roy Nielsen
-        """
+
+        '''
         total_time = 0
         if file_path and file_size:
             self.libc.sync()
@@ -221,9 +228,7 @@ class zzzTestFrameworkRamdisk(unittest.TestCase):
         return total_time
 
     def format_ramdisk(self):
-        """
-        Format Ramdisk
-        """
+        '''Format Ramdisk'''
         self.my_ramdisk._format()
 
 ###############################################################################
@@ -232,9 +237,7 @@ class zzzTestFrameworkRamdisk(unittest.TestCase):
     ##################################
 
     def test_files_n_dirs(self):
-        """
-        Should work when files exist in ramdisk.
-        """
+        '''Should work when files exist in ramdisk.'''
         # Do file setup for this test
         for subdir in self.subdirs:
             dirpath = self.mountPoint + "/" + subdir
@@ -252,9 +255,7 @@ class zzzTestFrameworkRamdisk(unittest.TestCase):
     ##################################
 
     def test_four_file_sizes(self):
-        """
-        Test file creation of various sizes, ramdisk vs. filesystem
-        """
+        '''Test file creation of various sizes, ramdisk vs. filesystem'''
         #####
         # Clean up the ramdisk
         self.my_ramdisk._format()
@@ -293,8 +294,7 @@ class zzzTestFrameworkRamdisk(unittest.TestCase):
 
 
     def test_many_small_files_creation(self):
-        """
-        """
+        ''' '''
         #####
         # Clean up the ramdisk
         self.my_ramdisk._format()
@@ -322,9 +322,7 @@ class zzzTestFrameworkRamdisk(unittest.TestCase):
 ##### unittest Tear down
     @classmethod
     def tearDownClass(self):
-        """
-        disconnect ramdisk
-        """
+        '''disconnect ramdisk'''
         if self.my_ramdisk.unmount():
             self.logger.log(LogPriority.DEBUG, r"Successfully detached disk: " + \
                        str(self.my_ramdisk.mntPoint).strip())

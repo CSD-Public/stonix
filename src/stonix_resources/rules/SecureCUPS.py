@@ -50,8 +50,7 @@ from ..stonixutilityfunctions import iterate
 
 
 class SecureCUPS(Rule):
-    '''
-    With this rule, you can:
+    '''With this rule, you can:
         Disable the CUPS service
         Configure CUPS service
         Disable Printer Browsing
@@ -59,6 +58,8 @@ class SecureCUPS(Rule):
         Disable Print Server Capabilities
         Set the Default Auth Type
         Setup default set of policy blocks for CUPS
+
+
     '''
 
 
@@ -143,12 +144,13 @@ class SecureCUPS(Rule):
         self.localize()
 
     def localize(self):
-        '''
-        set various settings and variables and objects based on
+        '''set various settings and variables and objects based on
         which OS is currently running
 
-        @return: void
+
+        :returns: void
         @author: Breen Malmberg
+
         '''
 
         self.linux = False
@@ -163,11 +165,12 @@ class SecureCUPS(Rule):
         self.setVars()
 
     def initObjs(self):
-        '''
-        initialize all required class objects
+        '''initialize all required class objects
 
-        @return: void
+
+        :returns: void
         @author: Breen Malmberg
+
         '''
 
         if self.linux:
@@ -179,14 +182,15 @@ class SecureCUPS(Rule):
         self.ch = CommandHelper(self.logger)
 
     def setVars(self):
-        '''
-        set all class variables depending on which
+        '''set all class variables depending on which
         OS is currently running
 
-        @return: void
+
+        :returns: void
         @author: Breen Malmberg
         @change: Breen Malmberg - 2/8/2017 - fixed a typo with the var name of the dict
-                for cupsd conf options; 
+                for cupsd conf options;
+
         '''
 
         try:
@@ -343,12 +347,14 @@ class SecureCUPS(Rule):
             raise
 
     def sanityCheck(self):
-        '''
-        perform sanity check on the cups configuration files
+        '''perform sanity check on the cups configuration files
 
-        @return: sane
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: sane
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         sane = True
@@ -373,14 +379,15 @@ class SecureCUPS(Rule):
         return sane
 
     def updateOpts(self):
-        '''
-        update the kveditor values for the different CIs
+        '''update the kveditor values for the different CIs
         based on their current user-specified values
 
-        @return: void
+
+        :returns: void
         @author: Breen Malmberg
         @change: Breen Malmberg - 2/8/2017 - KVcupsdrem will now only be processed if
                 self.DisableGenericPort CI is True
+
         '''
 
         try:
@@ -443,13 +450,15 @@ class SecureCUPS(Rule):
             raise
 
     def report(self):
-        '''
-        run report methods/actions appropriate for the current
+        '''run report methods/actions appropriate for the current
         OS and return compliancy status
 
-        @return: self.compliant
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: self.compliant
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         self.logger.log(LogPriority.DEBUG, "\n\nREPORT()\n\n")
@@ -512,13 +521,15 @@ class SecureCUPS(Rule):
         return self.compliant
 
     def reportDisabled(self):
-        '''
-        return True if cups is disabled
+        '''return True if cups is disabled
         return False if cups is enabled
 
-        @return: retval
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: retval
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         retval = True
@@ -539,15 +550,17 @@ class SecureCUPS(Rule):
         return retval
 
     def checkPolicyBlocks(self):
-        '''
-        report on whether default policy blocks are currently set up
+        '''report on whether default policy blocks are currently set up
         in cups configuration. Note that if these already exist, we
         do not want to overwrite them as the local admin may have
         them customised to their specific environment.
 
-        @return: retval
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: retval
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         self.logger.log(LogPriority.DEBUG, "\n\nCHECKPOLICYBLOCKS()\n\n")
@@ -601,14 +614,16 @@ class SecureCUPS(Rule):
         return retval
 
     def reportSecure(self):
-        '''
-        run report actions common to all platforms
+        '''run report actions common to all platforms
 
-        @return: retval
-        @rtype: bool
-        @author: Breen Malmberg
-        @change: Breen Malmberg - 2/8/2017 - KVcupsdrem will now only be run if 
-                self.DisableGenericPort CI is True
+
+        :returns: retval
+
+        :rtype: bool
+@author: Breen Malmberg
+@change: Breen Malmberg - 2/8/2017 - KVcupsdrem will now only be run if
+        self.DisableGenericPort CI is True
+
         '''
 
         self.logger.log(LogPriority.DEBUG, "\n\nREPORTSECURE()\n\n")
@@ -650,13 +665,15 @@ class SecureCUPS(Rule):
         return retval
 
     def fix(self):
-        '''
-        run fix methods/actions appropriate for the current
+        '''run fix methods/actions appropriate for the current
         OS and return success status of fix
 
-        @return: success
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: success
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         # DEFAULTS
@@ -735,15 +752,17 @@ class SecureCUPS(Rule):
         return success
 
     def fixSecure(self):
-        '''
-        run fix actions common to all platforms
+        '''run fix actions common to all platforms
 
-        @return: retval
-        @rtype: bool
-        @author: Breen Malmberg
-        @change: Breen Malmberg - 2/8/2017 - added inline comments; changed the way KVCupsdrem
-                was being handled (will not be run if there are no options to remove; aka if
-                self.DisableGenericPort CI is False)
+
+        :returns: retval
+
+        :rtype: bool
+@author: Breen Malmberg
+@change: Breen Malmberg - 2/8/2017 - added inline comments; changed the way KVCupsdrem
+        was being handled (will not be run if there are no options to remove; aka if
+        self.DisableGenericPort CI is False)
+
         '''
 
         retval = True
@@ -861,12 +880,14 @@ class SecureCUPS(Rule):
         return retval
 
     def reloadCUPS(self):
-        '''
-        reload the cups service to read the new configurations
+        '''reload the cups service to read the new configurations
 
-        @return: retval
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: retval
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         retval = True
@@ -892,12 +913,14 @@ class SecureCUPS(Rule):
         return retval
 
     def disableCUPS(self):
-        '''
-        disable the cups service
+        '''disable the cups service
 
-        @return: retval
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: retval
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         retval = True

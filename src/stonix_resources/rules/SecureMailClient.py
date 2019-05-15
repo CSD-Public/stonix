@@ -39,10 +39,7 @@ from ..stonixutilityfunctions import setPerms, getOctalPerms, getOwnership
 
 
 class SecureMailClient(RuleKVEditor):
-    '''
-
-    @author: ekkehard j. koch
-    '''
+    '''@author: ekkehard j. koch'''
 
 ###############################################################################
 

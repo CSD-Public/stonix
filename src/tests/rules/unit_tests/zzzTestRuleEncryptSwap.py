@@ -51,13 +51,15 @@ class zzzTestRuleEncryptSwap(RuleTest):
         self.simpleRuleTest()
 
     def setConditionsForRule(self):
-        '''
-        This method runs the following command to make sure system is in a 
+        '''This method runs the following command to make sure system is in a
         non compliant state before rule runs:
-        sudo defaults write /Library/Preferences/com.apple.virtualMemory 
+        sudo defaults write /Library/Preferences/com.apple.virtualMemory
         UseEncryptedSwap -bool no
         @author: dwalker
-        @return: bool - True if successful, False if not
+
+
+        :returns: bool - True if successful, False if not
+
         '''
         cmd = ["/usr/bin/defaults", "write", 
                "/Library/Preferences/com.apple.virtualMemory", "-bool", "no"]

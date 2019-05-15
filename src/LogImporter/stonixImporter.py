@@ -29,11 +29,12 @@ from datetime import datetime
 
 
 class ReportParser(object):
-    '''
-    The ReportParser object is instantiated for each report file being
+    '''The ReportParser object is instantiated for each report file being
     parsed.
-
+    
     @author: Dave Kennel
+
+
     '''
 
     def __init__(self, path=None):
@@ -61,12 +62,12 @@ class ReportParser(object):
             # sys.exit(1)
 
     def openreport(self, path):
-        '''
-        ReportParser.openReport will open a report file and load the data
+        '''ReportParser.openReport will open a report file and load the data
         for processing.
 
-        @param path: string; path to the report file
+        :param path: string; path to the report file
         @author: Dave Kennel
+
         '''
 
         try:
@@ -84,11 +85,12 @@ class ReportParser(object):
             # sys.exit(1)
 
     def parsereport(self):
-        '''
-        ReportParser.parseReport() will parse the xml report and return a
+        '''ReportParser.parseReport() will parse the xml report and return a
         dictionary of key:value pairs for the contents of the report.
-
+        
         @author: Dave Kennel
+
+
         '''
 
         repdict = {}
@@ -114,11 +116,12 @@ class ReportParser(object):
 
 
 class DBhandler(object):
-    '''
-    The dbhandler class handles the work of managing the db connection and
+    '''The dbhandler class handles the work of managing the db connection and
     performing the insert
-
+    
     @author: Dave Kennel
+
+
     '''
 
     def __init__(self):
@@ -139,19 +142,19 @@ class DBhandler(object):
             sys.exit(1)
 
     def loaddata(self, metadata, findings):
-        '''
-        This is the main worker of the dbhandler. It requires the metadata
+        '''This is the main worker of the dbhandler. It requires the metadata
         dictonary and the findings list of tuples.
 
-        @param metadata: dict dictionary of metadata elements for the run
-        @param findings: list of tuples containing findings for the run
+        :param metadata: dict dictionary of metadata elements for the run
+        :param findings: list of tuples containing findings for the run
         @author: Dave Kennel
-	    @change: Breen Malmberg - 10/19/2018 - Updated sql insert statement to
-		        reflect correct fieldname MACAddress as it appears in the database;
-		        previous incorrect entry was MacAddress
-	    @change: Breen Malmberg - 10/24/2018 - Removed default '999999' value from
-	            sql insert call if no rulecount present (as this was causing the
-	            script to fail/traceback)
+        	    @change: Breen Malmberg - 10/19/2018 - Updated sql insert statement to
+        		reflect correct fieldname MACAddress as it appears in the database;
+        		previous incorrect entry was MacAddress
+        	    @change: Breen Malmberg - 10/24/2018 - Removed default '999999' value from
+        	    sql insert call if no rulecount present (as this was causing the
+        	    script to fail/traceback)
+
         '''
 
         try:
@@ -231,11 +234,12 @@ class DBhandler(object):
             raise
 
     def close(self):
-        '''
-        Instruct the DBhandler to close the database connection. Attempts
+        '''Instruct the DBhandler to close the database connection. Attempts
         to use the DBhandler object after this is called will fail.
-
+        
         @author: Dave Kennel
+
+
         '''
 
         try:
@@ -251,9 +255,10 @@ class DBhandler(object):
 def log_error(trace_msg):
     '''
 
-    @param trace_msg: string; the traceback output
-
+    :param trace_msg: string; the traceback output
+    
     @author: Breen Malmberg
+
     '''
 
     try:
@@ -278,11 +283,12 @@ def log_error(trace_msg):
         sys.exit(1)
 
 def main():
-    '''
-    Main program loop. Flow is as follows: Instantiate objects and variables.
+    '''Main program loop. Flow is as follows: Instantiate objects and variables.
     List report files uploaded.
-
+    
     @author: Dave Kennel
+
+
     '''
 
     try:

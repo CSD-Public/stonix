@@ -39,10 +39,7 @@ from src.stonix_resources.rules.TCPWrappers import TCPWrappers
 class zzzTestRuleTCPWrappers(RuleTest):
 
     def setUp(self):
-        """
-
-        @return: 
-        """
+        ''' '''
 
         RuleTest.setUp(self)
         self.rule = TCPWrappers(self.config, self.environ, self.logdispatch, self.statechglogger)
@@ -50,38 +47,29 @@ class zzzTestRuleTCPWrappers(RuleTest):
         self.rulenumber = self.rule.rulenumber
 
     def tearDown(self):
-        """
-
-        @return: 
-        """
+        ''' '''
 
         pass
 
     def runTest(self):
-        """
-
-        @return: 
-        """
+        ''' '''
 
         self.simpleRuleTest()
 
     def setConditionsForRule(self):
-        """
-        Configure system for the unit test
+        '''Configure system for the unit test
 
-        @return: boolean - If successful True; If failure False
+
+        :returns: boolean - If successful True; If failure False
         @author: ekkehard j. koch
-        """
+
+        '''
 
         success = True
         return success
 
     def test_convert(self):
-        """
-        test the convert method in tcpwrappers
-
-        @return:
-        """
+        '''test the convert method in tcpwrappers'''
 
         self.assertEqual("", self.rule.convert_to_legacy(""))
         self.assertEqual("name.domain", self.rule.convert_to_legacy("name.domain"))
@@ -90,11 +78,7 @@ class zzzTestRuleTCPWrappers(RuleTest):
         self.assertEqual("129.0.0.0/255.0.0.0", self.rule.convert_to_legacy("129.0.0.0/8"))
 
     def test_init(self):
-        """
-        test whether parameters in init are set correctly
-
-        @return:
-        """
+        '''test whether parameters in init are set correctly'''
 
         self.assertIsNotNone(self.rule.osname)
         self.assertIsNotNone(self.rule.osmajorver)
@@ -106,14 +90,14 @@ class zzzTestRuleTCPWrappers(RuleTest):
         self.assertIsNotNone(self.rule.allownetCI.getcurrvalue())
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
-        """
-        check whether report was correct
+        '''check whether report was correct
 
-        @param pCompliance: the self.iscompliant value of rule
-        @param pRuleSuccess: did report run successfully
-        @return: boolean - If successful True; If failure False
+        :param pCompliance: the self.iscompliant value of rule
+        :param pRuleSuccess: did report run successfully
+        :returns: boolean - If successful True; If failure False
         @author: ekkehard j. koch
-        """
+
+        '''
 
         self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " + str(pCompliance) + ".")
         self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + str(pRuleSuccess) + ".")
@@ -121,26 +105,26 @@ class zzzTestRuleTCPWrappers(RuleTest):
         return success
 
     def checkFixForRule(self, pRuleSuccess):
-        """
-        check whether fix was correct
+        '''check whether fix was correct
 
-        @param pRuleSuccess: did report run successfully
-        @return: boolean - If successful True; If failure False
+        :param pRuleSuccess: did report run successfully
+        :returns: boolean - If successful True; If failure False
         @author: ekkehard j. koch
-        """
+
+        '''
 
         self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + str(pRuleSuccess) + ".")
         success = True
         return success
 
     def checkUndoForRule(self, pRuleSuccess):
-        """
-        check whether undo was correct
+        '''check whether undo was correct
 
-        @param pRuleSuccess: did report run successfully
-        @return: boolean - If successful True; If failure False
+        :param pRuleSuccess: did report run successfully
+        :returns: boolean - If successful True; If failure False
         @author: ekkehard j. koch
-        """
+
+        '''
 
         self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + str(pRuleSuccess) + ".")
         success = True

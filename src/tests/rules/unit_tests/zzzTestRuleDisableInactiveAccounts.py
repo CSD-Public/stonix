@@ -56,19 +56,21 @@ class zzzTestRuleDisableInactiveAccounts(RuleTest):
         self.simpleRuleTest()
 
     def setConditionsForRule(self):
-        '''
-        Configure system for the unit test
-        @param self: essential if you override this definition
-        @return: boolean - If successful True; If failure False
+        '''Configure system for the unit test
+
+        :param self: essential if you override this definition
+        :returns: boolean - If successful True; If failure False
         @author: Breen Malmberg
+
         '''
         success = True
         return success
 
     def test_dscl_path(self):
-        '''
-        test for valid location of dscl command path
+        '''test for valid location of dscl command path
         @author: Breen Malmberg
+
+
         '''
 
         found = False
@@ -77,9 +79,10 @@ class zzzTestRuleDisableInactiveAccounts(RuleTest):
         self.assertTrue(found, True)
 
     def test_get_users(self):
-        '''
-        test the command to get the list of users
+        '''test the command to get the list of users
         @author: Breen Malmberg
+
+
         '''
 
         self.ch.executeCommand('/usr/bin/dscl . -ls /Users')
@@ -89,9 +92,10 @@ class zzzTestRuleDisableInactiveAccounts(RuleTest):
         self.assertFalse(rc, "The return code for getting the list of users should always be 0 (success)")
 
     def test_pwpolicy_path(self):
-        '''
-        test for valid location of pwpolicy command path
+        '''test for valid location of pwpolicy command path
         @author: Breen Malmberg
+
+
         '''
 
         found = False
@@ -100,22 +104,24 @@ class zzzTestRuleDisableInactiveAccounts(RuleTest):
         self.assertTrue(found, True)
 
     def test_initobjs(self):
-        '''
-        test whether the private method initobjs works
+        '''test whether the private method initobjs works
         @author: Breen Malmberg
+
+
         '''
 
         self.rule.initobjs()
         self.assertTrue(self.rule.cmdhelper, "CommandHelper object should always initialize after initobjs() is run")
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
-        '''
-        check on whether report was correct
-        @param self: essential if you override this definition
-        @param pCompliance: the self.iscompliant value of rule
-        @param pRuleSuccess: did report run successfully
-        @return: boolean - If successful True; If failure False
+        '''check on whether report was correct
+
+        :param self: essential if you override this definition
+        :param pCompliance: the self.iscompliant value of rule
+        :param pRuleSuccess: did report run successfully
+        :returns: boolean - If successful True; If failure False
         @author: Breen Malmberg
+
         '''
         self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " + \
                              str(pCompliance) + ".")
@@ -125,12 +131,13 @@ class zzzTestRuleDisableInactiveAccounts(RuleTest):
         return success
 
     def checkFixForRule(self, pRuleSuccess):
-        '''
-        check on whether fix was correct
-        @param self: essential if you override this definition
-        @param pRuleSuccess: did report run successfully
-        @return: boolean - If successful True; If failure False
+        '''check on whether fix was correct
+
+        :param self: essential if you override this definition
+        :param pRuleSuccess: did report run successfully
+        :returns: boolean - If successful True; If failure False
         @author: Breen Malmberg
+
         '''
         self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
                              str(pRuleSuccess) + ".")
@@ -138,12 +145,13 @@ class zzzTestRuleDisableInactiveAccounts(RuleTest):
         return success
 
     def checkUndoForRule(self, pRuleSuccess):
-        '''
-        check on whether undo was correct
-        @param self: essential if you override this definition
-        @param pRuleSuccess: did report run successfully
-        @return: boolean - If successful True; If failure False
+        '''check on whether undo was correct
+
+        :param self: essential if you override this definition
+        :param pRuleSuccess: did report run successfully
+        :returns: boolean - If successful True; If failure False
         @author: Breen Malmberg
+
         '''
         self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
                              str(pRuleSuccess) + ".")

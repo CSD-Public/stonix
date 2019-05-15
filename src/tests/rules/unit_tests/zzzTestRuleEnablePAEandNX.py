@@ -56,21 +56,23 @@ class zzzTestRuleEnablePAEandNX(RuleTest):
         self.simpleRuleTest()
 
     def setConditionsForRule(self):
-        '''
-        Configure system for the unit test
-        @param self: essential if you override this definition
-        @return: boolean - If successful True; If failure False
+        '''Configure system for the unit test
+
+        :param self: essential if you override this definition
+        :returns: boolean - If successful True; If failure False
         @author: ekkehard j. koch
+
         '''
 
         success = True
         return success
 
     def test_checkPAE(self):
-        '''
-        test for correct return values for checkPAE method, under multiple conditions
-
+        '''test for correct return values for checkPAE method, under multiple conditions
+        
         @author: Breen Malmberg
+
+
         '''
 
         self.rule.initobjs()
@@ -80,19 +82,17 @@ class zzzTestRuleEnablePAEandNX(RuleTest):
         self.assertFalse(self.rule.checkPAE({}))
 
     def test_path(self):
-        '''
-
-        @return:
-        '''
+        ''' '''
 
         result = os.path.exists("/proc/cpuinfo")
         self.assertTrue(result)
 
     def test_getSystemARCH(self):
-        '''
-        test the return values for getSystemARCH method
-
+        '''test the return values for getSystemARCH method
+        
         @author: Breen Malmberg
+
+
         '''
 
         result = True
@@ -103,23 +103,25 @@ class zzzTestRuleEnablePAEandNX(RuleTest):
         self.assertTrue(result)
 
     def test_getSystemOS(self):
-        '''
-        test return values of getSystemOS method
-
+        '''test return values of getSystemOS method
+        
         @author: Breen Malmberg
+
+
         '''
 
         if self.rule.getSystemOS() == "":
             self.fail("getSystemOS returned a blank string. This should never happen.")
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
-        '''
-        check on whether report was correct
-        @param self: essential if you override this definition
-        @param pCompliance: the self.iscompliant value of rule
-        @param pRuleSuccess: did report run successfully
-        @return: boolean - If successful True; If failure False
+        '''check on whether report was correct
+
+        :param self: essential if you override this definition
+        :param pCompliance: the self.iscompliant value of rule
+        :param pRuleSuccess: did report run successfully
+        :returns: boolean - If successful True; If failure False
         @author: ekkehard j. koch
+
         '''
         self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " +
                              str(pCompliance) + ".")
@@ -129,12 +131,13 @@ class zzzTestRuleEnablePAEandNX(RuleTest):
         return success
 
     def checkFixForRule(self, pRuleSuccess):
-        '''
-        check on whether fix was correct
-        @param self: essential if you override this definition
-        @param pRuleSuccess: did report run successfully
-        @return: boolean - If successful True; If failure False
+        '''check on whether fix was correct
+
+        :param self: essential if you override this definition
+        :param pRuleSuccess: did report run successfully
+        :returns: boolean - If successful True; If failure False
         @author: ekkehard j. koch
+
         '''
         self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
@@ -142,12 +145,13 @@ class zzzTestRuleEnablePAEandNX(RuleTest):
         return success
 
     def checkUndoForRule(self, pRuleSuccess):
-        '''
-        check on whether undo was correct
-        @param self: essential if you override this definition
-        @param pRuleSuccess: did report run successfully
-        @return: boolean - If successful True; If failure False
+        '''check on whether undo was correct
+
+        :param self: essential if you override this definition
+        :param pRuleSuccess: did report run successfully
+        :returns: boolean - If successful True; If failure False
         @author: ekkehard j. koch
+
         '''
         self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")

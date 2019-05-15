@@ -32,10 +32,9 @@ from StonixExceptions import repoError
 
 
 class Zypper(object):
-    '''
-    The template class that provides a framework that must be implemented by
+    '''The template class that provides a framework that must be implemented by
     all platform specific pkgmgr classes.
-
+    
     @author: Derek T Walker
     @change: 2012/08/08 Derek Walker - Original Implementation
     @change: 2014/09/10 dkennel - Added -n option to search command string
@@ -49,6 +48,8 @@ class Zypper(object):
             removed detailedresults reset in __init__ (this should always be handled
             in the calling rule); replaced detailedresults instances with logging;
             added the flag "--quiet" to the install variable
+
+
     '''
 
     def __init__(self, logger):
@@ -65,16 +66,16 @@ class Zypper(object):
         self.pkgtype = "zypper"
 
     def installpackage(self, package):
-        '''
-        Install a package. Return a bool indicating success or failure.
+        '''Install a package. Return a bool indicating success or failure.
 
-        @param package: string; Name of the package to be installed, must be
+        :param package: string; Name of the package to be installed, must be
                 recognizable to the underlying package manager.
-        @return: installed
-        @rtype: bool
-        @author: Derek Walker
-        @change: Breen Malmberg - 12/24/2014 - fixed method doc string formatting
-        @change: Breen Malmberg - 10/1/2018 - added check for package manager lock and retry loop
+        :returns: installed
+        :rtype: bool
+@author: Derek Walker
+@change: Breen Malmberg - 12/24/2014 - fixed method doc string formatting
+@change: Breen Malmberg - 10/1/2018 - added check for package manager lock and retry loop
+
         '''
 
         installed = True
@@ -112,17 +113,17 @@ class Zypper(object):
         return installed
 
     def removepackage(self, package):
-        '''
-        Remove a package. Return a bool indicating success or failure.
+        '''Remove a package. Return a bool indicating success or failure.
 
-        @param package: string; Name of the package to be removed, must be
+        :param package: string; Name of the package to be removed, must be
                 recognizable to the underlying package manager.
-        @return: removed
-        @rtype: bool
-        @author: Derek Walker
-        @change: 12/24/2014 - Breen Malmberg - fixed method doc string formatting;
-                fixed an issue with var 'removed' not
-                being initialized before it was called
+        :returns: removed
+        :rtype: bool
+@author: Derek Walker
+@change: 12/24/2014 - Breen Malmberg - fixed method doc string formatting;
+        fixed an issue with var 'removed' not
+        being initialized before it was called
+
         '''
 
         removed = True
@@ -160,14 +161,14 @@ class Zypper(object):
         return removed
 
     def checkInstall(self, package):
-        '''
-        Check the installation status of a package. Return a bool; True if
+        '''Check the installation status of a package. Return a bool; True if
         the package is installed.
 
-        @param string package : Name of the package whose installation status
+        :param string: package : Name of the package whose installation status
             is to be checked, must be recognizable to the underlying package
             manager.
-        @return: bool
+        :param package: 
+        :returns: bool
         @author: Derek Walker
         @change: 12/24/2014 - Breen Malmberg - fixed method doc string formatting
         @change: 12/24/2014 - Breen Malmberg - changed var name 'found' to
@@ -175,6 +176,7 @@ class Zypper(object):
         @change: 12/24/2014 - Breen Malmberg - now uses correct search syntax
         @change: 12/24/2014 - Breen Malmberg - removed detailedresults update on
             'found but not installed' as this no longer applies to this method
+
         '''
 
         installed = True
@@ -214,11 +216,10 @@ class Zypper(object):
         return installed
 
     def checkAvailable(self, package):
-        '''
-        check if given package is available to install on the current system
+        '''check if given package is available to install on the current system
 
-        @param: package string name of package to search for
-        @return: bool
+        :param package: 
+        :returns: bool
         @author: Derek Walker
         @change: 12/24/2014 - Breen Malmberg - added method documentation
         @change: 12/24/2014 - Breen Malmberg - changed var name 'found' to
@@ -227,6 +228,7 @@ class Zypper(object):
             variable name
         @change: Breen Malmberg - 5/1/2017 - replaced detailedresults with logging;
                 added parameter validation
+
         '''
 
         available = True
@@ -273,16 +275,16 @@ class Zypper(object):
         return available
 
     def checkUpdate(self, package=""):
-        '''
-        check for available updates for specified
+        '''check for available updates for specified
         package.
         if no package is specified, then check for
         updates to the entire system.
 
-        @param package: string; name of package to check
-        @return: updatesavail
-        @rtype: bool
-        @author: Breen Malmberg
+        :param package: string; name of package to check (Default value = "")
+        :returns: updatesavail
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         # zypper does not have a package-specific list updates mechanism
@@ -323,15 +325,15 @@ class Zypper(object):
         return updatesavail
 
     def Update(self, package=""):
-        '''
-        update a specified package
+        '''update a specified package
         if no package name is specified,
         then update all packages on the system
 
-        @param package: string; name of package to update
-        @return: updated
-        @rtype: bool
-        @author: Breen Malmberg
+        :param package: string; name of package to update (Default value = "")
+        :returns: updated
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         updated = True
@@ -357,9 +359,10 @@ class Zypper(object):
         '''Returns the name of the package that provides the given
         filename/path.
 
-        @param: string filename : The name or path of the file to resolve
-        @return: string name of package if found, None otherwise
+        :param filename: 
+        :returns: string name of package if found, None otherwise
         @author: Eric Ball
+
         '''
 
         packagename = ""
@@ -388,23 +391,25 @@ class Zypper(object):
         return packagename
 
     def getInstall(self):
-        '''
-        return the install command string for the zypper pkg manager
+        '''return the install command string for the zypper pkg manager
 
-        @return: string
+
+        :returns: string
         @author: Derek Walker
         @change: 12/24/2014 - Breen Malmberg - added method documentation
+
         '''
 
         return self.install
 
     def getRemove(self):
-        '''
-        return the uninstall/remove command string for the zypper pkg manager
+        '''return the uninstall/remove command string for the zypper pkg manager
 
-        @return: string
+
+        :returns: string
         @author: Derek Walker
         @change: 12/24/2014 - Breen Malmberg - added method documentation
+
         '''
 
         return self.remove

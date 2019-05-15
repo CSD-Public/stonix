@@ -12,15 +12,16 @@ from lib.loggers import LogPriority as lp
 ##############################################################################
 
 def getLibc(logger=False):
-    """
-    Acquire a reference to the system libc, initially to access the
+    '''Acquire a reference to the system libc, initially to access the
     filesystem "sync" function.
 
-    @returns: python reference to the C libc object, or False, if it can't
+    :param logger:  (Default value = False)
+    :returns: s: python reference to the C libc object, or False, if it can't
               find libc on the system.
-
+    
     @author: Roy Nielsen
-    """
+
+    '''
     if not logger:
         logger = CyLogger()
     osFamily = sys.platform.lower().strip()

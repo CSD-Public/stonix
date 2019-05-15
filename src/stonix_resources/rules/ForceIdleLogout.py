@@ -50,8 +50,7 @@ from pwd import getpwnam
 
 
 class ForceIdleLogout(Rule):
-    '''
-    The ForceIdleLogout class attempts to configure the system to log out users
+    '''The ForceIdleLogout class attempts to configure the system to log out users
     after long periods of inactivity. This control reinforces the protection
     offered by the screen lock by terminating long idle sessions. Note that
     the guidance for this control, AC-2(5) from 800-53, seems to be written
@@ -59,6 +58,8 @@ class ForceIdleLogout(Rule):
     ability to establish work schedules in the directory service and limit
     logons to those time windows. *NIX systems typically do not have that type
     of tooling so we rely on a long idle time.
+
+
     '''
 
     def __init__(self, config, environ, logger, statechglogger):
@@ -120,12 +121,13 @@ FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
         self.kdesddm = ""
 
     def report(self):
-        """
-        Report on whether the Idle Logout settings are correct.
+        '''Report on whether the Idle Logout settings are correct.
 
-        @return: bool
+
+        :returns: bool
         @author: D.Kennel
-        """
+
+        '''
 
         try:
             compliant = True
@@ -188,12 +190,13 @@ FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
         return self.compliant
 
     def chkgnome3(self):
-        """
-        Check that the GNOME 3 auto logout settings are set correctly
+        '''Check that the GNOME 3 auto logout settings are set correctly
 
-        @return: boot - true if settings are set to logout
+
+        :returns: boot - true if settings are set to logout
         @author: D. Kennel
-        """
+
+        '''
 
         try:
             seconds = self.timeoutci.getcurrvalue() * 60
@@ -340,16 +343,17 @@ FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
         return compliant
 
     def chkkde4(self):
-        """
-        Check that settings are correct for KDE 4 auto logout. Note that this
+        '''Check that settings are correct for KDE 4 auto logout. Note that this
         setting lives in each user's home folder and is the reason this rule
         has root & non-root components. With root perms we can work on homes
         that are on local storage but user perms are required for NFS mounted
         home directories.
 
-        @return: bool - true if settings are set to logout for inspected users
+
+        :returns: bool - true if settings are set to logout for inspected users
         @author: D. Kennel
-        """
+
+        '''
         debug = "Inside chkkde4 method"
         self.logger.log(LogPriority.DEBUG, debug)
         try:
@@ -436,8 +440,7 @@ FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
                     return True
 
     def chkosx(self):
-        '''
-        '''
+        ''' '''
 
         globalprefs = "/Library/Preferences/.GlobalPreferences.plist"
         globalprefstemp = globalprefs + ".stonixtmp"
@@ -450,11 +453,12 @@ FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
         return self.editor.report()
 
     def fix(self):
-        """
-       Configure the system to enforce logout of idle GUI sessions
-
+        '''Configure the system to enforce logout of idle GUI sessions
+        
         @author: D. Kennel
-        """
+
+
+        '''
         try:
             if not self.filci.getcurrvalue():
                 self.detailedresults += "Rule not enabled so nothing was done\n"
@@ -488,11 +492,12 @@ FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
         return self.rulesuccess
 
     def fixgnome3(self):
-        """
-        Configure GNOME 3 for automatic logout.
-
+        '''Configure GNOME 3 for automatic logout.
+        
         @author: d.kennel
-        """
+
+
+        '''
 
         if not self.environ.geteuid() == 0:
             return
@@ -686,11 +691,12 @@ FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
         return success
 
     def fixkde4(self):
-        """
-        Configure KDE 4 for automatic logout.
-
+        '''Configure KDE 4 for automatic logout.
+        
         @author: d.kennel
-        """
+
+
+        '''
         success = True
         if self.environ.geteuid() == 0:
             self.logdispatch.log(LogPriority.DEBUG,
@@ -750,8 +756,10 @@ FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
         '''temporary method to separate the code to find directives from the
         rest of the code.  Will put back all in one method eventually
         @author: dwalker
-        @return: bool
-        @param filehandle: string
+
+        :param filehandle: string
+        :returns: bool
+
         '''
         self.editor = ""
         kvt = "tagconf"
@@ -770,9 +778,13 @@ FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
         '''separate method to find the correct contents of each file passed in
         as a parameter.
         @author: dwalker
-        @return: bool
-        @param filehandle: string
-         '''
+
+        :param filehandle: string
+        :param kfile: 
+        :param user: 
+        :returns: bool
+
+        '''
         created = False
         success = True
         self.editor = ""

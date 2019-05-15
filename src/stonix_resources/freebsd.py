@@ -22,12 +22,13 @@ from CommandHelper import CommandHelper
 
 
 class Freebsd(object):
-    '''
-    The template class that provides a framework that must be implemented by
+    '''The template class that provides a framework that must be implemented by
     all platform specific pkgmgr classes.
-
+    
     :version:
     @author: Derek T Walker 08-06-2012
+
+
     '''
 
     def __init__(self, logger):
@@ -40,16 +41,17 @@ class Freebsd(object):
 
 ###############################################################################
     def installpackage(self, package):
-        '''
-        Install a package. Return a bool indicating success or failure.
+        '''Install a package. Return a bool indicating success or failure.
 
-        @param string package : Name of the package to be installed, must be 
+        :param string: package : Name of the package to be installed, must be
                 recognizable to the underlying package manager.
-        @return installed
-        @rtype: bool
-        @author: Derek T. Walker
-        @change: Breen Malmberg - 4/18/2017 - doc string fixes; refactor
-                of method; parameter validation
+        :param package: 
+        :returns: installed
+        :rtype: bool
+@author: Derek T. Walker
+@change: Breen Malmberg - 4/18/2017 - doc string fixes; refactor
+        of method; parameter validation
+
         '''
 
         installed = False
@@ -78,16 +80,16 @@ class Freebsd(object):
 
 ###############################################################################
     def removepackage(self, package):
-        '''
-        Remove a package. Return a bool indicating success or failure.
+        '''Remove a package. Return a bool indicating success or failure.
 
-        @param package: string; Name of the package to be removed, must be 
+        :param package: string; Name of the package to be removed, must be
                 recognizable to the underlying package manager.
-        @return: removed
-        @rtype: bool
-        @author: Derek T. Walker
-        @change: Breen Malmberg - 4/18/2017 - refactor of method; doc string fixes;
-                parameter validation
+        :returns: removed
+        :rtype: bool
+@author: Derek T. Walker
+@change: Breen Malmberg - 4/18/2017 - refactor of method; doc string fixes;
+        parameter validation
+
         '''
 
         removed = True
@@ -116,18 +118,18 @@ class Freebsd(object):
 
 ###############################################################################
     def checkInstall(self, package):
-        '''
-        Check the installation status of a package. Return a bool; True if 
+        '''Check the installation status of a package. Return a bool; True if
         the package is installed.
 
-        @param package: string; Name of the package whose installation status 
-                is to be checked, must be recognizable to the underlying package 
+        :param package: string; Name of the package whose installation status
+                is to be checked, must be recognizable to the underlying package
                 manager.
-        @return: installed
-        @rtype: bool
-        @author: Derek T. Walker
-        @change: Breen Malmberg - 4/18/2017 - refactor of method; doc
-                string fixes; parameter validation
+        :returns: installed
+        :rtype: bool
+@author: Derek T. Walker
+@change: Breen Malmberg - 4/18/2017 - refactor of method; doc
+        string fixes; parameter validation
+
         '''
 
         installed = False
@@ -155,22 +157,22 @@ class Freebsd(object):
         return installed
 
     def checkUpdate(self, package=""):
-        '''
-        STUB METHOD
+        '''STUB METHOD
         check for updates for the specified package
         if package is not specified, check for all
         package updates
-
+        
         currently unfinished as I have no earthly idea
         how to reliably manage packages on bsd
         (ports? portsmanager? portsmaster? pkg_zzz? pkg?)
         also versioning heavily affects what package manager
         binary(ies) is/are available.
 
-        @param package: string; name of package to check
-        @return: updatesavail
-        @rtype: bool
-        @author: Breen Malmberg
+        :param package: string; name of package to check (Default value = "")
+        :returns: updatesavail
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         updatesavail = False
@@ -184,22 +186,22 @@ class Freebsd(object):
         return updatesavail
 
     def Update(self, package=""):
-        '''
-        STUB METHOD
+        '''STUB METHOD
         update the specified package
         if no package is specified, then update
         all packages on the system
-
+        
         currently unfinished as I have no earthly idea
         how to reliably manage packages on bsd
         (ports? portsmanager? portsmaster? pkg_zzz? pkg?)
         also versioning heavily affects what package manager
         binary(ies) is/are available.
 
-        @param package: string; name of package to update
-        @return: updated
-        @rtype: bool
-        @author: Breen Malmberg
+        :param package: string; name of package to update (Default value = "")
+        :returns: updated
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         updated = False
@@ -213,14 +215,14 @@ class Freebsd(object):
         return updated
 
     def getPackageFromFile(self, filename):
-        '''
-        return a string containing the name of the package
+        '''return a string containing the name of the package
         which provides the specified filename
 
-        @param: filename: string; The name or path of the file to resolve
-        @return: packagename
-        @rtype: string
-        @author: Breen Malmberg
+        :param filename: 
+        :returns: packagename
+        :rtype: string
+@author: Breen Malmberg
+
         '''
 
         packagename = ""

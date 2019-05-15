@@ -25,10 +25,12 @@ from loggers import CyLogger
 from loggers import LogPriority as lp
 
 def getRulesList(pathToRules=''):
-    '''
-    Get a directory listing of the path passed in - the stonix/rules path.
+    '''Get a directory listing of the path passed in - the stonix/rules path.
     
     @author: Roy Nielsen
+
+    :param pathToRules:  (Default value = '')
+
     '''
     rulesList = []
     allFilesList = os.listdir(pathToRules)
@@ -40,9 +42,10 @@ def getRulesList(pathToRules=''):
 
 def getHeader(initFp=None):
     '''
-    Return the header used in stonix files
-    
-    @author: Roy Nielsen
+
+    :param initFp:  (Default value = None)
+    :returns: @author: Roy Nielsen
+
     '''
     header = ''
     header = '''# from __future__ import absolute_import
@@ -50,10 +53,13 @@ def getHeader(initFp=None):
     return header
 
 def writeInit(pathToRules, logger):
-    '''
-    'Controller' to write the rules __init__.py file
+    ''''Controller' to write the rules __init__.py file
     
     @author: Roy Nielsen
+
+    :param pathToRules: 
+    :param logger: 
+
     '''
     success = False
     try:

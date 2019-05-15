@@ -67,11 +67,12 @@ class zzzTestRuleConfigureScreenLocking(RuleTest):
         self.simpleRuleTest()
 
     def setConditionsForRule(self):
-        '''
-        Configure system for the unit test
-        @param self: essential if you override this definition
-        @return: boolean - If successful True; If failure False
+        '''Configure system for the unit test
+
+        :param self: essential if you override this definition
+        :returns: boolean - If successful True; If failure False
         @author: ekkehard j. koch
+
         '''
         success = True
         if self.environ.getosfamily() == "darwin":
@@ -119,7 +120,10 @@ class zzzTestRuleConfigureScreenLocking(RuleTest):
     def setkde(self):
         '''Method to setup kde desktop to not be compliant
         @author: dwalker
-        @return: bool
+
+
+        :returns: bool
+
         '''
         self.kdeprops = {"ScreenSaver": {"Enabled": "true",
                                              "Lock": "true",
@@ -231,7 +235,10 @@ directory, invalid form of /etc/passwd"
     def setgnome(self):
         '''Method to setup gnome desktop to not be compliant
         @author: dwalker
-        @return: bool
+
+
+        :returns: bool
+
         '''
         success = True
         debug = "Inside setgnome method\n"
@@ -347,8 +354,10 @@ directory, invalid form of /etc/passwd"
     def wreckFile(self, filehandle):
         '''Method to ensure correct contents are NOT in file for testing
         @author: dwalker
-        @return: bool
-        @param filehandle: string
+
+        :param filehandle: string
+        :returns: bool
+
         '''
         self.editor = ""
         kvt = "tagconf"
@@ -370,13 +379,14 @@ directory, invalid form of /etc/passwd"
             return True
     
     def checkReportForRule(self, pCompliance, pRuleSuccess):
-        '''
-        check on whether report was correct
-        @param self: essential if you override this definition
-        @param pCompliance: the self.iscompliant value of rule
-        @param pRuleSuccess: did report run successfully
-        @return: boolean - If successful True; If failure False
+        '''check on whether report was correct
+
+        :param self: essential if you override this definition
+        :param pCompliance: the self.iscompliant value of rule
+        :param pRuleSuccess: did report run successfully
+        :returns: boolean - If successful True; If failure False
         @author: ekkehard j. koch
+
         '''
         self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " + \
                              str(pCompliance) + ".")
@@ -386,12 +396,13 @@ directory, invalid form of /etc/passwd"
         return success
 
     def checkFixForRule(self, pRuleSuccess):
-        '''
-        check on whether fix was correct
-        @param self: essential if you override this definition
-        @param pRuleSuccess: did report run successfully
-        @return: boolean - If successful True; If failure False
+        '''check on whether fix was correct
+
+        :param self: essential if you override this definition
+        :param pRuleSuccess: did report run successfully
+        :returns: boolean - If successful True; If failure False
         @author: ekkehard j. koch
+
         '''
         self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
                              str(pRuleSuccess) + ".")
@@ -399,12 +410,13 @@ directory, invalid form of /etc/passwd"
         return success
 
     def checkUndoForRule(self, pRuleSuccess):
-        '''
-        check on whether undo was correct
-        @param self: essential if you override this definition
-        @param pRuleSuccess: did report run successfully
-        @return: boolean - If successful True; If failure False
+        '''check on whether undo was correct
+
+        :param self: essential if you override this definition
+        :param pRuleSuccess: did report run successfully
+        :returns: boolean - If successful True; If failure False
         @author: ekkehard j. koch
+
         '''
         self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
                              str(pRuleSuccess) + ".")

@@ -44,7 +44,10 @@ class KVEditorStonix(KVEditor):
        those four actions in that order as many times as needed.
     4. Once all reports and fixes have been run, finally run the commit.
        Running the commit only once at the end ensure that only one statechange
-       event is recorded.'''
+       event is recorded.
+
+
+    '''
 
     '''If kvtype is defaults or plist, upon instantiation of the kveditorstonix
     object, id's will be created for each item in the data variable and passed

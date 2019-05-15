@@ -36,9 +36,7 @@ from ..ruleKVEditor import RuleKVEditor
 
 
 class DisablePasswordHints(RuleKVEditor):
-    """
-    This class disables Auto Login on the system.
-    """
+    '''This class disables Auto Login on the system.'''
     def __init__(self, config, environ, logdispatcher, statechglogger):
         '''
         Constructor

@@ -56,12 +56,12 @@ class test_zzzTestRuleConfigurePowerManagement(RuleTest):
         self.simpleRuleTest()
 
     def setConditionsForRule(self):
-        '''
-        This makes sure the intial report fails by executing the following
+        '''This makes sure the intial report fails by executing the following
 
-        @param self: essential if you override this definition
-        @return: boolean - If successful True; If failure False
+        :param self: essential if you override this definition
+        :returns: boolean - If successful True; If failure False
         @author: ekkehard j. koch
+
         '''
         success = True
         if success:
@@ -70,9 +70,13 @@ class test_zzzTestRuleConfigurePowerManagement(RuleTest):
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
         '''
-        @param self: essential if you override this definition
-        @return: boolean - If successful True; If failure False
+
+        :param self: essential if you override this definition
+        :param pCompliance: 
+        :param pRuleSuccess: 
+        :returns: boolean - If successful True; If failure False
         @author: ekkehard j. koch
+
         '''
         self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " + \
                              str(pCompliance) + ".")

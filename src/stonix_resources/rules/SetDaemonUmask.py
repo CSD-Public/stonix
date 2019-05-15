@@ -48,17 +48,18 @@ from ..stonixutilityfunctions import iterate
 
 
 class SetDaemonUmask(Rule):
-    '''
-    The settings file /etc/sysconfig/init contains settings which apply to all
-processes started at boot time. The system umask must be set to at least 022,
-or daemon processes may create world-writable files. The more restrictive setting
-027 protects files, including temporary files and log files, from unauthorized
-reading by unprivileged users on the system.
-The SetDaemonUmask class searches for each of the relevant config files and
-sets the process daemon umask to 022 (0022) to prevent world
-writability/readability on the system.
-
+    '''The settings file /etc/sysconfig/init contains settings which apply to all
+    processes started at boot time. The system umask must be set to at least 022,
+    or daemon processes may create world-writable files. The more restrictive setting
+    027 protects files, including temporary files and log files, from unauthorized
+    reading by unprivileged users on the system.
+    The SetDaemonUmask class searches for each of the relevant config files and
+    sets the process daemon umask to 022 (0022) to prevent world
+    writability/readability on the system.
+    
     @author bemalmbe
+
+
     '''
     def __init__(self, config, environ, logger, statechglogger):
 
@@ -98,14 +99,15 @@ set the value of SetDaemonUmask to False.'
                            'os': {'Mac OS X': ['10.12', 'r', '10.14.10']}}
 
     def fix(self):
-        """
-        The fix method will apply the required settings to the system.
+        '''The fix method will apply the required settings to the system.
         self.rulesuccess will be updated if the rule does not succeed.
         Search for files /etc/sysconfig/init and/or /etc/default/init (on
         Solaris systems), and if one of them exists
-
+        
         @author dkennel, bemalmbe
-        """
+
+
+        '''
 
         # defaults
         self.detailedresults = ''
@@ -134,10 +136,11 @@ set the value of SetDaemonUmask to False.'
         return fixsuccessful
 
     def fixlinux(self):
-        '''
-        private method to handle the configuration of *nix based clients
-
+        '''private method to handle the configuration of *nix based clients
+        
         @author bemalmbe
+
+
         '''
 
         # defaults
@@ -195,10 +198,11 @@ set the value of SetDaemonUmask to False.'
         return self.rulesuccess
 
     def fixmac(self):
-        '''
-        private method to handle the configuration for mac systems
-
+        '''private method to handle the configuration for mac systems
+        
         @author bemalmbe
+
+
         '''
 
         # defaults
@@ -229,16 +233,17 @@ set the value of SetDaemonUmask to False.'
         return self.rulesuccess
 
     def report(self):
-        """
-        The report method examines the current configuration and determines
+        '''The report method examines the current configuration and determines
         whether or not it is correct. If the config is correct then the
         self.compliant, self.detailedresults and self.currstate properties are
         updated to reflect the system status. self.rulesuccess will be updated
         if the rule does not succeed.
 
-        @return bool
+
+        :returns: bool
         @author bemalmbe
-        """
+
+        '''
 
         # defaults
         rfile = '/etc/sysconfig/init'
@@ -316,14 +321,14 @@ set the value of SetDaemonUmask to False.'
         return self.compliant
 
     def searchString(self, searchRE, searchfile):
-        '''
-        private method for performing iterative (looping) searches for regular
+        '''private method for performing iterative (looping) searches for regular
         expression. Return true if found, false if not found.
 
-        @param searchRE str regex to search for
-        @param searchfile str string name of file to search contents of
-        @return bool
+        :param searchRE: str regex to search for
+        :param searchfile: str string name of file to search contents of
+        :returns: bool
         @author bemalmbe
+
         '''
 
         # defaults
@@ -355,17 +360,17 @@ set the value of SetDaemonUmask to False.'
         return foundRE
 
     def replaceLine(self, searchRE, replaceValue, targetFile, ownership, perms):
-        '''
-        private method for replacing a line in a searchFile's contents with
+        '''private method for replacing a line in a searchFile's contents with
         value. return true if line is found and replaced, else return false.
 
-        @param searchRE: the regex string to search for
-        @param replaceValue: string to replace the matched search term with
-        @param targetFile: string file name of file to search
-        @param ownership: 2-element list containing: [uid, gid]
-        @param perms: 4-digit integer representing the octal format of file permissions
-        @return: bool
+        :param searchRE: the regex string to search for
+        :param replaceValue: string to replace the matched search term with
+        :param targetFile: string file name of file to search
+        :param ownership: 2-element list containing: [uid, gid]
+        :param perms: 4-digit integer representing the octal format of file permissions
+        :returns: bool
         @author: bemalmbe
+
         '''
 
         # defaults
@@ -423,15 +428,15 @@ set the value of SetDaemonUmask to False.'
             self.logger.log(LogPriority.ERROR, self.detailedresults)
 
     def appendLine(self, appendValue, targetFile, ownership, perms):
-        '''
-        private method for appending a line (appendValue) to a file
+        '''private method for appending a line (appendValue) to a file
         (targetFile)
 
-        @param appendValue str string to append to the targetFile
-        @param targetFile str name of the file to append appendValue to
-        @param ownership list 2-element list containing: [uid, gid]
-        @param perms int 4-digit integer representing the octal format of file permissions
+        :param appendValue: str string to append to the targetFile
+        :param targetFile: str name of the file to append appendValue to
+        :param ownership: list 2-element list containing: [uid, gid]
+        :param perms: int 4-digit integer representing the octal format of file permissions
         @author: bemalmbe
+
         '''
 
         # defaults

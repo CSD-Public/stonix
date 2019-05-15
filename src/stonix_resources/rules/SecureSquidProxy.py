@@ -64,7 +64,7 @@ class SecureSquidProxy(Rule):
         self.iditerator = 0
 
     def report(self):
-        ''''''
+        ''' '''
         try:
             self.detailedresults = ""
             compliant = True
@@ -181,7 +181,7 @@ class SecureSquidProxy(Rule):
         return self.compliant
 
     def fix(self):
-        ''''''
+        ''' '''
         try:
             if not self.ci.getcurrvalue():
                 return

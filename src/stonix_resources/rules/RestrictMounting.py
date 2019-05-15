@@ -49,9 +49,7 @@ from ..ServiceHelper import ServiceHelper
 
 
 class RestrictMounting(Rule):
-    """
-    Class help text
-    """
+    '''Class help text'''
 
     def __init__(self, config, enviro, logger, statechglogger):
         """
@@ -100,10 +98,7 @@ class RestrictMounting(Rule):
         self.dbuslaunch = "/usr/bin/dbus-launch"
 
     def report(self):
-        """
-
-        @return: 
-        """
+        ''' '''
 
         self.automountMedia = True
         self.automountDrives = True
@@ -222,10 +217,7 @@ class RestrictMounting(Rule):
         return self.compliant
 
     def fix(self):
-        """
-
-        @return:
-        """
+        ''' '''
 
         self.detailedresults = ""
         self.iditerator = 0

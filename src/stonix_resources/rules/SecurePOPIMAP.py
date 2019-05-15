@@ -37,9 +37,7 @@ import traceback
 
 
 class SecurePOPIMAP(Rule):
-    '''
-    classdocs
-    '''
+    '''classdocs'''
 
     def __init__(self, config, environ, logger, statechglogger):
         '''
@@ -80,11 +78,12 @@ class SecurePOPIMAP(Rule):
         self.localization()
 
     def localization(self):
-        '''
-        determine which type of OS we are running on and set up class variables accordingly
+        '''determine which type of OS we are running on and set up class variables accordingly
 
-        @return: void
+
+        :returns: void
         @author: Breen Malmberg
+
         '''
 
         self.initobjs()
@@ -106,11 +105,12 @@ class SecurePOPIMAP(Rule):
         pass
 
     def initobjs(self):
-        '''
-        initialize objects needed/used by other methods within this class
+        '''initialize objects needed/used by other methods within this class
 
-        @return: void
+
+        :returns: void
         @author: Breen Malmberg
+
         '''
 
         try:
@@ -132,10 +132,12 @@ class SecurePOPIMAP(Rule):
             raise
 
     def setcommon(self):
-        '''
-        set variables which are common to all platforms
-        @return: void
+        '''set variables which are common to all platforms
+
+
+        :returns: void
         @author: Breen Malmberg
+
         '''
 
         self.detailedresults = ""
@@ -145,10 +147,12 @@ class SecurePOPIMAP(Rule):
         self.protocollist = ['imap', 'imaps', 'pop3', 'pop3s']
 
     def setdebian(self):
-        '''
-        set debian specific variables
-        @return: void
+        '''set debian specific variables
+
+
+        :returns: void
         @author: Breen Malmberg
+
         '''
 
         self.debian = True
@@ -171,10 +175,12 @@ class SecurePOPIMAP(Rule):
         self.servicename = 'dovecot'
 
     def setredhat(self):
-        '''
-        set redhat sepcific variables
-        @return: void
+        '''set redhat sepcific variables
+
+
+        :returns: void
         @author: Breen Malmberg
+
         '''
 
         self.redhat = True
@@ -195,10 +201,12 @@ class SecurePOPIMAP(Rule):
         self.servicename = 'dovecot'
 
     def setsuse(self):
-        '''
-        set suse specific variables
-        @return: void
+        '''set suse specific variables
+
+
+        :returns: void
         @author: Breen Malmberg
+
         '''
 
         self.suse = True
@@ -220,6 +228,9 @@ class SecurePOPIMAP(Rule):
 
     def getFileContents(self, filepath):
         '''
+
+        :param filepath: 
+
         '''
 
         filecontents = []
@@ -247,6 +258,10 @@ class SecurePOPIMAP(Rule):
 
     def searchContents(self, regex, contents):
         '''
+
+        :param regex: 
+        :param contents: 
+
         '''
 
         retval = False
@@ -281,6 +296,11 @@ class SecurePOPIMAP(Rule):
 
     def fixContents(self, fixdict, filepath, contents):
         '''
+
+        :param fixdict: 
+        :param filepath: 
+        :param contents: 
+
         '''
 
         retval = True
@@ -341,13 +361,15 @@ class SecurePOPIMAP(Rule):
         os.rename(tempfilepath, filepath)
 
     def report(self):
-        '''
-        return true if all check actions report compliant
+        '''return true if all check actions report compliant
         return false if one or more check actions reports not compliant
 
-        @return: self.compliant
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: self.compliant
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         self.compliant = True
@@ -427,14 +449,16 @@ class SecurePOPIMAP(Rule):
         return self.compliant
 
     def checkinitobjs(self):
-        '''
-        validate each class property and object to be used in this class before it is used
+        '''validate each class property and object to be used in this class before it is used
         return True if each object is properly assigned/initialized
         return False if not
 
-        @return: retval
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: retval
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         retval = True
@@ -470,14 +494,16 @@ class SecurePOPIMAP(Rule):
         return retval
 
     def checksvc(self):
-        '''
-        check to see if the dovecot service is enabled or running
+        '''check to see if the dovecot service is enabled or running
         return False if it is either running or enabled
         if the service is neither running nor enabled, return True
 
-        @return: retval
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: retval
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         retval = True
@@ -505,18 +531,19 @@ class SecurePOPIMAP(Rule):
         return retval
 
     def checkpkgs(self, desired):
-        '''
-        check compliance of packages portion of rule
-
+        '''check compliance of packages portion of rule
+        
         if desired, check if all required packages are installed:
             True if yes, False if no
-
+        
         if not desired, check if any packages are installed:
             True if no, False if yes
 
-        @return: retval
-        @rtype: bool
-        @author: Breen Malmberg
+        :param desired: 
+        :returns: retval
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         retval = True
@@ -539,12 +566,14 @@ class SecurePOPIMAP(Rule):
         return retval
 
     def checkconfig(self):
-        '''
-        verify configuration state of file(s)
+        '''verify configuration state of file(s)
 
-        @return: retval
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: retval
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         retval = True
@@ -574,14 +603,16 @@ class SecurePOPIMAP(Rule):
         return retval
 
     def fix(self):
-        '''
-        run each fix action and get the success results of each one
+        '''run each fix action and get the success results of each one
         return True if all fix actions succeeded
         return False if not
 
-        @return: fixsuccess
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: fixsuccess
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         fixsuccess = True
@@ -614,14 +645,16 @@ class SecurePOPIMAP(Rule):
         return fixsuccess
 
     def turnoffsvc(self):
-        '''
-        disable dovecot service if it is enabled
+        '''disable dovecot service if it is enabled
         return True if dovecot service was successfully disabled or is not enabled
         return False if otherwise
 
-        @return: retval
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: retval
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         self.logger.log(LogPriority.DEBUG, "Attempting to disable service: " + str(self.servicename))
@@ -650,14 +683,16 @@ class SecurePOPIMAP(Rule):
         return retval
 
     def removePackages(self):
-        '''
-        Remove all packages in self.pkgdict, which are currently installed
+        '''Remove all packages in self.pkgdict, which are currently installed
         return True if all installed packages were successfully removed
         return False if not
 
-        @return: retval
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: retval
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         retval = True
@@ -682,11 +717,12 @@ class SecurePOPIMAP(Rule):
         return retval
 
     def configurefiles(self):
-        '''
-        set the correct configuration options within the dovecot configuration file(s)
+        '''set the correct configuration options within the dovecot configuration file(s)
 
-        @return: void
+
+        :returns: void
         @author: Breen Malmberg
+
         '''
 
         try:
@@ -699,12 +735,14 @@ class SecurePOPIMAP(Rule):
             raise
 
     def installPackages(self):
-        '''
-        install all necessary dovecot packages
+        '''install all necessary dovecot packages
 
-        @return: retval
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: retval
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         retval = True

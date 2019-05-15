@@ -42,9 +42,7 @@ from ..pkghelper import Pkghelper
 
 
 class DisableThumbnailers(Rule):
-    '''
-    disable the thumbnail creation feature in nautilus/gnome
-    '''
+    '''disable the thumbnail creation feature in nautilus/gnome'''
 
     def __init__(self, config, environ, logdispatcher, statechglogger):
         '''
@@ -77,15 +75,17 @@ class DisableThumbnailers(Rule):
         self.sethelptext()
 
     def report(self):
-        '''
-        check the gdm/gnome setting for thumbnailers to determine
+        '''check the gdm/gnome setting for thumbnailers to determine
         if it is off or on. report compliant if it is off,
         non-compliant if it is on.
 
-        @return: self.compliant
-        @rtype: bool
-        @author: Derek Walker
-        @change: 01/19/2018 - Breen Malmberg - re-wrote most of rule; added more detailed logging
+
+        :returns: self.compliant
+
+        :rtype: bool
+@author: Derek Walker
+@change: 01/19/2018 - Breen Malmberg - re-wrote most of rule; added more detailed logging
+
         '''
 
         self.compliant = True
@@ -132,10 +132,7 @@ class DisableThumbnailers(Rule):
         return self.compliant
 
     def reportdconf(self):
-        '''
-
-        @return:
-        '''
+        ''' '''
 
         self.logger.log(LogPriority.DEBUG, "Using gsettings to determine configuration value...")
 
@@ -160,10 +157,7 @@ class DisableThumbnailers(Rule):
         return retval
 
     def reportgconf(self):
-        '''
-
-        @return:
-        '''
+        ''' '''
 
         self.logger.log(LogPriority.DEBUG, "Using gconftool-2 to determine configuration value...")
 
@@ -184,15 +178,17 @@ class DisableThumbnailers(Rule):
         return retval
 
     def fix(self):
-        '''
-        run the gconftool-2 command to set the value for
+        '''run the gconftool-2 command to set the value for
         thumbnailers to disable it
 
-        @return: self.rulesuccess
-        @rtype: bool
-        @author: Derek Walker
-        @change: 01/22/2018 - Breen Malmberg - re-wrote most of the rule; added
-                some more detailed logging
+
+        :returns: self.rulesuccess
+
+        :rtype: bool
+@author: Derek Walker
+@change: 01/22/2018 - Breen Malmberg - re-wrote most of the rule; added
+        some more detailed logging
+
         '''
 
         self.rulesuccess = True
@@ -235,10 +231,7 @@ class DisableThumbnailers(Rule):
         return self.rulesuccess
 
     def fixgconf(self):
-        '''
-
-        @return:
-        '''
+        ''' '''
 
         self.logger.log(LogPriority.DEBUG, "Using gconftool-2 to set configuration value...")
 
@@ -261,10 +254,7 @@ class DisableThumbnailers(Rule):
         return retval
 
     def fixdconf(self):
-        '''
-
-        @return:
-        '''
+        ''' '''
 
         self.logger.log(LogPriority.DEBUG, "Using gsettings to set configuration value...")
 

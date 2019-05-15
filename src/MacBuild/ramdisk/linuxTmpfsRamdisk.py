@@ -19,22 +19,21 @@ from commonRamdiskTemplate import RamDiskTemplate
 ###############################################################################
 
 class RamDisk(RamDiskTemplate):
-    """
-    http://www.cyberciti.biz/tips/what-is-devshm-and-its-practical-usage.html
-
+    '''http://www.cyberciti.biz/tips/what-is-devshm-and-its-practical-usage.html
+    
     In this example, remount /dev/shm with 8G size as follows:
-
+    
     # mount -o remount,size=8G /dev/shm
-
+    
     To be frank, if you have more than 2GB RAM + multiple Virtual machines,
     this hack always improves performance. In this example, you will give you
     tmpfs instance on /disk2/tmpfs which can allocate 5GB RAM/SWAP in 5K inodes
     and it is only accessible by root:
-
+    
     # mount -t tmpfs -o size=5G,nr_inodes=5k,mode=700 tmpfs /disk2/tmpfs
-
+    
     Where,
-
+    
     -o opt1,opt2 : Pass various options with a -o flag followed by a comma
                    separated string of options. In this examples, I used the
                    following options:
@@ -58,25 +57,26 @@ class RamDisk(RamDiskTemplate):
                       pages, whichever is the lower.
        mode=700 : Set initial permissions of the root directory.
        tmpfs : Tmpfs is a file system which keeps all files in virtual memory.
-
+    
     ---------------------------------------------------------------------------
-
+    
     Another link:
     http://www.jamescoyle.net/how-to/943-create-a-ram-disk-in-linux
-
+    
     Exerpt:
     mount -t [TYPE] -o size=[SIZE],opt2=[opt2],opt3=[opt3] [FSTYPE] [MOUNTPOINT]
     Substitute the following attirbutes for your own values:
-
+    
     [TYPE] is the type of RAM disk to use; either tmpfs or ramfs.
     [SIZE] is the size to use for the file system. Remember that ramfs does not
            have a physical limit and is specified as a starting size.
     [FSTYPE] is the type of RAM disk to use; either tmpfs, ramfs, ext4, etc.
     Example:
-
+    
     mount -t tmpfs -o size=512m tmpfs /mnt/ramdisk
 
-    """
+
+    '''
     def __init__(self, size=0, mountpoint="",  logger=False,
                  mode=700, uid=None, gid=None,
                  fstype="tmpfs", nr_inodes=None, nr_blocks=None):
@@ -135,13 +135,14 @@ class RamDisk(RamDiskTemplate):
     ###########################################################################
 
     def buildCommand(self):
-        """
-        Build a command based on the "fstype" passed in.
-
+        '''Build a command based on the "fstype" passed in.
+        
         For more options on the tmpfs filesystem, check the mount manpage.
-
+        
         @author: Roy Nielsen
-        """
+
+
+        '''
         command=None
         if self.fstype == "ramfs":
             command = ["/bin/mount", "-t", "ramfs"]
@@ -169,11 +170,12 @@ class RamDisk(RamDiskTemplate):
     ###########################################################################
 
     def _mount(self) :
-        """
-        Mount the disk
-
+        '''Mount the disk
+        
         @author: Roy Nielsen
-        """
+
+
+        '''
         success = False
         command = self.buildCommand()
         self.runWith.setCommand(command)
@@ -187,13 +189,21 @@ class RamDisk(RamDiskTemplate):
 
     def remount(self, size=0, mountpoint="", mode=700, uid=None, gid=None,
                 nr_inodes=None, nr_blocks=None):
-        """
-        Use the tmpfs ability to be remounted with different options
-
+        '''Use the tmpfs ability to be remounted with different options
+        
         If bad input is given, the previous values will be used.
-
+        
         @author: Roy Nielsen
-        """
+
+        :param size:  (Default value = 0)
+        :param mountpoint:  (Default value = "")
+        :param mode:  (Default value = 700)
+        :param uid:  (Default value = None)
+        :param gid:  (Default value = None)
+        :param nr_inodes:  (Default value = None)
+        :param nr_blocks:  (Default value = None)
+
+        '''
         #####
         # Input Validation:
         #####
@@ -233,11 +243,12 @@ class RamDisk(RamDiskTemplate):
     ###########################################################################
 
     def unmount(self) :
-        """
-        Unmount the disk
-
+        '''Unmount the disk
+        
         @author: Roy Nielsen
-        """
+
+
+        '''
         success = False
 
         command = ["/bin/umount", self.mntPoint]
@@ -252,11 +263,12 @@ class RamDisk(RamDiskTemplate):
     ###########################################################################
 
     def detach(self) :
-        """
-        Unmount the disk
-
+        '''Unmount the disk
+        
         @author: Roy Nielsen
-        """
+
+
+        '''
         success = False
 
         success = self.unmount()
@@ -283,32 +295,39 @@ class RamDisk(RamDiskTemplate):
     ###########################################################################
 
     def getVersion(self):
-        """
-        Getter for the version of the ramdisk
-
+        '''Getter for the version of the ramdisk
+        
         @author: Roy Nielsen
-        """
+
+
+        '''
         return self.module_version
 
 ###############################################################################
 
 def detach(mnt_point="", logger=False):
-    """
-    Mirror for the unmount function...
-
+    '''Mirror for the unmount function...
+    
     @author: Roy Nielsen
-    """
+
+    :param mnt_point:  (Default value = "")
+    :param logger:  (Default value = False)
+
+    '''
     success = unmount(mnt_point, logger)
     return success
 
 ###############################################################################
 
 def unmount(mnt_point="", logger=False):
-    """
-    Unmount the ramdisk
-
+    '''Unmount the ramdisk
+    
     @author: Roy Nielsen
-    """
+
+    :param mnt_point:  (Default value = "")
+    :param logger:  (Default value = False)
+
+    '''
     success = False
     if mnt_point:
         runWith = RunWith(logger)

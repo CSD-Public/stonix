@@ -40,9 +40,7 @@ from ..ruleKVEditor import RuleKVEditor
 
 
 class ConfigureRemoteManagement(RuleKVEditor):
-    '''
-    classdocs
-    '''
+    '''classdocs'''
 
     def __init__(self, config, environ, logger, statechglogger):
         '''

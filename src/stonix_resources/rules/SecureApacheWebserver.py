@@ -69,15 +69,16 @@ from ..stonixutilityfunctions import readFile, writeFile, resetsecon, getOctalPe
 
 
 class SecureApacheWebserver(Rule):
-    '''
-    This class is responsible for securing the configuration of the Apache
+    '''This class is responsible for securing the configuration of the Apache
     webserver. It modifies the httpd.conf file and some files in conf.d. For
     future devs: N.B. the main apache config file location is a list thanks to
     Solaris 10 that insisted on shipping both Apache 1.3.4 and Apache 2.0 and
     making it possible to have both installed on the system at the same time.
     This affects all operations on the config file.
-
+    
     @author: dkennel
+
+
     '''
 
     def __init__(self, config, environ, logger, statechglogger):
@@ -335,8 +336,11 @@ development but some existing applications may use insecure side effects.'''
     def locatesslfiles(self):
         '''Probe known apache config file locations to find the file(s)
         containing cipher specifications.
-        @return: list of strings - list of fully qualified file paths
+
+
+        :returns: list of strings - list of fully qualified file paths
         @author: dkennel
+
         '''
         filelist = []
         sslfilelist = []
@@ -588,7 +592,10 @@ development but some existing applications may use insecure side effects.'''
         '''SecureApacheWebserver.report() Public method to report on the
         configuration status of the Apache webserver.
         @author: dkennel
-        @return: bool - False if the method died during execution
+
+
+        :returns: bool - False if the method died during execution
+
         '''
         compliant = True
         self.detailedresults = ""
@@ -1222,6 +1229,8 @@ development but some existing applications may use insecure side effects.'''
     def fix(self):
         '''SecureApacheWebserver.fix() Public method to fix the apache
         configuration elements.
+
+
         '''
         self.detailedresults = ""
         self.rulesuccess = True
@@ -1343,9 +1352,10 @@ development but some existing applications may use insecure side effects.'''
                                    self.detailedresults)
 
     def undo(self):
-        '''
-        SecureApacheWebserver.undo()
+        '''SecureApacheWebserver.undo()
         Undo method for reverting changes to the apache webserver.
+
+
         '''
         try:
             eventphp = self.statechglogger.getchgevent('0136001')
@@ -1429,9 +1439,13 @@ development but some existing applications may use insecure side effects.'''
     def makeEventId(self, iditerator):
         '''Method to create event ID numbers for use with the state change
         logger. Modified from D.Walkers original for use by this rule.
-
+        
         @author: dkennel
-        @return: string'''
+
+        :param iditerator: 
+        :returns: string
+
+        '''
         if iditerator < 10:
             idbase = '013600'
             myid = idbase + str(iditerator)

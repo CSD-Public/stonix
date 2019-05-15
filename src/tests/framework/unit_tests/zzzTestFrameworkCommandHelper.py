@@ -49,20 +49,19 @@ from src.stonix_resources.CommandHelper import CommandHelper
 
 
 class zzzTestFrameworkCommandHelper(unittest.TestCase):
-    '''
-    Perform tests on different parts of the functionality for framework CommandHelper
+    '''Perform tests on different parts of the functionality for framework CommandHelper
 
-    @param unittest.TestCase: unittest TestCase class inheritance object reference
+    :param unittest: TestCase: unittest TestCase class inheritance object reference
     @author: ekkehard
     @change: Breen Malmberg - 04/11/2018 - removed assertion tests -
                 you can't test for exception assertions in code that is wrapped by try
                 except because the try except intercepts the exception and throws it
                 and it never gets back to the assertraises call (see tf ticket for documentation)
+
     '''
 
     def setUp(self):
-        '''
-        '''
+        ''' '''
 
         self.enviro = Environment()
         self.enviro.setdebugmode(True)
@@ -70,14 +69,12 @@ class zzzTestFrameworkCommandHelper(unittest.TestCase):
         self.commandhelper = CommandHelper(self.logger)
 
     def tearDown(self):
-        '''
-        '''
+        ''' '''
 
         pass
 
     def testExecuteValidCommand(self):
-        '''
-        '''
+        ''' '''
 
         self.assertTrue(self.commandhelper.executeCommand("ls -l /"),
                         "Execute Valid Command string Failed!")
@@ -86,8 +83,7 @@ class zzzTestFrameworkCommandHelper(unittest.TestCase):
                         "Execute Valid Command List Failed!")
 
     def testSetLogPriority(self):
-        '''
-        '''
+        ''' '''
 
         self.assertTrue(self.commandhelper.setLogPriority(LogPriority.INFO),
                         "Execute setLogPriority(0) Command string Failed!")

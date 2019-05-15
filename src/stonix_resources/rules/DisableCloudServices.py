@@ -44,14 +44,15 @@ import traceback
 
 
 class DisableCloudServices(RuleKVEditor):
-    '''
-    This method runs all the report methods for RuleKVEditors defined in the
-dictionary
-
+    '''This method runs all the report methods for RuleKVEditors defined in the
+    dictionary
+    
     @author: ekkehard j. koch
     @change: 07/23/2014 added ubuntu methods and applicability; fixed typos in
             doc strings; added class doc string; implemented pkghelper and
             iterate methods - bemalmbe
+
+
     '''
 
 ###############################################################################
@@ -99,9 +100,7 @@ dictionary
                                   'unity-lens-shopping']
         self.sethelptext()
     def report(self):
-        '''
-        choose which report method to run based on OS archetype
-        '''
+        '''choose which report method to run based on OS archetype'''
         self.detailedresults = ""
         if self.environ.getosfamily() == 'darwin':
             RuleKVEditor.report(self, False)
@@ -111,9 +110,10 @@ dictionary
 ###############################################################################
 
     def reportUbuntu(self):
-        '''
-        if debian, check for unity-lens-shopping and unity-webapps-common
+        '''if debian, check for unity-lens-shopping and unity-webapps-common
         cloud service packages
+
+
         '''
 
         # defaults
@@ -142,9 +142,7 @@ dictionary
 ###############################################################################
 
     def fix(self):
-        '''
-        choose which fix method to run, based on OS archetype
-        '''
+        '''choose which fix method to run, based on OS archetype'''
         self.detailedresults = ""
         if self.DisableCloudServices.getcurrvalue():
             if self.environ.getosfamily() == 'darwin':
@@ -154,9 +152,10 @@ dictionary
 ###############################################################################
 
     def fixUbuntu(self):
-        '''
-        if debian, disable unity-lens-shopping and unity-webapps-common
+        '''if debian, disable unity-lens-shopping and unity-webapps-common
         cloud service packages, if they are installed
+
+
         '''
 
         # defaults

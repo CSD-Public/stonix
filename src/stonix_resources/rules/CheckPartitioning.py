@@ -36,10 +36,11 @@ from ..logdispatcher import LogPriority
 
 
 class CheckPartitioning(Rule):
-    '''
-    This class checks the system partitions to see if best partitioning
+    '''This class checks the system partitions to see if best partitioning
     practices have been followed. The class is audit only.This class inherits
     the base Rule class, which in turn inherits observable.
+
+
     '''
 
     def __init__(self, config, environ, logger, statechglogger):
@@ -65,15 +66,17 @@ class CheckPartitioning(Rule):
         self.auditonly = True
 
     def report(self):
-        '''
-        CheckPartitioning.report(): produce a report on whether or not the
+        '''CheckPartitioning.report(): produce a report on whether or not the
         systems partitioning appears to follow best practices.
 
-        @return: self.compliant
-        @rtype: bool
-        @author: David Kennel
-        @change: Breen Malmberg - 07/30/2018 - added potential missing format
-                detailedresults; minor docstring edit
+
+        :returns: self.compliant
+
+        :rtype: bool
+@author: David Kennel
+@change: Breen Malmberg - 07/30/2018 - added potential missing format
+        detailedresults; minor docstring edit
+
         '''
 
         self.detailedresults = ""

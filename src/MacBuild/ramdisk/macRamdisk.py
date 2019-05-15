@@ -41,21 +41,14 @@ from lib.libHelperExceptions import NotValidForThisOS
 ###############################################################################
 
 class RamDisk(RamDiskTemplate) :
-    """
-    Class to manage a ramdisk
-
+    '''Class to manage a ramdisk
+    
     utilizes commands I've used to manage ramdisks
-
+    
     Size passed in must be passed in as 1Mb chunks
 
-    @param: size - size of the ramdisk to create - must have a value on the Mac
-                   or the creation will fail.
-    @param: mountpoint - where to mount the disk, if left empty, will mount
-                         on locaiton created by tempfile.mkdtemp.
-    @param: message_level - level at which to log.
 
-    @author: Roy Nielsen
-    """
+    '''
     def __init__(self, size=0, mountpoint="", logger=False) :
         """
         Constructor
@@ -192,25 +185,27 @@ class RamDisk(RamDiskTemplate) :
     ###########################################################################
 
     def getData(self):
-        """
-        Getter for mount data, and if the mounting of a ramdisk was successful
-
+        '''Getter for mount data, and if the mounting of a ramdisk was successful
+        
         Does not print or log the data.
-
+        
         @author: Roy Nielsen
-        """
+
+
+        '''
         return (self.success, str(self.mntPoint), str(self.myRamdiskDev))
 
     ###########################################################################
 
     def getNlogData(self):
-        """
-        Getter for mount data, and if the mounting of a ramdisk was successful
-
+        '''Getter for mount data, and if the mounting of a ramdisk was successful
+        
         Also logs the data.
-
+        
         @author: Roy Nielsen
-        """
+
+
+        '''
         self.logger.log(lp.INFO, "Success: " + str(self.success))
         self.logger.log(lp.INFO, "Mount point: " + str(self.mntPoint))
         self.logger.log(lp.INFO, "Device: " + str(self.myRamdiskDev))
@@ -219,9 +214,7 @@ class RamDisk(RamDiskTemplate) :
     ###########################################################################
 
     def getNprintData(self):
-        """
-        Getter for mount data, and if the mounting of a ramdisk was successful
-        """
+        '''Getter for mount data, and if the mounting of a ramdisk was successful'''
         print "Success: " + str(self.success)
         print "Mount point: " + str(self.mntPoint)
         print "Device: " + str(self.myRamdiskDev)
@@ -311,39 +304,40 @@ class RamDisk(RamDiskTemplate) :
 
     def unionOver(self, target="", fstype="hfs", nosuid=None, noowners=True,
                         noatime=None, nobrowse=None):
-        """
-        Use unionfs to mount a ramdisk on top of a location already on the
+        '''Use unionfs to mount a ramdisk on top of a location already on the
         filesystem.
 
-        @parameter: target - where to lay the ramdisk on top of, ie the lower
+        :param eter: target - where to lay the ramdisk on top of, ie the lower
                              filesystem layer.
-
-        @parameter: nosuid - from the mount manpage: "Do not allow
+        :param eter: nosuid - from the mount manpage: "Do not allow
                              set-user-identifier bits to take effect.
-
-        @parameter: fstype - What supported filesystem to use.
-
-        @parameter: noowners - From the mount manpage: "Ignore the ownership
+        :param eter: fstype - What supported filesystem to use.
+        :param eter: noowners - From the mount manpage: "Ignore the ownership
                                field for the entire volume.  This causes all
                                objects to appear as owned by user ID 99 and
                                group ID 99.  User ID 99 is interpreted as
                                the current effective user ID, while group
                                99 is used directly and translates to "unknown".
-
-        @parameter: noatime - from the mount manpage: "Do not update the file
+        :param eter: noatime - from the mount manpage: "Do not update the file
                               access time when reading from a file.  This
                               option is useful on file systems where there are
                               large numbers of files and performance is more
                               critical than updating the file access time
                               (which is rarely ever important).
-
-        @parameter: nobrowse - from the mount manpage: "This option indicates
+        :param eter: nobrowse - from the mount manpage: "This option indicates
                                that the mount point should not be visible via
                                the GUI (i.e., appear on the Desktop as a
                                separate volume).
-
+        
         @author: Roy Nielsen
-        """
+        :param target:  (Default value = "")
+        :param fstype:  (Default value = "hfs")
+        :param nosuid:  (Default value = None)
+        :param noowners:  (Default value = True)
+        :param noatime:  (Default value = None)
+        :param nobrowse:  (Default value = None)
+
+        '''
         success = False
 
         #####
@@ -390,11 +384,12 @@ class RamDisk(RamDiskTemplate) :
     ###########################################################################
 
     def unmount(self) :
-        """
-        Unmount the disk - same functionality as __eject on the mac
-
+        '''Unmount the disk - same functionality as __eject on the mac
+        
         @author: Roy Nielsen
-        """
+
+
+        '''
         success = False
         if self.eject() :
             success = True
@@ -404,11 +399,12 @@ class RamDisk(RamDiskTemplate) :
     ###########################################################################
 
     def detach(self) :
-        """
-        Unmount the disk - same functionality as __eject on the mac
-
+        '''Unmount the disk - same functionality as __eject on the mac
+        
         @author: Roy Nielsen
-        """
+
+
+        '''
         success = False
         if self.eject() :
             success = True
@@ -418,11 +414,12 @@ class RamDisk(RamDiskTemplate) :
     ###########################################################################
 
     def _unmount(self) :
-        """
-        Unmount in the Mac sense - ie, the device is still accessible.
-
+        '''Unmount in the Mac sense - ie, the device is still accessible.
+        
         @author: Roy Nielsen
-        """
+
+
+        '''
         success = False
         cmd = [self.diskutil, "unmount", self.devPartition]
         self.runWith.setCommand(cmd)
@@ -435,12 +432,13 @@ class RamDisk(RamDiskTemplate) :
     ###########################################################################
 
     def _mount(self) :
-        """
-        Mount in the Mac sense - ie, mount an already accessible device to
+        '''Mount in the Mac sense - ie, mount an already accessible device to
         a mount point.
-
+        
         @author: Roy Nielsen
-        """
+
+
+        '''
         success = False
         cmd = [self.diskutil, "mount", "-mountPoint", self.mntPoint, self.devPartition]
         self.runWith.setCommand(cmd)
@@ -453,15 +451,16 @@ class RamDisk(RamDiskTemplate) :
     ###########################################################################
 
     def eject(self) :
-        """
-        Eject the ramdisk
-
+        '''Eject the ramdisk
+        
         Detach (on the mac) is a better solution than unmount and eject
         separately.. Besides unmounting the disk, it also stops any processes
         related to the mntPoint
-
+        
         @author: Roy Nielsen
-        """
+
+
+        '''
         success = False
         cmd = [self.hdiutil, "detach", self.myRamdiskDev]
         self.runWith.setCommand(cmd)
@@ -476,11 +475,12 @@ class RamDisk(RamDiskTemplate) :
     ###########################################################################
 
     def _format(self) :
-        """
-        Format the ramdisk
-
+        '''Format the ramdisk
+        
         @author: Roy Nielsen
-        """
+
+
+        '''
         success = False
         #####
         # Unmount (in the mac sense - the device should still be accessible)
@@ -614,21 +614,24 @@ class RamDisk(RamDiskTemplate) :
     ###########################################################################
 
     def getDevice(self):
-        """
-        Getter for the device name the ramdisk is using
-
+        '''Getter for the device name the ramdisk is using
+        
         @author: Roy Nielsen
-        """
+
+
+        '''
         return self.myRamdiskDev
 
     ###########################################################################
 
     def setDevice(self, device=None):
-        """
-        Setter for the device so it can be ejected.
-
+        '''Setter for the device so it can be ejected.
+        
         @author: Roy Nielsen
-        """
+
+        :param device:  (Default value = None)
+
+        '''
         if device:
             self.myRamdiskDev = device
         else:
@@ -637,35 +640,42 @@ class RamDisk(RamDiskTemplate) :
     ###########################################################################
 
     def getVersion(self):
-        """
-        Getter for the version of the ramdisk
-
+        '''Getter for the version of the ramdisk
+        
         @author: Roy Nielsen
-        """
+
+
+        '''
         return self.module_version
 
 
 ###############################################################################
 
 def unmount(device=" ", logger=False):
-    """
-    On the Mac, call detach.
-
+    '''On the Mac, call detach.
+    
     @author: Roy Nielsen
-    """
+
+    :param device:  (Default value = " ")
+    :param logger:  (Default value = False)
+
+    '''
     detach(device, logger)
 
 ###############################################################################
 
 def detach(device=" ", logger=False):
-    """
-    Eject the ramdisk
+    '''Eject the ramdisk
     Detach (on the mac) is a better solution than unmount and eject
     separately.. Besides unmounting the disk, it also stops any processes
     related to the mntPoint
-
+    
     @author: Roy Nielsen
-    """
+
+    :param device:  (Default value = " ")
+    :param logger:  (Default value = False)
+
+    '''
     success = False
     if not logger:
         logger = CyLogger()

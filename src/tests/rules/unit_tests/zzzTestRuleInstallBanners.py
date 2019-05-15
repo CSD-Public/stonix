@@ -60,10 +60,7 @@ class zzzTestRuleInstallBanners(RuleTest):
         pass
 
     def test_initobjs(self):
-        """
-
-        @return:
-        """
+        ''' '''
 
         self.rule.initobjs()
 
@@ -84,10 +81,7 @@ class zzzTestRuleInstallBanners(RuleTest):
         self.assertFalse(self.rule.badline)
 
     def test_setgnome3(self):
-        """
-
-        @return: 
-        """
+        ''' '''
 
         self.rule.setgnome3()
 
@@ -95,10 +89,7 @@ class zzzTestRuleInstallBanners(RuleTest):
         self.assertEqual(self.rule.gnome3bannertext, GDM3WARNINGBANNER)
 
     def test_setgnome2(self):
-        """
-
-        @return:
-        """
+        ''' '''
 
         self.rule.setgnome2()
 
@@ -106,10 +97,7 @@ class zzzTestRuleInstallBanners(RuleTest):
         self.assertEqual(self.rule.gnome2bannertext, GDMWARNINGBANNER)
 
     def test_setkde(self):
-        """
-
-        @return:
-        """
+        ''' '''
 
         self.rule.setkde()
 
@@ -124,10 +112,7 @@ class zzzTestRuleInstallBanners(RuleTest):
             raise
 
     def test_setlightdm(self):
-        """
-
-        @return:
-        """
+        ''' '''
 
         self.rule.setlightdm()
 
@@ -135,10 +120,7 @@ class zzzTestRuleInstallBanners(RuleTest):
         self.assertEqual(self.rule.ldmbannertext, ALTWARNINGBANNER)
 
     def test_setcommon(self):
-        """
-
-        @return:
-        """
+        ''' '''
 
         self.rule.setcommon()
 
@@ -153,10 +135,7 @@ class zzzTestRuleInstallBanners(RuleTest):
             raise
 
     def test_getfilecontents(self):
-        """
-
-        @return:
-        """
+        ''' '''
 
         self.assertEqual(self.rule.getFileContents(''), [])
         self.assertEqual(self.rule.getFileContents('', 'unknown'), '')
@@ -173,15 +152,16 @@ class zzzTestRuleInstallBanners(RuleTest):
         self.simpleRuleTest()
 
     def setConditionsForRule(self):
-        """
-        This makes sure the intial report fails by executing the following
+        '''This makes sure the intial report fails by executing the following
         commands:
         defaults -currentHost delete /Library/Preferences/com.apple.AppleFileServer loginGreeting
         defaults -currentHost delete /Library/Preferences/com.apple.loginwindow LoginWindowText
-        @param self: essential if you override this definition
-        @return: boolean - If successful True; If failure False
+
+        :param self: essential if you override this definition
+        :returns: boolean - If successful True; If failure False
         @author: ekkehard j. koch
-        """
+
+        '''
         success = True
         if self.environ.getosfamily() == "darwin":
             if success:
@@ -202,14 +182,17 @@ class zzzTestRuleInstallBanners(RuleTest):
 
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
-        """
-        To see what happended run these commans:
+        '''To see what happended run these commans:
         defaults -currentHost read /Library/Preferences/com.apple.AppleFileServer loginGreeting
         defaults -currentHost read /Library/Preferences/com.apple.loginwindow LoginWindowText
-        @param self: essential if you override this definition
-        @return: boolean - If successful True; If failure False
+
+        :param self: essential if you override this definition
+        :param pCompliance: 
+        :param pRuleSuccess: 
+        :returns: boolean - If successful True; If failure False
         @author: ekkehard j. koch
-        """
+
+        '''
         self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " +
                              str(pCompliance) + ".")
         self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +

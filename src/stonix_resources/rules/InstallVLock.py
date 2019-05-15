@@ -36,15 +36,16 @@ from ..pkghelper import Pkghelper
 
 
 class InstallVLock(Rule):
-    """
-    This class installs the vlock package to enable screen locking
+    '''This class installs the vlock package to enable screen locking
     vlock is the package name on opensuse 15+, debian, ubuntu
     kbd is the package name on opensuse 42.3-, rhel, fedora, centos (contains vlock package)
-
+    
     references:
     https://pkgs.org/download/vlock
     https://access.redhat.com/discussions/3543671
-    """
+
+
+    '''
 
     def __init__(self, config, environ, logger, statechglogger):
         """
@@ -72,11 +73,7 @@ class InstallVLock(Rule):
         self.sethelptext()
 
     def set_pkg(self):
-        """
-        set package name based on distro
-
-        @return:
-        """
+        '''set package name based on distro'''
 
         majorver = self.environ.getosmajorver()
 
@@ -88,14 +85,16 @@ class InstallVLock(Rule):
             self.pkg = "vlock"
 
     def report(self):
-        """
-        Perform a check to see if package is already installed.
+        '''Perform a check to see if package is already installed.
         If so, there is  no need to run Fix method
 
-        @return: self.compliant
-        @rtype: bool
-        @author: Derek T Walker
-        """
+
+        :returns: self.compliant
+
+        :rtype: bool
+@author: Derek T Walker
+
+        '''
 
         try:
 
@@ -123,16 +122,18 @@ class InstallVLock(Rule):
         return self.compliant
 
     def fix(self):
-        """
-        The fix method will apply the required settings to the system.
+        '''The fix method will apply the required settings to the system.
         self.rulesuccess will be updated if the rule does not succeed.
         Attempt to install Vlock, record success or failure in event
         logger.
 
-        @return: self.rulesuccess
-        @rtype: bool
-        @author: Derek T Walker
-        """
+
+        :returns: self.rulesuccess
+
+        :rtype: bool
+@author: Derek T Walker
+
+        '''
 
         try:
 

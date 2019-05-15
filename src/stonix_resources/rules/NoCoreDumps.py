@@ -53,9 +53,7 @@ from ..stonixutilityfunctions import iterate, readFile, checkPerms, createFile, 
 
 
 class NoCoreDumps(Rule):
-    """
-    classdocs
-    """
+    '''classdocs'''
 
     def __init__(self, config, environ, logger, statechglogger):
         """
@@ -85,16 +83,19 @@ class NoCoreDumps(Rule):
         self.sethelptext()
 
     def report(self):
-        """
-        Main parent report method that calls the sub report methods report1
+        '''Main parent report method that calls the sub report methods report1
         and report2
-
+        
         @author: Derek Walker
-        @return: self.compliant
-        @rtype: bool
-        @change: Breen Malmberg - 1/10/2017 - doc string edit; return var init;
-                minor refactor
-        """
+
+
+        :returns: self.compliant
+
+        :rtype: bool
+@change: Breen Malmberg - 1/10/2017 - doc string edit; return var init;
+        minor refactor
+
+        '''
 
         self.detailedresults = ""
         self.compliant = True
@@ -120,15 +121,17 @@ class NoCoreDumps(Rule):
         return self.compliant
 
     def reportMac(self):
-        """
-        run report actions for mac systems
+        '''run report actions for mac systems
 
-        @return: compliant
-        @rtype: bool
-        @author: Derek Walker
-        @change: Breen Malmberg - 1/10/2017 - added doc string; default return var init;
-                try/except; logging; minor refactor
-        """
+
+        :returns: compliant
+
+        :rtype: bool
+@author: Derek Walker
+@change: Breen Malmberg - 1/10/2017 - added doc string; default return var init;
+        try/except; logging; minor refactor
+
+        '''
 
         self.logger.log(LogPriority.DEBUG, "System has been detected as Mac OS X, running reportMac()...")
         compliant = True
@@ -150,14 +153,16 @@ class NoCoreDumps(Rule):
         return compliant
 
     def reportLinux(self):
-        """
-        Sub report method 1 that searches the /etc/security/limits.conf file
+        '''Sub report method 1 that searches the /etc/security/limits.conf file
         for the following line "* hard core 0"
 
-        @return: compliant
-        @rtype: bool
-        @author: ???
-        """
+
+        :returns: compliant
+
+        :rtype: bool
+@author: ???
+
+        '''
 
         compliant = True
 
@@ -170,14 +175,16 @@ class NoCoreDumps(Rule):
         return compliant
 
     def check_security_limits(self):
-        """
-        check the limits.conf file for the configuration line
+        '''check the limits.conf file for the configuration line
         * hard core 0
 
-        @return: compliant
-        @rtype: bool
-        @author: ???
-        """
+
+        :returns: compliant
+
+        :rtype: bool
+@author: ???
+
+        '''
 
         compliant = True
         securitylimits = "/etc/security/limits.conf"
@@ -203,14 +210,16 @@ class NoCoreDumps(Rule):
         return compliant
 
     def check_sysctl(self):
-        """
-        check the systemd configuration setting fs.suid_dumpable
+        '''check the systemd configuration setting fs.suid_dumpable
         for value of 0
 
-        @return: compliant
-        @rtype: bool
-        @author: ???
-        """
+
+        :returns: compliant
+
+        :rtype: bool
+@author: ???
+
+        '''
 
         compliant = True
 
@@ -231,13 +240,16 @@ class NoCoreDumps(Rule):
         return compliant
 
     def fix(self):
-        """
-        parent fix method which calls os-specific private fix methods
-
+        '''parent fix method which calls os-specific private fix methods
+        
         @author: Derek Walker
-        @return: self.rulesuccess
-        @rtype: bool
-        """
+
+
+        :returns: self.rulesuccess
+
+        :rtype: bool
+
+        '''
 
         self.iditerator = 0
         self.detailedresults = ""
@@ -273,13 +285,15 @@ class NoCoreDumps(Rule):
         return self.rulesuccess
 
     def fixLinux(self):
-        """
-        perform linux-specific configuration changes
+        '''perform linux-specific configuration changes
 
-        @return: success
-        @rtype: bool
-        @author: ???
-        """
+
+        :returns: success
+
+        :rtype: bool
+@author: ???
+
+        '''
 
         success = True
 
@@ -292,14 +306,16 @@ class NoCoreDumps(Rule):
         return success
 
     def fix_sysctl(self):
-        """
-        set the systemd configuration setting fs.suid_dumpable
+        '''set the systemd configuration setting fs.suid_dumpable
         to 0
 
-        @return: success
-        @rtype: bool
-        @author: ???
-        """
+
+        :returns: success
+
+        :rtype: bool
+@author: ???
+
+        '''
 
         success = True
 
@@ -330,14 +346,16 @@ class NoCoreDumps(Rule):
         return success
 
     def fix_security_limits(self):
-        """
-        ensure the limits.conf file contains the configuration
+        '''ensure the limits.conf file contains the configuration
         setting * hard core 0
 
-        @return: succcess
-        @rtype: bool
-        @author: ???
-        """
+
+        :returns: succcess
+
+        :rtype: bool
+@author: ???
+
+        '''
 
         success = True
         path1 = "/etc/security/limits.conf"
@@ -393,15 +411,17 @@ class NoCoreDumps(Rule):
         return success
 
     def fixMac(self):
-        """
-        run fix actions for Mac OS X systems
+        '''run fix actions for Mac OS X systems
 
-        @return: success
-        @rtype: bool
-        @author: Derek Walker
-        @change: Breen Malmberg - 1/10/2017 - added doc string; default return var init;
-                try/except; fixed command being used to restart sysctl on mac; logging
-        """
+
+        :returns: success
+
+        :rtype: bool
+@author: Derek Walker
+@change: Breen Malmberg - 1/10/2017 - added doc string; default return var init;
+        try/except; fixed command being used to restart sysctl on mac; logging
+
+        '''
 
         self.logger.log(LogPriority.DEBUG, "System detected as Mac OS X. Running fixMac()...")
         success = True

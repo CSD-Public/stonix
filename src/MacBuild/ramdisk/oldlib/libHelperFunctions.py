@@ -15,11 +15,12 @@ from lib.loggers import CyLogger
 from lib.loggers import LogPriority as lp
 
 def getOsFamily():
-    """
-    Get the os name from the "uname -s" command
-
+    '''Get the os name from the "uname -s" command
+    
     @author: Roy Nielsen
-    """
+
+
+    '''
 
     operatingsystemfamily = sys.platform
 

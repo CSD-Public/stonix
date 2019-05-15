@@ -48,10 +48,11 @@ from ..CommandHelper import CommandHelper
 
 
 class DisableWebSharing(Rule):
-    '''
-    Web Sharing uses the Apache 2.2.x web server to turn the Mac into an HTTP/Web
-server. As with file sharing, web sharing is best left off and a dedicated,
-well-managed web server is recommended.
+    '''Web Sharing uses the Apache 2.2.x web server to turn the Mac into an HTTP/Web
+    server. As with file sharing, web sharing is best left off and a dedicated,
+    well-managed web server is recommended.
+
+
     '''
 
     def __init__(self, config, environ, logger, statechglogger):
@@ -84,12 +85,14 @@ well-managed web server is recommended.
         self.sethelptext()
 
     def report(self):
-        '''
-        Report status of web sharing and compliance
+        '''Report status of web sharing and compliance
 
-        @return: self.compliant
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: self.compliant
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         # defaults
@@ -139,12 +142,14 @@ well-managed web server is recommended.
 
 ###############################################################################
     def fix(self):
-        '''
-        Perform operations to disable web sharing
+        '''Perform operations to disable web sharing
 
-        @return: self.rulesuccess
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: self.rulesuccess
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         # defaults

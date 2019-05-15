@@ -40,9 +40,7 @@ from ..CommandHelper import CommandHelper
 
 
 class SetSSCorners(Rule):
-    '''
-    classdocs
-    '''
+    '''classdocs'''
 
     def __init__(self, config, environ, logger, statechglogger):
         '''
@@ -71,8 +69,7 @@ class SetSSCorners(Rule):
         self.ci = self.initCi(datatype, key, instructions, default)
 
     def setVars(self):
-        '''
-        '''
+        ''' '''
 
         ssfound = False
 
@@ -116,8 +113,7 @@ class SetSSCorners(Rule):
             raise
 
     def report(self):
-        '''
-        '''
+        ''' '''
 
         found = False
         self.detailedresults = ""
@@ -173,8 +169,7 @@ class SetSSCorners(Rule):
         return self.compliant
 
     def fix(self):
-        '''
-        '''
+        ''' '''
 
         success = True
         self.detailedresults = ""

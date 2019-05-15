@@ -42,14 +42,20 @@ from ..logdispatcher import LogPriority
 
 
 class LimitConcurrentLogins(Rule):
-    '''
-    Limit a system's concurrent logins to 10 (default) or the
+    '''Limit a system's concurrent logins to 10 (default) or the
     number the end-user specifies
     This is not a mandatory rule
+
+
     '''
 
     def __init__(self, config, environ, logdispatcher, statechglogger):
         '''
+
+        :param config:
+        :param environ:
+        :param logdispatcher:
+        :param statechglogger:
         '''
 
         Rule.__init__(self, config, environ, logdispatcher, statechglogger)
@@ -80,18 +86,17 @@ class LimitConcurrentLogins(Rule):
         self.cinum = self.initCi(datatype2, key2, instructions2, default2)
 
     def readFile(self, filepath):
-        '''
-        Read the contents of filepath into a list and return that list
+        '''Read the contents of filepath into a list and return that list
         Return a blank list if either the filepath argument is not the
         correct data type, or the filepath does not exist on the operating
         system
 
-        @param filepath: string; full path to the file to be read
+        :param filepath: string; full path to the file to be read
+        :returns: contentlist
+        :rtype: list
 
-        @return: contentlist
-        @rtype: list
+@author: Breen Malmberg
 
-        @author: Breen Malmberg
         '''
 
         contentlist = []
@@ -113,19 +118,18 @@ class LimitConcurrentLogins(Rule):
         return contentlist
 
     def writeFile(self, path, contents):
-        '''
-        write given contents to a given file path
+        '''write given contents to a given file path
         record undo action
         return true if successful
         return false if failed
 
-        @param path: string; full path to the file to write to
-        @param contents: list; list of strings to write to file
+        :param path: string; full path to the file to write to
+        :param contents: list; list of strings to write to file
+        :returns: success
+        :rtype: bool
 
-        @return: success
-        @rtype: bool
+@author: Breen Malmberg
 
-        @author: Breen Malmberg
         '''
 
         success = True
@@ -182,15 +186,16 @@ class LimitConcurrentLogins(Rule):
         return success
 
     def buildConfFileList(self):
-        '''
-        Dynamically build the list of configuration files
+        '''Dynamically build the list of configuration files
         we need to edit. This includes any *.conf in the
         /etc/security/limits.d/ directory and the
         /etc/security/limits.conf file if it exists
         The "limits" configuration is read as a concatenation
         of limits.conf and any *.conf files in limits.d/
-
+        
         @author: Breen Malmberg
+
+
         '''
 
         if os.path.exists(self.conffilesdir):
@@ -204,14 +209,16 @@ class LimitConcurrentLogins(Rule):
                         self.conffiles.append(self.conffilesdir + "/" + cf)
 
     def report(self):
-        '''
-        LimitConcurrentLogins.report() method to report whether system's
+        '''LimitConcurrentLogins.report() method to report whether system's
         concurrent logins are regulated.
 
-        @return: self.compliant
-        @rtype: bool
 
-        @author: Derek Walker, Breen Malmberg
+        :returns: self.compliant
+
+        :rtype: bool
+
+@author: Derek Walker, Breen Malmberg
+
         '''
 
         self.compliant = True
@@ -285,18 +292,17 @@ class LimitConcurrentLogins(Rule):
         return self.compliant
 
     def matchIncorrect(self, line, expectedvalues):
-        '''
-        find any maxlogins configuration lines which have the incorrect value(s)
+        '''find any maxlogins configuration lines which have the incorrect value(s)
         return True if an incorrect config line is found
         return False if not
 
-        @param line: string; configuration line to check
-        @param expectedvalues: list; list of correct config line parts
+        :param line: string; configuration line to check
+        :param expectedvalues: list; list of correct config line parts
+        :returns: mismatch
+        :rtype: bool
 
-        @return: mismatch
-        @rtype: bool
+@author: Breen Malmberg
 
-        @author: Breen Malmberg
         '''
 
         mismatch = False
@@ -321,14 +327,16 @@ class LimitConcurrentLogins(Rule):
         return mismatch
 
     def fix(self):
-        '''
-        Limit the number of concurrent logins to the value of LOGINNUMBER CI
+        '''Limit the number of concurrent logins to the value of LOGINNUMBER CI
         (default 10)
 
-        @return: self.rulesuccess
-        @rtype: bool
 
-        @author: Derek Walker, Breen Malmberg
+        :returns: self.rulesuccess
+
+        :rtype: bool
+
+@author: Derek Walker, Breen Malmberg
+
         '''
 
         self.rulesuccess = True
@@ -388,17 +396,16 @@ class LimitConcurrentLogins(Rule):
         return self.rulesuccess
 
     def fixIncorrect(self, contentlines, expectedvalues):
-        '''
-        fix any existing, incorrect configuration line entries
+        '''fix any existing, incorrect configuration line entries
         return the fixed results
 
-        @param contentlines: list; list of strings to examine
-        @param expectedvalues: list; list of correct config value parts
+        :param contentlines: list; list of strings to examine
+        :param expectedvalues: list; list of correct config value parts
+        :returns: contentlines
+        :rtype: list
 
-        @return: contentlines
-        @rtype: list
+@author: Breen Malmberg
 
-        @author: Breen Malmberg
         '''
 
         # replace string slightly different than appendstring, since we
@@ -412,16 +419,15 @@ class LimitConcurrentLogins(Rule):
         return contentlines
 
     def fixMissing(self, contentlines=[]):
-        '''
-        if the contents are completely missing the configuration line
+        '''if the contents are completely missing the configuration line
         append it and return the results
 
-        @param contentlines: list; list of strings to examine
+        :param contentlines: list; list of strings to examine (Default value = [])
+        :returns: contentlines
+        :rtype: list
 
-        @return: contentlines
-        @rtype: list
+@author: Breen Malmberg
 
-        @author: Breen Malmberg
         '''
 
         # appendstring slightly different than replacestring, since we
@@ -434,17 +440,16 @@ class LimitConcurrentLogins(Rule):
         return contentlines
 
     def fixDuplicates(self, contentlines):
-        '''
-        search for and remove any duplicates of the specific configuration
+        '''search for and remove any duplicates of the specific configuration
         line we are looking for. return the results
 
-        @param contentlines: list; list of strings to examine
-        @param expectedvalues: list; list of correct config value parts
+        :param contentlines: list; list of strings to examine
+        :param expectedvalues: list; list of correct config value parts
+        :returns: newcontentlines
+        :rtype: list
 
-        @return: newcontentlines
-        @rtype: list
+@author: Breen Malmberg
 
-        @author: Breen Malmberg
         '''
 
         newcontentlines = []
@@ -458,15 +463,14 @@ class LimitConcurrentLogins(Rule):
         return newcontentlines
 
     def fixDeflate(self, contentlines):
-        '''
-        remove extra blank lines to prevent file inflation
+        '''remove extra blank lines to prevent file inflation
 
-        @param contentlines: list; list of strings to examine
+        :param contentlines: list; list of strings to examine
+        :returns: newcontentlines
+        :rtype: list
 
-        @return: newcontentlines
-        @rtype: list
+@author: Breen Malmberg
 
-        @author: Breen Malmberg
         '''
 
         i = 0
@@ -489,15 +493,14 @@ class LimitConcurrentLogins(Rule):
         return newcontentlines
 
     def fixEOF(self, contentlines):
-        '''
-        move the end of file comment to the end of the file
+        '''move the end of file comment to the end of the file
 
-        @param contentlines: list; list of strings to examine
+        :param contentlines: list; list of strings to examine
+        :returns: contentlines
+        :rtype: list
 
-        @return: contentlines
-        @rtype: list
+@author: Breen Malmberg
 
-        @author: Breen Malmberg
         '''
 
         eofstring = "\n# End of File\n"
@@ -511,16 +514,15 @@ class LimitConcurrentLogins(Rule):
         return contentlines
 
     def fixHeading(self, filepath, contentlines):
-        '''
-        insert the file comment heading if it does not exist
+        '''insert the file comment heading if it does not exist
 
-        @param filepath: string; full path to the file
-        @param contentlines: list; list of strings to examine
+        :param filepath: string; full path to the file
+        :param contentlines: list; list of strings to examine
+        :returns: contentlines
+        :rtype: list
 
-        @return: contentlines
-        @rtype: list
+@author: Breen Malmberg
 
-        @author: Breen Malmberg
         '''
 
         foundheading = False

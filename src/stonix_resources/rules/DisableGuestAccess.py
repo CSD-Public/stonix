@@ -35,8 +35,7 @@ from ..ruleKVEditor import RuleKVEditor
 
 
 class DisableGuestAccess(RuleKVEditor):
-    '''
-    This Mac Only rule makes sure that the NAT Dictionary is not enabled.:
+    '''This Mac Only rule makes sure that the NAT Dictionary is not enabled.:
     1. guestAccess is disabled with the following commands:
     defaults -currentHost read /Library/Preferences/com.apple.AppleFileServer guestAccess
     defaults -currentHost write /Library/Preferences/com.apple.AppleFileServer guestAccess -bool yes
@@ -44,6 +43,8 @@ class DisableGuestAccess(RuleKVEditor):
     defaults -currentHost read /Library/Preferences/com.apple.AppleFileServer AllowGuestAccess
     defaults -currentHost write /Library/Preferences/com.apple.AppleFileServer AllowGuestAccess -bool yes
     @author: ekkehard j. koch
+
+
     '''
 
 ###############################################################################

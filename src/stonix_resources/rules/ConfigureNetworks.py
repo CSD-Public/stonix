@@ -49,10 +49,7 @@ from ..stonixutilityfunctions import iterate
 
 
 class ConfigureNetworks(RuleKVEditor):
-    '''
-
-    @author: ekkehard j. koch
-    '''
+    '''@author: ekkehard j. koch'''
 
 ###############################################################################
 
@@ -119,14 +116,16 @@ class ConfigureNetworks(RuleKVEditor):
                              {})
 
     def report(self):
-        '''
-        determine the compliance status of ConfigureNetworks
+        '''determine the compliance status of ConfigureNetworks
         on the current system
 
-        @return: self.compliant
-        @rtype: bool
-        @author: ekkehard j. koch
-        @change: Breen Malmberg - 12/20/2016 - added doc string; 
+
+        :returns: self.compliant
+
+        :rtype: bool
+@author: ekkehard j. koch
+@change: Breen Malmberg - 12/20/2016 - added doc string;
+
         '''
 
         # CHANGES REQUIRED IN INIT OF THIS RULE IF THE CONSTANTS, THAT NETWORKSETUP.PY USE, ARE CHANGED
@@ -189,16 +188,18 @@ class ConfigureNetworks(RuleKVEditor):
 ###############################################################################
 
     def fix(self):
-        '''
-        run fix actions for ConfigureNetworks
+        '''run fix actions for ConfigureNetworks
         return True if all succeed
 
-        @return: fixed
-        @rtype: bool
-        @author: ekkehard j. koch
-        @change: Breen Malmberg - 12/20/2016 - added doc string; detailedresults
-                and fixed var's moved to before try; 
-        @change: Breen Malmberg - 1/12/2017 - added debug logging; default init kvfixed to True
+
+        :returns: fixed
+
+        :rtype: bool
+@author: ekkehard j. koch
+@change: Breen Malmberg - 12/20/2016 - added doc string; detailedresults
+        and fixed var's moved to before try;
+@change: Breen Malmberg - 1/12/2017 - added debug logging; default init kvfixed to True
+
         '''
 
         # CHANGES REQUIRED IN INIT OF THIS RULE IF THE CONSTANTS, THAT NETWORKSETUP.PY USE, ARE CHANGED
@@ -260,15 +261,17 @@ class ConfigureNetworks(RuleKVEditor):
 ###############################################################################
 
     def afterfix(self):
-        '''
-        restart the service after fix
+        '''restart the service after fix
 
-        @return: afterfixsuccessful
-        @rtype: bool
-        @author: ekkehard j. koch
-        @change: Breen Malmberg - 12/20/2016 - added doc string; var init before
-                try
-        @change: ekkehard - 2017/10/04 - temporary launchctl fix
+
+        :returns: afterfixsuccessful
+
+        :rtype: bool
+@author: ekkehard j. koch
+@change: Breen Malmberg - 12/20/2016 - added doc string; var init before
+        try
+@change: ekkehard - 2017/10/04 - temporary launchctl fix
+
         '''
 
         afterfixsuccessful = True

@@ -32,9 +32,7 @@ from logdispatcher import LogPriority
 
 
 class repoError(Exception):
-    '''
-    Meant to be raised when a remote repository (in linux) is inaccessible, for any reason
-    '''
+    '''Meant to be raised when a remote repository (in linux) is inaccessible, for any reason'''
 
     def __init__(self, ptype, ecode, errmsg=""):
         '''
@@ -123,13 +121,13 @@ class repoError(Exception):
         return
 
     def zypperCodes(self, ecode):
-        '''
-        Return information about the zypper exit codes
+        '''Return information about the zypper exit codes
 
-        @param ecode: int; the numeric exit status code
-        @return: msg
-        @rtype: string
-        @author: Breen Malmberg
+        :param ecode: int; the numeric exit status code
+        :returns: msg
+        :rtype: string
+@author: Breen Malmberg
+
         '''
 
         msg = "No further information available"
@@ -177,13 +175,13 @@ class repoError(Exception):
         return msg
 
     def yumCodes(self, ecode):
-        '''
-        Return information about the yum exit codes
+        '''Return information about the yum exit codes
 
-        @param ecode: int; the numeric exit code
-        @return: msg
-        @rtype: string
-        @author: Breen Malmberg
+        :param ecode: int; the numeric exit code
+        :returns: msg
+        :rtype: string
+@author: Breen Malmberg
+
         '''
 
         msg = "No further information available"
@@ -200,13 +198,13 @@ class repoError(Exception):
         return msg
 
     def aptCodes(self, ecode):
-        '''
-        Return information about the apt-get/dpkg exit codes
+        '''Return information about the apt-get/dpkg exit codes
 
-        @param ecode: int; the numeric exit code
-        @return: msg
-        @rtype: string
-        @author: Breen Malmberg
+        :param ecode: int; the numeric exit code
+        :returns: msg
+        :rtype: string
+@author: Breen Malmberg
+
         '''
 
         msg = "No further information available"
@@ -224,13 +222,13 @@ class repoError(Exception):
         return msg
 
     def dnfCodes(self, ecode):
-        '''
-        Return information about the dnf exit codes
+        '''Return information about the dnf exit codes
 
-        @param ecode: int; the numeric exit code
-        @return: msg
-        @rtype: string
-        @author: Breen Malmberg
+        :param ecode: int; the numeric exit code
+        :returns: msg
+        :rtype: string
+@author: Breen Malmberg
+
         '''
 
         msg = "No further information available"

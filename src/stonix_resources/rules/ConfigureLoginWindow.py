@@ -39,9 +39,7 @@ from ..ruleKVEditor import RuleKVEditor
 
 
 class ConfigureLoginWindow(RuleKVEditor):
-    """
-    defaults read /Library/Preferences/com.apple.loginwindow SHOWFULLNAME
-    """
+    '''defaults read /Library/Preferences/com.apple.loginwindow SHOWFULLNAME'''
     def __init__(self, config, environ, logdispatcher, statechglogger):
         '''
         Constructor

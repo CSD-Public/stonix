@@ -30,10 +30,11 @@ from .logdispatcher import LogPriority
 
 
 class SystemIntegrityProtectionObject():
-    '''
-    the SystemIntegrityProtectionObject gets System Integrity Protection(SIP)
+    '''the SystemIntegrityProtectionObject gets System Integrity Protection(SIP)
     data from the local system
     @author: ekkehard
+
+
     '''
 
     def __init__(self, logdispatcher):
@@ -56,10 +57,12 @@ class SystemIntegrityProtectionObject():
         self.messageReset()
 
     def getSIPStatus(self):
-        '''
-        get the current System Integrity Protection (SIP) status
+        '''get the current System Integrity Protection (SIP) status
         @author: ekkehard
-        @return: dictionary entry
+
+
+        :returns: dictionary entry
+
         '''
         osx_version = self.initializeOSXVersion()
         sipstatus = self.initializeSIPStatus()
@@ -68,10 +71,12 @@ class SystemIntegrityProtectionObject():
         return self.sipstatus
 
     def initializeOSXVersion(self, forceInitializtion = False):
-        '''
-        initialize OS X version info
+        '''initialize OS X version info
         @author: ekkehard
-        @return: boolean - True
+
+        :param forceInitializtion:  (Default value = False)
+        :returns: boolean - True
+
         '''
         success = True
         if forceInitializtion:
@@ -112,10 +117,12 @@ class SystemIntegrityProtectionObject():
         return success 
                 
     def initializeSIPStatus(self, forceInitializtion = False):
-        '''
-        Initialize SIP Status
+        '''Initialize SIP Status
         @author: ekkehard
-        @return: boolean - True
+
+        :param forceInitializtion:  (Default value = False)
+        :returns: boolean - True
+
         '''
         success = True
         if forceInitializtion:
@@ -158,11 +165,12 @@ class SystemIntegrityProtectionObject():
         return success
 
     def report(self):
-        '''
-        report if the SIP status is anabled or disabled.
-        @param self:essential if you override this definition
-        @return: boolean
+        '''report if the SIP status is anabled or disabled.
+
+        :param self: essential if you override this definition
+        :returns: boolean
         @note: None
+
         '''
         compliant = True
         sipstatus = self.getSIPStatus()
@@ -183,22 +191,25 @@ class SystemIntegrityProtectionObject():
         return fixed
 
     def messageGet(self):
-        '''
-        get the formatted message string.
+        '''get the formatted message string.
         @author: ekkehard j. koch
-        @param self:essential if you override this definition
-        @return: string
+
+        :param self: essential if you override this definition
+        :returns: string
         @note: None
+
         '''
         return self.msg
 
     def messageAppend(self, pMessage=""):
-        '''
-        append and format message to the message string.
+        '''append and format message to the message string.
         @author: ekkehard j. koch
-        @param self:essential if you override this definition
-        @return: boolean - true
+
+        :param self: essential if you override this definition
+        :param pMessage:  (Default value = "")
+        :returns: boolean - true
         @note: None
+
         '''
         datatype = type(pMessage)
         if datatype == types.StringType:
@@ -227,12 +238,13 @@ class SystemIntegrityProtectionObject():
         return self.msg
 
     def messageReset(self):
-        '''
-        reset the message string.
+        '''reset the message string.
         @author: ekkehard j. koch
-        @param self:essential if you override this definition
-        @return: boolean - true
+
+        :param self: essential if you override this definition
+        :returns: boolean - true
         @note: none
+
         '''
         self.msg = ""
         return self.msg

@@ -21,8 +21,7 @@ from commonRamdiskTemplate import RamDiskTemplate
 ###############################################################################
 
 class RamDisk(RamDiskTemplate):
-    """
-    """
+    ''' '''
     def __init__(self, size=0, mountpoint="", logger=False):
         """
         """
@@ -76,26 +75,28 @@ class RamDisk(RamDiskTemplate):
     ###########################################################################
 
     def unmount(self) :
-        """
-        Unmount the disk - same functionality as __eject on the mac
-
+        '''Unmount the disk - same functionality as __eject on the mac
+        
         Must be over-ridden to provide OS/Method specific functionality
-
+        
         @author: Roy Nielsen
-        """
+
+
+        '''
         success = False
         return success
 
     ###########################################################################
 
     def _format(self) :
-        """
-        Format the ramdisk
-
+        '''Format the ramdisk
+        
         Must be over-ridden to provide OS/Method specific functionality
-
+        
         @author: Roy Nielsen
-        """
+
+
+        '''
         success = False
         return success
 
@@ -119,38 +120,42 @@ class RamDisk(RamDiskTemplate):
     ###########################################################################
 
     def getDevice(self):
-        """
-        Getter for the device name the ramdisk is using
-
+        '''Getter for the device name the ramdisk is using
+        
         Must be over-ridden to provide OS/Method specific functionality
         
         @author: Roy Nielsen
-        """
+
+
+        '''
         return self.myRamdiskDev
 
     ###########################################################################
 
     def setDevice(self, device=None):
-        """
-        Setter for the device so it can be ejected.
-
+        '''Setter for the device so it can be ejected.
+        
         Must be over-ridden to provide OS/Method specific functionality
-
+        
         @author: Roy Nielsen
-        """
+
+        :param device:  (Default value = None)
+
+        '''
         success = False
         return success
 
     ###########################################################################
 
     def getVersion(self):
-        """
-        Getter for the version of the ramdisk
-
+        '''Getter for the version of the ramdisk
+        
         Must be over-ridden to provide OS/Method specific functionality
-
+        
         @author: Roy Nielsen
-        """
+
+
+        '''
         success = False
         return success
 
@@ -158,13 +163,16 @@ class RamDisk(RamDiskTemplate):
 
 
 def unmount(device=" ", message_level="normal"):
-    """
-    Eject the ramdisk
-
+    '''Eject the ramdisk
+    
     Must be over-ridden to provide OS/Method specific functionality
-
+    
     @author: Roy Nielsen
-    """
+
+    :param device:  (Default value = " ")
+    :param message_level:  (Default value = "normal")
+
+    '''
     success = False
     return success
 
