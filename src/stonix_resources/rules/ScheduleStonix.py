@@ -52,12 +52,11 @@ from ..CommandHelper import CommandHelper
 
 
 class ScheduleStonix(Rule):
-    '''
-    Schedule Stonix to run randomly throughout the week and once in a user
+    '''Schedule Stonix to run randomly throughout the week and once in a user
     context
-
+    
     @author: Breen Malmberg
-
+    
     @change: 09/25/2017 - Breen Malmberg - Eliminated redundant code; separated out
             some code into its own methods; Improved method comment blocks; Improved
             in-line code comments; Added logic to ensure that no two STONIX jobs can
@@ -69,6 +68,8 @@ class ScheduleStonix(Rule):
             (they were never getting created the paths didn't exist to begin with; this
             appears to have been a recent regression); added debug logging to the fixmac()
             method; removed an unused import "FindUserLoggedIn"
+
+
     '''
 
     def __init__(self, config, environ, logger, statechglogger):
@@ -129,10 +130,7 @@ class ScheduleStonix(Rule):
             self.initTimes()
 
     def initTimes(self):
-        '''
-
-        @return:
-        '''
+        ''' '''
 
         self.genJobTimes()
         self.syncCITimes()
@@ -140,10 +138,7 @@ class ScheduleStonix(Rule):
             return self.initTimes()
 
     def syncCITimes(self):
-        '''
-
-        @return:
-        '''
+        ''' '''
 
         self.fixdayCI.updatecurrvalue(self.adminfixday)
         self.fixhourCI.updatecurrvalue(self.adminfixhour)
@@ -155,10 +150,7 @@ class ScheduleStonix(Rule):
         self.userfixminuteCI.updatecurrvalue(self.userfixminute)
 
     def firstRun(self):
-        '''
-
-        @return:
-        '''
+        ''' '''
 
         firstrun = True
         total = 0
@@ -178,11 +170,12 @@ class ScheduleStonix(Rule):
         return firstrun
 
     def buildFiles(self):
-        '''
-        dynamically build the conf and script files
+        '''dynamically build the conf and script files
         based on the generated or entered times
-
+        
         @author: Breen Malmberg
+
+
         '''
 
         # define the Mac OS X weekly STONIX report launchd job
@@ -346,11 +339,12 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
             exit(exitcode)'''
 
     def initVars(self):
-        '''
-        initialize all of the time variables
+        '''initialize all of the time variables
         to be used by the class
-
+        
         @author: Breen Malmberg
+
+
         '''
 
         self.svchelper = ServiceHelper(self.environ, self.logger)
@@ -375,8 +369,7 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
         self.adminreportminute = 0
 
     def setUserTimes(self):
-        '''
-        '''
+        ''' '''
 
         self.adminfixday = self.fixdayCI.getcurrvalue()
         self.adminfixhour = self.fixhourCI.getcurrvalue()
@@ -393,16 +386,18 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
             self.adminfixday)
 
     def checkJobCollisions(self):
-        '''
-        check to make sure none of the generated
+        '''check to make sure none of the generated
         job times overlap, or are invalid
         return True if invalid or overlap
         return False if valid and not overlap
 
-        @return: collisions
-        @rtype: list
 
-        @author: Breen Malmberg
+        :returns: collisions
+
+        :rtype: list
+
+@author: Breen Malmberg
+
         '''
 
         self.logger.log(LogPriority.DEBUG, "Checking for job time collisions...")
@@ -423,12 +418,14 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
         return collisions
 
     def validateUserTimes(self):
-        '''
-        check the entered user-defined cron job times to see if they are valid
+        '''check the entered user-defined cron job times to see if they are valid
 
-        @return: valid
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: valid
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         valid = True
@@ -533,20 +530,19 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
         return valid
 
     def randomExcept(self, lowest, highest, exclude=None):
-        '''
-        generate a random number between lowest and highest (including lowest)
+        '''generate a random number between lowest and highest (including lowest)
         but excluding the given number exclude
         (result will never be = highest)
 
-        @param lowest: int; lower bound
-        @param highest: int; upper bound
-        @param exclude: int|list; integer or range of integers to exclude from result
+        :param lowest: int; lower bound
+        :param highest: int; upper bound
+        :param exclude: int|list; integer or range of integers to exclude from result
                 default value for exclude is None
+        :returns: x
+        :rtype: int
 
-        @return: x
-        @rtype: int
+@author: Breen Malmberg
 
-        @author: Breen Malmberg
         '''
 
         x = 0
@@ -583,11 +579,13 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
         return x
 
     def genJobTimes(self, *args):
-        '''
-        Generate random times to run the STONIX jobs
+        '''Generate random times to run the STONIX jobs
         Build the crontimedict used by Linux
-
+        
         @author: Breen Malmberg
+
+        :param *args: 
+
         '''
 
         genall = False
@@ -632,17 +630,16 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
         self.crontimedict['fix'] = str(self.adminfixminute) + ' ' + str(self.adminfixhour) + ' * * ' + str(self.adminfixday)
 
     def getFileContents(self, filepath):
-        '''
-        Read file contents from given filepath, into a list
+        '''Read file contents from given filepath, into a list
         Return the list (of strings)
         Return empty list if given filepath does not exist
 
-        @param: filepath: string; full path to file, from which to read
+        :param filepath: 
+        :returns: contents
+        :rtype: list
 
-        @return: contents
-        @rtype: list
+@author: Breen Malmberg
 
-        @author: Breen Malmberg
         '''
 
         contents = []
@@ -655,19 +652,21 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
         return contents
 
     def report(self):
-        '''
-        Linux:
+        '''Linux:
         Check that Cron file(s) exist and that they contain the correct job entries
         Check that the STONIX user script exists and contains the correct contents
-
+        
         Mac:
         Check that the launchd files exist
         Check that each launchd file contains the correct contents
 
-        @return: self.compliant
-        @rtype: bool
 
-        @author: Breen Malmberg
+        :returns: self.compliant
+
+        :rtype: bool
+
+@author: Breen Malmberg
+
         '''
 
         self.compliant = True
@@ -722,13 +721,15 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
         return self.compliant
 
     def reportLinux(self):
-        '''
-        Check for STONIX Cron job entries in the Linux crontab
+        '''Check for STONIX Cron job entries in the Linux crontab
 
-        @return: retval
-        @rtype: bool
 
-        @author: Breen Malmberg
+        :returns: retval
+
+        :rtype: bool
+
+@author: Breen Malmberg
+
         '''
 
         retval = True
@@ -826,14 +827,16 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
         return retval
 
     def reportMac(self):
-        '''
-        Check for the existence of the necessary STONIX launchd jobs
+        '''Check for the existence of the necessary STONIX launchd jobs
         Check that each STONIX launchd job contains the correct contents
 
-        @return: retval
-        @rtype: bool
 
-        @author Breen Malmberg
+        :returns: retval
+
+        :rtype: bool
+
+@author Breen Malmberg
+
         '''
 
         # defaults
@@ -920,14 +923,16 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
         return retval
 
     def fix(self):
-        '''
-        Mac OS X: Create or edit STONIX launchd jobs as necessary
+        '''Mac OS X: Create or edit STONIX launchd jobs as necessary
         Linux: Create or edit STONIX Cron job entries as necessary
 
-        @return: self.rulesuccess
-        @rtype: bool
 
-        @author: Breen Malmberg
+        :returns: self.rulesuccess
+
+        :rtype: bool
+
+@author: Breen Malmberg
+
         '''
 
         self.detailedresults = ""
@@ -963,13 +968,15 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
         return self.rulesuccess
 
     def fixLinux(self):
-        '''
-        Create or edit STONIX Cron jobs for Linux, as necessary
+        '''Create or edit STONIX Cron jobs for Linux, as necessary
 
-        @return: retval
-        @rtype: bool
 
-        @author: Breen Malmberg
+        :returns: retval
+
+        :rtype: bool
+
+@author: Breen Malmberg
+
         '''
 
         retval = True
@@ -1060,14 +1067,16 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
         return retval
 
     def fixMac(self):
-        '''
-        Create or edit STONIX launchd jobs for Mac OS X
+        '''Create or edit STONIX launchd jobs for Mac OS X
         Create or edit the STONIX launch agent user job for Mac OS X
 
-        @return: retval
-        @rtype: bool
 
-        @author Breen Malmberg
+        :returns: retval
+
+        :rtype: bool
+
+@author Breen Malmberg
+
         '''
 
         retval = True

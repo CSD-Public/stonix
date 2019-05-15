@@ -53,7 +53,7 @@ class zzzTestFramework(unittest.TestCase):
         pass
 
     def testgetrulenum(self):
-        '''GetRuleNum, Test that a valid rule number is returned '''
+        '''GetRuleNum, Test that a valid rule number is returned'''
         self.failUnless(re.search('[0-9]', str(self.to.getrulenum())))
 
     def testgetrulename(self):
@@ -73,8 +73,7 @@ class zzzTestFramework(unittest.TestCase):
         self.failIf(self.to.getisrootrequired() not in [True, False])
 
     def testgethelptext(self):
-        '''gethelptext, test to see that the prototype help string is
-        returned'''
+        '''gethelptext, test to see that the prototype help string is'''
         self.failUnless(re.search('This is the default help text',
                                   self.to.gethelptext()))
 
@@ -84,7 +83,7 @@ class zzzTestFramework(unittest.TestCase):
                                   self.to.getdetailedresults()))
 
     def testgetrulesuccess(self):
-        '''getrulesuccess, in concrete rules this returns a bool. '''
+        '''getrulesuccess, in concrete rules this returns a bool.'''
         self.failIf(self.to.getrulesuccess() not in [True, False])
 
     def testcheckconfigopts(self):
@@ -93,13 +92,19 @@ class zzzTestFramework(unittest.TestCase):
 
     def testisdatabaserule(self):
         '''isdatabaserule, should return a bool indicating whether or not
-        the rule is a db rule. The base class should return False'''
+        the rule is a db rule. The base class should return False
+
+
+        '''
         self.failUnlessEqual(self.to.isdatabaserule(), False)
 
     def testisapplicable(self):
         '''isapplicable, in concrete rules should return a bool indicating
         whether or not the rule applies to the current platform. In the base
-        class it always returns True.'''
+        class it always returns True.
+
+
+        '''
         self.failUnlessEqual(self.to.isapplicable(), True)
         environ = environment.Environment()
         myfamily = environ.getosfamily()
@@ -279,17 +284,26 @@ class zzzTestFramework(unittest.TestCase):
 
     def testgetcurrstate(self):
         '''getcurrstate in concrete rules is not valid until report() has been
-        called. In the base class it always returns notconfigured.'''
+        called. In the base class it always returns notconfigured.
+
+
+        '''
         self.failUnlessEqual(self.to.getcurrstate(), 'notconfigured')
 
     def testgettargetstate(self):
         '''gettargetstate should return "configured" unless it has been set
-        otherwise.'''
+        otherwise.
+
+
+        '''
         self.failUnlessEqual(self.to.gettargetstate(), 'configured')
 
     def testsettargetstate(self):
         '''To test the set target state function we call the setter and then
-        read back the new value with the getter.'''
+        read back the new value with the getter.
+
+
+        '''
         self.to.settargetstate('notconfigured')
         self.failUnlessEqual(self.to.gettargetstate(), 'notconfigured')
 

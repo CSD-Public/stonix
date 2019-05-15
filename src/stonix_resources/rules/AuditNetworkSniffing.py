@@ -41,12 +41,13 @@ from ..CommandHelper import CommandHelper
 
 
 class AuditNetworkSniffing(Rule):
-    """
-    The system should not be acting as a network sniffer, which can capture
+    '''The system should not be acting as a network sniffer, which can capture
     all traffic on the network to which it is connected.
     Check to see if any network interface on the current system is running
     in promiscuous mode or not.
-    """
+
+
+    '''
     def __init__(self, config, environ, logger, statechglogger):
         """
         Constructor
@@ -73,20 +74,22 @@ class AuditNetworkSniffing(Rule):
         self.localize()
 
     def initobjs(self):
-        """
-        initialize objects to be used by this class
-
+        '''initialize objects to be used by this class
+        
         @author: Breen Malmberg
-        """
+
+
+        '''
 
         self.ch = CommandHelper(self.logger)
 
     def localize(self):
-        """
-        set variables according to which platform this is running on
-
+        '''set variables according to which platform this is running on
+        
         @author: Breen Malmberg
-        """
+
+
+        '''
 
         self.osname = self.environ.getosname()
         tools = ["/usr/sbin/ifconfig", "/usr/sbin/ip", "/sbin/ifconfig", "/sbin/ip"]
@@ -111,13 +114,15 @@ class AuditNetworkSniffing(Rule):
             self.searchterm = "<.*PROMISC"
 
     def report(self):
-        """
-        detect whether any interface is running in promiscuous mode
+        '''detect whether any interface is running in promiscuous mode
 
-        @return: self.compliant
-        @rtype: bool
-        @author: Breen Malmberg
-        """
+
+        :returns: self.compliant
+
+        :rtype: bool
+@author: Breen Malmberg
+
+        '''
 
         self.detailedresults = ""
         self.compliant = True

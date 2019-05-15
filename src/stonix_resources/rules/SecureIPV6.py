@@ -93,17 +93,19 @@ False.'''
         return self.compliant
 ###############################################################################
     def reportMac(self):
-        '''
-        check the values of the directives, specified in self.directives
+        '''check the values of the directives, specified in self.directives
         check that self.path (/private/etc/sysctl.conf) exists
         check that the permissions and ownership on file sysctl.conf
         are 0o600 and 0,0
 
-        @return: compliant
-        @rtype: bool
-        @author: dwalker
-        @change: Breen Malmberg - 1/10/2017 - added doc string; try/except;
-                fixed perms for file sysctl.conf (should be 0o600; was 420)
+
+        :returns: compliant
+
+        :rtype: bool
+@author: dwalker
+@change: Breen Malmberg - 1/10/2017 - added doc string; try/except;
+        fixed perms for file sysctl.conf (should be 0o600; was 420)
+
         '''
 
         compliant = True
@@ -303,17 +305,19 @@ the correct contents\n"
         return self.rulesuccess
 ###############################################################################
     def fixMac(self):
-        '''
-        use the sysctl command to write directives
+        '''use the sysctl command to write directives
         create the sysctl.conf file if needed
         set permissions and ownership of sysctl.conf file
         to 0o600 and 0,0
 
-        @return: success
-        @rtype: bool
-        @author: dwalker
-        @change: Breen Malmberg - 1/10/2017 - added doc string; try/except;
-                fixed perms for file sysctl.conf (should be 0o600; was 420)
+
+        :returns: success
+
+        :rtype: bool
+@author: dwalker
+@change: Breen Malmberg - 1/10/2017 - added doc string; try/except;
+        fixed perms for file sysctl.conf (should be 0o600; was 420)
+
         '''
 
         success = True

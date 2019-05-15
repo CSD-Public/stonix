@@ -47,9 +47,7 @@ from ..CommandHelper import CommandHelper
 
 
 class SecureHomeDir(Rule):
-    '''
-    classdocs
-    '''
+    '''classdocs'''
 
     def __init__(self, config, environ, logger, statechglogger):
         '''
@@ -79,13 +77,15 @@ class SecureHomeDir(Rule):
         self.sethelptext()
 
     def report(self):
-        '''
-        report the compliance status of the permissions on all local user
+        '''report the compliance status of the permissions on all local user
         home directories
 
-        @return: self.compliant
-        @rtype: bool
-        @author: Derek Walker
+
+        :returns: self.compliant
+
+        :rtype: bool
+@author: Derek Walker
+
         '''
 
         self.detailedresults = ""
@@ -117,14 +117,16 @@ class SecureHomeDir(Rule):
         return self.compliant
 
     def reportMac(self):
-        '''
-        check all user local home directories, on Mac OS X, for correct permissions
+        '''check all user local home directories, on Mac OS X, for correct permissions
 
-        @return: compliant
-        @rtype: bool
-        @author: Derek Walker
-        @change: Breen Malmberg - 10/13/2015 - moved grpvals variable up to top where it should be; fixed logging;
-                                                will no longer report on /var/empty or /dev/null permissions
+
+        :returns: compliant
+
+        :rtype: bool
+@author: Derek Walker
+@change: Breen Malmberg - 10/13/2015 - moved grpvals variable up to top where it should be; fixed logging;
+                                        will no longer report on /var/empty or /dev/null permissions
+
         '''
 
         compliant = True
@@ -175,13 +177,13 @@ class SecureHomeDir(Rule):
         return compliant
 
     def isGW(self, path):
-        '''
-        determine if a given path is group writeable
+        '''determine if a given path is group writeable
 
-        @param path: string; absolute file path to scan
-        @return: groupwriteable
-        @rtype: bool
-        @author: Breen Malmberg
+        :param path: string; absolute file path to scan
+        :returns: groupwriteable
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         groupwriteable = False
@@ -197,13 +199,13 @@ class SecureHomeDir(Rule):
         return groupwriteable
 
     def isWR(self, path):
-        '''
-        determine if a given path is world readable
+        '''determine if a given path is world readable
 
-        @param path: string; absolute file path to scan
-        @return: worldreadable
-        @rtype: bool
-        @author: Breen Malmberg
+        :param path: string; absolute file path to scan
+        :returns: worldreadable
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         worldreadable = False
@@ -219,12 +221,14 @@ class SecureHomeDir(Rule):
         return worldreadable
 
     def getMacHomeDirs(self):
-        '''
-        get a list of user home directories on the Mac
+        '''get a list of user home directories on the Mac
 
-        @return: homedirs
-        @rtype: list
-        @author: Breen Malmberg
+
+        :returns: homedirs
+
+        :rtype: list
+@author: Breen Malmberg
+
         '''
 
         self.logger.log(LogPriority.DEBUG, "Building list of Mac local user home directories...")
@@ -272,12 +276,14 @@ class SecureHomeDir(Rule):
         return HomeDirs
 
     def getLinuxHomeDirs(self):
-        '''
-        get a list of user home directories on Linux platforms
+        '''get a list of user home directories on Linux platforms
 
-        @return: homedirs
-        @rtype: list
-        @author: Breen Malmberg
+
+        :returns: homedirs
+
+        :rtype: list
+@author: Breen Malmberg
+
         '''
 
         self.logger.log(LogPriority.DEBUG, "Building list of Linux user home directories...")
@@ -348,17 +354,16 @@ class SecureHomeDir(Rule):
         return HomeDirs
 
     def validateHomedirs(self, dirs):
-        '''
-        strip out common system (and non-existent) directories from the given list of dirs
+        '''strip out common system (and non-existent) directories from the given list of dirs
         and return the resultant list
 
-        @param dirs: list; list of strings containing directories to search
+        :param dirs: list; list of strings containing directories to search
         and modify
+        :returns: validateddirs
+        :rtype: list
 
-        @return: validateddirs
-        @rtype: list
+@author: Breen Malmberg
 
-        @author: Breen Malmberg
         '''
 
         validateddirs = []
@@ -381,15 +386,14 @@ class SecureHomeDir(Rule):
         return validateddirs
 
     def getBasePath(self, path):
-        '''
-        get only the first (base) part of a given path
+        '''get only the first (base) part of a given path
 
-        @param path: string; full path to get base of
+        :param path: string; full path to get base of
+        :returns: basepath
+        :rtype: string
 
-        @return: basepath
-        @rtype: string
+@author: Breen Malmberg
 
-        @author: Breen Malmberg
         '''
 
         basepath = "/"
@@ -413,12 +417,14 @@ class SecureHomeDir(Rule):
         return basepath
 
     def getUIDMIN(self):
-        '''
-        return this system's minimum user ID start value, if configured
+        '''return this system's minimum user ID start value, if configured
 
-        @return: uid_min
-        @rtype: string
-        @author: Breen Malmberg
+
+        :returns: uid_min
+
+        :rtype: string
+@author: Breen Malmberg
+
         '''
 
         uid_min = ""
@@ -443,14 +449,16 @@ class SecureHomeDir(Rule):
         return uid_min
 
     def reportLinux(self):
-        '''
-        check all user local home directories, on Linux platforms, for correct permissions
+        '''check all user local home directories, on Linux platforms, for correct permissions
 
-        @return: compliant
-        @rtype: bool
 
-        @author: Derek Walker
-        @change: Breen Malmberg - 06/28/2018 - re-wrote method
+        :returns: compliant
+
+        :rtype: bool
+
+@author: Derek Walker
+@change: Breen Malmberg - 06/28/2018 - re-wrote method
+
         '''
 
         compliant = True
@@ -508,12 +516,14 @@ class SecureHomeDir(Rule):
         return compliant
 
     def getMyHomeDir(self):
-        '''
-        return the home directory for the currently logged-in user
+        '''return the home directory for the currently logged-in user
 
-        @return: HomeDir
-        @rtype: string
-        @author: Breen Malmberg
+
+        :returns: HomeDir
+
+        :rtype: string
+@author: Breen Malmberg
+
         '''
 
         HomeDir = ""
@@ -546,14 +556,16 @@ class SecureHomeDir(Rule):
         return HomeDir
 
     def fix(self):
-        '''
-        remove group-write and other-read permissions on all local user home directories
+        '''remove group-write and other-read permissions on all local user home directories
 
-        @return: self.rulesuccess
-        @rtype: bool
-        @author: Derek Walker
-        @change: Breen Malmberg - 10/13/2015 - will now fix /dev/null permissions when run;
-                                                will no longer modify /var/empty or /dev/null
+
+        :returns: self.rulesuccess
+
+        :rtype: bool
+@author: Derek Walker
+@change: Breen Malmberg - 10/13/2015 - will now fix /dev/null permissions when run;
+                                        will no longer modify /var/empty or /dev/null
+
         '''
 
         self.iditerator = 0

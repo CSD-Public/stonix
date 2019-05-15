@@ -37,11 +37,12 @@ from stonixutilityfunctions import writeFile, resetsecon
 
 
 class FileHelper(object):
-    '''
-    FileHelper is class that helps with execution files permission, owner,
+    '''FileHelper is class that helps with execution files permission, owner,
     content, and/or removal
     @note: copy, move, and trash of files will be implemented in the future
     @author: ekkehard
+
+
     '''
 
 # initialize attributes
@@ -328,21 +329,25 @@ class FileHelper(object):
     def addFile(self, file_label, file_path="", file_remove=False,
                 file_content=None, file_permissions=None, file_owner=None,
                 file_group=None, file_eventid=None):
-        '''
-        set the current file helper values and adds the new file to the
+        '''set the current file helper values and adds the new file to the
         dictionary
         @author: ekkehard j. koch
-        @param self:essential if you override this definition
-        @param file_label: string - needs to be non blank
-        @param file_path: string - The full path to the file (blank by default)
-        @param file_content: string - The content that should be in the file
+
+        :param self: essential if you override this definition
+        :param file_label: string - needs to be non blank
+        :param file_path: string - The full path to the file (blank by default)
+        :param file_content: string - The content that should be in the file
                              (blank by default)
-        @param file_owner: string - The file_owner the file should have
+        :param file_owner: string - The file_owner the file should have
                            (blank by default)
-        @param file_permissions: string - The permission the file should have
+        :param file_permissions: string - The permission the file should have
                                           (blank by default)
-        @return: pointer to the configuration item
+        :param file_remove:  (Default value = False)
+        :param file_group:  (Default value = None)
+        :param file_eventid:  (Default value = None)
+        :returns: pointer to the configuration item
         @note: file_label is essential
+
         '''
         success = self.saveFileHelperValues()
         self.resetFileHelperValues()
@@ -403,10 +408,11 @@ class FileHelper(object):
 ###############################################################################
 
     def evaluateFiles(self):
-        '''
-        Evaluaate all files that have been added with addfile.
+        '''Evaluaate all files that have been added with addfile.
         @author: ekkehard j. koch
-        @param self:essential if you override this definition
+
+        :param self: essential if you override this definition
+
         '''
         evaluteAll = True
         evaluate = True
@@ -433,10 +439,11 @@ class FileHelper(object):
 ###############################################################################
 
     def fixFiles(self):
-        '''
-        Fixes all files that have been added with addfile.
+        '''Fixes all files that have been added with addfile.
         @author: ekkehard j. koch
-        @param self:essential if you override this definition
+
+        :param self: essential if you override this definition
+
         '''
         fixAll = True
         message = ""
@@ -458,10 +465,11 @@ class FileHelper(object):
 ###############################################################################
 
     def evaluateFile(self):
-        '''
-        evalueate the currently loaded file in the object.
+        '''evalueate the currently loaded file in the object.
         @author: ekkehard j. koch
-        @param self:essential if you override this definition
+
+        :param self: essential if you override this definition
+
         '''
         evaluationMatch = True
         self.evaluationReset()
@@ -490,13 +498,14 @@ class FileHelper(object):
 ###############################################################################
 
     def fixFile(self):
-        '''
-        This is the standard fix routine for a rule. It goes
+        '''This is the standard fix routine for a rule. It goes
         though all # the KVEditors and atempts to fix everything. If it
         succeeds it returns true
         @author: ekkehard j. koch
-        @param self:essential if you override this definition
+
+        :param self: essential if you override this definition
         @note: kveditorName is essential
+
         '''
         fixFileSuccess = True
         self.evaluateFile()
@@ -659,17 +668,18 @@ class FileHelper(object):
 ###############################################################################
 
     def removeFilePath(self, file_path="", shouldI=True):
-        '''
-        remove file_path. Only operates on absolute non blank links, files, and
+        '''remove file_path. Only operates on absolute non blank links, files, and
         directories on UNIX file systems
         @author: ekkehard j. koch
-        @param self:essential if you override this definition
-        @param file_path: string - The full path to the file (blank by default)
-        @param shouldI: boolean - The content that should be in the file
+
+        :param self: essential if you override this definition
+        :param file_path: string - The full path to the file (blank by default)
+        :param shouldI: boolean - The content that should be in the file
                                   (True by default)
-        @return: boolean - (True if file_path removal worked,
+        :returns: boolean - (True if file_path removal worked,
                            False if it does not)
         @note: This will not work on Windows systems
+
         '''
         success = True
         directory = os.path.dirname(file_path)
@@ -760,17 +770,18 @@ class FileHelper(object):
 ###############################################################################
 
     def createFilePath(self, file_path="", shouldI=True):
-        '''
-        remove file_path. Only operates on absolute non blank links, files, and
+        '''remove file_path. Only operates on absolute non blank links, files, and
         directories on UNIX file systems
         @author: ekkehard j. koch
-        @param self:essential if you override this definition
-        @param file_path: string - The full path to the file (blank by default)
-        @param shouldI: boolean - The content that should be in the file
+
+        :param self: essential if you override this definition
+        :param file_path: string - The full path to the file (blank by default)
+        :param shouldI: boolean - The content that should be in the file
                                   (True by default)
-        @return: boolean - (True if file_path removal worked,
+        :returns: boolean - (True if file_path removal worked,
                            False if it does not)
         @note: This will not work on Windows systems
+
         '''
         success = True
         creationtype = ""
@@ -869,17 +880,19 @@ class FileHelper(object):
 
     def fixFilePermissions(self, file_path="", file_permissions=None,
                            shouldI=True):
-        '''
-        fix file permissions. Only operates on absolute non blank links, files,
+        '''fix file permissions. Only operates on absolute non blank links, files,
         and directories on UNIX file systems
         @author: ekkehard j. koch
-        @param self:essential if you override this definition
-        @param file_path: string - The full path to the file (blank by default)
-        @param shouldI: boolean - The content that should be in the file
+
+        :param self: essential if you override this definition
+        :param file_path: string - The full path to the file (blank by default)
+        :param shouldI: boolean - The content that should be in the file
                                   (True by default)
-        @return: boolean - (True if file_path removal worked,
+        :param file_permissions:  (Default value = None)
+        :returns: boolean - (True if file_path removal worked,
                            False if it does not)
         @note: This will not work on Windows systems
+
         '''
         success = True
         file_permissions_fixed = False
@@ -949,17 +962,20 @@ class FileHelper(object):
 
     def fixFileOwnerGroup(self, file_path="", file_owner=None, file_group=None,
                           shouldI=True):
-        '''
-        fix file owner & group. Only operates on absolute non blank links,
+        '''fix file owner & group. Only operates on absolute non blank links,
         files, and directories on UNIX file systems
         @author: ekkehard j. koch
-        @param self:essential if you override this definition
-        @param file_path: string - The full path to the file (blank by default)
-        @param shouldI: boolean - The content that should be in the file
+
+        :param self: essential if you override this definition
+        :param file_path: string - The full path to the file (blank by default)
+        :param shouldI: boolean - The content that should be in the file
                                   (True by default)
-        @return: boolean - (True if file_path removal worked,
+        :param file_owner:  (Default value = None)
+        :param file_group:  (Default value = None)
+        :returns: boolean - (True if file_path removal worked,
                            False if it does not)
         @note: This will not work on Windows systems
+
         '''
         success = True
         file_owner_fixed = False
@@ -1101,13 +1117,14 @@ class FileHelper(object):
 ###############################################################################
 
     def getFileHelperValues(self, file_label):
-        '''
-        gets a kveditor by name and loads it into the current kveditor values
+        '''gets a kveditor by name and loads it into the current kveditor values
         of the object.
         @author: ekkehard j. koch
-        @param self:essential if you override this definition
-        @param file_label: string - required kveditorname
-        @return: boolean - true
+
+        :param self: essential if you override this definition
+        :param file_label: string - required kveditorname
+        :returns: boolean - true
+
         '''
         self.saveFileHelperValues()
         self.file_label = file_label
@@ -1138,12 +1155,13 @@ class FileHelper(object):
 ###############################################################################
 
     def saveFileHelperValues(self):
-        '''
-        saves the current kveditor values into the dictionary.
+        '''saves the current kveditor values into the dictionary.
         @author: ekkehard j. koch
-        @param self:essential if you override this definition
-        @param file_label: string - required kveditorname
-        @return: boolean - true
+
+        :param self: essential if you override this definition
+        :param file_label: string - required kveditorname
+        :returns: boolean - true
+
         '''
         if not (self.file_label == ""):
             item = {"file_path": self.file_path,
@@ -1174,11 +1192,12 @@ class FileHelper(object):
 ###############################################################################
 
     def resetFileHelperValues(self):
-        '''
-        reset the current file values to their defaults.
+        '''reset the current file values to their defaults.
         @author: ekkehard j. koch
-        @param self:essential if you override this definition
-        @return: boolean - true
+
+        :param self: essential if you override this definition
+        :returns: boolean - true
+
         '''
         self.file_label = ""
         self.file_path = ""

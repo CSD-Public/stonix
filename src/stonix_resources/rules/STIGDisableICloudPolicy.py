@@ -36,9 +36,7 @@ from ..CommandHelper import CommandHelper
 class STIGDisableICloudPolicy(Rule):
 
     def __init__(self, config, environ, logdispatch, statechglogger):
-        '''
-        Constructor
-        '''
+        '''Constructor'''
         Rule.__init__(self, config, environ, logdispatch, statechglogger)
 
         self.logger = logdispatch

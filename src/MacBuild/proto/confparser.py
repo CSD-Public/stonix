@@ -6,15 +6,16 @@ import re
 import sys
 
 def getConfOptions():
-    """
-    Get values from a basic ini style configuration file
+    '''Get values from a basic ini style configuration file
     using ConfigParser (python 2.7)
-
+    
     Logic retrieved from:
     https://pymotw.com/2/ConfigParser/
-
+    
     @author: Roy Nielsen
-    """
+
+
+    '''
     success = False
     parser = SafeConfigParser()
     candidates =  ['macbuild.conf', 'not_a_real_conf.conf']

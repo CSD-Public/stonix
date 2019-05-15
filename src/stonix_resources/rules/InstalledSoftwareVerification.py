@@ -39,9 +39,7 @@ from ..CommandHelper import CommandHelper
 class InstalledSoftwareVerification(Rule):
 
     def __init__(self, config, environ, logger, statechglogger):
-        '''
-        Constructor
-        '''
+        '''Constructor'''
         Rule.__init__(self, config, environ, logger, statechglogger)
         self.config = config
         self.environ = environ
@@ -68,13 +66,15 @@ default.'
         self.sethelptext()
 
     def getInstalledPackages(self):
-        '''
-        return a list of installed packages (as reported
+        '''return a list of installed packages (as reported
         by rpm database)
 
-        @return:installedpackages
-        @rtype: list
-        @author: Breen Malmberg
+
+        :returns: installedpackages
+
+        :rtype: list
+@author: Breen Malmberg
+
         '''
 
         installedpackages = []
@@ -93,16 +93,18 @@ default.'
         return installedpackages
 
     def report(self):
-        '''
-        Compile a list of files not conforming to rpm package database permissions (Mode)
+        '''Compile a list of files not conforming to rpm package database permissions (Mode)
         report non-compliant if any are found
         else report compliant
 
-        @return: self.compliant
-        @rtype: bool
-        @author: Eric Ball
-        @author: Breen Malmberg
-        @change: Breen Malmberg - 07/30/2018 - complete re-write of method
+
+        :returns: self.compliant
+
+        :rtype: bool
+@author: Eric Ball
+@author: Breen Malmberg
+@change: Breen Malmberg - 07/30/2018 - complete re-write of method
+
         '''
 
         self.detailedresults = ""
@@ -169,14 +171,16 @@ default.'
         return self.compliant
 
     def fix(self):
-        '''
-        The fix method changes permissions to the package defaults.
+        '''The fix method changes permissions to the package defaults.
 
-        @return: self.rulesuccess
-        @rtype: bool
-        @author: Eric Ball
-        @author: Breen Malmberg
-        @change: Breen Malmberg - 07/30/2018 - re-write of entire method
+
+        :returns: self.rulesuccess
+
+        :rtype: bool
+@author: Eric Ball
+@author: Breen Malmberg
+@change: Breen Malmberg - 07/30/2018 - re-write of entire method
+
         '''
 
         self.detailedresults = ""

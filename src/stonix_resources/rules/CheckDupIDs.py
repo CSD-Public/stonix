@@ -46,24 +46,25 @@ from ..CommandHelper import CommandHelper
 
 
 class CheckDupIDs(Rule):
-    '''
-    This class checks the local accounts database for duplicate IDs. All
+    '''This class checks the local accounts database for duplicate IDs. All
     accounts on a system must have unique UIDs. This class inherits the base
     Rule class, which in turn inherits observable.
-
+    
     @note: Per RedHat STIG - CCE-RHEL7-CCE-TBD 2.4.1.2.3, check group references.
-
+    
        All GIDs referenced in /etc/passwd must be defined in /etc/group
-
+    
        Add a group to the system for each GID referenced without a
        corresponding group. Inconsistency in GIDs between /etc/passwd and
        /etc/group could lead to a user having unintended rights.
-
+    
        Watch for LDAP issues (e.g. user default group changed to a group
        coming from LDAP).
-
+    
        For Mac, also check that all the user's primary group ID's are in the
        local directory.
+
+
     '''
 
     def __init__(self, config, environ, logger, statechglogger):
@@ -81,6 +82,7 @@ class CheckDupIDs(Rule):
         self.formatDetailedResults("initialize")
         self.mandatory = True
         self.rootrequired = True
+        self.guidance = ['CCE-RHEL7-CCE-TBD 2.4.1.2.3']
         self.sethelptext()
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
@@ -92,7 +94,9 @@ class CheckDupIDs(Rule):
         '''CheckDuplicateIds.report(): produce a report on whether or not local
         accounts databases have duplicate UIDs present.
 
-        @author: D. Kennel
+        :Authors:
+            Dave Kennel
+
         '''
         try:
             self.detailedresults = ""
@@ -123,10 +127,11 @@ class CheckDupIDs(Rule):
         return self.compliant
 
     def osxcheck(self):
-        """
-        This version of the check should work for all OS X systems.
+        '''This version of the check should work for all OS X systems.
         @author: ekkehard
-        """
+
+
+        '''
         try:
             result = False
             nixcheckresult = self.nixcheck()
@@ -195,12 +200,13 @@ class CheckDupIDs(Rule):
                              self.detailedresults])
 
     def nixcheck(self):
-        """
-        This version of the check should work for all u systems. This
+        '''This version of the check should work for all u systems. This
         is borrowed from the STOR code so the check methodology is well tested.
-
+        
         @author: D. Kennel
-        """
+
+
+        '''
         try:
             retval = True
             filelist = ['/etc/passwd', '/etc/group']
@@ -257,14 +263,18 @@ class CheckDupIDs(Rule):
             return False
 
     def getcolumn(self, file_to_read="", column=0, separator=":"):
-        """
-        Get the data out of <file_to_read> column <column> using <separator>
-
+        '''Get the data out of <file_to_read> column <column> using <separator>
+        
         Intended for use with the /etc/group and /etc/password files for getting
         and comparing group information.
-
+        
         @author: Roy Nielsen
-        """
+
+        :param file_to_read:  (Default value = "")
+        :param column:  (Default value = 0)
+        :param separator:  (Default value = ":")
+
+        '''
         if file_to_read and isinstance(column, int) and separator:
             reading = open(file_to_read, "r")
 
@@ -276,20 +286,21 @@ class CheckDupIDs(Rule):
             return column_data
 
     def checkgrouprefs(self):
-        """
-        Per RedHat STIG - CCE-RHEL7-CCE-TBD 2.4.1.2.3, check group references.
-
+        '''Per RedHat STIG - CCE-RHEL7-CCE-TBD 2.4.1.2.3, check group references.
+        
         All GIDs referenced in /etc/passwd must be defined in /etc/group
-
+        
         Add a group to the system for each GID referenced without a
         corresponding group. Inconsistency in GIDs between /etc/passwd and
         /etc/group could lead to a user having unintended rights.
-
+        
         Watch for LDAP issues (e.g. user default group changed to a group
         coming from LDAP).
-
+        
         @author: Roy Nielsen
-        """
+
+
+        '''
         group_groups = self.getcolumn("/etc/group", 2)
         pwd_groups = self.getcolumn("/etc/passwd", 3)
 
@@ -300,23 +311,24 @@ class CheckDupIDs(Rule):
                 self.issuelist.append(message)
 
     def checkmacgrouprefs(self):
-        """
-        Per RedHat STIG - CCE-RHEL7-CCE-TBD 2.4.1.2.3, check group references.
-
+        '''Per RedHat STIG - CCE-RHEL7-CCE-TBD 2.4.1.2.3, check group references.
+        
            All GIDs referenced in /etc/passwd must be defined in /etc/group
-
+        
            Add a group to the system for each GID referenced without a
            corresponding group. Inconsistency in GIDs between /etc/passwd and
            /etc/group could lead to a user having unintended rights.
-
+        
            Watch for LDAP issues (e.g. user default group changed to a group
            coming from LDAP).
-
+        
         For Mac, check that al the user's primary group ID's are in the local
         directory.
-
+        
         @author: Roy Nielsen
-        """
+
+
+        '''
         self.dscl = "/usr/bin/dscl"
         user_groups = []
         dscl_users = [self.dscl, ".", "list", "/users"]

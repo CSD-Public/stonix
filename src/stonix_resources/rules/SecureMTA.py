@@ -60,11 +60,12 @@ import re
 
 
 class SecureMTA(Rule):
-    '''
-    Mail servers are used to send and receive mail over a network on behalf of
-site users. Mail is a very common service, and MTAs are frequent targets of
-network attack. Ensure that machines are not running MTAs unnecessarily, and
-configure needed MTAs as defensively as possible.
+    '''Mail servers are used to send and receive mail over a network on behalf of
+    site users. Mail is a very common service, and MTAs are frequent targets of
+    network attack. Ensure that machines are not running MTAs unnecessarily, and
+    configure needed MTAs as defensively as possible.
+
+
     '''
 
     def __init__(self, config, environ, logger, statechglogger):
@@ -96,18 +97,20 @@ agent, set the value of SECUREMTA to False.'''
         self.iditerator = 0
 
     def report(self):
-        '''
-        The report method examines the current configuration and determines
+        '''The report method examines the current configuration and determines
         whether or not it is correct. If the config is correct then the
         self.compliant, self.detailed results and self.currstate properties are
         updated to reflect the system status. self.rulesuccess will be updated
         if the rule does not succeed.
 
-        @return self.compliant
-        @rtype: bool
-        @author Breen Malmberg
-        @change: dwalker - ??? - ???
-        @change: Breen Malmberg - 12/22/2015 - full refactor
+
+        :returns: self.compliant
+
+        :rtype: bool
+@author Breen Malmberg
+@change: dwalker - ??? - ???
+@change: Breen Malmberg - 12/22/2015 - full refactor
+
         '''
 
         # UPDATE THIS SECTION IF YOU CHANGE THE CONSTANTS BEING USED IN THE RULE
@@ -178,14 +181,16 @@ agent, set the value of SECUREMTA to False.'''
 
 ###############################################################################
     def reportsendmail(self):
-        '''
-        Check config of sendmail
+        '''Check config of sendmail
 
-        @return retval
-        @rtype: bool
-        @author Breen Malmberg
-        @change: dwalker - ??? - ???
-        @change: Breen Malmberg - 12/22/2015 - refactored method
+
+        :returns: retval
+
+        :rtype: bool
+@author Breen Malmberg
+@change: dwalker - ??? - ???
+@change: Breen Malmberg - 12/22/2015 - refactored method
+
         '''
 
         retval = True
@@ -239,14 +244,16 @@ agent, set the value of SECUREMTA to False.'''
 
 ###############################################################################
     def reportpostfix(self):
-        '''
-        Check config of postfix
+        '''Check config of postfix
 
-        @return retval
-        @rtype: bool
-        @author Breen Malmberg
-        @change: dwalker - ??? - ???
-        @change: Breen Malmberg - 12/22/2015 - refactored method
+
+        :returns: retval
+
+        :rtype: bool
+@author Breen Malmberg
+@change: dwalker - ??? - ???
+@change: Breen Malmberg - 12/22/2015 - refactored method
+
         '''
         retval = True
         data = {'inet_interfaces': 'localhost',
@@ -319,15 +326,17 @@ agent, set the value of SECUREMTA to False.'''
 
 ###############################################################################
     def fix(self):
-        '''
-        Call either fixpostfix() or fixsendmail() depending on which one is
+        '''Call either fixpostfix() or fixsendmail() depending on which one is
         installed.
 
-        @return: fixsuccess
-        @rtype: bool
-        @author Breen Malmberg
-        @change: dwalker - ??? - ???
-        @change: Breen Malmberg - 12/22/2015 - refactored method
+
+        :returns: fixsuccess
+
+        :rtype: bool
+@author Breen Malmberg
+@change: dwalker - ??? - ???
+@change: Breen Malmberg - 12/22/2015 - refactored method
+
         '''
 
         # UPDATE THIS SECTION IF YOU CHANGE THE CONSTANTS BEING USED IN THE RULE
@@ -424,14 +433,16 @@ agent, set the value of SECUREMTA to False.'''
 
 ###############################################################################
     def fixpostfix(self):
-        '''
-        Configure the postfix client securely if installed.
+        '''Configure the postfix client securely if installed.
 
-        @return: retval
-        @rtype: bool
-        @author Breen Malmberg
-        @change: dwalker - ??? - ???
-        @change: Breen Malmberg - 12/22/2015 - completely refactored method
+
+        :returns: retval
+
+        :rtype: bool
+@author Breen Malmberg
+@change: dwalker - ??? - ???
+@change: Breen Malmberg - 12/22/2015 - completely refactored method
+
         '''
 
         retval = True
@@ -477,16 +488,18 @@ agent, set the value of SECUREMTA to False.'''
 
 ###############################################################################
     def fixsendmail(self):
-        '''
-        Configure the sendmail client securely if installed.
+        '''Configure the sendmail client securely if installed.
 
-        @return: success
-        @rtype: bool
-        @author Breen Malmberg
-        @change: dwalker - ??? - ???
-        @change: Breen Malmberg - 12/21/2015 - corrected the check to see if sendmail is installed but missing a config file;
-                                                added user messaging to let the user know what is wrong;
-                                                partial refactor of method
+
+        :returns: success
+
+        :rtype: bool
+@author Breen Malmberg
+@change: dwalker - ??? - ???
+@change: Breen Malmberg - 12/21/2015 - corrected the check to see if sendmail is installed but missing a config file;
+                                        added user messaging to let the user know what is wrong;
+                                        partial refactor of method
+
         '''
 
         self.logger.log(LogPriority.DEBUG, "Inside fixsendmail() method")

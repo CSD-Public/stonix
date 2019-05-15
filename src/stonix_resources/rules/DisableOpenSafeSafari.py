@@ -65,10 +65,11 @@ class DisableOpenSafeSafari(RuleKVEditor):
         self.sethelptext()
 
     def undo(self):
-        '''
-        Overriding parent undo method because there is no undo method for this
+        '''Overriding parent undo method because there is no undo method for this
         rule due to the fact that this is a user context only rule and non
         administrators can't undo rule actions.
+
+
         '''
         try:
             self.detailedresults = "no undo available\n"

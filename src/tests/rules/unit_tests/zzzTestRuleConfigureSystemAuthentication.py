@@ -55,20 +55,14 @@ class zzzTestRuleConfigureSystemAuthentication(RuleTest):
         self.simpleRuleTest()
 
     def test_account_locking_detection(self):
-        '''
-
-        @return:
-        '''
+        ''' '''
 
         self.rule.report()
         result = bool(self.rule.usingpamfail or self.rule.usingpamtally2)
         self.assertTrue(result) # if false, then system is using neither in which case the rule will be in trouble
 
     def test_editor_creation(self):
-        '''
-
-        @return:
-        '''
+        ''' '''
 
         result1 = False
         result2 = False
@@ -84,23 +78,25 @@ class zzzTestRuleConfigureSystemAuthentication(RuleTest):
         self.assertTrue(result2)
 
     def setConditionsForRule(self):
-        '''
-        Configure system for the unit test
-        @param self: essential if you override this definition
-        @return: boolean - If successful True; If failure False
+        '''Configure system for the unit test
+
+        :param self: essential if you override this definition
+        :returns: boolean - If successful True; If failure False
         @author: ekkehard j. koch
+
         '''
         success = True
         return success
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
-        '''
-        check on whether report was correct
-        @param self: essential if you override this definition
-        @param pCompliance: the self.iscompliant value of rule
-        @param pRuleSuccess: did report run successfully
-        @return: boolean - If successful True; If failure False
+        '''check on whether report was correct
+
+        :param self: essential if you override this definition
+        :param pCompliance: the self.iscompliant value of rule
+        :param pRuleSuccess: did report run successfully
+        :returns: boolean - If successful True; If failure False
         @author: ekkehard j. koch
+
         '''
         self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " + \
                              str(pCompliance) + ".")
@@ -110,12 +106,13 @@ class zzzTestRuleConfigureSystemAuthentication(RuleTest):
         return success
 
     def checkFixForRule(self, pRuleSuccess):
-        '''
-        check on whether fix was correct
-        @param self: essential if you override this definition
-        @param pRuleSuccess: did report run successfully
-        @return: boolean - If successful True; If failure False
+        '''check on whether fix was correct
+
+        :param self: essential if you override this definition
+        :param pRuleSuccess: did report run successfully
+        :returns: boolean - If successful True; If failure False
         @author: ekkehard j. koch
+
         '''
         self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
                              str(pRuleSuccess) + ".")
@@ -123,12 +120,13 @@ class zzzTestRuleConfigureSystemAuthentication(RuleTest):
         return success
 
     def checkUndoForRule(self, pRuleSuccess):
-        '''
-        check on whether undo was correct
-        @param self: essential if you override this definition
-        @param pRuleSuccess: did report run successfully
-        @return: boolean - If successful True; If failure False
+        '''check on whether undo was correct
+
+        :param self: essential if you override this definition
+        :param pRuleSuccess: did report run successfully
+        :returns: boolean - If successful True; If failure False
         @author: ekkehard j. koch
+
         '''
         self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
                              str(pRuleSuccess) + ".")

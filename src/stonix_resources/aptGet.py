@@ -32,10 +32,9 @@ from StonixExceptions import repoError
 
 
 class AptGet(object):
-    '''
-    Linux specific package manager for distributions that use the apt-get
+    '''Linux specific package manager for distributions that use the apt-get
     command to install packages.
-
+    
     @author: Derek T Walker
     @change: 2012/08/06 Derek Walker - Original Implementation
     @change: 2015/08/20 eball - Added getPackageFromFile
@@ -50,12 +49,14 @@ class AptGet(object):
     @change: 2017/08/16 bgonz12 - Added DEBIAN_FRONTEND=noninteractive env var
             to remove function
     @change: 2017/10/18 Breen Malmberg - changed class var names to be more self-explanatory;
-            changed command to check whether there are available packages to use the canonical 
-            debian/ubuntu method; added calls to repoError exception to determine exact nature 
-            and cause of any errors with querying or calling repositories on the system (this adds 
-            logging of the nature and cause(s) as well); changed log messaging to be more consistent 
-            in style/format; removed calls to validateParam due to concerns about the stability and 
+            changed command to check whether there are available packages to use the canonical
+            debian/ubuntu method; added calls to repoError exception to determine exact nature
+            and cause of any errors with querying or calling repositories on the system (this adds
+            logging of the nature and cause(s) as well); changed log messaging to be more consistent
+            in style/format; removed calls to validateParam due to concerns about the stability and
             reliability of that method
+
+
     '''
 
     def __init__(self, logger):
@@ -77,18 +78,18 @@ class AptGet(object):
         self.aptchkavail = self.aptcacheloc +  " policy "
 
     def installpackage(self, package):
-        '''
-        Install a package. Return a bool indicating success or failure.
+        '''Install a package. Return a bool indicating success or failure.
 
-        @param package: string; Name of the package to be installed, must be
+        :param package: string; Name of the package to be installed, must be
                 recognizable to the underlying package manager.
-        @return: installed
-        @rtype: bool
-        @author: Derek Walker
-        @change: Breen Malmberg - 4/27/2017 - fixed doc string formatting;
-                method now returns a variable; parameter validation added
-                detailedresults replaced with logging
-        @change: Breen Malmberg - 10/1/2018 - added check for package manager lock and retry loop
+        :returns: installed
+        :rtype: bool
+@author: Derek Walker
+@change: Breen Malmberg - 4/27/2017 - fixed doc string formatting;
+        method now returns a variable; parameter validation added
+        detailedresults replaced with logging
+@change: Breen Malmberg - 10/1/2018 - added check for package manager lock and retry loop
+
         '''
 
         installed = True
@@ -130,14 +131,14 @@ class AptGet(object):
         return installed
 
     def removepackage(self, package):
-        '''
-        Remove a package. Return a bool indicating success or failure.
+        '''Remove a package. Return a bool indicating success or failure.
 
-        @param package: string; Name of the package to be removed, must be
+        :param package: string; Name of the package to be removed, must be
                 recognizable to the underlying package manager.
-        @return: removed
-        @rtype: bool
-        @author: Derek T. Walker
+        :returns: removed
+        :rtype: bool
+@author: Derek T. Walker
+
         '''
 
         removed = True
@@ -179,19 +180,17 @@ class AptGet(object):
         return removed
 
     def checkInstall(self, package):
-        '''
-        Check the installation status of a package. Return a bool; True if
+        '''Check the installation status of a package. Return a bool; True if
         the package is installed.
 
-        @param: package: string; Name of the package whose installation status
-                is to be checked, must be recognizable to the underlying package
-                manager.
-        @return: installed
-        @rtype: bool
-        @author: Derek Walker
-        @change: Breen Malmberg - 4/27/2017 - fixed doc string formatting;
-                method now returns a variable; replaced detailedresults with
-                logging
+        :param package: 
+        :returns: installed
+        :rtype: bool
+@author: Derek Walker
+@change: Breen Malmberg - 4/27/2017 - fixed doc string formatting;
+        method now returns a variable; replaced detailedresults with
+        logging
+
         '''
 
         installed = False
@@ -239,15 +238,15 @@ class AptGet(object):
         return installed
 
     def checkAvailable(self, package):
-        '''
-        check if a given package is available
+        '''check if a given package is available
 
-        @param package: string; Name of package to check
-        @return: found
-        @rtype: bool
-        @author: Derek T. Walker
-        @change: Breen Malmberg - 4/27/2017 - created doc string;
-                pulled result logging out of conditional 
+        :param package: string; Name of package to check
+        :returns: found
+        :rtype: bool
+@author: Derek T. Walker
+@change: Breen Malmberg - 4/27/2017 - created doc string;
+        pulled result logging out of conditional
+
         '''
 
         found = False
@@ -297,16 +296,16 @@ class AptGet(object):
         return found
 
     def Update(self, package=""):
-        '''
-        update the specified package if any
+        '''update the specified package if any
         updates are available for it
         if no package is specified, apply
         all available updates for the system
 
-        @param package: string; (OPTIONAL) name of package to update
-        @return: updated
-        @rtype: bool
-        @author: Breen Malmberg
+        :param package: string; (OPTIONAL) name of package to update (Default value = "")
+        :returns: updated
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         updated = True
@@ -340,15 +339,15 @@ class AptGet(object):
         return updated
 
     def checkUpdate(self, package=""):
-        '''
-        check for updates for specified package
+        '''check for updates for specified package
         if no package is specified, then check
         for updates for the entire system
 
-        @param package: string; (OPTIONAL) Name of package to check
-        @return: updatesavail
-        @rtype: bool
-        @author: Breen Malmberg
+        :param package: string; (OPTIONAL) Name of package to check (Default value = "")
+        :returns: updatesavail
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         updatesavail = False
@@ -384,16 +383,16 @@ class AptGet(object):
         return updatesavail
 
     def getPackageFromFile(self, filename):
-        '''
-        Returns the name of the package that provides the given
+        '''Returns the name of the package that provides the given
         filename/path.
 
-        @param: filename: string; The name or path of the file to resolve
-        @return: packagename
-        @rtype: string
-        @author: Eric Ball
-        @change: Breen Malmberg - 4/17/2017 - fixed doc string formatting;
-                method now returns a variable; added param validation
+        :param filename: 
+        :returns: packagename
+        :rtype: string
+@author: Eric Ball
+@change: Breen Malmberg - 4/17/2017 - fixed doc string formatting;
+        method now returns a variable; added param validation
+
         '''
 
         packagename = ""

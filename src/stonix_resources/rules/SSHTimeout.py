@@ -44,11 +44,12 @@ import re
 
 
 class SSHTimeout(Rule):
-    '''
-    This rule will configure the ssh timeout period for 
+    '''This rule will configure the ssh timeout period for
     ssh sessions, if ssh is installed.
-
+    
     @author: dwalker
+
+
     '''
 
     def __init__(self, config, environ, logger, statechglogger):
@@ -81,6 +82,8 @@ class SSHTimeout(Rule):
         '''SSHTimeout.report(): produce a report on whether or not a valid
         time for timing out of ssh is set.
         @author: D.Walker
+
+
         '''
 
         try:
@@ -143,6 +146,8 @@ class SSHTimeout(Rule):
         '''SSHTimeout.fix(): set the correct values in /etc/ssh/sshd_config
         so that ssh sessions time out appropriately.
         @author: D.Walker
+
+
         '''
 
         try:

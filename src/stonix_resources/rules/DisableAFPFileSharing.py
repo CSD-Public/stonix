@@ -39,28 +39,29 @@ import traceback
 
 
 class DisableAFPFileSharing(RuleKVEditor):
-    '''
-AFP & SMB start up and stop
-
-AFP Service
-Starting and Stopping AFP Service
-To start AFP service:
-$ sudo serveradmin start afp
-To stop AFP service:
-$ sudo serveradmin stop afp
-Checking AFP Service Status
-To see if AFP service is running:
-$ sudo serveradmin status afp
-To see complete AFP status:
-$ sudo serveradmin fullstatus afp
-Viewing AFP Settings
-To list all AFP service settings:
-$ sudo serveradmin settings afp
-To list a particular setting:
-$ sudo serveradmin settings afp:setting
+    '''AFP & SMB start up and stop
+    
+    AFP Service
+    Starting and Stopping AFP Service
+    To start AFP service:
+    $ sudo serveradmin start afp
+    To stop AFP service:
+    $ sudo serveradmin stop afp
+    Checking AFP Service Status
+    To see if AFP service is running:
+    $ sudo serveradmin status afp
+    To see complete AFP status:
+    $ sudo serveradmin fullstatus afp
+    Viewing AFP Settings
+    To list all AFP service settings:
+    $ sudo serveradmin settings afp
+    To list a particular setting:
+    $ sudo serveradmin settings afp:setting
     This method disables AFP file sharing on mac os x systems
-
+    
     @author: Breen Malmberg
+
+
     '''
 
 ###############################################################################
@@ -97,19 +98,21 @@ $ sudo serveradmin settings afp:setting
         self.sethelptext()
 
     def initObjs(self):
-        '''
-        initialize any objects to be used by this class
+        '''initialize any objects to be used by this class
 
-        @return: void
+
+        :returns: void
         @author: Breen Malmberg
+
         '''
 
         self.cmdhelper = CommandHelper(self.logger)
 
     def determineOrigAFPstatus(self):
-        '''
-        store the original operational state/status of
+        '''store the original operational state/status of
         Apple File Server as a bool
+
+
         '''
 
         # default init
@@ -129,12 +132,14 @@ $ sudo serveradmin settings afp:setting
                 self.afporigstatus = True
 
     def fix(self):
-        '''
-        disable Apple File Sharing service
+        '''disable Apple File Sharing service
 
-        @return: success
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: success
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         success = True
@@ -181,12 +186,13 @@ $ sudo serveradmin settings afp:setting
             self.logger.log(LogPriority.ERROR, self.detailedresults)
 
     def undo(self):
-        '''
-        restore Apple File Sharing service
+        '''restore Apple File Sharing service
         to its original state
 
-        @return: void
+
+        :returns: void
         @author: Breen Malmberg
+
         '''
 
         success = True

@@ -33,25 +33,23 @@ elif sys.platform.startswith("linux"):
 
 @unittest.skipUnless(sys.platform.startswith("darwin"), "This test is not valid on this OS")
 class test_macRamdisk(GenericRamdiskTest):
-    """
-    """
+    ''' '''
 
     @classmethod
     def setUpInstanceSpecifics(self):
-        """
-        Initializer
-        """
+        '''Initializer'''
 
         self.getLibc()
 
     ##################################
 
     def setUp(self):
-        """
-        This method runs before each test run.
-
+        '''This method runs before each test run.
+        
         @author: Roy Nielsen
-        """
+
+
+        '''
         #self.getLibc()
         pass
 
@@ -61,24 +59,20 @@ class test_macRamdisk(GenericRamdiskTest):
     ##################################
 
     def test_macRamdiskFirstTest(self):
-        """
-        """
+        ''' '''
         pass
 
     ##################################
 
     def test_macRamdiskSecondTest(self):
-        """
-        """
+        ''' '''
         pass
 
 ###############################################################################
 ##### unittest Tear down
     @classmethod
     def tearDownInstanceSpecifics(self):
-        """
-        disconnect ramdisk
-        """
+        '''disconnect ramdisk'''
         pass
 
 ###############################################################################

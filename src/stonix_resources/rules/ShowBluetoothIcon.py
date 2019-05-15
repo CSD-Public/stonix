@@ -36,10 +36,7 @@ from ..CommandHelper import CommandHelper
 from ..logdispatcher import LogPriority
 
 class ShowBluetoothIcon(RuleKVEditor):
-    '''
-    
-    @author: bgonz12
-    '''
+    '''@author: bgonz12'''
 
 ###############################################################################
 
@@ -78,13 +75,15 @@ class ShowBluetoothIcon(RuleKVEditor):
                              {})
 
     def report(self):
-        '''
-        determine the compliance status of ShowBluetoothIcon
+        '''determine the compliance status of ShowBluetoothIcon
         on the current system
 
-        @return: self.compliant
-        @rtype: bool
-        @author: bgonz12
+
+        :returns: self.compliant
+
+        :rtype: bool
+@author: bgonz12
+
         '''
         
         self.detailedresults = ""
@@ -115,13 +114,15 @@ class ShowBluetoothIcon(RuleKVEditor):
 ###############################################################################
 
     def fix(self):
-        '''
-        run fixed actions for ShowBluetoothIcon
+        '''run fixed actions for ShowBluetoothIcon
         return True if all succeed
 
-        @return: fixed
-        @rtype: bool
-        @author: bgonz12
+
+        :returns: fixed
+
+        :rtype: bool
+@author: bgonz12
+
         '''
         self.detailedresults = ""
         fixed = True
@@ -147,12 +148,14 @@ class ShowBluetoothIcon(RuleKVEditor):
 ###############################################################################
 
     def afterfix(self):
-        '''
-        reset the menu bar after fix
+        '''reset the menu bar after fix
 
-        @return: afterfixsuccess
-        @rtype: bool
-        @author: bgonz12
+
+        :returns: afterfixsuccess
+
+        :rtype: bool
+@author: bgonz12
+
         '''
         afterfixsuccess = True
 

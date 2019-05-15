@@ -19,21 +19,22 @@ from ..loggers import CyLogger
 from ..libHelperExceptions import UnsupportedOSError, NotACyLoggerError
 
 class ManageKeychain(object):
-    """
-    Factory object for acquiring the right keychain manager
+    '''Factory object for acquiring the right keychain manager
     
     @note: Defined interface methods work somewhat like generic decorators that have
            a preprocess and postprocess step.
     
     @note: If the generic interface doesn't have enough functionality, the
            factory has a method to return the specific keychain manager.
-
-    @note: Methods may return a bool, list or dictionary depending on the 
+    
+    @note: Methods may return a bool, list or dictionary depending on the
            concrete implementation of the keychain manager for a specific
            OS or application.
-
+    
     @author: Roy Nielsen
-    """
+
+
+    '''
 
     #----------------------------------------------------------------------
 
@@ -62,9 +63,7 @@ class ManageKeychain(object):
     #----------------------------------------------------------------------
 
     def getSpecificManager(self):
-        """
-        Getter to acqure the specific keychain manager
-        """
+        '''Getter to acqure the specific keychain manager'''
         return self.keychainMgr
 
     #----------------------------------------------------------------------
@@ -92,11 +91,14 @@ class ManageKeychain(object):
     #----------------------------------------------------------------------
 
     def setUser(self, *args, **kwargs):
-        """
-        Setter for the user property of the concrete class.
+        '''Setter for the user property of the concrete class.
         
         @author: Roy Nielsen
-        """
+
+        :param *args: 
+        :param **kwargs: 
+
+        '''
         success = False
         #####
         # Preprocess logging
@@ -115,11 +117,14 @@ class ManageKeychain(object):
     #----------------------------------------------------------------------
 
     def listKeychain(self, *args, **kwargs):
-        """
-        Display or manipulate the keychain search list.
-
+        '''Display or manipulate the keychain search list.
+        
         @author: Roy Nielsen
-        """
+
+        :param *args: 
+        :param **kwargs: 
+
+        '''
         success = False
 
         #####
@@ -139,11 +144,14 @@ class ManageKeychain(object):
     #----------------------------------------------------------------------
 
     def defaultKeychain(self, *args, **kwargs):
-        """
-        Display or set the default keychain.
+        '''Display or set the default keychain.
         
         @author: Roy Nielsen
-        """
+
+        :param *args: 
+        :param **kwargs: 
+
+        '''
         success = False
 
         #####
@@ -163,10 +171,13 @@ class ManageKeychain(object):
     #----------------------------------------------------------------------
 
     def loginKeychain(self, *args, **kwargs):
-        '''
-        Display or set the login keychain.
+        '''Display or set the login keychain.
         
         @author: Roy Nielsen
+
+        :param *args: 
+        :param **kwargs: 
+
         '''
         success = False
 
@@ -187,11 +198,14 @@ class ManageKeychain(object):
     #----------------------------------------------------------------------
 
     def createKeychain(self, *args, **kwargs):
-        """
-        Create a keychain.
+        '''Create a keychain.
         
         @author: Roy Nielsen
-        """
+
+        :param *args: 
+        :param **kwargs: 
+
+        '''
         success = False
         #####
         # Preprocess logging
@@ -208,11 +222,14 @@ class ManageKeychain(object):
     #----------------------------------------------------------------------
 
     def deleteKeychain(self, *args, **kwargs):
-        """
-        Delete keychain
+        '''Delete keychain
         
         @author: Roy Nielsen
-        """
+
+        :param *args: 
+        :param **kwargs: 
+
+        '''
         success = False
         #####
         # Preprocess logging
@@ -227,11 +244,14 @@ class ManageKeychain(object):
         return success, output
 
     def lockKeychain(self, *args, **kwargs):
-        """
-        Unlock the defined keychain
+        '''Unlock the defined keychain
         
         @author: Roy Nielsen
-        """
+
+        :param *args: 
+        :param **kwargs: 
+
+        '''
         success = False
         output = ''
         #####
@@ -249,11 +269,14 @@ class ManageKeychain(object):
     #----------------------------------------------------------------------
 
     def unlockKeychain(self, *args, **kwargs):
-        """
-        Unlock the defined keychain
+        '''Unlock the defined keychain
         
         @author: Roy Nielsen
-        """
+
+        :param *args: 
+        :param **kwargs: 
+
+        '''
         success = False
         output = ''
         #####
@@ -271,11 +294,14 @@ class ManageKeychain(object):
     #----------------------------------------------------------------------
 
     def changeKeychainPassword(self, *args, **kwargs):
-        """
-        Change a keychain password
+        '''Change a keychain password
         
         @author: Roy Nielsen
-        """
+
+        :param *args: 
+        :param **kwargs: 
+
+        '''
         success = False
         output = ''
         #####
@@ -293,10 +319,14 @@ class ManageKeychain(object):
     #----------------------------------------------------------------------
 
     def showKeychainInfo(self, keychain, *args, **kwargs):
-        '''
-        Show the settings for a keychain.
-
+        '''Show the settings for a keychain.
+        
         @author: Roy Nielsen
+
+        :param keychain: 
+        :param *args: 
+        :param **kwargs: 
+
         '''
         success = False
         #####
@@ -314,10 +344,13 @@ class ManageKeychain(object):
     #----------------------------------------------------------------------
 
     def dumpKeychain(self, *args, **kwargs):
-        '''
-        Dump the contents of one or more keychains.
-
+        '''Dump the contents of one or more keychains.
+        
         @author: Roy Nielsen
+
+        :param *args: 
+        :param **kwargs: 
+
         '''
         success = False
         #####
@@ -335,10 +368,13 @@ class ManageKeychain(object):
     #----------------------------------------------------------------------
 
     def findCertificate(self, *args, **kwargs):
-        '''
-        Find a certificate item.
+        '''Find a certificate item.
         
         @author: Roy Nielsen
+
+        :param *args: 
+        :param **kwargs: 
+
         '''
         success = False
         #####
@@ -356,10 +392,13 @@ class ManageKeychain(object):
     #----------------------------------------------------------------------
 
     def findIdentity(self, *args, **kwargs):
-        '''
-        Find an identity (certificate + private key).
+        '''Find an identity (certificate + private key).
         
         @author: Roy Nielsen
+
+        :param *args: 
+        :param **kwargs: 
+
         '''
         success = False
         #####
@@ -377,10 +416,13 @@ class ManageKeychain(object):
     #----------------------------------------------------------------------
 
     def error(self, *args, **kwargs):
-        '''
-        Display descrip6tive message for the given error code(s).
+        '''Display descrip6tive message for the given error code(s).
         
         @author: Roy Nielsen
+
+        :param *args: 
+        :param **kwargs: 
+
         '''
         success = False
         #####

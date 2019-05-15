@@ -45,11 +45,12 @@ from ..CommandHelper import CommandHelper
 
 
 class ConfigureMACPolicy(Rule):
-    '''
-    The ConfigureMACPolicy class configures either selinux or apparmor
+    '''The ConfigureMACPolicy class configures either selinux or apparmor
     depending on the os platform.
     @change: dwalker - created two config items, one for enable/disable, and
         another for whether the user wants to use permissive or enforcing
+
+
     '''
 
     def __init__(self, config, environ, logger, statechglogger):
@@ -96,12 +97,13 @@ class ConfigureMACPolicy(Rule):
         self.localization()
 
     def localization(self):
-        '''
-        wrapper for setting up initial variables and helper objects based on
+        '''wrapper for setting up initial variables and helper objects based on
         which OS type you have
 
-        @return: void
+
+        :returns: void
         @author: Breen Malmberg
+
         '''
 
         self.initobjs()
@@ -120,11 +122,12 @@ class ConfigureMACPolicy(Rule):
             self.setFedora()
 
     def setcommon(self):
-        '''
-        set common variables for use with both/either ubuntu and/or opensuse
+        '''set common variables for use with both/either ubuntu and/or opensuse
 
-        @return: void
+
+        :returns: void
         @author: Breen Malmberg
+
         '''
 
         self.releasefiles = ['/etc/os-release', '/etc/redhat-release']
@@ -156,11 +159,12 @@ class ConfigureMACPolicy(Rule):
             self.updategrubcmd = self.updategrubbase + ' -o ' + self.grubbootdir
 
     def initobjs(self):
-        '''
-        initialize helper objects
+        '''initialize helper objects
 
-        @return: void
+
+        :returns: void
         @author: Breen Malmberg
+
         '''
 
         try:
@@ -172,11 +176,12 @@ class ConfigureMACPolicy(Rule):
             raise
 
     def setRedHat(self):
-        '''
-        set variables for red hat systems
+        '''set variables for red hat systems
 
-        @return: void
+
+        :returns: void
         @author: Breen Malmberg
+
         '''
 
         self.logger.log(LogPriority.DEBUG,
@@ -218,12 +223,13 @@ class ConfigureMACPolicy(Rule):
             raise
 
     def setRedHatBackupMethod(self):
-        '''
-        a backup method for attempting to determine, ad-hoc, which file names
+        '''a backup method for attempting to determine, ad-hoc, which file names
         and directories apply to this system
 
-        @return: void
+
+        :returns: void
         @author: Breen Malmberg
+
         '''
 
         self.logger.log(LogPriority.DEBUG,
@@ -252,12 +258,14 @@ class ConfigureMACPolicy(Rule):
             self.perms2 = [0, 0, 0o644]
 
     def getOsVer(self):
-        '''
-        get and return the os version number (x.y) as a string
+        '''get and return the os version number (x.y) as a string
 
-        @return: osver
-        @rtype: string
-        @author: Breen Malmberg
+
+        :returns: osver
+
+        :rtype: string
+@author: Breen Malmberg
+
         '''
 
         osver = ""
@@ -292,13 +300,13 @@ class ConfigureMACPolicy(Rule):
         return osver
 
     def parseRedhatRelease(self, contentlines):
-        '''
-        parse the contents of the redhat-release file
+        '''parse the contents of the redhat-release file
 
-        @param contentlines: list list of strings
-        @return: osver
-        @rtype: string
-        @author: Breen Malmberg
+        :param contentlines: list list of strings
+        :returns: osver
+        :rtype: string
+@author: Breen Malmberg
+
         '''
 
         osver = ""
@@ -319,13 +327,13 @@ class ConfigureMACPolicy(Rule):
         return osver
 
     def parseOSRelease(self, contentlines):
-        '''
-        parse the contents of the os-release file
+        '''parse the contents of the os-release file
 
-        @param contentlines: list list of strings
-        @return: osver
-        @rtype: string
-        @author: Breen Malmberg
+        :param contentlines: list list of strings
+        :returns: osver
+        :rtype: string
+@author: Breen Malmberg
+
         '''
 
         osver = ""
@@ -343,13 +351,14 @@ class ConfigureMACPolicy(Rule):
         return osver
 
     def setFedora(self):
-        '''
-        set variables for fedora systems
+        '''set variables for fedora systems
 
-        @return: void
+
+        :returns: void
         @author: Breen Malmberg
         @change: increased the version number accounted for, in
                 the regex search (now 20-29; was 20-23 (oops!))
+
         '''
 
         self.logger.log(LogPriority.DEBUG, "This system is using Fedora operating system")
@@ -384,13 +393,14 @@ class ConfigureMACPolicy(Rule):
             raise
 
     def setDebian(self):
-        '''
-        set variables for Debian systems
+        '''set variables for Debian systems
         although many things are the same for Debian and Ubuntu,
         not all of them are..
 
-        @return: void
+
+        :returns: void
         @author: Breen Malmberg
+
         '''
 
         self.logger.log(LogPriority.DEBUG,
@@ -416,11 +426,12 @@ class ConfigureMACPolicy(Rule):
             self.updategrubcmd = '/usr/sbin/update-grub'
 
     def setopensuse(self):
-        '''
-        set variables for opensuse systems
+        '''set variables for opensuse systems
 
-        @return: void
+
+        :returns: void
         @author: Breen Malmberg
+
         '''
 
         self.logger.log(LogPriority.DEBUG,
@@ -443,11 +454,12 @@ class ConfigureMACPolicy(Rule):
         self.aastatuscmd = 'rcapparmor status'
 
     def setubuntu(self):
-        '''
-        set variables for ubuntu systems
+        '''set variables for ubuntu systems
 
-        @return: void
+
+        :returns: void
         @author: Breen Malmberg
+
         '''
 
         self.logger.log(LogPriority.DEBUG,
@@ -473,14 +485,16 @@ class ConfigureMACPolicy(Rule):
             self.updategrubcmd = '/usr/sbin/update-grub'
 
     def report(self):
-        '''
-        decide which report method(s) to run, based on package manager
+        '''decide which report method(s) to run, based on package manager
 
-        @return: self.compliant
-        @rtype: bool
-        @author: Derek Walker
-        @change: Breen Malmberg - 10/26/2015 - filled in stub method; added
-            method doc string
+
+        :returns: self.compliant
+
+        :rtype: bool
+@author: Derek Walker
+@change: Breen Malmberg - 10/26/2015 - filled in stub method; added
+    method doc string
+
         '''
 
         self.compliant = True
@@ -505,12 +519,14 @@ class ConfigureMACPolicy(Rule):
         return self.compliant
 
     def reportAppArmor(self):
-        '''
-        run report actions for each piece of apparmor in sequence
+        '''run report actions for each piece of apparmor in sequence
 
-        @return: retval
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: retval
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         retval = True
@@ -534,12 +550,14 @@ class ConfigureMACPolicy(Rule):
         return retval
 
     def reportAApkg(self):
-        '''
-        check whether the AppArmor package is installed
+        '''check whether the AppArmor package is installed
 
-        @return: retval
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: retval
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         # defaults
@@ -569,12 +587,14 @@ class ConfigureMACPolicy(Rule):
         return retval
 
     def reportAAstatus(self):
-        '''
-        check whether the AppArmor module is loaded
+        '''check whether the AppArmor module is loaded
 
-        @return: retval
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: retval
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         retval = True
@@ -633,13 +653,15 @@ class ConfigureMACPolicy(Rule):
         return retval
 
     def reportAAprofs(self):
-        '''
-        check whether or not there are any unconfined (by AppArmor) services or
+        '''check whether or not there are any unconfined (by AppArmor) services or
         applications
 
-        @return: retval
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: retval
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         self.unconflist = []
@@ -705,13 +727,13 @@ class ConfigureMACPolicy(Rule):
         return retval
 
     def reportSELinux(self):
-        '''
-        Determine whether SELinux is already enabled and properly configured.
+        '''Determine whether SELinux is already enabled and properly configured.
         self.compliant, self.detailed results and self.currstate properties are
         updated to reflect the system status. self.rulesuccess will be updated
         if the rule does not succeed.
 
-        @return bool
+
+        :returns: bool
         @author Breen Malmberg
         @change: dwalker 4/04/2014 implemented commandhelper, added more
             accurate implementation per system basis for apt-get systems
@@ -721,6 +743,7 @@ class ConfigureMACPolicy(Rule):
         @change: Breen Malmberg 6/10/2016 changed the commands to look for
         unconfined daemons and unlabled device files so that they actually work
         and do not produce errors when run on rhel7
+
         '''
 
         self.detailedresults = ""
@@ -865,17 +888,19 @@ the sestatus command to see if SELinux is configured properly\n"
 
 ###############################################################################
     def fix(self):
-        '''
-        decide which fix method(s) to run, based on package manager
+        '''decide which fix method(s) to run, based on package manager
 
-        @return: fixresult
-        @rtype: bool
-        @author: Derek Walker
-        @change: Breen Malmberg - 10/26/2015 - filled in stub method;
-            added doc string; changed method to use correct return variable
-        @change: added dnf package manager type to the detectable types; this
-                fixed an issue where the package manager could not be detected
-                correctly on later versions of fedora OS
+
+        :returns: fixresult
+
+        :rtype: bool
+@author: Derek Walker
+@change: Breen Malmberg - 10/26/2015 - filled in stub method;
+    added doc string; changed method to use correct return variable
+@change: added dnf package manager type to the detectable types; this
+        fixed an issue where the package manager could not be detected
+        correctly on later versions of fedora OS
+
         '''
 
         fixresult = True
@@ -913,13 +938,15 @@ the sestatus command to see if SELinux is configured properly\n"
         return fixresult
 
     def fixAppArmor(self):
-        '''
-        wrapper to decide which fix actions to run and in what order, for
+        '''wrapper to decide which fix actions to run and in what order, for
         apparmor
 
-        @return: retval
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: retval
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         retval = True
@@ -953,13 +980,15 @@ the sestatus command to see if SELinux is configured properly\n"
         return retval
 
     def fixAApkg(self):
-        '''
-        install all packages which are required for apparmor to function
+        '''install all packages which are required for apparmor to function
         properly
 
-        @return: retval
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: retval
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         retval = True
@@ -979,15 +1008,15 @@ the sestatus command to see if SELinux is configured properly\n"
         return retval
 
     def getFileContents(self, filepath):
-        '''
-        retrieve and return contents of given filepath
+        '''retrieve and return contents of given filepath
         in list form
 
-        @param filepath: string; full path to file from which to
+        :param filepath: string; full path to file from which to
                 read contents
-        @return: contents
-        @rtype: list
-        @author: Breen Malmberg
+        :returns: contents
+        :rtype: list
+@author: Breen Malmberg
+
         '''
 
         contents = []
@@ -1013,16 +1042,18 @@ the sestatus command to see if SELinux is configured properly\n"
         return contents
 
     def fixGrub(self):
-        '''
-        determine if system uses /etc/default/grub and
+        '''determine if system uses /etc/default/grub and
         /boot/grub2/grub.cfg - or - /etc/grub.conf
         and run fix actions to ensure
         that either one have the required configuration
         options correctly specified in them
 
-        @return: success
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: success
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         success = True
@@ -1114,21 +1145,21 @@ the sestatus command to see if SELinux is configured properly\n"
         return success
 
     def writeFileContents(self, contents, filepath, owner, perms):
-        '''
-        write contents to a temporary file, then rename to the
+        '''write contents to a temporary file, then rename to the
         given filepath, after recording a change event (for undo)
         give the filepath the specified owner and perms and then
         reset the security of the file (resetsecon)
 
-        @param contents: list; string list to write to filepath
-        @param filepath: string; full path to file to write to
-        @param owner: list; integer list (of exactly len=2) representing
+        :param contents: list; string list to write to filepath
+        :param filepath: string; full path to file to write to
+        :param owner: list; integer list (of exactly len=2) representing
                 the owner and group uids to apply to filepath
-        @param perms: int; 4 digit octal integer representing the permissions
+        :param perms: int; 4 digit octal integer representing the permissions
                 to apply to filepath
-        @return: success
-        @rtype: bool
-        @author: Breen Malmberg
+        :returns: success
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         success = True
@@ -1188,12 +1219,14 @@ the sestatus command to see if SELinux is configured properly\n"
         resetsecon(filepath)
 
     def fixAAstatus(self):
-        '''
-        ensure that apparmor is configured correctly and running
+        '''ensure that apparmor is configured correctly and running
 
-        @return: retval
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: retval
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         retval = True
@@ -1286,16 +1319,18 @@ the sestatus command to see if SELinux is configured properly\n"
         return retval
 
     def fixSELinux(self):
-        '''
-        enable and configure selinux. self.rulesuccess will be updated if this
+        '''enable and configure selinux. self.rulesuccess will be updated if this
         method does not succeed.
 
-        @return: fixresult
-        @rtype: bool
-        @author Breen Malmberg
-        @change: dwalker 4/04/2014 implemented commandhelper, added more
-            accurate implementation per system basis for apt-get systems
-            especially.
+
+        :returns: fixresult
+
+        :rtype: bool
+@author Breen Malmberg
+@change: dwalker 4/04/2014 implemented commandhelper, added more
+    accurate implementation per system basis for apt-get systems
+    especially.
+
         '''
 
         fixresult = True

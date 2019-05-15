@@ -30,12 +30,12 @@ from localize import STONIXVERSION
 
 
 class ProgramArguments(object):
-    """
-    Class for holding the command line options
-
+    '''Class for holding the command line options
+    
     @author: Roy Nielsen
 
-    """
+
+    '''
     def __init__(self):
         """
         Initialization routine for our program options
@@ -128,137 +128,142 @@ class ProgramArguments(object):
             print self.args
 
     def getBuildSelfUpdate(self):
-        """
-        Getter for whether or not we use the test build for self updating
-
+        '''Getter for whether or not we use the test build for self updating
+        
         @author: Roy Nielsen
-        """
+
+
+        '''
         return self.opts.selfupdatetest
 
     def get_gui(self):
-        """
-        Return whether or not to start the GUI.
+        '''
 
-        @author: Roy Nielsen
 
-        """
+        :returns: @author: Roy Nielsen
+
+        '''
         return self.opts.gui
 
     def get_install(self):
-        """
-        Return the install option (True/False)
+        '''
 
-        @author: Roy Nielsen
 
-        """
+        :returns: @author: Roy Nielsen
+
+        '''
         return self.opts.install
 
     def get_update(self):
-        """
-        Return whether or not to update this software package.
+        '''
 
-        @author: Roy Nielsen
 
-        """
+        :returns: @author: Roy Nielsen
+
+        '''
         return self.opts.update
 
     def get_fix(self):
-        """
-        Return whether or not to run in fix mode.
+        '''
 
-        @author: Roy Nielsen
 
-        """
+        :returns: @author: Roy Nielsen
+
+        '''
         return self.opts.fix
 
     def get_report(self):
-        """
-        Return the filename passed in, or the default value
+        '''
 
-        @author: Roy Nielsen
 
-        """
+        :returns: @author: Roy Nielsen
+
+        '''
         return self.opts.report
 
     def get_rollback(self):
-        """
-        Return whether or not to run in rollback mode.
+        '''
 
-        @author: Roy Nielsen
 
-        """
+        :returns: @author: Roy Nielsen
+
+        '''
         return self.opts.rollback
 
     def get_verbose(self):
-        """
-        Return the filename passed in, or the default value
+        '''
 
-        @author: Roy Nielsen
 
-        """
+        :returns: @author: Roy Nielsen
+
+        '''
         return self.opts.verbose
 
     def get_debug(self):
-        """
-        Return the filename passed in, or the default value
+        '''
 
-        @author: Roy Nielsen
 
-        """
+        :returns: @author: Roy Nielsen
+
+        '''
         return self.opts.debug
 
     def get_module(self):
-        """
-        Return the filename passed in, or the default value
+        '''
 
-        @author: Roy Nielsen
 
-        """
+        :returns: @author: Roy Nielsen
+
+        '''
         return self.opts.mod
 
     def get_num_of_args(self):
-        """
-        Return the number of arguments passed in.
+        '''
 
-        @author: Roy Nielsen
 
-        """
+        :returns: @author: Roy Nielsen
+
+        '''
         return len(self.args)
 
     def get_cli(self):
-        """
-        Return whether or not to run in Command Line Mode
+        '''
 
-        @author: Roy Nielsen
 
-        """
+        :returns: @author: Roy Nielsen
+
+        '''
         return self.opts.cli
 
     def getPrintConfigFull(self):
-        """
-        Return the bool for whether or not the CLI has requested the
-        generation of a full config file.
+        '''
 
+
+        :returns: generation of a full config file.
+        
         @author: Roy Nielsen
 
-        """
+        '''
         return self.opts.pcf
 
     def getPrintConfigSimple(self):
-        """
-        Return the bool for whether or not the CLI has requested the
-        generation of a simple config file.
+        '''
 
+
+        :returns: generation of a simple config file.
+        
         @author: Roy Nielsen
 
-        """
+        '''
         return self.opts.pcs
 
     def getList(self):
-        """
-        Return a bool for whether or not the CLI has requested the listing
-        of installed rules.
+        '''
 
+
+        :returns: of installed rules.
+        
         @author: D. Kennel
-        """
+
+        '''
         return self.opts.list

@@ -54,14 +54,15 @@ from ..CommandHelper import CommandHelper
 
 
 class MuteMic(Rule):
-    '''
-    This class is responsible for muting the microphone input levels to
+    '''This class is responsible for muting the microphone input levels to
     help prevent attacks that would attempt to use the system as a listening
     device.
-
+    
     @author: dkennel
     @change: dwalker 11/6/2018 - Updated rule to only check contents of
             protected files inside /etc/ if uid is 0
+
+
     '''
 
     def __init__(self, config, environ, logger, statechglogger):
@@ -103,14 +104,15 @@ valid exceptions.'
         return myci
 
     def report(self):
-        '''
-        Report method for MuteMic. Uses the platform native method to read
+        '''Report method for MuteMic. Uses the platform native method to read
         the input levels. Levels must be zero to pass. Note for Linux the use
         of amixer presumes pulseaudio.
-
+        
         @author: dkennel
         @change: Breen Malmberg - 07/19/2016 - added variable defaults initialization;
         added commandhelper object self.ch
+
+
         '''
 
         # defaults
@@ -142,12 +144,14 @@ valid exceptions.'
         return self.compliant
 
     def reportmac(self):
-        '''
-        determine the volume level of the input device on a mac
+        '''determine the volume level of the input device on a mac
 
-        @return: retval
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: retval
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         retval = True
@@ -171,16 +175,18 @@ valid exceptions.'
         return retval
 
     def reportlinux(self):
-        '''
-        determine the volume level and mute status of all mic's
+        '''determine the volume level and mute status of all mic's
         and capture devices, using linux-specific mechanisms and
         commands/paths
 
-        @return: retval
-        @rtype: bool
-        @author: Breen Malmberg
-        @change: dwalker 11/6/2018 - Updated rule to only check contents of
-            protected files inside /etc/ if uid is 0
+
+        :returns: retval
+
+        :rtype: bool
+@author: Breen Malmberg
+@change: dwalker 11/6/2018 - Updated rule to only check contents of
+    protected files inside /etc/ if uid is 0
+
         '''
         debug = ""
         retval = True
@@ -352,17 +358,19 @@ valid exceptions.'
         return retval
 
     def fix(self):
-        '''
-        Fix method for MuteMic. Uses platform native methods to set the input
+        '''Fix method for MuteMic. Uses platform native methods to set the input
         levels to zero. Note for Linux the use of amixer presumes pulseaudio.
 
-        @return: self.rulesuccess
-        @rtype: bool
-        @author: dkennel
-        @change: Breen Malmberg - 07/19/2016 - fixed comment block; init return
-        value to default and self.detailedresults as well; commands now run
-        through commandhelper object: self.ch; wrapped entire method in try/except;
-        added more debugging output
+
+        :returns: self.rulesuccess
+
+        :rtype: bool
+@author: dkennel
+@change: Breen Malmberg - 07/19/2016 - fixed comment block; init return
+value to default and self.detailedresults as well; commands now run
+through commandhelper object: self.ch; wrapped entire method in try/except;
+added more debugging output
+
         '''
 
         # defaults
@@ -405,12 +413,14 @@ valid exceptions.'
         return success
 
     def fixmac(self):
-        '''
-        run commands to turn off microphones on mac
+        '''run commands to turn off microphones on mac
 
-        @return: retval
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: retval
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         # defaults
@@ -442,12 +452,14 @@ valid exceptions.'
         return retval
 
     def fixlinux(self):
-        '''
-        run commands to turn off microphones on linux
+        '''run commands to turn off microphones on linux
 
-        @return: retval
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: retval
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         retval = True
@@ -592,12 +604,13 @@ valid exceptions.'
         return retval
 
     def setPaths(self):
-        '''
-        determine the correct paths for each utility,
+        '''determine the correct paths for each utility,
         based on the current OS distro
 
-        @return: void
+
+        :returns: void
         @author: Breen Malmberg
+
         '''
 
         sysvinitscripts = ["/etc/rc.d/rc.local", "/etc/rc.local"]
@@ -614,15 +627,17 @@ valid exceptions.'
         self.systemdscriptname = "/usr/lib/systemd/system/stonix-mute-mic.service"
 
     def soundDeviceExists(self):
-        '''
-        This method is only meant to be used on linux systems
+        '''This method is only meant to be used on linux systems
         This method is used to determine the presence of any
         sound devices on the current system. Return True if
         any are found. Return False if none are found.
 
-        @return: sdevicefound
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: sdevicefound
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         sdevicefound = False
@@ -678,15 +693,17 @@ valid exceptions.'
         return sdevicefound
 
     def findPulseMic(self):
-        '''
-        This method will attempt to determine the indexes of the sources that
+        '''This method will attempt to determine the indexes of the sources that
         contain microphone inputs. It will return a list of strings that are
         index numbers. It is legal for the list to be of zero length in the
         cases where pulse is not running or there are no sources with
         microphones.
-
+        
         @author: dkennel
-        @return: list of numbers in string format
+
+
+        :returns: list of numbers in string format
+
         '''
         indexlist = []
         index = ''
@@ -722,13 +739,15 @@ valid exceptions.'
         return indexlist
 
     def checkpulseaudio(self):
-        '''
-        Report method for checking the pulse audio configuration to ensure that
+        '''Report method for checking the pulse audio configuration to ensure that
         the Microphone defaults to muted. Returns True if the system is
         compliant
-
+        
         @author: dkennel
-        @return: Bool
+
+
+        :returns: Bool
+
         '''
         linesfound = 0
         if not os.path.exists(self.pulsedefaults):
@@ -783,19 +802,21 @@ valid exceptions.'
         return True
 
     def fixPulseAudio(self):
-        '''
-        This method adds lines to the end of the pulse audio services default
+        '''This method adds lines to the end of the pulse audio services default
         settings definitions file to ensure that the microphones are muted by
         default.
 
-        @return: retval
-        @rtype: bool
-        @author: dkennel
-        @change: Breen Malmberg - 07/19/2016 - fixed comment block; init default return
-        param value, retval; made sure method always returns something
-        @change: Breen Malmberg - 2/15/2017 - made sure method does not run if the rule is
-                being run in user mode, because the method writes to a location which requires
-                root privileges
+
+        :returns: retval
+
+        :rtype: bool
+@author: dkennel
+@change: Breen Malmberg - 07/19/2016 - fixed comment block; init default return
+param value, retval; made sure method always returns something
+@change: Breen Malmberg - 2/15/2017 - made sure method does not run if the rule is
+        being run in user mode, because the method writes to a location which requires
+        root privileges
+
         '''
 
         retval = True
@@ -880,12 +901,14 @@ valid exceptions.'
         return retval
 
     def getDevices(self):
-        '''
-        retrieve a list of device indexes
+        '''retrieve a list of device indexes
 
-        @return: indexes
-        @rtype: list
-        @author: Breen Malmberg
+
+        :returns: indexes
+
+        :rtype: list
+@author: Breen Malmberg
+
         '''
 
         indexes = []
@@ -918,13 +941,14 @@ valid exceptions.'
         return indexes
 
     def getMics(self, index):
-        '''
-        return a list of simple mixer control mics for the
+        '''return a list of simple mixer control mics for the
         specified device index
 
-        @return: mics
-        @rtype: list
-        @author: Breen Malmberg
+        :param index: 
+        :returns: mics
+        :rtype: list
+@author: Breen Malmberg
+
         '''
 
         mics = []
@@ -955,13 +979,14 @@ valid exceptions.'
         return mics
 
     def buildScript(self, systype):
-        '''
-        dynamically build the boot up script and return
+        '''dynamically build the boot up script and return
         a list of the lines to be written
 
-        @return: script
-        @rtype: list
-        @author: Breen Malmberg
+        :param systype: 
+        :returns: script
+        :rtype: list
+@author: Breen Malmberg
+
         '''
 
         script = []
@@ -1003,13 +1028,15 @@ valid exceptions.'
         return script
 
     def getSysType(self):
-        '''
-        determine whether the os type is
+        '''determine whether the os type is
         systemd-based or sysvinit-based
 
-        @return: systype
-        @rtype: string
-        @author: Breen Malmberg
+
+        :returns: systype
+
+        :rtype: string
+@author: Breen Malmberg
+
         '''
 
         # determine if os is systemd-based or sysvinit
@@ -1053,12 +1080,14 @@ valid exceptions.'
         return systype
 
     def finishScript(self, systype, script):
-        '''
-        write the script to disk and run any
+        '''write the script to disk and run any
         final needed command(s)
 
-        @return: void
+        :param systype: 
+        :param script: 
+        :returns: void
         @author: Breen Malmberg
+
         '''
         retval = True
         if not self.root:

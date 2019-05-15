@@ -34,9 +34,7 @@ from ..CommandHelper import CommandHelper
 
 
 class STIGConfigureLoginWindowPolicy(Rule):
-    '''
-    Deploy LoginWindow Policy configuration profiles for OS X Yosemite 10.10
-    '''
+    '''Deploy LoginWindow Policy configuration profiles for OS X Yosemite 10.10'''
     def __init__(self, config, environ, logdispatch, statechglogger):
         '''
         Constructor

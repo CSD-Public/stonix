@@ -48,10 +48,11 @@ from ..logdispatcher import LogPriority
 
 
 class MinimizeServices(Rule):
-    """
-    The MinimizeServices class sets the system so that only approved services
+    '''The MinimizeServices class sets the system so that only approved services
     are running at any given time.
-    """
+
+
+    '''
 
     def __init__(self, config, environ, logger, statechglogger):
         """
@@ -523,14 +524,16 @@ elements should be space separated."""
             self.svcslistci.updatecurrvalue(x + y)
 
     def report(self):
-        """
-        Report on whether any services not in the baseline or configured set
+        '''Report on whether any services not in the baseline or configured set
         are running.
 
-        @return: self.compliant
-        @rtype: bool
-        @author: Dave Kennel
-        """
+
+        :returns: self.compliant
+
+        :rtype: bool
+@author: Dave Kennel
+
+        '''
 
         running = False # default init var
         self.compliant = True
@@ -581,11 +584,12 @@ elements should be space separated."""
         return self.compliant
 
     def fix(self):
-        """
-        Disable all services not in the 'enable services' list.
-
+        '''Disable all services not in the 'enable services' list.
+        
         @author: Dave Kennel
-        """
+
+
+        '''
 
         self.detailedresults = ""
         self.rulesuccess = True
@@ -634,12 +638,13 @@ elements should be space separated."""
         return self.rulesuccess
 
     def undo(self):
-        """
-        Attempt to reset the service state for all the services that we changed
+        '''Attempt to reset the service state for all the services that we changed
         back to their original states.
-
+        
         @author: Dave Kennel
-        """
+
+
+        '''
         self.targetstate = 'notconfigured'
         try:
             event1 = self.statechglogger.getchgevent('0013001')

@@ -52,12 +52,13 @@ from ..CommandHelper import CommandHelper
 
 
 class ConfigureDotFiles(Rule):
-    '''
-    A user who can modify another user's configuration files can likely execute
+    '''A user who can modify another user's configuration files can likely execute
     commands with the other user's privileges, including stealing data,
     destroying files, or launching further attacks on the system. This rule
     ensures that no dot files within users' home directories possess the
     world/other - writable permission.
+
+
     '''
 
     def __init__(self, config, environ, logger, statechglogger):
@@ -90,15 +91,17 @@ being made non-world-writable, set the value of ConfigureDotFiles to False.'''
                            'os': {'Mac OS X': ['10.12', 'r', '10.14.10']}}
 
     def report(self):
-        '''
-        The report method examines the current configuration and determines
+        '''The report method examines the current configuration and determines
         whether or not it is correct. If the config is correct then the
         self.compliant and self.detailed results properties are
         updated to reflect the system status.
 
-        @return self.compliant
-        @rtype: boolean
-        @author: Breen Malmberg
+
+        :returns: self.compliant
+
+        :rtype: boolean
+@author: Breen Malmberg
+
         '''
 
         # defaults
@@ -134,11 +137,14 @@ being made non-world-writable, set the value of ConfigureDotFiles to False.'''
         return self.compliant
 
     def buildlinuxdotfilelist(self):
-        '''
-        build a list of linux dot files for the current user
-        @return: dotfilelist
-        @rtype: list
-        @author: Breen Malmberg
+        '''build a list of linux dot files for the current user
+
+
+        :returns: dotfilelist
+
+        :rtype: list
+@author: Breen Malmberg
+
         '''
 
         dotfilelist = []
@@ -171,11 +177,14 @@ being made non-world-writable, set the value of ConfigureDotFiles to False.'''
         return dotfilelist
 
     def buildmacdotfilelist(self):
-        '''
-        build a list of mac dot files for the current user
-        @return: dotfilelist
-        @rtype: list
-        @author: Breen Malmberg
+        '''build a list of mac dot files for the current user
+
+
+        :returns: dotfilelist
+
+        :rtype: list
+@author: Breen Malmberg
+
         '''
 
         dotfilelist = []
@@ -227,11 +236,12 @@ being made non-world-writable, set the value of ConfigureDotFiles to False.'''
         return dotfilelist
 
     def fix(self):
-        '''
-        remove any world writable flags from any dot files in user's home
+        '''remove any world writable flags from any dot files in user's home
         directory
-
+        
         @author: Breen Malmberg
+
+
         '''
 
         # defaults

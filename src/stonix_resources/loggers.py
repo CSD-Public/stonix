@@ -29,16 +29,20 @@ import logging.handlers
 # Exception setup
 
 def IllegalExtensionTypeError(Exception):
-    """
-    Custom Exception
-    """
+    '''Custom Exception
+
+    :param Exception: 
+
+    '''
     def __init__(self,*args,**kwargs):
         Exception.__init__(self,*args,**kwargs)
 
 def IllegalLoggingLevelError(Exception):
-    """
-    Custom Exception
-    """
+    '''Custom Exception
+
+    :param Exception: 
+
+    '''
     def __init__(self,*args,**kwargs):
         Exception.__init__(self,*args,**kwargs)
 
@@ -46,9 +50,7 @@ def IllegalLoggingLevelError(Exception):
 # Setting up a function for a singleton
 
 def singleton_decorator(cls):
-    """
-    Adapted from: https://www.python.org/dev/peps/pep-0318/ Example #2 and:
-    """
+    '''Adapted from: https://www.python.org/dev/peps/pep-0318/ Example #2 and:'''
     instances = {}
     def getinstance(*args, **kwargs):
         if cls not in instances:
@@ -58,11 +60,12 @@ def singleton_decorator(cls):
 
 
 class SingletonCyLogger(type):
-    """
-    This class was retrieved from: http://stackoverflow.com/questions/33364070/python-implementing-singleton-as-metaclass-but-for-abstract-classes
+    '''This class was retrieved from: http://stackoverflow.com/questions/33364070/python-implementing-singleton-as-metaclass-but-for-abstract-classes
     Modified class origionally authored by: Martijn Pieters(http://stackoverflow.com/users/100297/martijn-pieters)
     with license: https://creativecommons.org/licenses/by-sa/3.0/
-    """
+
+
+    '''
     _instances = {}
     def __call__(cls, *args, **kwargs):
         if cls not in cls._instances:
@@ -120,8 +123,11 @@ class CyLogger(object):
     #############################################
 
     def setInitialLoggingLevel(self, level=30):
-        """
-        """
+        '''
+
+        :param level:  (Default value = 30)
+
+        '''
         success = False
         if self.validateLevel():
             self.lvl = level
@@ -131,11 +137,13 @@ class CyLogger(object):
     #############################################
 
     def validateLevel(self, level=30):
-        """
-        Input validation for the logging level
-
+        '''Input validation for the logging level
+        
         @author: Roy Nielsen
-        """
+
+        :param level:  (Default value = 30)
+
+        '''
         
         success = False
         if int(level) > 0 and int(level) <= 60:
@@ -148,12 +156,14 @@ class CyLogger(object):
     #############################################
 
     def doRollover(self, rothandler):
-        """
-        If there is a RotatingFileHandler attached to the active logger,
+        '''If there is a RotatingFileHandler attached to the active logger,
         rotate the log.
         
         @author: Roy Nielsen
-        """
+
+        :param rothandler: 
+
+        '''
         if self.rotate:
             try:
                 self.logr.handlers.RotatingFileHandler.doRollover()
@@ -169,36 +179,18 @@ class CyLogger(object):
                        size=10000000,
                        syslog=True,
                        myconsole=True):
-        """
-        Sets up some basic logging.  For more configurable logging, use the
+        '''Sets up some basic logging.  For more configurable logging, use the
         setUpLogger & setUpHandler methods.
 
-        @param: logdir: Directory to place the logs
+        :param logdir:  (Default value = "/tmp")
+        :param filename:  (Default value = "")
+        :param extension_type:  (Default value = "inc")
+        :param logCount:  (Default value = 10)
+        :param size:  (Default value = 10000000)
+        :param syslog:  (Default value = True)
+        :param myconsole:  (Default value = True)
 
-        @param: filename: Name of the file you would like to log to. String
-
-        @param: extension_type: type of extension to use on the filename. String
-                  none:  overwrite the file currently with the passed in name
-                 epoch:  time since epoch
-                  time:  date/time stamp .ccyymmdd.hhmm.ss in military time
-                   inc:  will increment log number similar to logrotate.
-
-        @param: log_count:  if "inc" is used above, the count of logs to keep
-                            Default keep the last 10 logs.  Int
-
-        @param: size   :  if "inc", the size to allow logs to get. Default 10Mb. Int
-
-        @param: syslog : Whether or not to log to syslog. Bool
-
-        @param: console: Whether or not to log to the console. Bool
-
-        @NOTE: This only sets up the root logger.
-
-        @note: Interface borrowed from Stonix's LogDispatcher.initializeLogs
-               authored by scmcleni, D. Kennel and R. Nielsen
-
-        @author: Roy Nielsen
-        """
+        '''
         if not filename:
             filename = sys.argv[0].split("/")[-1]
         success = False
@@ -295,38 +287,47 @@ class CyLogger(object):
     #############################################
 
     def setUpHandler(self, *args, **kwargs):
-        """
-        Template/interface for children to use for setting up specific handlers.
-
+        '''Template/interface for children to use for setting up specific handlers.
+        
         In future there should be children, or methods to handle different
         log handlers...
-
+        
         @author: Roy Nielsen
-        """
+
+        :param *args: 
+        :param **kwargs: 
+
+        '''
         pass
 
     #############################################
 
     def setUpLogger(self, *args, **kwargs):
-        """
-        Template/interface for setting up a logger
-
+        '''Template/interface for setting up a logger
+        
         One may add several handlers to one logger.
-
+        
         @author: Roy Nielsen
-        """
+
+        :param *args: 
+        :param **kwargs: 
+
+        '''
         pass
 
     #############################################
 
     def log(self, priority=0, msg=""):
-        """
-        Interface to work similar to Stonix's LogDispatcher.py
-
+        '''Interface to work similar to Stonix's LogDispatcher.py
+        
         @note: Stonix's LogDispatcher.py authored by: scmcleni
-
+        
         @author: Roy Nielsen
-        """
+
+        :param priority:  (Default value = 0)
+        :param msg:  (Default value = "")
+
+        '''
         pri = str(priority)
         if re.match("^\d\d$", pri) and self.validateLevel():
             validatedLvl = int(pri)
@@ -431,12 +432,13 @@ class CyLogger(object):
 # Helper class
 
 class LogPriority(object):
-    """
-    Similar to LogPriority in the Stonix project LogDispatcher, only using
+    '''Similar to LogPriority in the Stonix project LogDispatcher, only using
     numbers instead of strings.
-
+    
     @note: Author of the Stonix LogPriority is scmcleni
-    """
+
+
+    '''
     DEBUG = int(10)
     INFO = int(20)
     VERBOSE = int(20)

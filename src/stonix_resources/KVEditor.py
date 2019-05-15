@@ -38,7 +38,10 @@ class KVEditor(object):
     means the values you set are not desired in the configuration file.  If you
     have a mixture of desired key-values and undesired key-values you must set
     intent for each time you change intents then setData with the new data.  Do
-    not run commit until all'''
+    not run commit until all
+
+
+    '''
 
     def __init__(self, stchlgr, logger, kvtype, path, tmpPath, data, intent="",
                  configType="", output=""):
@@ -358,8 +361,7 @@ class KVEditor(object):
             return False
 
     def validateProfiles(self):
-        '''
-        @since: 3/10/2016
+        '''@since: 3/10/2016
         @author: dwalker
         @var self.data: A dictionary in the form of {k: {v: ["numberValue",
                                                              "datatype",
@@ -382,8 +384,12 @@ class KVEditor(object):
                 if an int, can be lower(less) or higher(more) in order to
                 detect and represent stringency (see self.data description
                 above).
-        @return: Value returned from validate method in factory sub-class
-        @rtype: bool
+
+
+        :returns: Value returned from validate method in factory sub-class
+
+        :rtype: bool
+
         '''
         cmd = ["/usr/sbin/system_profiler", "SPConfigurationProfileDataType"]
         self.ch = CommandHelper(self.logger)

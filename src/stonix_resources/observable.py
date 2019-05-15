@@ -37,75 +37,77 @@ This class should be inherited only, no direct invocations.
 
 class Observable:
 
-    """
-    Base class for objects that are observable
+    '''Base class for objects that are observable
     :version:
     :author:
-    """
+
+
+    '''
     def __init__(self):
         self.dirty = False
         self.listeners = []
 
     def register_listener(self, listener):
-        """
+        '''
 
+        :param object_: listener : Name of listening object
+        :param listener: 
+        :returns: void
 
-        @param object_ listener : Name of listening object
-        @return  :
-        @author
-        """
+        '''
         if not listener in self.listeners:
             self.listeners.append(listener)
             # debug element
             #print "Listener Registered " + str(listener)
 
     def detatch_listener(self, listener):
-        """
+        '''
 
-
-        @param object_ listener: Name of listening object to be removed
+        :param listener: Name of listening object to be removed
                                  from notification list
-        @return  :
-        @author
-        """
+        :returns: void
+
+        '''
         if listener in self.listeners:
             del self.listeners[listener]
 
     def set_dirty(self):
-        """
+        '''
 
 
-        @return:
-        @author
-        """
+        :returns: void
+
+        '''
         self.dirty = True
 
     def set_clean(self):
-        """
+        '''
 
 
-        @return:
-        @author
-        """
+        :returns: void
+
+        '''
         self.dirty = False
 
     def notify_observers(self):
-        """
-        Call update() on every attached listener
-        @return:
-        @author
-        """
+        '''Call update() on every attached listener
+
+
+        :returns: author
+
+        '''
         for listener in self.listeners:
             listener.update(self)
             # Debug
             #print "Update called on: " + str(listener)
 
     def notify_check(self):
-        """
+        '''
 
-        @return:
-        @author
-        """
+
+        :returns: author
+
+        '''
         if self.dirty:
             self.notify_observers()
             self.set_clean()

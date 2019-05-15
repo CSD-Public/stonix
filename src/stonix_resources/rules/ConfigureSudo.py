@@ -87,10 +87,11 @@ class ConfigureSudo(Rule):
         self.localization()
 
     def localization(self):
-        '''
-        set up class variables, specific to OS type
-
+        '''set up class variables, specific to OS type
+        
         @author: Breen Malmberg
+
+
         '''
 
         self.logger.log(LogPriority.DEBUG, "Running localization() method...")
@@ -119,13 +120,13 @@ class ConfigureSudo(Rule):
             raise
 
     def readFile(self, filepath):
-        '''
-        get and return contents of file filepath
+        '''get and return contents of file filepath
 
-        @param filepath: string full path to file to read from
-        @return: contentlines
-        @rtype: list
-        @author: Breen Malmberg
+        :param filepath: string full path to file to read from
+        :returns: contentlines
+        :rtype: list
+@author: Breen Malmberg
+
         '''
 
         contentlines = []
@@ -147,13 +148,13 @@ class ConfigureSudo(Rule):
         return contentlines
 
     def findString(self, searchstring):
-        '''
-        search for parameter searchstring, in self.sudoersfile
+        '''search for parameter searchstring, in self.sudoersfile
 
-        @param searchstring: string to search for in self.sudoersfile
-        @return: found
-        @rtype: bool
-        @author: Breen Malmberg
+        :param searchstring: string to search for in self.sudoersfile
+        :returns: found
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         found = False
@@ -175,12 +176,14 @@ class ConfigureSudo(Rule):
         return found
 
     def fixSudoers(self):
-        '''
-        wrapper to run fix actions for sudoers
+        '''wrapper to run fix actions for sudoers
 
-        @return: retval
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: retval
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         retval = True
@@ -242,13 +245,14 @@ class ConfigureSudo(Rule):
         return retval
 
     def report(self):
-        '''
-        ConfigureScreenLocking.report() method to report whether system is
+        '''ConfigureScreenLocking.report() method to report whether system is
         configured with a sudoers group.
         @author: dwalker
-        @param self - essential if you override this definition
-        @return: bool - True if system is compliant, False if it isn't
+
+        :param self: essential if you override this definition
+        :returns: bool - True if system is compliant, False if it isn't
         @change: Breen Malmberg, 9/6/2015, re-wrote method
+
         '''
 
         try:
@@ -296,13 +300,14 @@ class ConfigureSudo(Rule):
 ###############################################################################
 
     def fix(self):
-        '''
-        Fix method that writes specified or default sudo group to sudoers file
+        '''Fix method that writes specified or default sudo group to sudoers file
         if not present from the report method
         @author: dwalker
-        @param self - essential if you override this definition
-        @return: bool - True if fix is successful, False if it isn't
+
+        :param self: essential if you override this definition
+        :returns: bool - True if fix is successful, False if it isn't
         @change: Breen Malmberg, 9/6/2015, re-wrote method
+
         '''
 
         try:

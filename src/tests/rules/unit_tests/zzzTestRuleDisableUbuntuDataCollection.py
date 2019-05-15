@@ -44,8 +44,10 @@ class zzzTestRuleDisableUbuntuDataCollection(RuleTest):
     def setUp(self):
         '''
 
-        @return: None
+
+        :returns: None
         @author: ekkehard j. koch, Breen Malmberg
+
         '''
 
         RuleTest.setUp(self)
@@ -59,7 +61,9 @@ class zzzTestRuleDisableUbuntuDataCollection(RuleTest):
     def tearDown(self):
         '''
 
-        @return: None
+
+        :returns: None
+
         '''
 
         for pkg in self.teardownpkgs:
@@ -69,18 +73,22 @@ class zzzTestRuleDisableUbuntuDataCollection(RuleTest):
     def runTest(self):
         '''
 
-        @return: None
+
+        :returns: None
+
         '''
 
         self.simpleRuleTest()
 
     def setConditionsForRule(self):
-        '''
-        Configure system for the unit test
+        '''Configure system for the unit test
 
-        @return: success
-        @rtype: bool
-        @author: ekkehard j. koch, Breen Malmberg
+
+        :returns: success
+
+        :rtype: bool
+@author: ekkehard j. koch, Breen Malmberg
+
         '''
 
         success = True
@@ -93,14 +101,14 @@ class zzzTestRuleDisableUbuntuDataCollection(RuleTest):
         return success
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
-        '''
-        check on whether report was correct
+        '''check on whether report was correct
 
-        @param pCompliance: the self.iscompliant value of rule
-        @param pRuleSuccess: did report run successfully
-        @return: success
-        @rtype: bool
-        @author: ekkehard j. koch
+        :param pCompliance: the self.iscompliant value of rule
+        :param pRuleSuccess: did report run successfully
+        :returns: success
+        :rtype: bool
+@author: ekkehard j. koch
+
         '''
 
         self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " + str(pCompliance) + ".")
@@ -109,13 +117,13 @@ class zzzTestRuleDisableUbuntuDataCollection(RuleTest):
         return success
 
     def checkFixForRule(self, pRuleSuccess):
-        '''
-        check on whether fix was correct
+        '''check on whether fix was correct
 
-        @param pRuleSuccess: did report run successfully
-        @return: success
-        @rtype: bool
-        @author: ekkehard j. koch
+        :param pRuleSuccess: did report run successfully
+        :returns: success
+        :rtype: bool
+@author: ekkehard j. koch
+
         '''
 
         self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + str(pRuleSuccess) + ".")
@@ -123,13 +131,13 @@ class zzzTestRuleDisableUbuntuDataCollection(RuleTest):
         return success
 
     def checkUndoForRule(self, pRuleSuccess):
-        '''
-        check on whether undo was correct
+        '''check on whether undo was correct
 
-        @param pRuleSuccess: did report run successfully
-        @return: success
-        @rtype: bool
-        @author: ekkehard j. koch
+        :param pRuleSuccess: did report run successfully
+        :returns: success
+        :rtype: bool
+@author: ekkehard j. koch
+
         '''
 
         self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + str(pRuleSuccess) + ".")

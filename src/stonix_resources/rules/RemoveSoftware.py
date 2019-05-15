@@ -37,9 +37,7 @@ from ..rule import Rule
 
 
 class RemoveSoftware(Rule):
-    '''
-    This class removes any unnecessary software installed on the system
-    '''
+    '''This class removes any unnecessary software installed on the system'''
 
     def __init__(self, config, environ, logger, statechglogger):
         '''
@@ -111,15 +109,17 @@ class RemoveSoftware(Rule):
         self.pkgci = self.initCi(datatype2, key2, instructions2, default2)
 
     def report(self):
-        '''
-        report on any unnecessary software that is currently
+        '''report on any unnecessary software that is currently
         installed
         return True if none installed
         return False if any installed
 
-        @return: self.compliant
-        @rtype: bool
-        @author: Derek Walker
+
+        :returns: self.compliant
+
+        :rtype: bool
+@author: Derek Walker
+
         '''
 
         self.detailedresults = ""
@@ -144,12 +144,14 @@ class RemoveSoftware(Rule):
         return self.compliant
 
     def fix(self):
-        '''
-        remove all unnecessary software
+        '''remove all unnecessary software
 
-        @return: self.rulesuccess
-        @rtype: bool
-        @author: Derek Walker
+
+        :returns: self.rulesuccess
+
+        :rtype: bool
+@author: Derek Walker
+
         '''
 
         self.rulesuccess = True

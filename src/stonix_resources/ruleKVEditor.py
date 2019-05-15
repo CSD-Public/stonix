@@ -39,10 +39,11 @@ from configurationitem import ConfigurationItem
 
 
 class RuleKVEditor (Rule):
-    """
-    Abstraction of the Rule class for KVEditor Rule classes.
+    '''Abstraction of the Rule class for KVEditor Rule classes.
     @author: ekkehard j. koch
-    """
+
+
+    '''
 ###############################################################################
 
     def __init__(self, config, environ, logger, statechglogger):
@@ -229,13 +230,15 @@ LANL-stonix."""
 ###############################################################################
 
     def fix(self, letcallersetdetailedresults=False):
-        '''
-        This is the standard fix routine for a rule. It goes
+        '''This is the standard fix routine for a rule. It goes
         though all # the KVEditors and atempts to fix everything. If it
         succeeds it returns true
         @author: ekkehard j. koch
-        @param self:essential if you override this definition
+
+        :param self: essential if you override this definition
         @note: kveditorName is essential
+        :param letcallersetdetailedresults:  (Default value = False)
+
         '''
 
         try:
@@ -368,14 +371,16 @@ LANL-stonix."""
 ###############################################################################
 
     def report(self, letcallersetdetailedresults=False):
-        '''
-        This is the standard report routine for a rule. It goes though all the
+        '''This is the standard report routine for a rule. It goes though all the
         KVEditors and checks if everything is compliant. If everything is
         compliant it returns true.
         @author: ekkehard j. koch
-        @param self: essential if you override this definition
+
+        :param self: essential if you override this definition
         @note: kveditorName is essential
-        @return: bool - true if all are compliant, false if one fails
+        :param letcallersetdetailedresults:  (Default value = False)
+        :returns: bool - true if all are compliant, false if one fails
+
         '''
         self.logdispatch.log(LogPriority.DEBUG,
                              [self.prefix(), "----begin"])
@@ -466,12 +471,13 @@ LANL-stonix."""
 ###############################################################################
 
     def kveditorinit(self):
-        '''
-        Initializes the current kveditor
+        '''Initializes the current kveditor
         @author: ekkehard j. koch
-        @param self:essential if you override this definition
-        @return: boolean - true if kveditor is initialized, false if not
+
+        :param self: essential if you override this definition
+        :returns: boolean - true if kveditor is initialized, false if not
         @note: kveditorName is essential
+
         '''
         if (not self.kveditorinitialized):
             self.kveditor = KVEditorStonix(self.statechglogger,
@@ -496,12 +502,13 @@ LANL-stonix."""
 ###############################################################################
 
     def prefix(self):
-        '''
-        Creates a standard prefix used in logging for the rule.
+        '''Creates a standard prefix used in logging for the rule.
         @author: ekkehard j. koch
-        @param self:essential if you override this definition
-        @return: string - standard prefix for rule
+
+        :param self: essential if you override this definition
+        :returns: string - standard prefix for rule
         @note: kveditorName is essential
+
         '''
         try:
             prefix = str(self.rulename) + "(" + str(self.rulenumber) + \
@@ -530,33 +537,34 @@ LANL-stonix."""
                     pKvConfigurationItem=None,
                     pKVReportOnly=False,
                     pKvDataFixAlternate={}):
-        '''
-        set the current kveditor values and adds the new kveditor to the
+        '''set the current kveditor values and adds the new kveditor to the
         dictionary
         @author: ekkehard j. koch
-        @param self:essential if you override this definition
-        @param pKVEditorName: string - required kveditorname
-        @param pKvType: string - type of kveditor to use (blank by default)
-        @param pKvPath: string - file path (blank by default)
-        @param pKvTempPath: string - file path for temp files (blank by
+
+        :param self: essential if you override this definition
+        :param pKVEditorName: string - required kveditorname
+        :param pKvType: string - type of kveditor to use (blank by default)
+        :param pKvPath: string - file path (blank by default)
+        :param pKvTempPath: string - file path for temp files (blank by
                             default)
-        @param pKvData: dictionary - of command data (empty dictionary by
+        :param pKvData: dictionary - of command data (empty dictionary by
                         default)
-        @param pKvIntent: string - intent of kveditor (present dictionary by
+        :param pKvIntent: string - intent of kveditor (present dictionary by
                           default)
-        @param pKvConfigurationType: string - type of configuration file for
+        :param pKvConfigurationType: string - type of configuration file for
                                      kveditor (blank by default)
-        @param pInstruction: string - instructions for configuraiton item
+        :param pInstruction: string - instructions for configuraiton item
                              ('This should always be enabled' by default)
-        @param pKvConfigurationItem: ConfigurationItem - configuration item to
+        :param pKvConfigurationItem: ConfigurationItem - configuration item to
                                      use for kveditor  (None by default)
-        @param pKVReportOnly: boolean set to true if the kveditor in only
+        :param pKVReportOnly: boolean set to true if the kveditor in only
                               supposed to run in report mode (False by default)
-        @param pKvDataFixAlternate: dictionary - of command data to be used
+        :param pKvDataFixAlternate: dictionary - of command data to be used
                                     for alternate fix actions (empty
                                     dictionary by default)
-        @return: pointer to the configuration item
+        :returns: pointer to the configuration item
         @note: kveditorName is essential
+
         '''
         success = True
         if success:
@@ -612,14 +620,15 @@ LANL-stonix."""
 ###############################################################################
 
     def getKVEditor(self, pKVEditorName):
-        '''
-        gets a kveditor by name and loads it into the current kveditor values
+        '''gets a kveditor by name and loads it into the current kveditor values
         of the object.
         @author: ekkehard j. koch
-        @param self:essential if you override this definition
-        @param pKVEditorName: string - required kveditorname
-        @return: boolean - true
+
+        :param self: essential if you override this definition
+        :param pKVEditorName: string - required kveditorname
+        :returns: boolean - true
         @note: kveditorName is essential
+
         '''
         self.saveKVEditor()
         self.kveditorName = pKVEditorName
@@ -655,13 +664,14 @@ LANL-stonix."""
 ###############################################################################
 
     def saveKVEditor(self):
-        '''
-        saves the current kveditor values into the dictionary.
+        '''saves the current kveditor values into the dictionary.
         @author: ekkehard j. koch
-        @param self:essential if you override this definition
-        @param pKVEditorName: string - required kveditorname
-        @return: boolean - true
+
+        :param self: essential if you override this definition
+        :param pKVEditorName: string - required kveditorname
+        :returns: boolean - true
         @note: kveditorName is essential
+
         '''
         if not (self.kveditorName == ""):
             item = {"kveventid": self.kveventid,
@@ -690,12 +700,13 @@ LANL-stonix."""
 ###############################################################################
 
     def resetKVEditorValues(self):
-        '''
-        reset the current kveditor values to their defaults.
+        '''reset the current kveditor values to their defaults.
         @author: ekkehard j. koch
-        @param self:essential if you override this definition
-        @return: boolean - true
+
+        :param self: essential if you override this definition
+        :returns: boolean - true
         @note: kveditorName is essential
+
         '''
         success = True
         self.kveditorName = ""
@@ -723,12 +734,14 @@ LANL-stonix."""
 ###############################################################################
 
     def resultAppend(self, pMessage=""):
-        '''
-        reset the current kveditor values to their defaults.
+        '''reset the current kveditor values to their defaults.
         @author: ekkehard j. koch
-        @param self:essential if you override this definition
-        @return: boolean - true
+
+        :param self: essential if you override this definition
+        :param pMessage:  (Default value = "")
+        :returns: boolean - true
         @note: kveditorName is essential
+
         '''
         datatype = type(pMessage)
         if datatype == types.StringType:
@@ -756,12 +769,13 @@ LANL-stonix."""
 ###############################################################################
 
     def resultReset(self):
-        '''
-        reset the current kveditor values to their defaults.
+        '''reset the current kveditor values to their defaults.
         @author: ekkehard j. koch
-        @param self:essential if you override this definition
-        @return: boolean - true
+
+        :param self: essential if you override this definition
+        :returns: boolean - true
         @note: kveditorName is essential
+
         '''
         self.detailedresults = ""
 

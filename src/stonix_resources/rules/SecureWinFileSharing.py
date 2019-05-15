@@ -41,10 +41,11 @@ import traceback
 
 
 class SecureWinFileSharing(RuleKVEditor):
-    '''
-    This class will secure samba file sharing
-
+    '''This class will secure samba file sharing
+    
     @author: Breen Malmberg
+
+
     '''
 
     def __init__(self, config, environ, logger, statechglogger):
@@ -142,12 +143,14 @@ value of SecureWinFileSharing to False.'''
                                      kvintent, kvconftype)
 
     def isapplicable(self):
-        '''
-        determine applicability
+        '''determine applicability
 
-        @return: applicability
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: applicability
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         applicability = False
@@ -160,13 +163,15 @@ value of SecureWinFileSharing to False.'''
         return applicability
 
     def report(self):
-        '''
-        Report whether the current smb.conf file has the necessary/specified configuration directives
+        '''Report whether the current smb.conf file has the necessary/specified configuration directives
         Update self.compliant, self.currstate and self.detailedresults
 
-        @return: self.compliant
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: self.compliant
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         self.detailedresults = ""
@@ -193,12 +198,14 @@ value of SecureWinFileSharing to False.'''
         return self.compliant
 
     def fix(self):
-        '''
-        Make secure configuration changes to smb.conf
+        '''Make secure configuration changes to smb.conf
 
-        @return: self.rulesuccess
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: self.rulesuccess
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         # defaults

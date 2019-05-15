@@ -43,22 +43,22 @@ WARNING! FIX ME! Is this object still relevant? Can we remove this?
 
 class View:
 
-    """
-    Abstract class. Not intended to be instantiated, only inherited.
+    '''Abstract class. Not intended to be instantiated, only inherited.
     :version:
     :author:
-    """
+
+
+    '''
     def __init__(self):
         
         #self.controller = controller
         pass
 
     def update(self, subject):
-        """
-        Called when isDirty message is received.
+        '''Called when isDirty message is received.
         GUI and CLI versions are independent of each other.
 
-        @return  :
-        @author
-        """
+        :param subject: ???
+        :returns: void
+        '''
         pass

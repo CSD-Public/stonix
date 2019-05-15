@@ -36,14 +36,10 @@ from src.stonix_resources.localize import PROXY
 
 
 class zzzTestFrameworkHelpLinks(unittest.TestCase):
-    """
-    Class for testing the HelpLinks
-    """
+    '''Class for testing the HelpLinks'''
 
     def setUp(self):
-        """
-        set up handlers and objects and any other conditions for use in the class
-        """
+        '''set up handlers and objects and any other conditions for use in the class'''
 
         self.environ = Environment()
         self.logger = LogDispatcher(self.environ)
@@ -60,14 +56,16 @@ class zzzTestFrameworkHelpLinks(unittest.TestCase):
         urllib2.install_opener(opener)
 
     def get_links(self):
-        """
-        return a (unique) list of all web links in all html help files in
+        '''return a (unique) list of all web links in all html help files in
         stonix help folder
 
-        @return: help_files_list
-        @rtype: list
-        @author: Breen Malmberg
-        """
+
+        :returns: help_files_list
+
+        :rtype: list
+@author: Breen Malmberg
+
+        '''
 
         help_files_list = self.get_help_files()
         help_links = []
@@ -91,13 +89,15 @@ class zzzTestFrameworkHelpLinks(unittest.TestCase):
         return help_links
 
     def get_help_files(self):
-        """
-        return a list of all html help files within stonix help folder
+        '''return a list of all html help files within stonix help folder
 
-        @return: help_files_list
-        @rtype: list
-        @author: Breen Malmberg
-        """
+
+        :returns: help_files_list
+
+        :rtype: list
+@author: Breen Malmberg
+
+        '''
 
         help_files_list = []
 
@@ -120,11 +120,12 @@ class zzzTestFrameworkHelpLinks(unittest.TestCase):
         return help_files_list
 
     def test_links(self):
-        """
-        test all web links to make sure each one is reachable/valid
-
+        '''test all web links to make sure each one is reachable/valid
+        
         @author: Breen Malmberg
-        """
+
+
+        '''
 
         help_links = self.get_links()
 

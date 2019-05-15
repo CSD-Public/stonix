@@ -23,15 +23,16 @@ from logdispatcher import LogPriority
 
 
 class Pkghelper(object):
-    '''
-     Package helper class that interacts with rules needing to install, remove
+    '''Package helper class that interacts with rules needing to install, remove
      or check the status of software packages. Relies on platform specific
      subclasses to do the heavy lifting.
-
+    
     @author: Derek T Walker  July 2012
     @change: 2015/08/20 eball - Added getPackageFromFile
     @change: 2015/09/04 rsn - Gave default value to self.pckgr for OSs that
                               are not included, specifically OS X.
+
+
     '''
 
     def __init__(self, logdispatcher, environment):
@@ -76,12 +77,13 @@ class Pkghelper(object):
             self.pckgr = None
 
     def determineMgr(self):
-        '''
-        determines the package manager for the current os
-
+        '''determines the package manager for the current os
+        
         @author: ???
         @change: Breen Malmberg - Feb 25 2019 - added "packageMgr" return variable
                 initialization; added doc string
+
+
         '''
 
         packageMgr = None
@@ -125,15 +127,16 @@ class Pkghelper(object):
             raise
 
     def install(self, package):
-        '''
-        Install the named package. Return a bool indicating installation
+        '''Install the named package. Return a bool indicating installation
         success or failure.
 
-        @param string package : Name of the package to be installed, must be
+        :param string: package : Name of the package to be installed, must be
             recognizable to the underlying package manager.
-        @return bool :
+        :param package: 
+        :returns: bool :
         @author: Derek T Walker July 2012
         @change: Breen Malmberg - Feb 25 2019 - Removed unreachable code line 146
+
         '''
 
         try:
@@ -154,13 +157,14 @@ install command"
             raise
 
     def remove(self, package):
-        '''
-        Remove a package. Return a bool indicating success or failure.
+        '''Remove a package. Return a bool indicating success or failure.
 
-        @param string package : Name of the package to be removed, must be
+        :param string: package : Name of the package to be removed, must be
             recognizable to the underlying package manager.
-        @return bool :
+        :param package: 
+        :returns: bool :
         @author Derek T Walker July 2012
+
         '''
 
         try:
@@ -181,15 +185,16 @@ remove command"
             raise
 
     def check(self, package):
-        '''
-        Check for the existence of a package in the package manager.
+        '''Check for the existence of a package in the package manager.
         Return a bool; True if found.
 
-        @param string package : Name of the package whose installation status
+        :param string: package : Name of the package whose installation status
             is to be checked. Must be recognizable to the underlying package
             manager.
-        @return bool :
+        :param package: 
+        :returns: bool :
         @author Derek T Walker July 2012
+
         '''
 
         try:
@@ -205,16 +210,16 @@ remove command"
             raise
 
     def checkAvailable(self, package):
-        '''
-        check the reachable repositories to see if the specified package
+        '''check the reachable repositories to see if the specified package
         is available to install or not
 
-        @param package: string; name of package to check
-        @return: True/False
-        @rtype: bool
-        @author: ???
-        @change: Breen Malmberg - Feb 25 2019 - added doc string; moved
-                unreachable logging call to before call to raise, on line 228
+        :param package: string; name of package to check
+        :returns: True/False
+        :rtype: bool
+@author: ???
+@change: Breen Malmberg - Feb 25 2019 - added doc string; moved
+        unreachable logging call to before call to raise, on line 228
+
         '''
 
         try:
@@ -230,17 +235,17 @@ remove command"
             raise
 
     def checkUpdate(self, package=""):
-        '''
-        check for updates on the system
+        '''check for updates on the system
         return True if there are updates available
         return False if there are no updates available
 
-        @param package: string; name of package to check for. If
+        :param package: string; name of package to check for. If
                 no package is specified, the rule will check for
-                ANY updates available to the system
-        @return: updatesavail
-        @rtype: bool
-        @author: Breen Malmberg
+                ANY updates available to the system (Default value = "")
+        :returns: updatesavail
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         updatesavail = False
@@ -265,16 +270,16 @@ remove command"
         return updatesavail
 
     def Update(self, package=""):
-        '''
-        update either the specified package
+        '''update either the specified package
         or all available updates if no package is specified
 
-        @param package: string; name of package to update
+        :param package: string; name of package to update
                 will update all packages if no package is
-                specified
-        @return: updated
-        @rtype: bool
-        @author: Breen Malmberg
+                specified (Default value = "")
+        :returns: updated
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         updated = True
@@ -299,13 +304,13 @@ remove command"
         return updated
 
     def getPackageFromFile(self, filename):
-        '''
-        Returns the name of the package that provides the given
+        '''Returns the name of the package that provides the given
         filename/path.
 
-        @param: string filename : The name or path of the file to resolve
-        @return: string name of package if found, None otherwise
+        :param filename: 
+        :returns: string name of package if found, None otherwise
         @author: Eric Ball
+
         '''
 
         try:
@@ -318,15 +323,15 @@ remove command"
             raise(self.detailedresults)
 
     def getInstall(self):
-        '''
-        return the commandline command for installing a package
+        '''return the commandline command for installing a package
         with the current, detected package manager
 
-        @return:
-        @rtype: string
+
+        :returns: rtype: string
         @author: ???
         @change: Breen Malmberg - Feb 25 2019 - added doc string; added try/except;
                 added logging
+
         '''
 
         try:
@@ -336,15 +341,15 @@ remove command"
             return ""
 
     def getRemove(self):
-        '''
-        return the commandline command for removing a package
+        '''return the commandline command for removing a package
         with the current, detected package manager
 
-        @return:
-        @rtype: string
+
+        :returns: rtype: string
         @author: ???
         @change: Breen Malmberg - Feb 25 2019 - added doc string; added try/except;
                 added logging
+
         '''
 
         try:

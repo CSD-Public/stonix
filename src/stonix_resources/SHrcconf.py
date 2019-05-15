@@ -28,9 +28,10 @@ from ServiceHelperTemplate import ServiceHelperTemplate
 
 
 class SHrcconf(object):
-    '''
-    SHrcconf is the Service Helper for systems using /etc/rc.conf to
+    '''SHrcconf is the Service Helper for systems using /etc/rc.conf to
     configure services. (FreeBSD and some variants)
+
+
     '''
 
     def __init__(self, environment, logdispatcher):
@@ -43,11 +44,13 @@ class SHrcconf(object):
         self.svc = '/etc/rc.d/'
 
     def disableService(self, service, **kwargs):
-        '''
-        Disables the service and terminates it if it is running.
+        '''Disables the service and terminates it if it is running.
 
-        @param string: Name of the service to be disabled
-        @return: Bool indicating success status
+        :param string: Name of the service to be disabled
+        :param service: 
+        :param **kwargs: 
+        :returns: Bool indicating success status
+
         '''
         ret2 = 0
         self.logdispatcher.log(LogPriority.DEBUG,
@@ -76,12 +79,14 @@ class SHrcconf(object):
             return False
 
     def enableService(self, service, **kwargs):
-        '''
-        Enables a service and starts it if it is not running as long as we are
+        '''Enables a service and starts it if it is not running as long as we are
         not in install mode
 
-        @param string: Name of the service to be enabled
-        @return: Bool indicating success status
+        :param string: Name of the service to be enabled
+        :param service: 
+        :param **kwargs: 
+        :returns: Bool indicating success status
+
         '''
         ret2 = 0
         self.logdispatcher.log(LogPriority.DEBUG,
@@ -110,12 +115,14 @@ class SHrcconf(object):
             return False
 
     def auditService(self, service, **kwargs):
-        '''
-        Checks the status of a service and returns a bool indicating whether or
+        '''Checks the status of a service and returns a bool indicating whether or
         not the service is configured to run or not.
 
-        @param string: Name of the service to audit
-        @return: Bool, True if the service is configured to run
+        :param string: Name of the service to audit
+        :param service: 
+        :param **kwargs: 
+        :returns: Bool, True if the service is configured to run
+
         '''
         self.logdispatcher.log(LogPriority.DEBUG,
                                'SHrcconf.audit ' + service)
@@ -133,15 +140,17 @@ class SHrcconf(object):
         return enabled
 
     def isRunning(self, service, **kwargs):
-        '''
-        Check to see if a service is currently running. The enable service uses
+        '''Check to see if a service is currently running. The enable service uses
         this so that we're not trying to start a service that is already
         running.
-
+        
         Note that this fails it's unittest due to some odd quirk of BSD.
 
-        @param sting: Name of the service to check
-        @return: bool, True if the service is already running
+        :param sting: Name of the service to check
+        :param service: 
+        :param **kwargs: 
+        :returns: bool, True if the service is already running
+
         '''
         self.logdispatcher.log(LogPriority.DEBUG,
                                'SHrcconf.isrunning ' + service)
@@ -162,13 +171,15 @@ class SHrcconf(object):
         return running
 
     def reloadService(self, service, **kwargs):
-        '''
-        Reload (HUP) a service so that it re-reads it's config files. Called
+        '''Reload (HUP) a service so that it re-reads it's config files. Called
         by rules that are configuring a service to make the new configuration
         active.
 
-        @param string: Name of the service to reload
-        @return: bool indicating success status
+        :param string: Name of the service to reload
+        :param service: 
+        :param **kwargs: 
+        :returns: bool indicating success status
+
         '''
         self.logdispatcher.log(LogPriority.DEBUG,
                                'SHrcconf.reload ' + service)
@@ -185,13 +196,14 @@ class SHrcconf(object):
                 return True
 
     def listServices(self, **kwargs):
-        '''
-        Walk through the FreeBSD service control files in rc.d and gather
+        '''Walk through the FreeBSD service control files in rc.d and gather
         the service names. We have to do this this way because some services
         <cough> sendmail </cough> have multiple names from a single rc.d
         file.
 
-        @return: list of strings which are service names
+        :param **kwargs: 
+        :returns: list of strings which are service names
+
         '''
         self.logdispatcher.log(LogPriority.DEBUG,
                                'SHrcconf.listservices')
@@ -211,14 +223,16 @@ class SHrcconf(object):
         return servicelist
 
     def editrcconf(self, service, enabled):
-        '''
-        This method assists the enable and disable methods in editing the
+        '''This method assists the enable and disable methods in editing the
         /etc/rc.conf file. It expects to be passed a service name
         (without _enable) and a bool for enabled. True equates to "YES" in the
         rc.conf and False to "NO".
 
-        @param string: service name
-        @param bool: enabled status
+        :param string: service name
+        :param bool: enabled status
+        :param service: 
+        :param enabled: 
+
         '''
         self.logdispatcher.log(LogPriority.DEBUG,
                                'SHrcconf.editrcconf ' + service + str(enabled))

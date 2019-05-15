@@ -39,14 +39,15 @@ from ..stonixutilityfunctions import iterate, writeFile, readFile, createFile, c
 
 
 class ConfigureLinuxFirewall(Rule):
-    '''
-    The configureLinuxFirewall class attempts to audit and configure firewalls
+    '''The configureLinuxFirewall class attempts to audit and configure firewalls
     for Linux OS based systems. Note: there is tremendous variations in the
     approach taken by the various distributions on how to manage firewalls,
     this code should work effectively for debian, ubuntu, RHEL and close
     derivatives. Note: unlike many other rules this behaves as a binary state
     manager, the undo will set the system back to an as new state with no
     firewalls.
+
+
     '''
 
     def __init__(self, config, environ, logger, statechglogger):
@@ -91,15 +92,16 @@ CONFIGURELINUXFIREWALL to False.'''
         self.iditerator = 0
 
     def report(self):
-        """
-        Report on whether the firewall meets baseline expectations.
+        '''Report on whether the firewall meets baseline expectations.
 
-        @return: bool
+
+        :returns: bool
         @author: D.Kennel
         @change: dwalker - updating rule to check for every possible firewall
             implementation and configure it rather than mutually exclusively
             checking based on system.
-        """
+
+        '''
         try:
             compliant = True
             iptablesrunning = False
@@ -268,11 +270,12 @@ CONFIGURELINUXFIREWALL to False.'''
         return self.compliant
 
     def fix(self):
-        """
-        Enable the firewall services and establish basic rules if needed.
-
+        '''Enable the firewall services and establish basic rules if needed.
+        
         @author: D. Kennel
-        """
+
+
+        '''
         try:
             if not self.clfci.getcurrvalue():
                 return

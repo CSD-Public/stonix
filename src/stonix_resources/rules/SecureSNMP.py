@@ -51,9 +51,7 @@ from ..KVEditorStonix import KVEditorStonix
 
 
 class SecureSNMP(Rule):
-    '''
-    classdocs
-    '''
+    '''classdocs'''
 
     def __init__(self, config, environ, logger, statechglogger):
         '''
@@ -112,11 +110,12 @@ class SecureSNMP(Rule):
                 self.snmpdconflocations.append(path)
 
     def report(self):
-        '''
-        Determine which report method(s) to run and run them
+        '''Determine which report method(s) to run and run them
 
-        @return bool
+
+        :returns: bool
         @author bemalmbe
+
         '''
 
         # defaults
@@ -160,9 +159,7 @@ class SecureSNMP(Rule):
         return self.compliant
 
     def reportmac(self):
-        '''
-        @author: Breen Malmberg
-        '''
+        '''@author: Breen Malmberg'''
 
         configured = True
 
@@ -190,11 +187,12 @@ class SecureSNMP(Rule):
         return configured
 
     def reportDisableSNMP(self):
-        '''
-        Determine whether SNMP service is disabled and uninstalled
+        '''Determine whether SNMP service is disabled and uninstalled
 
-        @return bool
+
+        :returns: bool
         @author bemalmbe
+
         '''
 
         # defaults
@@ -224,11 +222,12 @@ class SecureSNMP(Rule):
             return False
 
     def reportConfigureSNMP(self):
-        '''
-        Determine whether the SNMP service is securely configured
+        '''Determine whether the SNMP service is securely configured
 
-        @return bool
+
+        :returns: bool
         @author bemalmbe
+
         '''
 
         # defaults
@@ -309,10 +308,11 @@ class SecureSNMP(Rule):
             return False
 
     def fix(self):
-        '''
-        Determine which fix method(s) to run and run them
-
+        '''Determine which fix method(s) to run and run them
+        
         @author bemalmbe
+
+
         '''
 
         self.detailedresults = ""
@@ -349,9 +349,7 @@ class SecureSNMP(Rule):
         return self.rulesuccess
 
     def fixmac(self):
-        '''
-        @author: Breen Malmberg
-        '''
+        '''@author: Breen Malmberg'''
 
         success = True
 
@@ -376,10 +374,11 @@ class SecureSNMP(Rule):
         return success
 
     def fixDisableSNMP(self):
-        '''
-        Disable the SNMP service and uninstall the package for it
-
+        '''Disable the SNMP service and uninstall the package for it
+        
         @author bemalmbe
+
+
         '''
 
         try:
@@ -399,12 +398,13 @@ class SecureSNMP(Rule):
             raise
 
     def fixConfigureSNMP(self):
-        '''
-        Securely configure the SNMP service. This option should be used instead
+        '''Securely configure the SNMP service. This option should be used instead
         of disabling SNMP only if there is a mission-critical need for the
         SNMP service to operate in the environment.
-
+        
         @author bemalmbe
+
+
         '''
 
 # set auth type to SHA, security model version to 3, and security level to

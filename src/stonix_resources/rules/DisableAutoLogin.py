@@ -46,9 +46,7 @@ from ..logdispatcher import LogPriority
 
 
 class DisableAutoLogin(RuleKVEditor):
-    """
-    This class disables Auto Login on the system.
-    """
+    '''This class disables Auto Login on the system.'''
     def __init__(self, config, environ, logdispatcher, statechglogger):
         '''
         Constructor
@@ -97,10 +95,11 @@ class DisableAutoLogin(RuleKVEditor):
         self.sethelptext()
 
     def report(self):
-        '''
-        Report on the status of this rule
-
+        '''Report on the status of this rule
+        
         @author: Roy Nielsen
+
+
         '''
         try:
             self.detailedresults = ""
@@ -130,10 +129,11 @@ class DisableAutoLogin(RuleKVEditor):
         return self.compliant
 
     def fix(self):
-        '''
-        Disables Auto Login
-
+        '''Disables Auto Login
+        
         @author: Roy Nielsen
+
+
         '''
         try:
             self.detailedresults = ""

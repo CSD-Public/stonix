@@ -74,11 +74,12 @@ class zzzTestRuleEnableKernelAuditing(RuleTest):
         self.simpleRuleTest()
 
     def setConditionsForRule(self):
-        '''
-        Configure system for the unit test
-        @param self: essential if you override this definition
-        @return: boolean - If successful True; If failure False
+        '''Configure system for the unit test
+
+        :param self: essential if you override this definition
+        :returns: boolean - If successful True; If failure False
         @author: ekkehard j. koch
+
         '''
 
         success = True
@@ -103,29 +104,32 @@ class zzzTestRuleEnableKernelAuditing(RuleTest):
         return success
 
     def test_freqci_in_range(self):
-        '''
-        test if the frequency ci value is within range
-
+        '''test if the frequency ci value is within range
+        
         @author: Breen Malmberg
+
+
         '''
 
         allowable_freq_range = range(1,100)
         self.assertTrue(self.rule.freqci.getcurrvalue() in allowable_freq_range)
 
     def test_flushtype_valid(self):
-        '''
-        test if the flush type ci value is a valid flush type
-
+        '''test if the flush type ci value is a valid flush type
+        
         @author: Breen Malmberg
+
+
         '''
 
         allowable_flush_types = ['data', 'incremental', 'sync']
         self.assertTrue(self.rule.flushtypeci.getcurrvalue() in allowable_flush_types)
 
     def test_get_system_arch(self):
-        '''
-        test the command to get the system arch
+        '''test the command to get the system arch
         @author: Breen Malmberg
+
+
         '''
 
         found = False
@@ -143,19 +147,21 @@ class zzzTestRuleEnableKernelAuditing(RuleTest):
         self.assertEqual(found, True)
 
     def test_get_suid_files(self):
-        '''
-        test the command to find suid files
+        '''test the command to find suid files
         @author: Breen Malmberg
+
+
         '''
 
         self.ch.executeCommand('/usr/bin/find / -xdev -type f -perm -4000 -o -type f -perm -2000')
         self.assertEqual(0, self.ch.getReturnCode())
 
     def test_release_file_exists(self):
-        '''
-        does at least one of the release file paths that the code relies on exist?
+        '''does at least one of the release file paths that the code relies on exist?
         linux-only
         @author: Breen Malmberg
+
+
         '''
 
         if self.environ.getosfamily() == 'darwin':
@@ -170,10 +176,11 @@ class zzzTestRuleEnableKernelAuditing(RuleTest):
         self.assertEqual(found, True)
 
     def test_grub_cfg_file_exists(self):
-        '''
-        does at least one of the grub config file paths that the code relies on exist?
+        '''does at least one of the grub config file paths that the code relies on exist?
         linux-only
         @author: Breen Malmberg
+
+
         '''
 
         if self.environ.getosfamily() == 'darwin':
@@ -188,13 +195,14 @@ class zzzTestRuleEnableKernelAuditing(RuleTest):
         self.assertEqual(found, True)
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
-        '''
-        check on whether report was correct
-        @param self: essential if you override this definition
-        @param pCompliance: the self.iscompliant value of rule
-        @param pRuleSuccess: did report run successfully
-        @return: boolean - If successful True; If failure False
+        '''check on whether report was correct
+
+        :param self: essential if you override this definition
+        :param pCompliance: the self.iscompliant value of rule
+        :param pRuleSuccess: did report run successfully
+        :returns: boolean - If successful True; If failure False
         @author: ekkehard j. koch
+
         '''
         self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " + \
                              str(pCompliance) + ".")
@@ -204,12 +212,13 @@ class zzzTestRuleEnableKernelAuditing(RuleTest):
         return success
 
     def checkFixForRule(self, pRuleSuccess):
-        '''
-        check on whether fix was correct
-        @param self: essential if you override this definition
-        @param pRuleSuccess: did report run successfully
-        @return: boolean - If successful True; If failure False
+        '''check on whether fix was correct
+
+        :param self: essential if you override this definition
+        :param pRuleSuccess: did report run successfully
+        :returns: boolean - If successful True; If failure False
         @author: ekkehard j. koch
+
         '''
         self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
                              str(pRuleSuccess) + ".")
@@ -217,12 +226,13 @@ class zzzTestRuleEnableKernelAuditing(RuleTest):
         return success
 
     def checkUndoForRule(self, pRuleSuccess):
-        '''
-        check on whether undo was correct
-        @param self: essential if you override this definition
-        @param pRuleSuccess: did report run successfully
-        @return: boolean - If successful True; If failure False
+        '''check on whether undo was correct
+
+        :param self: essential if you override this definition
+        :param pRuleSuccess: did report run successfully
+        :returns: boolean - If successful True; If failure False
         @author: ekkehard j. koch
+
         '''
         self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
                              str(pRuleSuccess) + ".")

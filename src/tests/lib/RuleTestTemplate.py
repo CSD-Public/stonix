@@ -27,10 +27,11 @@ import unittest
 class RuleTest(unittest.TestCase):
 
     def setUp(self):
-        '''
-        Setup what we need for the test.
+        '''Setup what we need for the test.
         @author: ekkehard j. koch
-        @param self:essential if you override this definition
+
+        :param self: essential if you override this definition
+
         '''
         self.environ = Environment()
         self.environ.setverbosemode(True)
@@ -47,20 +48,22 @@ class RuleTest(unittest.TestCase):
 ###############################################################################
 
     def tearDown(self):
-        '''
-        Release anything we no longer need what we need for the test.
+        '''Release anything we no longer need what we need for the test.
         @author: ekkehard j. koch
-        @param self:essential if you override this definition
+
+        :param self: essential if you override this definition
+
         '''
         pass
 
 ###############################################################################
 
     def simpleRuleTest(self):
-        '''
-        Run a simple Report, Fix, Report Cycle
+        '''Run a simple Report, Fix, Report Cycle
         @author: ekkehard j. koch
-        @param self:essential if you override this definition
+
+        :param self: essential if you override this definition
+
         '''
         nextstep = True
         prefixHeadline = "################################################### "

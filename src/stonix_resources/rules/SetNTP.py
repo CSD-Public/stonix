@@ -47,9 +47,7 @@ from ..CommandHelper import CommandHelper
 from ..get_libc import getLibc
 
 class SetNTP(Rule):
-    '''
-    The SetNTP class sets the ntpd and ntp config for each client.
-    '''
+    '''The SetNTP class sets the ntpd and ntp config for each client.'''
 
     def __init__(self, config, environ, logger, statechglogger):
         '''
@@ -132,13 +130,15 @@ class SetNTP(Rule):
 ###############################################################################
 
     def report(self):
-        '''
-        determine whether the fix() method of this rule has run successfully
+        '''determine whether the fix() method of this rule has run successfully
         yet or not
 
-        @return: self.compliant
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: self.compliant
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         self.detailedresults = ""
@@ -176,13 +176,14 @@ class SetNTP(Rule):
 ###############################################################################
 
     def report_darwin(self):
-        '''
-        determine rule compliance status for darwin based systems
+        '''determine rule compliance status for darwin based systems
 
-        @return: bool
+
+        :returns: bool
         @author: ekkehard j. koch
         @change: 08/26/2014 Breen Malmberg added detailedresults message updates to
                 indicate which config items are missing/incorrect
+
         '''
 
         # defaults
@@ -235,11 +236,12 @@ class SetNTP(Rule):
 
 ###############################################################################
     def report_non_darwin(self):
-        '''
-        determine rule compliance status for linux based systems
+        '''determine rule compliance status for linux based systems
 
-        @return: bool
+
+        :returns: bool
         @author: Breen Malmberg
+
         '''
 
         # defaults
@@ -261,8 +263,7 @@ class SetNTP(Rule):
 
 ###############################################################################
     def report_chrony(self):
-        '''
-        '''
+        ''' '''
 
         # defaults
         conffile = '/etc/chrony/chrony.conf'
@@ -327,8 +328,7 @@ class SetNTP(Rule):
 
 ###############################################################################
     def report_ntp(self):
-        '''
-        '''
+        ''' '''
 
         # defaults
         retval = False
@@ -406,12 +406,14 @@ class SetNTP(Rule):
 
 ###############################################################################
     def fix(self):
-        '''
-        Decide which fix sub method to run, and run it to configure ntp/chrony
+        '''Decide which fix sub method to run, and run it to configure ntp/chrony
 
-        @return: self.rulesuccess
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: self.rulesuccess
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         # UPDATE THIS SECTION IF THE CONSTANTS BEING USED IN THIS CLASS CHANGE
@@ -455,10 +457,11 @@ class SetNTP(Rule):
 ###############################################################################
 
     def fix_darwin(self):
-        '''
-        private method to perform fix operations for mac os x machines
-
+        '''private method to perform fix operations for mac os x machines
+        
         @author: Breen Malmberg
+
+
         '''
 
         # defaults
@@ -600,15 +603,16 @@ class SetNTP(Rule):
 
 ###############################################################################
     def fix_non_darwin(self):
-        '''
-        check to see if ntp is installed and if it is not, then install it.
+        '''check to see if ntp is installed and if it is not, then install it.
         check to see if ntp is properly configured and if it is not, then
         configure it.
 
-        @return: bool
+
+        :returns: bool
         @author: Breen Malmberg
         @change: 08/27/2014 Breen Malmberg added blank line to bottom in accordance
                 with pep8
+
         '''
 
         try:
@@ -705,16 +709,17 @@ class SetNTP(Rule):
 
 ###############################################################################
     def parseVersion(self):
-        '''
-        This method checks the version of the OS to determine whether or not it
+        '''This method checks the version of the OS to determine whether or not it
         is using chrony or openNTPD by default.
-        
-        @return: Bool True if the system uses chrony
+
+
+        :returns: Bool True if the system uses chrony
         @author: Breen Malmberg
         @change: Modified to correct for bugs in Environment object by D. Kennel
         @change: Breen Malmberg - 2/1/2017 - fixed bug with variable osname being
                 referenced before assignment if the osname was not found in the osversion
                 dictionary
+
         '''
 
         # defaults

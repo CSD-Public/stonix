@@ -183,14 +183,15 @@ class ConfigureScreenLocking(RuleKVEditor):
             self.ch = CommandHelper(self.logger)
 
     def report(self):
-        '''
-        ConfigureScreenLocking.report() method to report whether system
+        '''ConfigureScreenLocking.report() method to report whether system
         is configured to screen locking NSA standards.  If the system is linux,
         although many desktops are available, this rule will only check the
         two most popular desktops, KDE, and Gnome.
         @author: dwalker
-        @param self - essential if you override this definition
-        @return: bool - True if system is compliant, False if it isn't
+
+        :param self: essential if you override this definition
+        :returns: bool - True if system is compliant, False if it isn't
+
         '''
 
         self.detailedresults = ""
@@ -242,27 +243,29 @@ class ConfigureScreenLocking(RuleKVEditor):
         return self.compliant
 
     def reportMac(self):
-        '''
-        Mac osx specific report submethod
-
+        '''Mac osx specific report submethod
+        
         @author: dwalker
-        @param self - essential if you override this definition
-        @return: bool - True if system is compliant, False if it isn't
+
+        :param self: essential if you override this definition
+        :returns: bool - True if system is compliant, False if it isn't
+
         '''
         success = RuleKVEditor.report(self, True)
         return success
 
     def reportGnome(self):
-        '''
-        determines if gnome is installed, if so, checks to see if the
+        '''determines if gnome is installed, if so, checks to see if the
         return value strings from running the gconftool-2 command are
         correct.  Gconftool-2 command only works in root mode so if not root
         do not audit gnome and just return true
-
+        
         @author: dwalker
-        @param self - essential if you override this definition
-        @return: bool
+
+        :param self: essential if you override this definition
+        :returns: bool
         @change: dwalker - mass refactor, added comments
+
         '''
 
         compliant = True
@@ -481,15 +484,16 @@ class ConfigureScreenLocking(RuleKVEditor):
         return compliant
 
     def reportKde(self):
-        '''
-        determines if kde is installed, if so, ensures kde is configured
+        '''determines if kde is installed, if so, ensures kde is configured
         by enabling screenlocking, automatically going black after 14 minutes
         and if inactivity ensues after 14 minutes, screen fully locks after 1
         additional minute of inactivity for a total of 15 minutes activity
-
+        
         @author: dwalker
-        @param self - essential if you override this definition
-        @return: bool
+
+        :param self: essential if you override this definition
+        :returns: bool
+
         '''
         self.kdefix = {}
         if self.ph.manager == "apt-get" or self.ph.manager == "zypper":
@@ -566,12 +570,13 @@ class ConfigureScreenLocking(RuleKVEditor):
                     return True
 
     def fix(self):
-        '''
-        ConfigureScreenLocking.fix() method to correct screen locking
-
+        '''ConfigureScreenLocking.fix() method to correct screen locking
+        
         @author: dwalker
-        @param self - essential if you override this definition
-        @return: bool - True if fix is successful, False if it isn't
+
+        :param self: essential if you override this definition
+        :returns: bool - True if fix is successful, False if it isn't
+
         '''
 
         self.detailedresults = ""
@@ -617,9 +622,11 @@ class ConfigureScreenLocking(RuleKVEditor):
         necessarily mean your system is out of compliance.  If the fix fails
         Please check the logs to determing the real reason of non rule success.
         @author: dwalker
-        @param self - essential if you override this definition
-        @return: bool - True if KDE is successfully configured, False if it
+
+        :param self: essential if you override this definition
+        :returns: bool - True if KDE is successfully configured, False if it
                 isn't
+
         '''
 
         success = True
@@ -669,9 +676,11 @@ class ConfigureScreenLocking(RuleKVEditor):
         '''ensures gnome is configured to automatically screen lock after
         15 minutes of inactivity, if gnome is installed
         @author: dwalker
-        @param self - essential if you override this definition
-        @return: bool - True if gnome is successfully configured, False if it
+
+        :param self: essential if you override this definition
+        :returns: bool - True if gnome is successfully configured, False if it
                 isn't
+
         '''
         info = ""
         success = True
@@ -818,12 +827,13 @@ class ConfigureScreenLocking(RuleKVEditor):
 
 
     def fixMac(self):
-        '''
-        Mac osx specific fix submethod
-
+        '''Mac osx specific fix submethod
+        
         @author: dwalker
-        @param self - essential if you override this definition
-        @return: bool - True if system is successfully fix, False if it isn't
+
+        :param self: essential if you override this definition
+        :returns: bool - True if system is successfully fix, False if it isn't
+
         '''
         success = RuleKVEditor.fix(self, True)
         return success
@@ -832,8 +842,10 @@ class ConfigureScreenLocking(RuleKVEditor):
         '''temporary method to separate the code to find directives from the
         rest of the code.  Will put back all in one method eventually
         @author: dwalker
-        @return: bool
-        @param filehandle: string
+
+        :param filehandle: string
+        :returns: bool
+
         '''
         self.editor = ""
         kvt = "tagconf"
@@ -852,9 +864,13 @@ class ConfigureScreenLocking(RuleKVEditor):
         '''separate method to find the correct contents of each file passed in
         as a parameter.
         @author: dwalker
-        @return: bool
-        @param filehandle: string
-         '''
+
+        :param filehandle: string
+        :param kfile: 
+        :param user: 
+        :returns: bool
+
+        '''
         success = True
         self.editor = ""
         debug = ""

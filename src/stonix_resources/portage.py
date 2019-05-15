@@ -23,10 +23,9 @@ import glob
 
 
 class Portage(object):
-    '''
-    The template class that provides a framework that must be implemented by
+    '''The template class that provides a framework that must be implemented by
     all platform specific pkgmgr classes.
-
+    
     :version:
     @author: Derek T Walker 08-06-2012
     @change: Breen Malmberg - 4/18/2017 - minor method edits; added doc strings;
@@ -34,6 +33,8 @@ class Portage(object):
             reset in __init__ of this class (should only be done in rule template
             and the individual rules); fixed some pep8 grammar; fixed the location
             of emerge (changed 'emerge' to '/usr/bin/emerge')
+
+
     '''
 
     def __init__(self, logger):
@@ -45,17 +46,17 @@ class Portage(object):
 
 ###############################################################################
     def installpackage(self, package):
-        '''
-        Install a package. Return a bool indicating success or failure.
+        '''Install a package. Return a bool indicating success or failure.
 
-        @param package: string; Name of the package to be installed, must be 
+        :param package: string; Name of the package to be installed, must be
                 recognizable to the underlying package manager.
-        @return installed
-        @rtype: bool
-        @author: Derek T Walker 08-06-2012
-        @change: Breen Malmberg - 4/18/2017 - fixed return var logic; fixed
-                doc string; added parameter validation; changed detailedresults
-                to logging
+        :returns: installed
+        :rtype: bool
+@author: Derek T Walker 08-06-2012
+@change: Breen Malmberg - 4/18/2017 - fixed return var logic; fixed
+        doc string; added parameter validation; changed detailedresults
+        to logging
+
         '''
 
         installed = False
@@ -84,17 +85,17 @@ class Portage(object):
 
 ###############################################################################
     def removepackage(self, package):
-        '''
-        Remove a package. Return a bool indicating success or failure.
+        '''Remove a package. Return a bool indicating success or failure.
 
-        @param package: string; Name of the package to be removed, must be 
+        :param package: string; Name of the package to be removed, must be
                 recognizable to the underlying package manager.
-        @return: removed
-        @rtype: bool
-        @author: Derek T Walker 08-6-2012
-        @change: Breen Malmberg - 4/18/2017 - minor edit; replaced detailedresults
-                with logging; fixed return var logic; added parameter validation;
-                fixed doc string
+        :returns: removed
+        :rtype: bool
+@author: Derek T Walker 08-6-2012
+@change: Breen Malmberg - 4/18/2017 - minor edit; replaced detailedresults
+        with logging; fixed return var logic; added parameter validation;
+        fixed doc string
+
         '''
 
         removed = False
@@ -123,20 +124,20 @@ class Portage(object):
 
 ###############################################################################
     def checkInstall(self, package):
-        '''
-        Check the installation status of a package. Return a bool; 
+        '''Check the installation status of a package. Return a bool;
         True if the package is installed.
 
-        @param package: string; Name of the package whose installation status 
-                is to be checked, must be recognizable to the underlying package 
+        :param package: string; Name of the package whose installation status
+                is to be checked, must be recognizable to the underlying package
                 manager
-        @return installed
-        @rtype: bool
-        @author: Derek T. Walker
-        @change: Breen Malmberg - 4/18/2017 - fixed doc string; minor edit;
-                replaced detailedresults with logging (detailedresults should
-                be handled in the calling rule); changed name of return var;
-                added parameter validation
+        :returns: installed
+        :rtype: bool
+@author: Derek T. Walker
+@change: Breen Malmberg - 4/18/2017 - fixed doc string; minor edit;
+        replaced detailedresults with logging (detailedresults should
+        be handled in the calling rule); changed name of return var;
+        added parameter validation
+
         '''
 
         installed = False
@@ -171,18 +172,18 @@ class Portage(object):
 
 ###############################################################################
     def checkAvailable(self, package):
-        '''
-        check if the specified package is available
+        '''check if the specified package is available
         return True if found
         return False if not found
 
-        @param package: string; name of package to check for
-        @return: found
-        @rtype: bool
-        @author: Derek T. Walker
-        @change: Breen Malmberg - 4/18/2017 - added doc string; minor edit;
-                parameter validation added; added code comments; added logging;
-                replaced detailedresults with logging
+        :param package: string; name of package to check for
+        :returns: found
+        :rtype: bool
+@author: Derek T. Walker
+@change: Breen Malmberg - 4/18/2017 - added doc string; minor edit;
+        parameter validation added; added code comments; added logging;
+        replaced detailedresults with logging
+
         '''
 
         available = False
@@ -209,15 +210,15 @@ class Portage(object):
         return available
 
     def checkUpdate(self, package=""):
-        '''
-        check for updates for the specified package
+        '''check for updates for the specified package
         or if not package is specified, check for
         all updates on the system
 
-        @param package: string; name of package, for which, to check updates
-        @return: updatesavail
-        @rtype: bool
-        @author: Breen Malmberg
+        :param package: string; name of package, for which, to check updates (Default value = "")
+        :returns: updatesavail
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         # defaults
@@ -246,14 +247,15 @@ class Portage(object):
         return updatesavail
 
     def Update(self, package=""):
-        '''
-        update either the specified package or all packages
+        '''update either the specified package or all packages
         on the system, if no package is specified
 
-        @param pacakge: string; name of package to update
-        @return: updated
-        @rtype: bool
-        @author: Breen Malmberg
+        :param pacakge: string; name of package to update
+        :param package:  (Default value = "")
+        :returns: updated
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         # defaults

@@ -99,10 +99,11 @@ class DisableGUILogon(Rule):
         self.sethelptext()
 
     def report(self):
-        '''
-        @author: Eric Ball
-        @param self - essential if you override this definition
-        @return: bool - True if system is compliant, False if it isn't
+        '''@author: Eric Ball
+
+        :param self: essential if you override this definition
+        :returns: bool - True if system is compliant, False if it isn't
+
         '''
         try:
             compliant = True
@@ -260,10 +261,11 @@ class DisableGUILogon(Rule):
         return compliant, results
 
     def fix(self):
-        '''
-        @author: Eric Ball
-        @param self - essential if you override this definition
-        @return: bool - True if fix is successful, False if it isn't
+        '''@author: Eric Ball
+
+        :param self: essential if you override this definition
+        :returns: bool - True if fix is successful, False if it isn't
+
         '''
         try:
             if not self.ci1.getcurrvalue() and not self.ci2.getcurrvalue() \

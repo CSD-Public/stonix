@@ -45,9 +45,7 @@ import stat
 
 
 class XinetdAccessControl(Rule):
-    '''
-    classdocs
-    '''
+    '''classdocs'''
 
     def __init__(self, config, environ, logger, statechglogger):
         '''
@@ -82,10 +80,11 @@ class XinetdAccessControl(Rule):
             self.setvars()
 
     def setvars(self):
-        '''
-        set the values for all the class variables to be used
-
+        '''set the values for all the class variables to be used
+        
         @author: Breen Malmberg
+
+
         '''
 
         self.confpath = '/etc/xinetd.conf'
@@ -101,13 +100,13 @@ class XinetdAccessControl(Rule):
             raise
 
     def readFile(self, path):
-        '''
-        read the specified path's contents and return them in a list
+        '''read the specified path's contents and return them in a list
 
-        @param path: string the full path to the file to be read
-        @return: contentlines
-        @rtype: list
-        @author: Breen Malmberg
+        :param path: string the full path to the file to be read
+        :returns: contentlines
+        :rtype: list
+@author: Breen Malmberg
+
         '''
 
         self.logger.log(LogPriority.DEBUG, "inside readFile() method")
@@ -130,15 +129,15 @@ class XinetdAccessControl(Rule):
         return contentlines
 
     def findopt(self, path, opt):
-        '''
-        search the specified path for the specified option (opt). if found,
+        '''search the specified path for the specified option (opt). if found,
         return True, else False.
 
-        @param path: string full path to the file to be searched
-        @param opt: string regex or option to search the file for
-        @return: found
-        @rtype: bool
-        @author: Breen Malmberg
+        :param path: string full path to the file to be searched
+        :param opt: string regex or option to search the file for
+        :returns: found
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         self.logger.log(LogPriority.DEBUG, "inside findopt() method")
@@ -163,17 +162,20 @@ class XinetdAccessControl(Rule):
         return found
 
     def replaceopt(self, path, partialopt, fullopt, perms=[0600, 0, 0]):
-        '''
-        search the specified file for the option partialopt and replace it with
+        '''search the specified file for the option partialopt and replace it with
         the option fullopt, if found.
 
-        @param path: string full path to the file to be searched
-        @param partialopt: string the regex/option text to search the file for
-        @param fullopt: string the full option text to replace the found
+        :param path: string full path to the file to be searched
+        :param partialopt: string the regex/option text to search the file for
+        :param fullopt: string the full option text to replace the found
         partialopt text with
-        @return: replaced
-        @rtype: bool
-        @author: Breen Malmberg
+        :param perms:  (Default value = [0600)
+        :param 0: 
+        :param 0]: 
+        :returns: replaced
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         self.logger.log(LogPriority.DEBUG, "inside replaceopt() method")
@@ -254,15 +256,18 @@ class XinetdAccessControl(Rule):
         return replaced
 
     def writeFile(self, path, opt, perms=[0600, 0, 0]):
-        '''
-        append the option opt to the contents of the file specified by path,
+        '''append the option opt to the contents of the file specified by path,
         and write them out to the file path
 
-        @param path: string full path to the file to write to
-        @param opt: string option text to write to the file
-        @return: written
-        @rtype: bool
-        @author: Breen Malmberg
+        :param path: string full path to the file to write to
+        :param opt: string option text to write to the file
+        :param perms:  (Default value = [0600)
+        :param 0: 
+        :param 0]: 
+        :returns: written
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         self.logger.log(LogPriority.DEBUG, "inside writeFile() method")
@@ -341,17 +346,19 @@ class XinetdAccessControl(Rule):
         return written
 
     def report(self):
-        '''
-        determine whether the xinetd configuration file contains the correct
+        '''determine whether the xinetd configuration file contains the correct
         configuration settings
         determine whether the xinetd configuration file has the correct
         permissions set
         determine whether the xinetd configuration file has the correct
         ownership set
 
-        @return: self.compliant
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: self.compliant
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         self.detailedresults = ""
@@ -416,14 +423,16 @@ class XinetdAccessControl(Rule):
         return self.compliant
 
     def fix(self):
-        '''
-        write correction xinetd configuration to xinetd configuration file
+        '''write correction xinetd configuration to xinetd configuration file
         ensure correct permissions set on xinetd configuration file
         ensure correct ownership set on xinetd configuration file
 
-        @return: self.rulesuccess
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: self.rulesuccess
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         # UPDATE THIS SECTION IF THE CONSTANTS BEING USED IN THIS CLASS CHANGE

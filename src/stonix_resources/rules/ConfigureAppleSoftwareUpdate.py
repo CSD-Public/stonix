@@ -52,10 +52,9 @@ from ..logdispatcher import LogPriority
 from ..localize import APPLESOFTUPDATESERVER
 
 class ConfigureAppleSoftwareUpdate(RuleKVEditor):
-    '''
-    This Mac Only rule does three things:
+    '''This Mac Only rule does three things:
     To fix issue the following commands:
-
+    
     1. Set the default Apple Software Update Server for the organization server
     softwareupdate --set-catalog http://apple.foo.com:8088/
     2. Disables AutomaticDownload:
@@ -69,12 +68,12 @@ class ConfigureAppleSoftwareUpdate(RuleKVEditor):
     6. Disables ability to install PreReleases:
     defaults -currentHost write /Library/Preferences/com.apple.SoftwareUpdate AllowPreReleaseInstallation -bool no
     7. Disables ability to install PreReleases:
-    defaults -currentHost write /Library/Preferences/com.apple.SoftwareUpdate RecommendedUpdates 
+    defaults -currentHost write /Library/Preferences/com.apple.SoftwareUpdate RecommendedUpdates
     8. Disables ability to install PreReleases:
     defaults -currentHost write /Library/Preferences/com.apple.SoftwareUpdate SkipLocalCDN -bool no
     9. Disables automatic macOS (OS X) updates
     defaults write /Library/Preferences/com.apple.commerce AutoUpdateRestartRequired -bool no
-
+    
     1. defaults -currentHost read /Library/Preferences/com.apple.SoftwareUpdate AppleCatalogURL
     2. defaults -currentHost read /Library/Preferences/com.apple.SoftwareUpdate AutomaticDownload
     3. defaults -currentHost read /Library/Preferences/com.apple.SoftwareUpdate AutomaticCheckEnabled
@@ -84,11 +83,13 @@ class ConfigureAppleSoftwareUpdate(RuleKVEditor):
     7. defaults -currentHost read /Library/Preferences/com.apple.SoftwareUpdate RecommendedUpdates
     8. defaults -currentHost read /Library/Preferences/com.apple.SoftwareUpdate SkipLocalCDN
     9. defaults -currentHost read /Library/Preferences/com.apple.commerce AutoUpdateRestartRequired
-
+    
     OS X Yosemite considerations:
     defaults write /Library/Preferences/com.apple.commerce AutoUpdate -bool [TRUE|FALSE]
-
+    
     @author: ekkehard j. koch
+
+
     '''
 
 ###############################################################################
@@ -289,15 +290,17 @@ class ConfigureAppleSoftwareUpdate(RuleKVEditor):
         return success
 
     def report(self):
-        '''
-        Calls the inherited RuleKVEditor report method.
-
+        '''Calls the inherited RuleKVEditor report method.
+        
         Additionally checks that the APPLESOFTWAREUPDATESERVER constant is
         set, the ConfigureCatalogueURL kveditor item is enabled, and gives
         instructions on how to manually fix the RecommendedUpdates kveditor
         item if it is not compliant.
         @author: Brandon R. Gonzales
-        @return: bool - true if rule is compliant, false otherwise
+
+
+        :returns: bool - true if rule is compliant, false otherwise
+
         '''
 
         # Invoke super method
@@ -370,14 +373,16 @@ class ConfigureAppleSoftwareUpdate(RuleKVEditor):
         return compliant
 
     def fix(self):
-        '''
-        Calls the inherited RuleKVEditor fix method.
-
+        '''Calls the inherited RuleKVEditor fix method.
+        
         Additionally fixes the ConfigureCatalogURL kveditor item though
         command helper(instead of using RuleKVEditor).
-
+        
         @author: Brandon R. Gonzales
-        @return: bool - True if fix was successful, False otherwise
+
+
+        :returns: bool - True if fix was successful, False otherwise
+
         '''
         rulekvesuccess = RuleKVEditor.fix(self, True)
 
@@ -421,14 +426,16 @@ class ConfigureAppleSoftwareUpdate(RuleKVEditor):
         return success
 
     def undo(self):
-        '''
-        Calls the inherited RuleKVEditor undo method.
-
+        '''Calls the inherited RuleKVEditor undo method.
+        
         Additionally reverts the ConfigureCatalogURL kveditor item though
         command helper(instead of using RuleKVEditor).
-
+        
         @author: Brandon R. Gonzales
-        @return: bool - True if fix was successful, False otherwise
+
+
+        :returns: bool - True if fix was successful, False otherwise
+
         '''
         rulekvesuccess = RuleKVEditor.undo(self)
 

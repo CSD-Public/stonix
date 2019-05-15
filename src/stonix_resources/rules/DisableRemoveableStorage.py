@@ -62,9 +62,10 @@ from ..pkghelper import Pkghelper
 
 
 class DisableRemoveableStorage(Rule):
-    '''
-    Disable removeable storage. This rule is optional, and disables USB, thunderbolt and firewire
+    '''Disable removeable storage. This rule is optional, and disables USB, thunderbolt and firewire
     storage devices from accessing, or being accessed, by the system.
+
+
     '''
 
     def __init__(self, config, environ, logger, statechglogger):
@@ -103,28 +104,30 @@ class DisableRemoveableStorage(Rule):
         self.pkgremovedlist = []
         self.iditerator = 0
         self.created = False
-        self.daemonpath = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]))) + "/stonix_resources/disablestorage"
+        self.daemonpath = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]))) + "/stonix_resources/disablestorage.py"
         self.sethelptext()
         self.grubperms = ""
         self.ph = Pkghelper(self.logger, self.environ)
         self.ch = CommandHelper(self.logger)
 
     def report(self):
-        '''
-        report the current rule-compliance status of this system. update
+        '''report the current rule-compliance status of this system. update
         self.rulesuccess if method does not succeed. self.compliant if
         rule succeeds and reports true.
 
-        @return: self.compliant
-        @rtype: bool
 
-        @author: Breen Malmberg
+        :returns: self.compliant
 
-        @change: dwalker - implementing kveditor and completely revamped rule
-            logic. added event deletion at the beginning of the fix
-        @change: dwalker 8/13/2014 changed name of rule to
-            DisableRemoveableStorage and rule now supports disabling other
-            ports such thunderbolt and firewire
+        :rtype: bool
+
+@author: Breen Malmberg
+
+@change: dwalker - implementing kveditor and completely revamped rule
+    logic. added event deletion at the beginning of the fix
+@change: dwalker 8/13/2014 changed name of rule to
+    DisableRemoveableStorage and rule now supports disabling other
+    ports such thunderbolt and firewire
+
         '''
 
         try:
@@ -153,11 +156,14 @@ class DisableRemoveableStorage(Rule):
         return self.compliant
 
     def reportLinux(self):
-        '''
-        sub method for linux portion of compliance reporting
+        '''sub method for linux portion of compliance reporting
         @author: dwalker
-        @return: compliant
-        @rtype: boolean
+
+
+        :returns: compliant
+
+        :rtype: boolean
+
         '''
         compliant = True
         lsmodcmd = ""
@@ -328,9 +334,12 @@ class DisableRemoveableStorage(Rule):
 
     def reportMac(self):
         '''
-        
-        @return: compliant
-        @rtype: bool
+
+
+        :returns: compliant
+
+        :rtype: bool
+
         '''
 
         self.detailedresults = ""
@@ -351,14 +360,15 @@ class DisableRemoveableStorage(Rule):
 
 
     def fix(self):
-        '''
-        attempt to perform necessary operations to bring the system into
+        '''attempt to perform necessary operations to bring the system into
         compliance with this rule.
-
+        
         @author Breen Malmberg
         @change: dwalker - implemented event deletion at the beginning of fix,
             also implemented a check for the ci value to see if fix should
             even be run.
+
+
         '''
 
         try:
@@ -399,8 +409,11 @@ class DisableRemoveableStorage(Rule):
         check the disabled extensions folder to see if it was previously
         disabled.  If it's in that folder, we will move it back.
         @author: Breen Malmberg
-        @return: bool
+
+
+        :returns: bool
         @change: dwalker 8/19/2014
+
         '''
         debug = ""
         success = True
@@ -467,11 +480,14 @@ class DisableRemoveableStorage(Rule):
         return success
 
     def fixLinux(self):
-        '''
-        sub method for linux portion of compliance fixing
+        '''sub method for linux portion of compliance fixing
         @author: dwalker
-        @return: success
-        @rtype: boolean
+
+
+        :returns: success
+
+        :rtype: boolean
+
         '''
         success = True
         created1, created2 = False, False

@@ -38,12 +38,13 @@ from ..KVEditorStonix import KVEditorStonix
 
 
 class ExecShield(Rule):
-    '''
-    This class is responsible for auditing and correcting the setting of the
+    '''This class is responsible for auditing and correcting the setting of the
     ExecShield overflow prevention and the virtual address space randomizer.
     On most modern Linux distributions these are correct by default.
-
+    
     @author: dkennel
+
+
     '''
 
     def __init__(self, config, environ, logger, statechglogger):
@@ -95,14 +96,14 @@ class ExecShield(Rule):
         return myci
 
     def checkproc(self, procpath):
-        '''
-        Check for the value of a specific key in proc. Return that value.
+        '''Check for the value of a specific key in proc. Return that value.
         This method is designed for proc keys that only return a single value.
 
-        @param procpath string: fully qualified path to the element to be
+        :param procpath: string: fully qualified path to the element to be
         checked.
-        @return: string version of the value at that proc location.
+        :returns: string version of the value at that proc location.
         @author: dkennel
+
         '''
         myval = ''
         try:
@@ -123,14 +124,17 @@ class ExecShield(Rule):
                                   self.detailedresults])
 
     def report(self):
-        '''
-        Main report method. We rely on the active values in proc to make our
+        '''Main report method. We rely on the active values in proc to make our
         compliant/not-compliant decision.
-
+        
         @author dkennel
-        @return: self.compliant
-        @rtype: bool
-        @change: Breen Malmberg - 1/10/2017 - minor doc string edit; return var init
+
+
+        :returns: self.compliant
+
+        :rtype: bool
+@change: Breen Malmberg - 1/10/2017 - minor doc string edit; return var init
+
         '''
 
         self.detailedresults = ''
@@ -181,19 +185,22 @@ class ExecShield(Rule):
         return self.compliant
 
     def fix(self):
-        '''
-        Main fix method. We update the current vaules in proc via shell
+        '''Main fix method. We update the current vaules in proc via shell
         commands and set the correct settings in /etc/sysctl.conf since our
         assumption is that if it didn't pass it's because it's been overridden
         in sysctl.conf.
-
+        
         @author: dkennel
-        @return: self.rulesuccess
-        @rtype: bool
-        @change: Breen Malmberg - 1/10/2017 - minor doc string edit; self.rulesuccess
-                now default init to True (only being set to False in the method);
-                method now returns self.rulesuccess; fixed perms on file sysctl.conf
-                (should be 0o600; was 420)
+
+
+        :returns: self.rulesuccess
+
+        :rtype: bool
+@change: Breen Malmberg - 1/10/2017 - minor doc string edit; self.rulesuccess
+        now default init to True (only being set to False in the method);
+        method now returns self.rulesuccess; fixed perms on file sysctl.conf
+        (should be 0o600; was 420)
+
         '''
 
         self.detailedresults = ""

@@ -40,10 +40,11 @@ from ..stonixutilityfunctions import getOctalPerms
 
 
 class AuditSSHKeys(Rule):
-    '''
-    This class audits for password-less ssh keys on the system.
-
+    '''This class audits for password-less ssh keys on the system.
+    
     @author: Breen Malmberg
+
+
     '''
 
     def __init__(self, config, environ, logger, statechglogger):
@@ -71,12 +72,13 @@ class AuditSSHKeys(Rule):
         self.localize()
 
     def localize(self):
-        '''
-        determine which OS the system is, and set
+        '''determine which OS the system is, and set
         certain variables accordingly
 
-        @return: void
+
+        :returns: void
         @author: Breen Malmberg
+
         '''
 
         self.logger.log(LogPriority.DEBUG, "Running localize() ...")
@@ -93,12 +95,14 @@ class AuditSSHKeys(Rule):
             self.linux = True
 
     def report(self):
-        '''
-        check status of private ssh keys (whether they are encrypted with passwords or not)
+        '''check status of private ssh keys (whether they are encrypted with passwords or not)
 
-        @return: self.compliant
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: self.compliant
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         searchterm = "Proc-Type:"
@@ -154,13 +158,13 @@ class AuditSSHKeys(Rule):
         return self.compliant
 
     def get_key_list(self, searchdirs):
-        '''
-        walk the ssh directory/ies and build and return a list of private keys (file names)
+        '''walk the ssh directory/ies and build and return a list of private keys (file names)
 
-        @param searchdirs: list of directories to search for private ssh keys
-        @return: keylist
-        @rtype: list
-        @author: Breen Malmberg
+        :param searchdirs: list of directories to search for private ssh keys
+        :returns: keylist
+        :rtype: list
+@author: Breen Malmberg
+
         '''
 
         keylist = []
@@ -191,12 +195,14 @@ class AuditSSHKeys(Rule):
         return keylist
 
     def get_search_dirs(self):
-        '''
-        build and return a list of search directories to look for private ssh keys
+        '''build and return a list of search directories to look for private ssh keys
 
-        @return: searchdirs
-        @rtype: list
-        @author: Breen Malmberg
+
+        :returns: searchdirs
+
+        :rtype: list
+@author: Breen Malmberg
+
         '''
 
         searchdirs = []
@@ -261,12 +267,13 @@ class AuditSSHKeys(Rule):
         return searchdirs
 
     def fix(self):
-        '''
-        set permissions on all private keys
+        '''set permissions on all private keys
         to 600
 
-        @return: self.rulesuccess
+
+        :returns: self.rulesuccess
         @author: Breen Malmberg
+
         '''
 
         fixedkeys = []

@@ -56,13 +56,14 @@ class zzzTestRuleDisableFTP(RuleTest):
         self.simpleRuleTest()
 
     def setConditionsForRule(self):
-        '''
-        This makes sure the intial report fails by executing the following
+        '''This makes sure the intial report fails by executing the following
         commands:
         defaults write /System/Library/LaunchDaemons/ftp.plist Disabled 0
-        @param self: essential if you override this definition
-        @return: boolean - If successful True; If failure False
+
+        :param self: essential if you override this definition
+        :returns: boolean - If successful True; If failure False
         @author: Eric Ball
+
         '''
         success = True
         if self.environ.getosfamily() == "darwin":
@@ -75,13 +76,14 @@ class zzzTestRuleDisableFTP(RuleTest):
         return success
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
-        '''
-        check on whether report was correct
-        @param self: essential if you override this definition
-        @param pCompliance: the self.iscompliant value of rule
-        @param pRuleSuccess: did report run successfully
-        @return: boolean - If successful True; If failure False
+        '''check on whether report was correct
+
+        :param self: essential if you override this definition
+        :param pCompliance: the self.iscompliant value of rule
+        :param pRuleSuccess: did report run successfully
+        :returns: boolean - If successful True; If failure False
         @author: ekkehard j. koch
+
         '''
         self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " +
                              str(pCompliance) + ".")

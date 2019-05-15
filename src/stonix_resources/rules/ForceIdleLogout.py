@@ -50,8 +50,7 @@ from pwd import getpwnam
 
 
 class ForceIdleLogout(Rule):
-    '''
-    The ForceIdleLogout class attempts to configure the system to log out users
+    '''The ForceIdleLogout class attempts to configure the system to log out users
     after long periods of inactivity. This control reinforces the protection
     offered by the screen lock by terminating long idle sessions. Note that
     the guidance for this control, AC-2(5) from 800-53, seems to be written
@@ -59,6 +58,8 @@ class ForceIdleLogout(Rule):
     ability to establish work schedules in the directory service and limit
     logons to those time windows. *NIX systems typically do not have that type
     of tooling so we rely on a long idle time.
+
+
     '''
 
     def __init__(self, config, environ, logger, statechglogger):
@@ -120,12 +121,13 @@ FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
         self.gnomeInstalled, self.kdeInstalled = False, False
 
     def report(self):
-        """
-        Report on whether the Idle Logout settings are correct.
+        '''Report on whether the Idle Logout settings are correct.
 
-        @return: bool
+
+        :returns: bool
         @author: D.Kennel
-        """
+
+        '''
 
         try:
             compliant = True
@@ -158,7 +160,7 @@ FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
                 if self.ph.check("kdm") or self.ph.check("kde-workspace") or \
                         self.ph.check("sddm") or self.ph.check("patterns-kde-kde_yast"):
                     self.kdeInstalled = True
-                    if not self.chkkde4():
+                    if not self.chkkde():
                         self.detailedresults += "KDE GUI environment " + \
                                                 "does not appear to be correctly configured " + \
                                                 "for automatic logout of idle sessions. This " + \
@@ -193,23 +195,28 @@ FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
         return self.compliant
 
     def chkgnome(self):
-        """
-        Check that the GNOME 3 or GNOME 2 auto logout settings
-        are set correctly
+        '''Check that the GNOME 3 auto logout settings are set correctly
 
-        @return: bool - true if settings are set to logout
+
+        :returns: boot - true if settings are set to logout
         @author: D. Kennel
-        """
+
+        '''
+
+        if not self.environ.geteuid() == 0:
+            # Short circuit for user mode run
+            # manipulating the GNOME settings requires privilege
+            return True
         compliant = True
         self.timeoutwrong = False
         self.logoutwrong = False
+        havedconffile = False
+        havelockfile = False
+        havetimeout = False
+        havetimeoutlock = False
+        havelogout = False
+        havelogoutlock = False
         if os.path.exists('/etc/dconf/db/local.d'):
-            havedconffile = False
-            havelockfile = False
-            havetimeout = False
-            havetimeoutlock = False
-            havelogout = False
-            havelogoutlock = False
             if os.path.exists(self.gnomesettingpath):
                 havedconffile = True
                 self.logdispatch.log(LogPriority.DEBUG,
@@ -245,44 +252,44 @@ FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
                         self.logdispatch.log(LogPriority.DEBUG,
                                              ['ForceIdleLogout.__chkgnome3',
                                               'Found Gnome logout lock'])
-            if not havedconffile:
-                self.detailedresults += "GNOME 3 autologout settings " + \
-                    "file not found at: " + \
-                    "/etc/dconf/db/local.d/00-autologout\n"
-                compliant = False
+        if not havedconffile:
+            self.detailedresults += "GNOME 3 autologout settings " + \
+                "file not found at: " + \
+                "/etc/dconf/db/local.d/00-autologout\n"
+            compliant = False
 
-            if not havetimeout:
-                self.detailedresults += "GNOME 3 autologout timeout " + \
-                    "not found or does not match expected value. Set " + \
-                    "sleep-inactive-ac-timeout=" + str(self.seconds) + \
-                    " in /etc/dconf/db/local.d/00-autologout\n"
-                compliant = False
+        if not havetimeout:
+            self.detailedresults += "GNOME 3 autologout timeout " + \
+                "not found or does not match expected value. Set " + \
+                "sleep-inactive-ac-timeout=" + str(self.seconds) + \
+                " in /etc/dconf/db/local.d/00-autologout\n"
+            compliant = False
 
-            if not havelogout:
-                self.detailedresults += "GNOME 3 autologout logout " + \
-                    "not found. Set sleep-inactive-ac-type='logout' in " + \
-                    "/etc/dconf/db/local.d/00-autologout\n"
-                compliant = False
+        if not havelogout:
+            self.detailedresults += "GNOME 3 autologout logout " + \
+                "not found. Set sleep-inactive-ac-type='logout' in " + \
+                "/etc/dconf/db/local.d/00-autologout\n"
+            compliant = False
 
-            if not havelockfile:
-                self.detailedresults += "GNOME 3 autologout lock " + \
-                    "file not found at: " + \
-                    "/etc/dconf/db/local.d/locks/autologout\n"
-                compliant = False
+        if not havelockfile:
+            self.detailedresults += "GNOME 3 autologout lock " + \
+                "file not found at: " + \
+                "/etc/dconf/db/local.d/locks/autologout\n"
+            compliant = False
 
-            if not havetimeoutlock:
-                self.detailedresults += "GNOME 3 autologout timeout " + \
-                    "lock not found. Set /org/gnome/settings-daemon/" + \
-                    "plugins/power/sleep-inactive-ac-timeout in " + \
-                    "/etc/dconf/db/local.d/locks/autologout\n"
-                compliant = False
+        if not havetimeoutlock:
+            self.detailedresults += "GNOME 3 autologout timeout " + \
+                "lock not found. Set /org/gnome/settings-daemon/" + \
+                "plugins/power/sleep-inactive-ac-timeout in " + \
+                "/etc/dconf/db/local.d/locks/autologout\n"
+            compliant = False
 
-            if not havelogoutlock:
-                self.detailedresults += "GNOME 3 autologout lock not " + \
-                    "found. Set /org/gnome/settings-daemon/plugins/" + \
-                    "power/sleep-inactive-ac-type in " + \
-                    "/etc/dconf/db/local.d/locks/autologout\n"
-                compliant = False
+        if not havelogoutlock:
+            self.detailedresults += "GNOME 3 autologout lock not " + \
+                "found. Set /org/gnome/settings-daemon/plugins/" + \
+                "power/sleep-inactive-ac-type in " + \
+                "/etc/dconf/db/local.d/locks/autologout\n"
+            compliant = False
 
         if self.ph.check(self.gconf):
             self.logdispatch.log(LogPriority.DEBUG,
@@ -333,18 +340,19 @@ FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
                         self.undoforcelogout = str(output2[0])
         return compliant
 
-    def chkkde4(self):
-        """
-        Check that settings are correct for KDE 4 auto logout. Note that this
+    def chkkde(self):
+        '''Check that settings are correct for KDE 4 auto logout. Note that this
         setting lives in each user's home folder and is the reason this rule
         has root & non-root components. With root perms we can work on homes
         that are on local storage but user perms are required for NFS mounted
         home directories.
 
-        @return: bool - true if settings are set to logout for inspected users
+
+        :returns: bool - true if settings are set to logout for inspected users
         @author: D. Kennel
-        """
-        debug = "Inside chkkde4 method"
+
+        '''
+        debug = "Inside chkkde method"
         self.logger.log(LogPriority.DEBUG, debug)
 
         self.kdefix = {}
@@ -424,8 +432,7 @@ FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
                     return True
 
     def chkosx(self):
-        '''
-        '''
+        ''' '''
 
         globalprefs = "/Library/Preferences/.GlobalPreferences.plist"
         globalprefstemp = globalprefs + ".stonixtmp"
@@ -438,11 +445,12 @@ FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
         return self.editor.report()
 
     def fix(self):
-        """
-       Configure the system to enforce logout of idle GUI sessions
-
+        '''Configure the system to enforce logout of idle GUI sessions
+        
         @author: D. Kennel
-        """
+
+
+        '''
         try:
             if not self.filci.getcurrvalue():
                 self.detailedresults += "Rule not enabled so nothing was done\n"
@@ -475,20 +483,34 @@ FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.rulesuccess
 
-    def fixgnome(self):
-        """
-        Configure GNOME 3 for automatic logout.
 
+    def fixgnome(self):
+        '''Configure GNOME 3 for automatic logout.
         @author: d.kennel
-        """
+
+
+        '''
 
         if self.environ.geteuid() != 0:
-            debug = "Configuring gnome requires root privileges\n"
+            debug = "Configuring gnome requires root privileges"
             self.logger.log(LogPriority.DEBUG, debug)
             self.detailedresults += "Configuring gnome requires root " + \
                 "privileges\n"
             return False
         success = True
+        createddir = False
+        debug = ""
+        if not os.path.exists('/etc/dconf/db/local.d'):
+            if not os.mkdir('/etc/dconf/db/local.d/'):
+                success = False
+                debug = "Unable to create the /etc/dconf/db/local.d/ directory"
+                self.logger.log(LogPriority.DEBUG, debug)
+            else:
+                createddir = True
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                event = {"eventtype": "creation",
+                         "filepath": "/etc/dconf/db/local.d"}
         if os.path.exists('/etc/dconf/db/local.d'):
             created1, created2 = False, False
             self.logdispatch.log(LogPriority.DEBUG,
@@ -508,11 +530,12 @@ FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
                     self.detailedresults += "Unable to create " + self.gnomesettingpath + " file\n"
                 else:
                     created1 = True
-                    self.iditerator += 1
-                    myid = iterate(self.iditerator, self.rulenumber)
-                    event = {"eventtype": "creation",
-                             "filepath": self.gnomesettingpath}
-                    self.statechglogger.recordchgevent(myid, event)
+                    if not createddir:
+                        self.iditerator += 1
+                        myid = iterate(self.iditerator, self.rulenumber)
+                        event = {"eventtype": "creation",
+                                 "filepath": self.gnomesettingpath}
+                        self.statechglogger.recordchgevent(myid, event)
             if os.path.exists(self.gnomesettingpath):
                 gdirectives = {"org.gnome.settings-daemon.plugins.power": {
                                 "sleep-inactive-ac-type": "'logout'",
@@ -570,11 +593,12 @@ FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
                     self.detailedresults += "Unable to create " + self.gnomelockpath + " file\n"
                 else:
                     created2 = True
-                    self.iditerator += 1
-                    myid = iterate(self.iditerator, self.rulenumber)
-                    event = {"eventtype": "creation",
-                             "filepath": self.gnomelockpath}
-                    self.statechglogger.recordchgevent(myid, event)
+                    if not createddir:
+                        self.iditerator += 1
+                        myid = iterate(self.iditerator, self.rulenumber)
+                        event = {"eventtype": "creation",
+                                 "filepath": self.gnomelockpath}
+                        self.statechglogger.recordchgevent(myid, event)
             if os.path.exists(self.gnomelockpath):
                 contents = readFile(self.gnomelockpath, self.logger)
                 for line in contents:
@@ -605,17 +629,17 @@ FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
                     self.detailedresults += "Unable to write contents to " + \
                         self.gnomelockpath
                     success = False
-                if not checkPerms(self.gnomelockpath, [0, 0, 644], self.logger):
+                if not checkPerms(self.gnomelockpath, [0, 0, 0o644], self.logger):
                     if not created2:
                         self.iditerator += 1
                         myid = iterate(self.iditerator, self.rulenumber)
-                        if not setPerms(self.gnomelockpath, [0, 0, 644], self.logger,
+                        if not setPerms(self.gnomelockpath, [0, 0, 0o644], self.logger,
                                         self.statechglogger, myid):
                             self.detailedresults += "Unable to set permissions on " + \
                                 self.gnomelockpath + " file\n"
                             success = False
                     else:
-                        if not setPerms(self.gnomelockpath, [0, 0, 644], self.logger):
+                        if not setPerms(self.gnomelockpath, [0, 0, 0o644], self.logger):
                             self.detailedresults += "Unable to set permissions on " + \
                                                     self.gnomelockpath + " file\n"
                             success = False
@@ -678,11 +702,11 @@ FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
         return success
 
     def fixkde(self):
-        """
-        Configure KDE 4 for automatic logout.
-
+        '''Configure KDE 4 for automatic logout.
         @author: d.kennel
-        """
+
+
+        '''
         success = True
         if self.environ.geteuid() == 0:
             self.logdispatch.log(LogPriority.DEBUG,
@@ -742,8 +766,10 @@ FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
         '''temporary method to separate the code to find directives from the
         rest of the code.  Will put back all in one method eventually
         @author: dwalker
-        @return: bool
-        @param filehandle: string
+
+        :param filehandle: string
+        :returns: bool
+
         '''
         self.editor = ""
         kvt = "tagconf"
@@ -762,9 +788,13 @@ FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
         '''separate method to find the correct contents of each file passed in
         as a parameter.
         @author: dwalker
-        @return: bool
-        @param filehandle: string
-         '''
+
+        :param filehandle: string
+        :param kfile: 
+        :param user: 
+        :returns: bool
+
+        '''
         created = False
         success = True
         self.editor = ""

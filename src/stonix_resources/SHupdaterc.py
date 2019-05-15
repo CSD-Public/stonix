@@ -33,10 +33,11 @@ from ServiceHelperTemplate import ServiceHelperTemplate
 
 
 class SHupdaterc(ServiceHelperTemplate):
-    """
-    SHupdaterc is the Service Helper for systems using the rcupdate command to
+    '''SHupdaterc is the Service Helper for systems using the rcupdate command to
     configure services. (Debian, Ubuntu and variants)
-    """
+
+
+    '''
 
     def __init__(self, environment, logdispatcher):
         """
@@ -50,15 +51,16 @@ class SHupdaterc(ServiceHelperTemplate):
         self.svc = "/usr/sbin/service "
 
     def disableService(self, service, **kwargs):
-        """
-        Disables the service and terminates it if it is running.
+        '''Disables the service and terminates it if it is running.
 
-        @param service: string; name of service
-        @param kwargs: dict; dictionary of key-value arguments
-        @return: enabled
-        @rtype: bool
-        @author: ???
-        """
+        :param service: string; name of service
+        :param kwargs: dict; dictionary of key-value arguments
+        :param **kwargs: 
+        :returns: enabled
+        :rtype: bool
+@author: ???
+
+        '''
 
         disabled = True
 
@@ -80,16 +82,17 @@ class SHupdaterc(ServiceHelperTemplate):
         return disabled
 
     def enableService(self, service, **kwargs):
-        """
-        Enables a service and starts it if it is not running as long as we are
+        '''Enables a service and starts it if it is not running as long as we are
         not in install mode
 
-        @param service: string; name of service
-        @param kwargs: dict; dictionary of key-value arguments
-        @return: enabled
-        @rtype: bool
-        @author: ???
-        """
+        :param service: string; name of service
+        :param kwargs: dict; dictionary of key-value arguments
+        :param **kwargs: 
+        :returns: enabled
+        :rtype: bool
+@author: ???
+
+        '''
 
         enabled = True
 
@@ -111,17 +114,18 @@ class SHupdaterc(ServiceHelperTemplate):
         return enabled
 
     def auditService(self, service, **kwargs):
-        """
-        Checks all /etc/rc*.d/ directories for the "S" (start) service entry
+        '''Checks all /etc/rc*.d/ directories for the "S" (start) service entry
         in updaterc, if an "S" entry with the service name exists in any of the rc*.d/
         directories, it means that the service is scheduled to start at boot
 
-        @param service: string; name of service
-        @param kwargs: dict; dictionary of key-value arguments
-        @return: enabled
-        @rtype: bool
-        @author: ???
-        """
+        :param service: string; name of service
+        :param kwargs: dict; dictionary of key-value arguments
+        :param **kwargs: 
+        :returns: enabled
+        :rtype: bool
+@author: ???
+
+        '''
 
         enabled = False
 
@@ -139,15 +143,16 @@ class SHupdaterc(ServiceHelperTemplate):
         return enabled
 
     def isRunning(self, service, **kwargs):
-        """
-        Check to see if a service is currently running.
+        '''Check to see if a service is currently running.
 
-        @param service: string; name of service
-        @param kwargs: dict; dictionary of key-value arguments
-        @return: enabled
-        @rtype: bool
-        @author: ???
-        """
+        :param service: string; name of service
+        :param kwargs: dict; dictionary of key-value arguments
+        :param **kwargs: 
+        :returns: enabled
+        :rtype: bool
+@author: ???
+
+        '''
 
         running = False
 
@@ -165,17 +170,18 @@ class SHupdaterc(ServiceHelperTemplate):
         return running
 
     def reloadService(self, service, **kwargs):
-        """
-        Reload (HUP) a service so that it re-reads it's config files. Called
+        '''Reload (HUP) a service so that it re-reads it's config files. Called
         by rules that are configuring a service to make the new configuration
         active.
 
-        @param service: string; name of service
-        @param kwargs: dict; dictionary of key-value arguments
-        @return: enabled
-        @rtype: bool
-        @author: ???
-        """
+        :param service: string; name of service
+        :param kwargs: dict; dictionary of key-value arguments
+        :param **kwargs: 
+        :returns: enabled
+        :rtype: bool
+@author: ???
+
+        '''
 
         reloaded = True
 
@@ -196,14 +202,15 @@ class SHupdaterc(ServiceHelperTemplate):
         return reloaded
 
     def listServices(self, **kwargs):
-        """
-        Return a list containing strings that are service names.
+        '''Return a list containing strings that are service names.
 
-        @param kwargs: dict; dictionary of key-value arguments
-        @return: enabled
-        @rtype: bool
-        @author: ???
-        """
+        :param kwargs: dict; dictionary of key-value arguments
+        :param **kwargs: 
+        :returns: enabled
+        :rtype: bool
+@author: ???
+
+        '''
 
         services = []
 
@@ -221,33 +228,41 @@ class SHupdaterc(ServiceHelperTemplate):
         return services
 
     def getStartCommand(self, service):
-        """
-        retrieve the start command.  Mostly used by event recording
-        @return: string - start command
+        '''retrieve the start command.  Mostly used by event recording
+
+        :param service: 
+        :returns: string - start command
         @author: Derek Walker
-        """
+
+        '''
         return self.svc + service + ' start'
 
     def getStopCommand(self, service):
-        """
-        retrieve the stop command.  Mostly used by event recording
-        @return: string - stop command
+        '''retrieve the stop command.  Mostly used by event recording
+
+        :param service: 
+        :returns: string - stop command
         @author: Derek Walker
-        """
+
+        '''
         return self.svc + service + ' stop'
 
     def getEnableCommand(self, service):
-        """
-        retrieve the enable command.  Mostly used by event recording
-        @return: string - enable command
+        '''retrieve the enable command.  Mostly used by event recording
+
+        :param service: 
+        :returns: string - enable command
         @author: Derek Walker
-        """
+
+        '''
         return self.updaterc + service + ' enable'
 
     def getDisableCommand(self, service):
-        """
-        retrieve the start command.  Mostly used by event recording
-        @return: string - disable command
+        '''retrieve the start command.  Mostly used by event recording
+
+        :param service: 
+        :returns: string - disable command
         @author: Derek Walker
-        """
+
+        '''
         return self.updaterc + service + ' disable'

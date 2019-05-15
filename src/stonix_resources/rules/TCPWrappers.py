@@ -49,15 +49,16 @@ from ..localize import ALLOWNETS, HOSTSALLOWDEFAULT, HOSTSDENYDEFAULT
 
 
 class TCPWrappers(Rule):
-    """
-    TCPWrappers is a library which provides simple access control and
+    '''TCPWrappers is a library which provides simple access control and
     standardized logging for supported applications which accept connections
     over a network. Historically, TCPWrappers was used to support inetd
     services. Now that inetd is deprecated (see Section 3.2.1), TCPWrappers
     supports only services which were built to make use of the libwrap library.
-
+    
     @author: Breen Malmberg
-    """
+
+
+    '''
 
     def __init__(self, config, environ, logger, statechglogger):
         """
@@ -101,11 +102,12 @@ class TCPWrappers(Rule):
         self.osmajorver = self.environ.getosmajorver()
 
     def configure_allow_text(self):
-        """
-        Set up hosts.allow content for later output to file
-
+        '''Set up hosts.allow content for later output to file
+        
         @author: Breen Malmberg
-        """
+
+
+        '''
 
         self.logger.log(LogPriority.DEBUG, "configuring hosts.allow text")
 
@@ -134,16 +136,17 @@ class TCPWrappers(Rule):
                     self.hosts_allow_contents.append(re.sub("{allownet}", s, line))
 
     def convert_to_legacy(self, subnet):
-        """
-        converts modern tcp wrappers subnet specification to legacy (rhel 6, centos 6) format
+        '''converts modern tcp wrappers subnet specification to legacy (rhel 6, centos 6) format
         modern format = <servicename> : x.x.x.x/CIDR : <ALLOW|DENY>
         legacy format = <servicename> : x.x.x.x/y.y.y.y : <ALLOW|DENY>
         x.x.x.x = ip subnet spec, y.y.y.y = subnet mask
 
-        @return: subnet
-        @rtype: string
-        @author: Breen Malmberg
-        """
+        :param subnet: 
+        :returns: subnet
+        :rtype: string
+@author: Breen Malmberg
+
+        '''
 
         subnet = str(subnet)
 
@@ -173,13 +176,15 @@ class TCPWrappers(Rule):
         return subnet
 
     def report(self):
-        """
-        Check for correct configuration of hosts.allow and hosts.deny
+        '''Check for correct configuration of hosts.allow and hosts.deny
 
-        @return: self.compliant
-        @rtype: bool
-        @author: Breen Malmberg
-        """
+
+        :returns: self.compliant
+
+        :rtype: bool
+@author: Breen Malmberg
+
+        '''
 
         # if the REQUIRED constants from localize.py are not populated
         # then set the applicability of the rule to False
@@ -218,13 +223,15 @@ class TCPWrappers(Rule):
         return self.compliant
 
     def reportAllow(self):
-        """
-        check contents of hosts.allow file
+        '''check contents of hosts.allow file
 
-        @return: compliant
-        @rtype: bool
-        @author: Breen Malmberg
-        """
+
+        :returns: compliant
+
+        :rtype: bool
+@author: Breen Malmberg
+
+        '''
 
         compliant = True
         allowfile = "/etc/hosts.allow"
@@ -248,13 +255,15 @@ class TCPWrappers(Rule):
         return compliant
 
     def reportDeny(self):
-        """
-        check contents of hosts.deny file
+        '''check contents of hosts.deny file
 
-        @return: compliant
-        @rtype: bool
-        @author: Breen Malmberg
-        """
+
+        :returns: compliant
+
+        :rtype: bool
+@author: Breen Malmberg
+
+        '''
 
         compliant = True
         denyfile = "/etc/hosts.deny"
@@ -278,13 +287,15 @@ class TCPWrappers(Rule):
         return compliant
 
     def fix(self):
-        """
-        Apply changes to hosts.allow and hosts.deny to correctly configure them
+        '''Apply changes to hosts.allow and hosts.deny to correctly configure them
 
-        @return: self.rulesuccess
-        @rtype: bool
-        @author: Breen Malmberg
-        """
+
+        :returns: self.rulesuccess
+
+        :rtype: bool
+@author: Breen Malmberg
+
+        '''
 
         # defaults
         self.iditerator = 0
@@ -313,13 +324,15 @@ class TCPWrappers(Rule):
         return self.rulesuccess
 
     def fixAllow(self):
-        """
-        fix contents for hosts.allow file
+        '''fix contents for hosts.allow file
 
-        @return: success
-        @rtype: bool
-        @author: Breen Malmberg
-        """
+
+        :returns: success
+
+        :rtype: bool
+@author: Breen Malmberg
+
+        '''
 
         success = True
         allowfile = "/etc/hosts.allow"
@@ -349,13 +362,15 @@ class TCPWrappers(Rule):
         return success
 
     def fixDeny(self):
-        """
-        fix contents for hosts.deny file
+        '''fix contents for hosts.deny file
 
-        @return: success
-        @rtype: bool
-        @author: Breen Malmberg
-        """
+
+        :returns: success
+
+        :rtype: bool
+@author: Breen Malmberg
+
+        '''
 
         success = True
         denyfile = "/etc/hosts.deny"

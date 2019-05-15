@@ -42,13 +42,15 @@ from logdispatcher import LogPriority
 
 class Cli (View):
     
-    """
-    
-    :version:
-    :author:
-    """
+    '''
+    template for command line interface
+    '''
     
     def __init__(self, environment):
+        '''
+
+        :param environment:
+        '''
         View.__init__(self)
         
         self.environ = environment
@@ -64,31 +66,35 @@ class Cli (View):
         
         
     def displaymessage(self, message):
-        """
-        WARNING! Fix Me.
+        '''WARNING! Fix Me.
         This method appears to be redundant (see printmessage)
         
         Send message to screen.
-        @param string message: Message to be printed to std out
-        """
+
+        :param string: message: Message to be printed to std out
+        :param message: 
+
+        '''
         print message
 
     def displayhelp(self):
-        """
-        
+        '''
 
-        @return  :
-        @author
-        """
+
+        :returns: void
+
+        '''
         pass
     
     
     def update(self, subject):
-        """
-        Called by observed objects when reporting changes
-        @return: void
+        '''Called by observed objects when reporting changes
+
+        :param subject: 
+        :returns: void
         @author: D. Kennel
-        """
+
+        '''
         try:
             #self.currrule = subject.getcurrentrule()
             percentage = subject.getcompletionpercentage()
@@ -100,89 +106,88 @@ class Cli (View):
             pass
 
     def printmessage(self, messagetext):
-        """
-        Print a message to stdout.
+        '''Print a message to stdout.
 
-        @param string messageText : Message text to be printed.
-        @return  :
-        @author D. Kennel
-        """
+        :param string: messageText : Message text to be printed.
+        :param messagetext: 
+        :returns:
+        @author: D. Kennel
+
+        '''
         print messagetext
 
     def displayrulename(self, rulename):
-        """
-        
+        '''
 
-        @param string ruleName : Name of the rule.
-        @return  :
-        @author
-        """
+        :param string: ruleName : Name of the rule.
+        :param rulename: 
+        :returns:
+
+        '''
         pass
 
     def displayrulestatus(self, status, rulename):
-        """
-        
+        '''
 
-        @param enum status : Enum of rule status:
+        :param enum: status : Enum of rule status:
             processing
             complete
             failed
             warning
-        @param string rulename : 
-        @return  :
-        @author
-        """
+        :param string: rulename :
+        :param status: 
+        :param rulename: 
+        :returns: author
+
+        '''
         pass
 
     def displaydetailedrulestatus(self, ruledetailedstatus):
-        """
-        
+        '''
 
-        @param string ruledetailedstatus : Detailed status information about 
+        :param string: ruledetailedstatus : Detailed status information about
         the rule
-        @return  :
-        @author
-        """
+        :param ruledetailedstatus: 
+        :returns:
+        '''
         pass
 
     def displayrulehelp(self, rulehelptext):
-        """
-        
+        '''
 
-        @param string rulehelptext : Help text for rule
-        @return  :
-        @author
-        """
+        :param string: rulehelptext : Help text for rule
+        :param rulehelptext: 
+        :returns: author
+
+        '''
         pass
 
 
     def clearbuttons(self):
-        """
-        
+        '''
 
-        @return  :
-        @author
-        """
+
+        :returns: void
+        '''
         pass
 
 
     def displayruleconfigopts(self, ruleconfigopts):
-        """
-        
+        '''
 
-        @param dict ruleconfigopts : 
-        @return  :
-        @author
-        """
+        :param dict: ruleconfigopts :
+        :param ruleconfigopts: 
+        :returns: void
+        '''
         pass
 
     def displayconfigopts(self, configopts):
-        """
-        
+        '''
 
-        @param dict configOpts : 
-        @return  :
-        @author
-        """
+        :param dict: configOpts :
+        :param configopts: 
+        :returns: author
+
+        '''
         pass
     

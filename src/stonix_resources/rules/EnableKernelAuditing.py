@@ -49,9 +49,7 @@ import re
 
 
 class EnableKernelAuditing(Rule):
-    '''
-    classdocs
-    '''
+    '''classdocs'''
 
     def __init__(self, config, environ, logger, statechglogger):
         '''
@@ -98,17 +96,17 @@ this system, set the value of EnableKernelAuditing to False"""
         self.flushtype = str(self.flushtypeci.getcurrvalue())
 
     def searchFileContents(self, contents, searchstring):
-        '''
-        search specified filepath for regex param searchstring
+        '''search specified filepath for regex param searchstring
         return true if found, false if not
 
-        @param contents: list of strings to search through, looking for value
+        :param contents: list of strings to search through, looking for value
                          searchstring
-        @param searchstring: string regex string value to search for in
+        :param searchstring: string regex string value to search for in
                              filepath's contents
-        @return: found
-        @rtype: bool
-        @author: Breen Malmberg
+        :returns: found
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         found = False
@@ -130,13 +128,13 @@ this system, set the value of EnableKernelAuditing to False"""
         return found
 
     def getFileContents(self, filepath):
-        '''
-        retrieve specified file path's contents and return them in list form
+        '''retrieve specified file path's contents and return them in list form
 
-        @param filepath: string full path to file to read
-        @return: contentlines
-        @rtype: list
-        @author: Breen Malmberg
+        :param filepath: string full path to file to read
+        :returns: contentlines
+        :rtype: list
+@author: Breen Malmberg
+
         '''
 
         contentlines = []
@@ -157,12 +155,13 @@ this system, set the value of EnableKernelAuditing to False"""
         return contentlines
 
     def localization(self):
-        '''
-        determine which operating system and version of operating system (if
+        '''determine which operating system and version of operating system (if
         relevant), and then set all variables, paths, commands, etc. to the
         correct versions for that os type and version.
-
+        
         @author: Breen Malmberg
+
+
         '''
 
         try:
@@ -286,10 +285,11 @@ this system, set the value of EnableKernelAuditing to False"""
             raise
 
     def set_grub_one(self):
-        '''
-        set up grub v1 variables and objects
-
+        '''set up grub v1 variables and objects
+        
         @author: Breen Malmberg
+
+
         '''
 
         self.logger.log(LogPriority.DEBUG, "Setting Grub v1 variables...")
@@ -297,10 +297,11 @@ this system, set the value of EnableKernelAuditing to False"""
         self.grubver = 1
 
     def set_grub_two(self):
-        '''
-        set up grub v2 variables and objects
-
+        '''set up grub v2 variables and objects
+        
         @author: Breen Malmberg
+
+
         '''
 
         self.logger.log(LogPriority.DEBUG, "Setting Grub v2 variables...")
@@ -322,10 +323,11 @@ this system, set the value of EnableKernelAuditing to False"""
         self.grubupdatecmd = grubmkconfigname + ' -o ' + self.grubcfgloc
 
     def report(self):
-        '''
-        run report actions to determine the current system's compliancy status
-
+        '''run report actions to determine the current system's compliancy status
+        
         @author: Breen Malmberg
+
+
         '''
 
         self.compliant = True
@@ -541,12 +543,14 @@ this system, set the value of EnableKernelAuditing to False"""
         return self.compliant
 
     def reportmac(self):
-        '''
-        run report actions for Mac OS systems
+        '''run report actions for Mac OS systems
 
-        @return: retval
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: retval
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         retval = True
@@ -609,12 +613,14 @@ this system, set the value of EnableKernelAuditing to False"""
         return retval
 
     def report_grub_one(self):
-        '''
-        run report actions for grub version 1
+        '''run report actions for grub version 1
 
-        @return: retval
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: retval
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         retval = False
@@ -631,12 +637,14 @@ this system, set the value of EnableKernelAuditing to False"""
         return retval
 
     def report_grub_two(self):
-        '''
-        run report actions for grub version 2
+        '''run report actions for grub version 2
 
-        @return: retval
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: retval
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         retval = False
@@ -653,12 +661,14 @@ this system, set the value of EnableKernelAuditing to False"""
         return retval
 
     def reportAuditRules(self):
-        '''
-        private method to report status on the audit rules configuration
+        '''private method to report status on the audit rules configuration
 
-        @return: retval
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: retval
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         retval = True
@@ -717,13 +727,15 @@ this system, set the value of EnableKernelAuditing to False"""
         return retval
 
     def reportAURulesSingle(self):
-        '''
-        check audit rules which are stored only in a single
+        '''check audit rules which are stored only in a single
         file (audit.rules)
 
-        @return: retval
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: retval
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         retval = True
@@ -751,14 +763,16 @@ this system, set the value of EnableKernelAuditing to False"""
         return retval
 
     def reportAURulesParts(self):
-        '''
-        check audit rules which are stored in multiple files
+        '''check audit rules which are stored in multiple files
         within rules.d/ directory on systems which use this
         structure
 
-        @return: retval
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: retval
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         retval = True
@@ -791,13 +805,14 @@ this system, set the value of EnableKernelAuditing to False"""
         return retval
 
     def fix(self):
-        '''
-        fix audit rules
+        '''fix audit rules
         ensure audit package is installed
         ensure audit daemon is configured and running
         ensure audit dispatcher is configured
-
+        
         @author: Breen Malmberg
+
+
         '''
 
         fixsuccess = True
@@ -918,14 +933,16 @@ this system, set the value of EnableKernelAuditing to False"""
         return fixsuccess
 
     def fixAuditRules(self):
-        '''
-        private method to fix audit rules configuration
+        '''private method to fix audit rules configuration
         kveditor will not work for this rule because the keys used in
         the dictionary have spaces
 
-        @return: retval
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: retval
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         self.logger.log(LogPriority.DEBUG, "Fixing audit rules...")
@@ -1019,19 +1036,18 @@ this system, set the value of EnableKernelAuditing to False"""
         return retval
 
     def fixArches(self, contentlines):
-        '''
-        fix any arch flags to be appropriate to the current
+        '''fix any arch flags to be appropriate to the current
         system's arch (64 or 32)
         cannot have rule entries for both 64 and 32 of the
         same sys calls, because audit control reads them as
         duplicates and will not load the rules file if it
         detects duplicates
 
-        @param: contentlines: list; list of strings to search and
-                replace
-        @return: contentlines
-        @rtype: list
-        @author: Breen Malmberg
+        :param contentlines: 
+        :returns: contentlines
+        :rtype: list
+@author: Breen Malmberg
+
         '''
 
         self.logger.log(LogPriority.DEBUG, "Fixing arches...")
@@ -1071,15 +1087,15 @@ this system, set the value of EnableKernelAuditing to False"""
         return contentlines
 
     def fixDuplicates(self, contentlines):
-        '''
-        build a new list which is a copy of contentlines
+        '''build a new list which is a copy of contentlines
         except for removing all duplicate entries
 
-        @param contentlines: list; list of strings to search
+        :param contentlines: list; list of strings to search
                 through and remove duplicates from
-        @return: fixedlist
-        @rtype: list
-        @author: Breen Malmberg
+        :returns: fixedlist
+        :rtype: list
+@author: Breen Malmberg
+
         '''
 
         self.logger.log(LogPriority.DEBUG, "Fixing duplicate audit rules entries...")
@@ -1117,16 +1133,18 @@ this system, set the value of EnableKernelAuditing to False"""
         return fixedlist
 
     def remBadRules(self):
-        '''
-        look for, and remove any unwanted or "bad" audit
+        '''look for, and remove any unwanted or "bad" audit
         rules (rules which may be disruptive or harmful to
         the normal operation of a system)
         simply add the correct regex to find the rule you
         want to remove, to the badrules list below
 
-        @return: success
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: success
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         success = True
@@ -1188,8 +1206,7 @@ this system, set the value of EnableKernelAuditing to False"""
         return success
 
     def writeFileContents(self, contents, filepath, owner, perms):
-        '''
-        write new contents to a temp file then rename it to the
+        '''write new contents to a temp file then rename it to the
         intended/original file name
         set the given ownership and permissions to the renamed file
         reset the security context of the renamed file
@@ -1197,16 +1214,17 @@ this system, set the value of EnableKernelAuditing to False"""
         return True if method successfully writes contents
         return False if failed to write contents
 
-        @param contents: list; string list of contents to write to filepath
-        @param filepath: string; full path to file to write to (will write to
+        :param contents: list; string list of contents to write to filepath
+        :param filepath: string; full path to file to write to (will write to
                 a temp file first, then rename to filepath)
-        @param owner: list; integer list of owner (first) and group (second) permissions
+        :param owner: list; integer list of owner (first) and group (second) permissions
                 ex: [0, 0]
-        @param perms: int; integer representation of file permissions to be applied to filepath
+        :param perms: int; integer representation of file permissions to be applied to filepath
                 (will use OCTAL form of this int!) ex: 0640 = rw, r, none
-        @return: success
-        @rtype: bool
-        @author: Breen Malmberg
+        :returns: success
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         success = True
@@ -1286,12 +1304,14 @@ this system, set the value of EnableKernelAuditing to False"""
         return success
 
     def fixmac(self):
-        '''
-        run fix actions for Mac OS systems
+        '''run fix actions for Mac OS systems
 
-        @return: retval
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: retval
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         retval = True
@@ -1348,10 +1368,11 @@ this system, set the value of EnableKernelAuditing to False"""
         return retval
 
     def fix_grub_one(self):
-        '''
-        run fix actions for grub version one
-
+        '''run fix actions for grub version one
+        
         @author: Breen Malmberg
+
+
         '''
 
         retval = True
@@ -1388,10 +1409,11 @@ this system, set the value of EnableKernelAuditing to False"""
         return retval
 
     def fix_grub_two(self):
-        '''
-        run fix actions for grub version two
-
+        '''run fix actions for grub version two
+        
         @author: Breen Malmberg
+
+
         '''
 
         retval = True

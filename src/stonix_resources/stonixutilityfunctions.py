@@ -81,14 +81,14 @@ from logdispatcher import LogPriority
 
 
 def resetsecon(filename):
-    '''
-    Reset the SELinux security context of a file. This should be done after
+    '''Reset the SELinux security context of a file. This should be done after
     sensitive files are modified to prevent breakage due to SELinux denials.
 
-    @param filename: string; Full path to the file to be reset
+    :param filename: string; Full path to the file to be reset
     @author: D. Kennel
-    @return: void
+    :returns: void
     @change: Breen Malmberg - 7/12/2017 - minor doc string edit; added try/except
+
     '''
 
     try:
@@ -101,18 +101,18 @@ def resetsecon(filename):
         raise
 
 def getlocalfs(logger, environ):
-    '''
-    This function is used to return a list of local filesystems. It is used
+    '''This function is used to return a list of local filesystems. It is used
     in the FilePermissions rule among others.
     It must be passed references to the instantiated logdispatcher and
     environment objects.
 
-    @param logger: logging object
-    @param environ: environment object
-    @return: fslist; List of strings that are local filesystems (default = [])
-    @rtype: list
-    @author: Dave Kennel
-    @change: Breen Malmberg - 7/12/2017 - minor doc string edit
+    :param logger: logging object
+    :param environ: environment object
+    :returns: fslist; List of strings that are local filesystems (default = [])
+    :rtype: list
+@author: Dave Kennel
+@change: Breen Malmberg - 7/12/2017 - minor doc string edit
+
     '''
 
     logger.log(LogPriority.DEBUG,
@@ -212,18 +212,18 @@ def getlocalfs(logger, environ):
 
 # This will become a rule or part of a rule
 def importkey(logger):
-    """
-    On new installs we need to import the rpm gpg key to check package sigs.
+    '''On new installs we need to import the rpm gpg key to check package sigs.
     This function will import the key if has not been imported already. We
     don't need to do this if called in install mode because the assumption
     is that expressway has done it.
 
-    @param logger: logging object
+    :param logger: logging object
     @author: Roy Nielsen
-    @return: void
+    :returns: void
     @change: Breen Malmberg - 7/12/2017 - fixed doc string; added try/except;
             fixed method logic
-    """
+
+    '''
 
     try:
 
@@ -251,18 +251,18 @@ def importkey(logger):
         raise
 
 def write_file(logger, file_name="", file_content=""):
-    '''
-    Write a config file (file_content) to destination (file_name)
+    '''Write a config file (file_content) to destination (file_name)
     Initially intended for installing scripts and plists to be controlled by
     launchd
 
-    @param logger: logging object
-    @param file_name: string; file path to write to
-    @param file_content: string; contents to write to <file_name>
-    @author: Roy Nielsen
-    @return: void
+    :param logger: logging object
+    :param file_name: string; file path to write to (Default value = "")
+    :param file_content: string; contents to write to <file_name>
+    @author: Roy Nielsen (Default value = "")
+    :returns: void
     @change: Breen Malmberg - 7/12/2017 - fixed doc string; added try/except;
             simplified method logic; added logging
+
     '''
 
     try:
@@ -282,14 +282,16 @@ def write_file(logger, file_name="", file_content=""):
         raise
 
 def set_no_proxy():
-    """
-    This method described here: http://www.decalage.info/en/python/urllib2noproxy
+    '''This method described here: http://www.decalage.info/en/python/urllib2noproxy
     to create a "no_proxy" environment for python
-
+    
     @author: Roy Nielsen
-    @return: void
+
+
+    :returns: void
     @change: Breen Malmberg - 7/12/2017 - minor doc string edit; added try/except
-    """
+
+    '''
 
     try:
 
@@ -301,16 +303,16 @@ def set_no_proxy():
         raise
 
 def delete_plist_key(plist="", key=""):
-    '''
-    **** Macintosh-specific Function ****
+    '''**** Macintosh-specific Function ****
     Delete a key from a plist file
 
-    @param plist: string; the fully qualified filename of the plist
-    @param key: string; the key to delete
-    @return: in_compliance (0 for failed to delete 1 for done; default = 0)
-    @rtype: int
-    @author: Roy Nielsen
-    @change: Breen Malmberg - 7/12/2017 - fixed doc string; added try/except
+    :param plist: string; the fully qualified filename of the plist (Default value = "")
+    :param key: string; the key to delete (Default value = "")
+    :returns: in_compliance (0 for failed to delete 1 for done; default = 0)
+    :rtype: int
+@author: Roy Nielsen
+@change: Breen Malmberg - 7/12/2017 - fixed doc string; added try/except
+
     '''
 
     in_compliance = 0
@@ -341,20 +343,20 @@ def delete_plist_key(plist="", key=""):
     return in_compliance
 
 def get_plist_value(plist="", key="", current_host=""):
-    '''
-    **** Macintosh-specific Function ****
+    '''**** Macintosh-specific Function ****
     Get the value of a key in a plist file
 
-    @param plist: string; the fully qualified filename of the plist
-    @param key: string; the key to delete
-    @param current_host: string; whether or not to use the -currentHost option
+    :param plist: string; the fully qualified filename of the plist (Default value = "")
+    :param key: string; the key to delete (Default value = "")
+    :param current_host: string; whether or not to use the -currentHost option
            0 = don't use option
-           1 = use -currentHost option
-    @return: current_value ('-NULL-' if the key is not found, otherwise it returns the value of the key; default = '-NULL-')
-    @rtype: string
-    @author: Roy Nielsen
-    @change: Breen Malmberg - 7/12/2017 - doc string edit; added try/except;
-            added return var default init; simplified method logic
+           1 = use -currentHost option (Default value = "")
+    :returns: current_value ('-NULL-' if the key is not found, otherwise it returns the value of the key; default = '-NULL-')
+    :rtype: string
+@author: Roy Nielsen
+@change: Breen Malmberg - 7/12/2017 - doc string edit; added try/except;
+        added return var default init; simplified method logic
+
     '''
 
     current_value = "-NULL-"
@@ -382,20 +384,20 @@ def get_plist_value(plist="", key="", current_host=""):
     return current_value
 
 def has_connection_to_server(logger, server=None, port=80, timeout=1):
-    '''
-    Check to see if there is a connection to a server.
+    '''Check to see if there is a connection to a server.
 
-    @param logger: logger object
-    @param server: string; name of the server you want to check connection with
+    :param logger: logger object
+    :param server: string; name of the server you want to check connection with
             default = None
-    @param port: int; port number you want to check connection with
+    :param port: int; port number you want to check connection with
             default=80
-    @param timeout: int; the number of seconds to wait for a timeout, can be a float.
+    :param timeout: int; the number of seconds to wait for a timeout, can be a float.
             default = 1 second
-    @return: resolvable (True if there is a connection, False if there is not; default = True)
-    @rtype: bool
-    @author: Dave Kennel, Roy Nielsen
-    @change: Breen Malmberg - 7/12/2017 - minor doc string edit; 
+    :returns: resolvable (True if there is a connection, False if there is not; default = True)
+    :rtype: bool
+@author: Dave Kennel, Roy Nielsen
+@change: Breen Malmberg - 7/12/2017 - minor doc string edit;
+
     '''
 
     resolvable = True
@@ -422,8 +424,7 @@ def has_connection_to_server(logger, server=None, port=80, timeout=1):
     return resolvable
 
 def isWritable(logger, filepath, owner="o"):
-    '''
-    return true or false, depending on whether filepath is writable by owner.
+    '''return true or false, depending on whether filepath is writable by owner.
     if owner is not specified, will test for world-writable.
     owner should be specified as one of the following string values:
      other
@@ -433,12 +434,16 @@ def isWritable(logger, filepath, owner="o"):
      user
      u
 
-    @params filepath: string; path of file to check
-    @params owner: string; type of writability to check
-    @params logger: logging object
-    @return isw
-    @rtype: bool
-    @author Breen Malmberg
+    :param s: filepath: string; path of file to check
+    :param s: owner: string; type of writability to check
+    :param s: logger: logging object
+    :param logger: 
+    :param filepath: 
+    :param owner:  (Default value = "o")
+    :returns: isw
+    :rtype: bool
+@author Breen Malmberg
+
     '''
 
     # set default return value isw to False
@@ -472,17 +477,17 @@ def isWritable(logger, filepath, owner="o"):
     return isw
 
 def getOctalPerms(filepath):
-    '''
-    Get and return the octal format of the file permissions for filepath
+    '''Get and return the octal format of the file permissions for filepath
 
-    @return: octperms
-    @rtype: int
-    @author: Breen Malmberg
-    @param filepath: path of file to check
+    :param filepath: path of file to check
     @change: Breen Malmberg - 7/12/2017 - minor doc string edit; added
             try/except; added default return var init
     @change: Brandon R. Gonzales - 5/29/2018 - Now works with directory
             file paths
+    :returns: octperms
+    :rtype: int
+@author: Breen Malmberg
+
     '''
 
     octperms = 0
@@ -501,15 +506,15 @@ def getOctalPerms(filepath):
     return int(octperms)
 
 def getOwnership(filepath):
-    '''
-    Get and return the numeric user and group owner of the filepath
+    '''Get and return the numeric user and group owner of the filepath
 
-    @return: ownership (list; uid in position 0, gid in position 1; default = [])
-    @rtype: list
-    @param filepath: string; path of file to get ownership info from
+    :param filepath: string; path of file to get ownership info from
     @author Breen Malmberg
     @change: Breen Malmberg - 7/12/2017 - minor doc string edit; added
             default return var init
+    :returns: ownership (list; uid in position 0, gid in position 1; default = [])
+    :rtype: list
+
     '''
 
     ownership = []
@@ -526,17 +531,17 @@ def getOwnership(filepath):
     return ownership
 
 def isThisYosemite(environ):
-    '''
-    returns True if the current system's OS is Mountain Lion
-
+    '''returns True if the current system's OS is Mountain Lion
+    
     @author: ekkehard j. koch
-    @param environ: environment object
-    @return: isYosemite (True if applicable False if not)
-    @rtype: bool
-    @change: ekkehard j. koch - 10/17/2013 - Original Implementation
-    @change: Breen Malmberg - 7/12/2017 - minor doc string edit; added try/except;
-            simplified method logic; added default return var init
-            
+
+    :param environ: environment object
+    :returns: isYosemite (True if applicable False if not)
+    :rtype: bool
+@change: ekkehard j. koch - 10/17/2013 - Original Implementation
+@change: Breen Malmberg - 7/12/2017 - minor doc string edit; added try/except;
+        simplified method logic; added default return var init
+
     '''
 
     isYosemite = False
@@ -555,16 +560,17 @@ def isThisYosemite(environ):
     return isYosemite
 
 def isThisMavericks(environ):
-    '''
-    returns True if the current system's OS is Mavericks
-
+    '''returns True if the current system's OS is Mavericks
+    
     @author: ekkehard j. koch
-    @param environ: environment object
-    @return: isMavericks (True if applicable False if not)
-    @rtype: bool
-    @change: ekkehard j. koch - 10/17/2013 - Original Implementation
-    @change: Breen Malmberg - 7/12/2017 - minor doc string edit; added try/except;
-            added default return var init; simplified method logic
+
+    :param environ: environment object
+    :returns: isMavericks (True if applicable False if not)
+    :rtype: bool
+@change: ekkehard j. koch - 10/17/2013 - Original Implementation
+@change: Breen Malmberg - 7/12/2017 - minor doc string edit; added try/except;
+        added default return var init; simplified method logic
+
     '''
 
     isMavericks = False
@@ -583,16 +589,17 @@ def isThisMavericks(environ):
     return isMavericks
 
 def isThisMountainLion(environ):
-    '''
-    returns True if the current system's OS is Mountain Lion
-
+    '''returns True if the current system's OS is Mountain Lion
+    
     @author: ekkehard j. koch
-    @param environ: environment object
-    @return: isMountainLion (True if applicable False if not)
-    @rtype: bool
-    @change: ekkehard j. koch - 10/17/2013 - Original Implementation
-    @change: Breen Malmberg - 7/12/2017 - minor doc string edit; added try/except;
-            added default return var init; simplified method logic
+
+    :param environ: environment object
+    :returns: isMountainLion (True if applicable False if not)
+    :rtype: bool
+@change: ekkehard j. koch - 10/17/2013 - Original Implementation
+@change: Breen Malmberg - 7/12/2017 - minor doc string edit; added try/except;
+        added default return var init; simplified method logic
+
     '''
 
     isMountainLion = False
@@ -611,18 +618,19 @@ def isThisMountainLion(environ):
     return isMountainLion
 
 def readFile(filepath, logger):
-    '''
-    Read a file's contents and return in a list format
+    '''Read a file's contents and return in a list format
     @author: Derek Walker
-    @param filepath: string; path to file to read
-    @param logger: logging object
-    @return: contents
-    @rtype: list
-    @change: bgonz12 - 2017/06/02 - fixed the implementation to use std lib's
-             readlines function, removing syntax error; moved the implementation
-             into the try block
-    @change: Breen Malmberg - 7/12/2017 - minor doc string edit
-    @change: bgonz12 - 2018/1/18 - added handling for 'filepath' not existing
+
+    :param filepath: string; path to file to read
+    :param logger: logging object
+    :returns: contents
+    :rtype: list
+@change: bgonz12 - 2017/06/02 - fixed the implementation to use std lib's
+         readlines function, removing syntax error; moved the implementation
+         into the try block
+@change: Breen Malmberg - 7/12/2017 - minor doc string edit
+@change: bgonz12 - 2018/1/18 - added handling for 'filepath' not existing
+
     '''
     
     contents = []
@@ -644,12 +652,13 @@ def readFile(filepath, logger):
     return contents
 
 def readFileString(filepath, logger):
-    '''
-    Read a file's contents and return in a string format
+    '''Read a file's contents and return in a string format
     @author: Derek Walker
+
     :param filepath: string
     :param logger: logger object
-    :return: contents - string of file's contents
+    :returns: contents - string of file's contents
+
     '''
     contents = ""
     if not os.path.exists(filepath):
@@ -669,20 +678,21 @@ def readFileString(filepath, logger):
     return contents
 
 def writeFile(tmpfile, contents, logger):
-    '''
-    Write <contents> to <tmpfile>.
+    '''Write <contents> to <tmpfile>.
     Return True if successful, False if not.
-
+    
     @author: Derek Walker
-    @param tmpfile: string
-    @param contents: string
-    @param logger: logging object
-    @return: success
-    @rtype: bool
-    @change: Breen Malmberg - 5/8/2017 - refactor to handle both
-            list and string type contents parameter; no change needed
-            to implementation in rules
-    @change: Breen Malmberg - 7/12/2017 - minor doc string edit
+
+    :param tmpfile: string
+    :param contents: string
+    :param logger: logging object
+    :returns: success
+    :rtype: bool
+@change: Breen Malmberg - 5/8/2017 - refactor to handle both
+        list and string type contents parameter; no change needed
+        to implementation in rules
+@change: Breen Malmberg - 7/12/2017 - minor doc string edit
+
     '''
 
     success = True
@@ -703,16 +713,17 @@ def writeFile(tmpfile, contents, logger):
     return success
 
 def getUserGroupName(filename):
-    '''
-    This method gets the uid and gid string name of a file
-    and stores in a list where position 0 is the owner and 
+    '''This method gets the uid and gid string name of a file
+    and stores in a list where position 0 is the owner and
     position 1 is the group
-
+    
     @author: Derek Walker
-    @param filename: string; filename to get uid and gid name
-    @return: retval (uid in position 0 of list. gid in position 1 of list)
-    @rtype: list
-    @change: Breen Malmberg - 7/12/2017 - minor doc string edit; added try/except
+
+    :param filename: string; filename to get uid and gid name
+    :returns: retval (uid in position 0 of list. gid in position 1 of list)
+    :rtype: list
+@change: Breen Malmberg - 7/12/2017 - minor doc string edit; added try/except
+
     '''
 
     retval = []
@@ -732,23 +743,24 @@ def getUserGroupName(filename):
     return retval
 
 def checkUserGroupName(ownergrp, owner, group, actualmode, desiredmode, logger):
-    '''
-    This method is usually used in conjuction with getUserGroupName.
+    '''This method is usually used in conjuction with getUserGroupName.
     Returned list from getUserGroupName is passed through this method along
     with desired owner and group string name and checked to see if they match
-
+    
     @author: Derek Walker
-    @param ownergrp: list containing user/owner string name (0) and group string
+
+    :param ownergrp: list containing user/owner string name (0) and group string
         name (1)
-    @param owner: Desired owner string name to check against
-    @param group: Desired group string name to check against
-    @param actualmode: Actual mode number to be compared with <desiredmode>
-    @param desiredmode: Desired mode number to be compared with <actualmode>
-    @param logger: logging object
-    @return: retval
-    @rtype: list | bool
-    @change: Breen Malmberg - 7/12/2017 - minor doc string edit; added try/except
-    @note: methods should not have more than 1 return type!!
+    :param owner: Desired owner string name to check against
+    :param group: Desired group string name to check against
+    :param actualmode: Actual mode number to be compared with <desiredmode>
+    :param desiredmode: Desired mode number to be compared with <actualmode>
+    :param logger: logging object
+    :returns: retval
+    :rtype: list | bool
+@change: Breen Malmberg - 7/12/2017 - minor doc string edit; added try/except
+@note: methods should not have more than 1 return type!!
+
     '''
 
     retval = []
@@ -785,17 +797,17 @@ def checkUserGroupName(ownergrp, owner, group, actualmode, desiredmode, logger):
     return retval
 
 def checkPerms(path, perm, logger):
-    '''
-    Check the given file's permissions.
+    '''Check the given file's permissions.
 
-    @return: retval
-    @rtype: bool
-    @param path: string; file path whose perm's to check
-    @param perm: list; list of ownership and permissions information
-    @param logger: LogDispatch object
+    :param path: string; file path whose perm's to check
+    :param perm: list; list of ownership and permissions information
+    :param logger: LogDispatch object
     @author: Derek Walker
     @change: Breen Malmberg - 1/10/2017 - doc string edit; return val init;
             minor refactor; parameter validation; logging
+    :returns: retval
+    :rtype: bool
+
     '''
 
     retval = True
@@ -838,19 +850,19 @@ def checkPerms(path, perm, logger):
     return retval
 
 def setPerms(path, perm, logger, stchlogger="", myid=""):
-    '''
-    Set the given <path>'s permissions to <perm>.
+    '''Set the given <path>'s permissions to <perm>.
 
-    @return: retval
-    @rtype: bool
-    @param path: string; full path to the file whose perms to set
-    @param perm: list; integer list of permissions and ownership information
-    @param logger: object; logger object
-    @param stchlogger: object; statechangelogger object
-    @param myid: string; indicates a unique id to assign to the action of changing perms
+    :param path: string; full path to the file whose perms to set
+    :param perm: list; integer list of permissions and ownership information
+    :param logger: object; logger object
+    :param stchlogger: object; statechangelogger object (Default value = "")
+    :param myid: string; indicates a unique id to assign to the action of changing perms
     @author: Derek Walker
     @change: Breen Malmberg - 1/10/2017 - doc string edit; minor refactor; logging;
-            return var init; parameter validation
+            return var init; parameter validation (Default value = "")
+    :returns: retval
+    :rtype: bool
+
     '''
 
     retval = True
@@ -892,17 +904,18 @@ def setPerms(path, perm, logger, stchlogger="", myid=""):
     return retval
 
 def iterate(iditerator, rulenumber):
-    '''
-    Create and return a unique id number, in string format, for recording events
+    '''Create and return a unique id number, in string format, for recording events
     in Stonix.
-
+    
     @author: Derek Walker
-    @param iditerator: int
-    @param rulenumber: int 
-    @return: myid (default = '0000')
-    @rtype: string
-    @change: Breen Malmberg - 7/12/2017 - minor doc string edit; added return
-            var init; added try/except
+
+    :param iditerator: int
+    :param rulenumber: int
+    :returns: myid (default = '0000')
+    :rtype: string
+@change: Breen Malmberg - 7/12/2017 - minor doc string edit; added return
+        var init; added try/except
+
     '''
 
     myid = "0000"
@@ -930,25 +943,24 @@ def iterate(iditerator, rulenumber):
     return myid
 
 def createFile(path, logger):
-    '''
-    Create a blank file with file name = <path>, if <path>
+    '''Create a blank file with file name = <path>, if <path>
     does not already exist.
 
-    @param path: string representing full path to write
-    @param logger: logging object
+    :param path: string representing full path to write
+    :param logger: logging object
+    :returns: retval
+    :rtype: bool
 
-    @return: retval
-    @rtype: bool
+@author: Derek Walker
+@change: Breen Malmberg - 7/12/2017 - completed doc string; added return var;
+        added return var init; added check to see if path already exists;
+        changed the way new files get created to the canonical python way;
+        changed the logging if an exception happens to just log the exception
+        message itself instead of creating an artificial message; added debug
+        logging about the processes of the method; changed the makedirs default
+        permissions so directories will no longer be created with 777, but 755
+        instead
 
-    @author: Derek Walker
-    @change: Breen Malmberg - 7/12/2017 - completed doc string; added return var;
-            added return var init; added check to see if path already exists;
-            changed the way new files get created to the canonical python way;
-            changed the logging if an exception happens to just log the exception
-            message itself instead of creating an artificial message; added debug
-            logging about the processes of the method; changed the makedirs default
-            permissions so directories will no longer be created with 777, but 755
-            instead
     '''
 
     retval = True
@@ -971,16 +983,16 @@ def createFile(path, logger):
     return retval
 
 def findUserLoggedIn(logger):
-    """
-    Find the name of the logged-in user.
+    '''Find the name of the logged-in user.
 
-    @return: myuser
-    @rtype: string
-    @param logger: logging object
+    :param logger: logging object
     @author: Roy Nielsen
     @change: Breen Malmberg - 7/12/2017 - completed doc string; added try/except
             and var init
-    """
+    :returns: myuser
+    :rtype: string
+
+    '''
 
     myuser = ""
     reterr = ""
@@ -1011,25 +1023,26 @@ def findUserLoggedIn(logger):
     return myuser
 
 def isServerVersionHigher(client_version="0.0.0", server_version="0.0.0", logger=None):
-    """
-    Compares two strings with potentially either 3 or 4 digits, to see which
+    '''Compares two strings with potentially either 3 or 4 digits, to see which
     version is higher.
     
-    WARNING: This relies on the programmer putting the SERVER VERSION in the 
+    WARNING: This relies on the programmer putting the SERVER VERSION in the
              last parameter.
     
     Returns - True: if version two is higher
               False: if version two is lower
                      Also returns false if the pattern \d+\.\d+\.\d+ is not met
-
+    
     @author: Roy Nielsen
-    @return: needToUpdate
-    @rtype: bool
-    @param client_version: string representing version of client
-    @param server_version: string representing version of server
-    @param logger: logging object (optional; default = None)
+
+    :param client_version: string representing version of client (Default value = "0.0.0")
+    :param server_version: string representing version of server (Default value = "0.0.0")
+    :param logger: logging object (optional; default = None)
     @change: Breen Malmberg - 7/12/2017 - completed doc string; added try/except
-    """
+    :returns: needToUpdate
+    :rtype: bool
+
+    '''
 
     needToUpdate = False
 
@@ -1122,8 +1135,7 @@ def isServerVersionHigher(client_version="0.0.0", server_version="0.0.0", logger
     return needToUpdate
 
 def versioncomp(firstver, secondver):
-    '''
-    versioncomp() is an alternate version comparison to the original
+    '''versioncomp() is an alternate version comparison to the original
     isServerVersionHigher() function. This function takes two version strings
     as arguments. The second string is compared to the first and the results
     are based on that order. The return is a string that is one of the
@@ -1134,13 +1146,16 @@ def versioncomp(firstver, secondver):
     This function only works for purely numeric versions. e.g. 2.3.4 but not
     2.3.4B.
 
-    @param string firstver: the first version string
-    @param string secondver: the second version string
-    @return: versionis
-    @rtype: string (equal | newer | older; default = equal)
-    @author: Dave Kennel
-    @change: Breen Malmberg - 7/12/2017 - minor doc string edit; added try/except;
-            added return var; added return var init
+    :param string: firstver: the first version string
+    :param string: secondver: the second version string
+    :param firstver: 
+    :param secondver: 
+    :returns: versionis
+    :rtype: string (equal | newer | older; default = equal)
+@author: Dave Kennel
+@change: Breen Malmberg - 7/12/2017 - minor doc string edit; added try/except;
+        added return var; added return var init
+
     '''
 
     versionis = 'equal'
@@ -1159,18 +1174,18 @@ def versioncomp(firstver, secondver):
     return versionis
 
 def fixInflation(filepath, logger, perms, owner):
-    '''
-    this method is designed to remove newline character (\n) inflation in files
+    '''this method is designed to remove newline character (\n) inflation in files
     it should not modify, nor remove any lines of actual content in the file
     return True if successful; else return False
 
-    @param filepath: string full path to file
-    @param logger: object reference logging object
-    @param perms: int 4-digit octal permissions (ex: 0644 = rw, r, r)
-    @param owner: list a list of 2 integers (ex: [0, 0] = root:root)
-    @return: retval
-    @rtype: bool
-    @author: Breen Malmberg
+    :param filepath: string full path to file
+    :param logger: object reference logging object
+    :param perms: int 4-digit octal permissions (ex: 0644 = rw, r, r)
+    :param owner: list a list of 2 integers (ex: [0, 0] = root:root)
+    :returns: retval
+    :rtype: bool
+@author: Breen Malmberg
+
     '''
 
     retval = True
@@ -1275,19 +1290,19 @@ def fixInflation(filepath, logger, perms, owner):
     return retval
 
 def validateParam(logger, param, ptype, pname):
-    '''
-    check whether a param is of the given type
+    '''check whether a param is of the given type
     return True if type matches
     return False if type does not match
 
-    @param logger: logging object
-    @param param: any; variable to check
-    @param ptype: object base type
-    @param pname: string; name of variable being passed (for logging purposes)
-    @return: valid
-    @rtype: bool
-    @author: Breen Malmberg
-    @change: Breen Malmberg - 7/12/2017 - minor doc string edit
+    :param logger: logging object
+    :param param: any; variable to check
+    :param ptype: object base type
+    :param pname: string; name of variable being passed (for logging purposes)
+    :returns: valid
+    :rtype: bool
+@author: Breen Malmberg
+@change: Breen Malmberg - 7/12/2017 - minor doc string edit
+
     '''
 
     valid = True
@@ -1338,16 +1353,16 @@ def reportStack(level=1):
     return filename + " : " + functionName + " : " + lineNumber + " : "
 
 def psRunning(ps):
-    '''
-    check whether a process identified by the given pid is
+    '''check whether a process identified by the given pid is
     currently running or not
 
-    @param pid: int; process id to check
+    :param pid: int; process id to check
+    :param ps: 
+    :returns: isrunning
+    :rtype: bool
 
-    @return: isrunning
-    @rtype: bool
+@author: Breen Malmberg
 
-    @author: Breen Malmberg
     '''
 
     isrunning = False

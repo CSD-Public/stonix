@@ -31,11 +31,12 @@ class SedFile4VersionStamp(object):
                 self.sedFileWithDateTimeStamp(myfile)
 
     def acquireStamp(self):
-        """
-        Get the UTC time and format a time stamp string for the version.
-
+        '''Get the UTC time and format a time stamp string for the version.
+        
         @author: Roy Nielsen
-        """
+
+
+        '''
         format = ""
         datestamp = datetime.utcnow()
         
@@ -43,13 +44,15 @@ class SedFile4VersionStamp(object):
         self.logger.log(lp.DEBUG, "Stamp: " + str(self.stamp))
 
     def sedFileWithDateTimeStamp(self, file2change=""):
-        """
-        Find "^(\s+module_version\s*=\s*)\S*" or
+        '''Find "^(\s+module_version\s*=\s*)\S*" or
              "^(\s+self.module_version\s*=\s*)\S*"
         and replace with x.group(1) + "'" +  acquireStamp() + "'"
-
+        
         @author: Roy Nielsen
-        """
+
+        :param file2change:  (Default value = "")
+
+        '''
         self.logger.log(lp.INFO, "********** Entered sed method...**************")
         startString = ""
         found = False

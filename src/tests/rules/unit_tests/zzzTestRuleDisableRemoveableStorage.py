@@ -61,11 +61,12 @@ class zzzTestRuleDisableRemoveableStorage(RuleTest):
         self.simpleRuleTest()
 
     def setConditionsForRule(self):
-        '''
-        Configure system for the unit test
-        @param self: essential if you override this definition
-        @return: boolean - If successful True; If failure False
+        '''Configure system for the unit test
+
+        :param self: essential if you override this definition
+        :returns: boolean - If successful True; If failure False
         @author: ekkehard j. koch
+
         '''
         success = True
         if self.environ.getostype() == "Mac OS X":
@@ -75,13 +76,15 @@ class zzzTestRuleDisableRemoveableStorage(RuleTest):
         return success
 
     def setConditionsForMac(self):
-        '''
-        Method to configure mac non compliant for unit test
+        '''Method to configure mac non compliant for unit test
         @author: dwalker
-        @return: boolean
+
+
+        :returns: boolean
+
         '''
         success = True
-        daemonpath = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]))) + "/src/stonix_resources/disablestorage"
+        daemonpath = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]))) + "/src/stonix_resources/disablestorage.py"
         plistpath = "/Library/LaunchDaemons/gov.lanl.stonix.disablestorage.plist"
         self.rule.daemonpath = daemonpath
         if re.search("^10.11", self.environ.getosver()):
@@ -113,10 +116,12 @@ class zzzTestRuleDisableRemoveableStorage(RuleTest):
         return success
 
     def setConditionsForLinux(self):
-        '''
-        Method to configure mac non compliant for unit test
+        '''Method to configure mac non compliant for unit test
         @author: dwalker
-        @return: boolean
+
+
+        :returns: boolean
+
         '''
         success = True
         self.ph = Pkghelper(self.logger, self.environ)
@@ -207,13 +212,14 @@ class zzzTestRuleDisableRemoveableStorage(RuleTest):
         return success
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
-        '''
-        check on whether report was correct
-        @param self: essential if you override this definition
-        @param pCompliance: the self.iscompliant value of rule
-        @param pRuleSuccess: did report run successfully
-        @return: boolean - If successful True; If failure False
+        '''check on whether report was correct
+
+        :param self: essential if you override this definition
+        :param pCompliance: the self.iscompliant value of rule
+        :param pRuleSuccess: did report run successfully
+        :returns: boolean - If successful True; If failure False
         @author: ekkehard j. koch
+
         '''
         self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " + \
                              str(pCompliance) + ".")
@@ -223,12 +229,13 @@ class zzzTestRuleDisableRemoveableStorage(RuleTest):
         return success
 
     def checkFixForRule(self, pRuleSuccess):
-        '''
-        check on whether fix was correct
-        @param self: essential if you override this definition
-        @param pRuleSuccess: did report run successfully
-        @return: boolean - If successful True; If failure False
+        '''check on whether fix was correct
+
+        :param self: essential if you override this definition
+        :param pRuleSuccess: did report run successfully
+        :returns: boolean - If successful True; If failure False
         @author: ekkehard j. koch
+
         '''
         self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
                              str(pRuleSuccess) + ".")
@@ -236,12 +243,13 @@ class zzzTestRuleDisableRemoveableStorage(RuleTest):
         return success
 
     def checkUndoForRule(self, pRuleSuccess):
-        '''
-        check on whether undo was correct
-        @param self: essential if you override this definition
-        @param pRuleSuccess: did report run successfully
-        @return: boolean - If successful True; If failure False
+        '''check on whether undo was correct
+
+        :param self: essential if you override this definition
+        :param pRuleSuccess: did report run successfully
+        :returns: boolean - If successful True; If failure False
         @author: ekkehard j. koch
+
         '''
         self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
                              str(pRuleSuccess) + ".")

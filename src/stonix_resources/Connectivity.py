@@ -31,19 +31,18 @@ from localize import PROXY
 
 
 class ConnectivityInvalidURL(Exception):
-    """
-    Custom Exception
-    """
+    '''Custom Exception'''
     def __init__(self, *args, **kwargs):
         Exception.__init__(self, *args, **kwargs)
 
 
 class Connectivity(object):
-    """
-    Check different methods of network connectivity
+    '''Check different methods of network connectivity
     
     @author: Roy Nielsen
-    """
+
+
+    '''
     def __init__(self, logger, use_proxy=False):
         """
         Constructor
@@ -59,10 +58,13 @@ class Connectivity(object):
     ############################################################
 
     def is_site_socket_online(self, host):
-        """ This function checks to see if a host name has a DNS entry by checking
-            for socket info. If the website gets something in return, 
+        '''This function checks to see if a host name has a DNS entry by checking
+            for socket info. If the website gets something in return,
             we know it's available to DNS.
-        """
+
+        :param host: 
+
+        '''
         retval = False
         try:
             socket.setdefaulttimeout(5)
@@ -89,24 +91,24 @@ class Connectivity(object):
     ############################################################
 
     def is_site_available(self, site="", path=""):
-        """
-        This function retrieves the status code of a web site by requesting
+        '''This function retrieves the status code of a web site by requesting
         HEAD data from the host. This means that it only requests the headers.
         If the host cannot be reached or something else goes wrong, it returns
         False.
-
+        
         This will only work if the self.set_no_proxy method is used before
         this method is called.
 
-        @param site: string; fqdn (domain); ex: http://www.google.com/
-        @param path: string; the rest of the URL; ex: docs/about
-        @return: retval
-        @rtype: bool
-        @author: ???
-        @change: 02/12/2018 - Breen Malmberg - added doc string decorators; proxy
-                will now be set for the test if the use_proxy argument in __init__ is
-                True.
-        """
+        :param site: string; fqdn (domain); ex: http://www.google.com/ (Default value = "")
+        :param path: string; the rest of the URL; ex: docs/about (Default value = "")
+        :returns: retval
+        :rtype: bool
+@author: ???
+@change: 02/12/2018 - Breen Malmberg - added doc string decorators; proxy
+        will now be set for the test if the use_proxy argument in __init__ is
+        True.
+
+        '''
 
         retval = True
 
@@ -137,14 +139,16 @@ class Connectivity(object):
         return retval
 
     def isPageAvailable(self, url="", timeout=8):
-        """
-        Check if a specific webpage link is available, using httplib's
+        '''Check if a specific webpage link is available, using httplib's
         request('GET', url).  If a 200 is received in return, the connection
         to the page was successful.
 
-        @parameter: url - valid http:// or https:// url
-        @parameter: timeout - how fast to timeout the connection.
-        """
+        :param eter: url - valid http:// or https:// url
+        :param eter: timeout - how fast to timeout the connection.
+        :param url:  (Default value = "")
+        :param timeout:  (Default value = 8)
+
+        '''
         url = url.strip()
         self.logger.log(LogPriority.DEBUG, "URL: '" + str(url) + "'")
         self.logger.log(LogPriority.DEBUG, "timeout: " + str(timeout))
@@ -192,15 +196,17 @@ class Connectivity(object):
         return success
 
     def isUrlValid(self, url):
-        """
-        Check for a valid URL - 
+        '''Check for a valid URL -
         
         1 - cannot have multiple colons in the host portion of the url.
             one colon may separate the host and port, ie:
               proxy.example.com:8888
         2 - Only http and https are supported
         3 - the URL is a string
-        """
+
+        :param url: 
+
+        '''
         success = False
         self.logger.log(LogPriority.DEBUG, "URL: " + str(url))
         
@@ -248,17 +254,14 @@ class Connectivity(object):
         return success
     
     def decomposeURL(self, url=""):
-        """
-        Acquire the host, port and page of the URL and return them to the 
+        '''Acquire the host, port and page of the URL and return them to the
         caller.
-        
-        @parameter: url - a valid web URL, must be http:// or https://
-        
-        @returns: host - the host to which we want to connect.
-        @returns: port - the port we want to connect to
-        @returns: page - the rest of the string past the host:port section
-                         of the URL.
-        """
+
+        :param eter: url - a valid web URL, must be http:// or https://
+        :param url:  (Default value = "")
+        :returns: s: host - the host to which we want to connect.
+
+        '''
         host = ""
         port = 0
         page = ""
@@ -310,23 +313,25 @@ class Connectivity(object):
     ###########################################################################
     
     def set_no_proxy(self):
-        """
-        This method described here: http://www.decalage.info/en/python/urllib2noproxy
+        '''This method described here: http://www.decalage.info/en/python/urllib2noproxy
         to create a "no_proxy" environment for python
-    
+        
         @author: Roy Nielsen
-        """
+
+
+        '''
 
         proxy_handler = urllib2.ProxyHandler({})
         opener = urllib2.build_opener(proxy_handler)
         urllib2.install_opener(opener)
 
     def set_proxy(self):
-        '''
-        This method configures the proxy for the outgoing connection based on the proxy
+        '''This method configures the proxy for the outgoing connection based on the proxy
         set in localize.py (PROXY)
-
+        
         @author: Breen Malmberg
+
+
         '''
 
         ptype = 'https'
@@ -346,20 +351,18 @@ class Connectivity(object):
     ###########################################################################
     
     def buildValidatingOpener(self, ca_certs, proxy=False):
-        '''
-        Return a urllib2 'opener' that can verify a site based on a public CA
+        '''Return a urllib2 'opener' that can verify a site based on a public CA
         pem file.
-        
-        @param: ca_certs - a Pem file that has one or more public CA certs
-                           to compare a website's cert with to make sure the
-                           site has a valid ancestry.
-        @param: proxy - proxy string that defines a proxy that the opener
-                        needs to travel through.  If false, will not use proxies
 
-        @returns: a valid urllib2 https handler, or False, having not been able
+        :param ca_certs: 
+        :param proxy:  (Default value = False)
+        :returns: s: a valid urllib2 https handler, or False, having not been able
                   to load the ssl library
         
         example:
+        
+        
+        @compiler: Roy Nielsen
 
         >>> opener = buildValidatingOpener(resourcesDir + "/.ea.pem")
         >>> params = urllib.urlencode({'PropNumIn' : self.prop_num})
@@ -369,10 +372,8 @@ class Connectivity(object):
         >>> req = urllib2.Request(url, params, headers)
         >>>
         >>> data = opener.open(req).read()
-        >>> 
+        >>>
         >>> opener.close()
- 
-        @compiler: Roy Nielsen
         '''
         url_opener = False
         try:

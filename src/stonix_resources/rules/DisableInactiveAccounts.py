@@ -48,9 +48,10 @@ from ..CommandHelper import CommandHelper
 
 
 class DisableInactiveAccounts(Rule):
-    '''
-    This rule will set the global policy for inactive accounts so that any
+    '''This rule will set the global policy for inactive accounts so that any
     account not accessed/used within 35 days will be automatically disabled.
+
+
     '''
 
     def __init__(self, config, environ, logger, statechglogger):
@@ -82,22 +83,25 @@ class DisableInactiveAccounts(Rule):
         self.initobjs()
 
     def initobjs(self):
-        '''
-        initialize objects for use by this class
+        '''initialize objects for use by this class
 
-        @return: void
+
+        :returns: void
         @author: Breen Malmberg
+
         '''
 
         self.cmdhelper = CommandHelper(self.logger)
 
     def getEnabledAccounts(self):
-        '''
-        return a list of all currently enabled accounts
+        '''return a list of all currently enabled accounts
 
-        @return: enabledaccounts
-        @rtype: list
-        @author: Breen Malmberg
+
+        :returns: enabledaccounts
+
+        :rtype: list
+@author: Breen Malmberg
+
         '''
 
         allaccounts = []
@@ -122,14 +126,16 @@ class DisableInactiveAccounts(Rule):
         return enabledaccounts
 
     def report(self):
-        '''
-        get a list of users
+        '''get a list of users
         determine each user's password last set time
         determine if each user is inactive
 
-        @return: self.compliant
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: self.compliant
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         # UPDATE THIS SECTION IF YOU CHANGE THE CONSTANTS BEING USED IN THE RULE
@@ -208,14 +214,14 @@ class DisableInactiveAccounts(Rule):
         return self.compliant
 
     def getinactivedays(self, user):
-        '''
-        Get and return the number of days a given user account has been
+        '''Get and return the number of days a given user account has been
         inactive
 
-        @return: inactivedays
-        @rtype: int
-        @param user: string the name of the account to check
+        :param user: string the name of the account to check
         @author: Breen Malmberg
+        :returns: inactivedays
+        :rtype: int
+
         '''
 
         inactivedays = 0
@@ -269,14 +275,16 @@ class DisableInactiveAccounts(Rule):
         return inactivedays
 
     def fix(self):
-        '''
-        check if ci is enabled
+        '''check if ci is enabled
         if it is, run fix actions for this rule
         if not, report that it is disabled
 
-        @return: fixsuccess
-        @rtype: bool
-        @author: Breen Malmberg
+
+        :returns: fixsuccess
+
+        :rtype: bool
+@author: Breen Malmberg
+
         '''
 
         # UPDATE THIS SECTION IF YOU CHANGE THE CONSTANTS BEING USED IN THE RULE

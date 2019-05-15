@@ -40,14 +40,13 @@ class CheckApplicable(object):
         self.myostype = self.environ.getostype()
 
     def isapplicable(self, applicable={'default': 'default'}):
-        """
-        This method returns true if the rule applies to the platform on which
+        '''This method returns true if the rule applies to the platform on which
         stonix is currently running. The method in this template class will
         return true by default. The class property applicable will be
         referenced when this method is called and should be set by classes
         inheriting from the rule class including sub-template rules and
         concrete rule implementations.
-
+        
         The format for the applicable property is a dictionary. The dictionary
         will be interpreted as follows:
         Key    Values        Meaning
@@ -88,28 +87,30 @@ class CheckApplicable(object):
                             always causes the method to return true. The
                             default only takes affect if the family and os keys
                             are not defined.
-
+        
         An Example dictionary might look like this:
         applicable = {'type': 'white',
                            'family': Linux,
                            'os': {'Mac OS X': ['10.9', 'r', '10.10.5']}
         That example whitelists all Linux operating systems and Mac OS X from
         10.9.0 to 10.10.5.
-
+        
         The family and os keys may be combined. Note that specifying a family
         will mask the behavior of the more specific os key.
-
+        
         Note that version comparison is done using the distutils.version
         module. If the stonix environment module returns a 3 place version
         string then you need to provide a 3 place version string. I.E. in this
         case 10.9 only matches 10.9.0 and does not match 10.9.3 or 10.9.5.
-
+        
         This method may be overridden if required.
 
-        @return bool :
+        :param applicable:  (Default value = {'default': 'default'})
+        :returns: bool :
         @author D. Kennel
         @change: 2015/04/13 added this method to template class
-        """
+
+        '''
         self.logger.log(LogPriority.DEBUG,
                         'Dictionary is: ' + str(applicable))
         try:
@@ -166,14 +167,16 @@ class CheckApplicable(object):
         return applies
 
     def isInRange(self, rangeList, myversion=0):
-        """
-        This method separates out the range-checking functionality of the
+        '''This method separates out the range-checking functionality of the
         original rule.isapplicable() method. The proper formats for a version
         list are detailed in the isapplicable docs above.
 
-        @return: bool
+        :param rangeList: 
+        :param myversion:  (Default value = 0)
+        :returns: bool
         @author: David Kennel, Eric Ball
-        """
+
+        '''
         if not myversion:
             myversion = self.myosversion
         # Process version and up

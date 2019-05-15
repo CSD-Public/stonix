@@ -17,19 +17,19 @@ from ..manage_user.macos_user import MacOSUser
 from .manage_keychain_template import ManageKeychainTemplate
 
 class UnsupportedSecuritySubcommand(Exception):
-    """
-    Meant for being thrown when a command does not support a passed
+    '''Meant for being thrown when a command does not support a passed
     in subcommand.
-
+    
     @author: Roy Nielsen
-    """
+
+
+    '''
     def __init__(self, *args, **kwargs):
         Exception.__init__(self, *args, **kwargs)
 
 
 class MacOSKeychain(MacOSUser, ManageKeychainTemplate):
-    """
-    """
+    ''' '''
     def __init__(self, **kwargs):
         """
         Initialization Method
@@ -50,21 +50,15 @@ class MacOSKeychain(MacOSUser, ManageKeychainTemplate):
     # ----------------------------------------------------------------------
 
     def validateSecurityCommand(self, command={}):
-        """
-        Validate that we have a properly formatted command, and the subcommand
+        '''Validate that we have a properly formatted command, and the subcommand
         is valid.
 
-        @param: the commandDict should be in the format below:
-
-        cmd = {"set-keychain-password": [oldPass, newPass, "'" + keychain + "'"]}
-
-        where the key is the security 'subcommand' and the list is an ordered
-        list of the arguments to give the subcommand.
-
-        @returns: success - whether the command was successfull or not.
-
+        :param command:  (Default value = {})
+        :returns: s: success - whether the command was successfull or not.
+        
         @author: Roy Nielsen
-        """
+
+        '''
         success = False
         subcmd = []
         if not isinstance(command, dict):
@@ -126,21 +120,15 @@ class MacOSKeychain(MacOSUser, ManageKeychainTemplate):
     # -------------------------------------------------------------------------
 
     def runSecurityCommand(self, commandDict={}):
-        """
-        Use the passed in dictionary to create a MacOS 'security' command
+        '''Use the passed in dictionary to create a MacOS 'security' command
         and execute it.
 
-        @param: the commandDict should be in the format below:
-
-        cmd = { "set-keychain-password" : [oldPass, newPass, "'" + keychain + "'"] }
-
-        where the key is the security 'subcommand' and the list is an ordered
-        list of the arguments to give the subcommand.
-
-        @returns: success - whether the command was successfull or not.
-
+        :param commandDict:  (Default value = {})
+        :returns: s: success - whether the command was successfull or not.
+        
         @author: Roy Nielsen
-        """
+
+        '''
         success = False
         output = ""
         error = ""
@@ -205,11 +193,13 @@ class MacOSKeychain(MacOSUser, ManageKeychainTemplate):
     # ----------------------------------------------------------------------
 
     def setUser(self, user=""):
-        """
-        Setter for the class user variable..
-
+        '''Setter for the class user variable..
+        
         @author: Roy Nielsen
-        """
+
+        :param user:  (Default value = "")
+
+        '''
         success = False
         if self.isSaneUserName(user):
             self.userName = user
@@ -219,16 +209,18 @@ class MacOSKeychain(MacOSUser, ManageKeychainTemplate):
     # ----------------------------------------------------------------------
 
     def catOne(self, subCommand="", prefDomain="", keychain="", setList=False, *args, **kwargs):
-        '''
-        Run a category one subcommand - a subcommand that has a options pattern of:
-
+        '''Run a category one subcommand - a subcommand that has a options pattern of:
+        
         [-h] [-d user|system|common|dynamic] [-s [keychain...]]
-
+        
         such as list-keychains, default-keychain and login-keychain.
 
-        @param: subCommand - a value inthe list of ["list-keychains",
-                                                    "default-keychain",
-                                                    "login-keychain"]
+        :param subCommand:  (Default value = "")
+        :param prefDomain:  (Default value = "")
+        :param keychain:  (Default value = "")
+        :param setList:  (Default value = False)
+        :param *args: 
+        :param **kwargs: 
 
         '''
         success = False
@@ -273,14 +265,15 @@ class MacOSKeychain(MacOSUser, ManageKeychainTemplate):
 
     def listKeychains(self, keychain='', prefDomain='user', setList=False,
                       *args, **kwargs):
-        '''
-        Display or manipulate the keychain search list.  Only support a single
+        '''Display or manipulate the keychain search list.  Only support a single
         keychain at a time.
 
-        @param: keychain - Keychain to list
-        @param: prefDomain - user|system|common|dynamic
+        :param keychain:  (Default value = '')
+        :param prefDomain:  (Default value = 'user')
+        :param setList:  (Default value = False)
+        :param *args: 
+        :param **kwargs: 
 
-        @author: Roy Nielsen
         '''
         keychain = keychain.strip()
         prefDomain = prefDomain.strip()
@@ -294,13 +287,14 @@ class MacOSKeychain(MacOSUser, ManageKeychainTemplate):
 
     def defaultKeychain(self, keychain='', prefDomain='user', setList=False,
                         *args, **kwargs):
-        '''
-        Display or set the default keychain.
+        '''Display or set the default keychain.
 
-        @param: keychain - Keychain to list
-        @param: prefDomain - user|system|common|dynamic
+        :param keychain:  (Default value = '')
+        :param prefDomain:  (Default value = 'user')
+        :param setList:  (Default value = False)
+        :param *args: 
+        :param **kwargs: 
 
-        @author: Roy Nielsen
         '''
         keychain = keychain.strip()
         prefDomain = prefDomain.strip()
@@ -312,13 +306,14 @@ class MacOSKeychain(MacOSUser, ManageKeychainTemplate):
 
     def loginKeychain(self, keychain='', prefDomain='user', setList=False,
                       *args, **kwargs):
-        '''
-        Display or set the login keychain.
+        '''Display or set the login keychain.
 
-        @param: keychain - Keychain to list
-        @param: prefDomain - user|system|common|dynamic
+        :param keychain:  (Default value = '')
+        :param prefDomain:  (Default value = 'user')
+        :param setList:  (Default value = False)
+        :param *args: 
+        :param **kwargs: 
 
-        @author: Roy Nielsen
         '''
         keychain = keychain.strip()
         prefDomain = prefDomain.strip()
@@ -331,11 +326,16 @@ class MacOSKeychain(MacOSUser, ManageKeychainTemplate):
 
     def createKeychain(self, passwd="", keychain="",
                        *args, **kwargs):
-        """
-        Create a keychain.
-
+        '''Create a keychain.
+        
         @author: Roy Nielsen
-        """
+
+        :param passwd:  (Default value = "")
+        :param keychain:  (Default value = "")
+        :param *args: 
+        :param **kwargs: 
+
+        '''
         success = False
         passwd = passwd.strip()
         keychain = keychain.strip()
@@ -357,21 +357,13 @@ class MacOSKeychain(MacOSUser, ManageKeychainTemplate):
 
     def deleteKeychain(self, keychain="",
                        *args, **kwargs):
-        """
-        Delete keychain
+        '''Delete keychain
 
-        @param: keychain - full path to keychain to delete, it will be removed
-                           from the index as well as deleted from the
-                           filesystem.
+        :param keychain:  (Default value = "")
+        :param *args: 
+        :param **kwargs: 
 
-        @note: the command is:
-
-        security delete-keychain <file.keychain>
-
-        The <file.keychain> must be the full path to the keychain.
-
-        @author: Roy Nielsen
-        """
+        '''
         success = False
         keychain = keychain.strip()
         #####
@@ -391,16 +383,18 @@ class MacOSKeychain(MacOSUser, ManageKeychainTemplate):
     # -------------------------------------------------------------------------
 
     def lockKeychain(self, keychain="", allKeychains=False):
-        """
-        Lock the defined keychain
+        '''Lock the defined keychain
 
-        @parameter: keychain - full path to the keychain to unlock
-
+        :param eter: keychain - full path to the keychain to unlock
+        
         @note:
         security unlock-keychain -p <passwd>
-
+        
         @author: Roy Nielsen
-        """
+        :param keychain:  (Default value = "")
+        :param allKeychains:  (Default value = False)
+
+        '''
         success = False
         keychain = keychain.strip()
         #####
@@ -423,18 +417,19 @@ class MacOSKeychain(MacOSUser, ManageKeychainTemplate):
     # -------------------------------------------------------------------------
 
     def unlockKeychain(self, passwd="", keychain=""):
-        """
-        Unlock the defined keychain
+        '''Unlock the defined keychain
 
-        @parameter: passwd - password for the keychain to unlock
-
-        @parameter: keychain - full path to the keychain to unlock
-
+        :param eter: passwd - password for the keychain to unlock
+        :param eter: keychain - full path to the keychain to unlock
+        
         @note:
         security unlock-keychain -p <passwd>
-
+        
         @author: Roy Nielsen
-        """
+        :param passwd:  (Default value = "")
+        :param keychain:  (Default value = "")
+
+        '''
         success = False
         keychain = keychain.strip()
         passwd = passwd.strip()
@@ -463,17 +458,22 @@ class MacOSKeychain(MacOSUser, ManageKeychainTemplate):
                                oldPass=False,
                                newPass=False,
                                keychain=False):
-        """
-        Use the "security" command to set the login keychain.  If it has not
+        '''Use the "security" command to set the login keychain.  If it has not
         been created, create the login keychain.
-
+        
         use the following command on the Mac:
         security set-keychain-password -o <oldpassword> -p <newpassword> <file.keychain>
-
+        
         Most used keychain is the login.keychain-db.
-
+        
         @author: Roy Nielsen
-        """
+
+        :param user:  (Default value = "")
+        :param oldPass:  (Default value = False)
+        :param newPass:  (Default value = False)
+        :param keychain:  (Default value = False)
+
+        '''
         success = False
         stdout = ""
         user = user.strip()
@@ -515,12 +515,12 @@ class MacOSKeychain(MacOSUser, ManageKeychainTemplate):
 
     def showKeychainInfo(self, keychain,
                          *args, **kwargs):
-        '''
-        Show the settings for a keychain.
+        '''Show the settings for a keychain.
 
-        @param: keychain - keychain to acquire information about
+        :param keychain: 
+        :param *args: 
+        :param **kwargs: 
 
-        @author: Roy Nielsen
         '''
         success = False
         stdout = False
@@ -543,12 +543,15 @@ class MacOSKeychain(MacOSUser, ManageKeychainTemplate):
     # -------------------------------------------------------------------------
 
     def dumpKeychain(self, *args, **kwargs):
-        '''
-        Dump the contents of one or more keychains.
-
+        '''Dump the contents of one or more keychains.
+        
         @Note: No parameters currently supported, will dump all information.
-
+        
         @author: Roy Nielsen
+
+        :param *args: 
+        :param **kwargs: 
+
         '''
         #####
         # Command setup - note that the keychain deliberately has quotes
@@ -566,14 +569,14 @@ class MacOSKeychain(MacOSUser, ManageKeychainTemplate):
 
     def findCertificate(self, name='', keychain='',
                         *args, **kwargs):
-        '''
-        Find a certificate item.  Search based on 'name', currently finds all,
+        '''Find a certificate item.  Search based on 'name', currently finds all,
         matches, printing output in PEM format.
 
-        @param: name - search string
-        @param: keychain - keychain to search, default = search list
+        :param name:  (Default value = '')
+        :param keychain:  (Default value = '')
+        :param *args: 
+        :param **kwargs: 
 
-        @author: Roy Nielsen
         '''
         success = False
         stdout = False
@@ -602,16 +605,16 @@ class MacOSKeychain(MacOSUser, ManageKeychainTemplate):
 
     def findIdentity(self, valid=True, policy='', sstring='', keychain='',
                      *args, **kwargs):
-        '''
-        Find an identity (certificate + private key).  Only shows valid
+        '''Find an identity (certificate + private key).  Only shows valid
         identities.
 
-        @param: policy - value  in a list of validProperties in this method
-        @param: sstring - search string
-        @param: keychain - (optional) - keychain to search, otherwise the
-                                        search list.
+        :param valid:  (Default value = True)
+        :param policy:  (Default value = '')
+        :param sstring:  (Default value = '')
+        :param keychain:  (Default value = '')
+        :param *args: 
+        :param **kwargs: 
 
-        @author: Roy Nielsen
         '''
         policy = policy.strip()
         keychain = keychain.strip()
@@ -663,13 +666,13 @@ class MacOSKeychain(MacOSUser, ManageKeychainTemplate):
 
     def authorize(self, options='', right='',
                   *args, **kwargs):
-        '''
-        Display descriptive message for the given error code(s).
+        '''Display descriptive message for the given error code(s).
 
-        @param: options - Options to use for rights authorization.
-        @param: right - What right to authorize
+        :param options:  (Default value = '')
+        :param right:  (Default value = '')
+        :param *args: 
+        :param **kwargs: 
 
-        @author: Roy Nielsen
         '''
         success = False
         stdout = False
@@ -696,12 +699,12 @@ class MacOSKeychain(MacOSUser, ManageKeychainTemplate):
 
     def error(self, ecode='',
               *args, **kwargs):
-        '''
-        Display descrip6tive message for the given error code(s).
+        '''Display descrip6tive message for the given error code(s).
 
-        @param: Error code to acquire information about.
+        :param ecode:  (Default value = '')
+        :param *args: 
+        :param **kwargs: 
 
-        @author: Roy Nielsen
         '''
         success = False
         stdout = False
@@ -735,10 +738,9 @@ class MacOSKeychain(MacOSUser, ManageKeychainTemplate):
                             keyType='',
                             partIDs="apple-tool:,apple:,codesign:",
                             *args, **kwargs):
-        '''
-        Not known what exactly this subcommand does, it is required
+        '''Not known what exactly this subcommand does, it is required
         on MacOS Sierra to allow for signing with xcodebuild or codesign.
-
+        
         Usage: set-key-partition-list [options...] [keychain]
             -a  Match "application label" string
             -c  Match "creator" (four-character code)
@@ -757,15 +759,20 @@ class MacOSKeychain(MacOSUser, ManageKeychainTemplate):
             -k  password for keychain (required)
         If no keychains are specified to search, the default search list is used.
 
-        @param: options = string of characters indicated by the switches above 
-                          that determine a the type of match to make
-        @param: keyPass = keychain password to use
-        @param: keychain = the keychain to act on
-        @param: partIDs = String to pass as the partition IDs for the -S parameter
-        @param: keyType = type of key to find - must be one of:
-                          ["symmetric", "public", "private"]
+        :param options:  (Default value = False)
+        :param keyPass:  (Default value = '')
+        :param keychain:  (Default value = '')
+        :param creator:  (Default value = '')
+        :param description:  (Default value = '')
+        :param comment:  (Default value = '')
+        :param label:  (Default value = '')
+        :param keyType:  (Default value = '')
+        :param partIDs:  (Default value = "apple-tool:)
+        :param apple:: 
+        :param codesign:": 
+        :param *args: 
+        :param **kwargs: 
 
-        @author: Roy Nielsen
         '''
         success = False
         stdout = False

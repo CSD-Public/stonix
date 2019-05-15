@@ -28,11 +28,12 @@ from ServiceHelperTemplate import ServiceHelperTemplate
 
 
 class SHrcupdate(ServiceHelperTemplate):
-    '''
-    SHrcupdate is the Service Helper for systems using the rcupdate command to
+    '''SHrcupdate is the Service Helper for systems using the rcupdate command to
     configure services. (Gentoo & variants)
-
+    
     @author: dkennel
+
+
     '''
 
     def __init__(self, environment, logdispatcher):
@@ -47,11 +48,12 @@ class SHrcupdate(ServiceHelperTemplate):
         self.svclist = self.getsvclist()
 
     def getsvclist(self):
-        '''
-        Returns the list of enabled services and the run level in which they are
+        '''Returns the list of enabled services and the run level in which they are
         scheduled to run. This is the raw output of rc-update show.
-
+        
         @author: D. Kennel
+
+
         '''
         self.logdispatcher.log(LogPriority.DEBUG, 'SHrcupdate.getsvclist')
         try:
@@ -66,14 +68,15 @@ class SHrcupdate(ServiceHelperTemplate):
         return svclist
 
     def findrunlevel(self, service):
-        '''
-        Returns a string indicating the run level that the named service is
+        '''Returns a string indicating the run level that the named service is
         configured to run at. If the service is not configured to run it will
         return None.
 
-        @param string: service name
-        @return: string: runlevel
+        :param string: service name
+        :param service: 
+        :returns: string: runlevel
         @author: D. Kennel
+
         '''
         self.logdispatcher.log(LogPriority.DEBUG,
                                'SHrcupdate.findrunlevel ' + service)
@@ -90,11 +93,13 @@ class SHrcupdate(ServiceHelperTemplate):
         return runlevel
 
     def disableService(self, service, **kwargs):
-        '''
-        Disables the service and terminates it if it is running.
+        '''Disables the service and terminates it if it is running.
 
-        @param string: Name of the service to be disabled
-        @return: Bool indicating success status
+        :param string: Name of the service to be disabled
+        :param service: 
+        :param **kwargs: 
+        :returns: Bool indicating success status
+
         '''
         ret2 = 0
         self.logdispatcher.log(LogPriority.DEBUG,
@@ -123,12 +128,14 @@ class SHrcupdate(ServiceHelperTemplate):
             return False
 
     def enableService(self, service, **kwargs):
-        '''
-        Enables a service and starts it if it is not running as long as we are
+        '''Enables a service and starts it if it is not running as long as we are
         not in install mode
 
-        @param string: Name of the service to be enabled
-        @return: Bool indicating success status
+        :param string: Name of the service to be enabled
+        :param service: 
+        :param **kwargs: 
+        :returns: Bool indicating success status
+
         '''
         ret2 = 0
         self.logdispatcher.log(LogPriority.DEBUG,
@@ -158,12 +165,14 @@ class SHrcupdate(ServiceHelperTemplate):
             return False
 
     def auditService(self, service, **kwargs):
-        '''
-        Checks the status of a service and returns a bool indicating whether or
+        '''Checks the status of a service and returns a bool indicating whether or
         not the service is configured to run or not.
 
-        @param string: Name of the service to audit
-        @return: Bool, True if the service is configured to run
+        :param string: Name of the service to audit
+        :param service: 
+        :param **kwargs: 
+        :returns: Bool, True if the service is configured to run
+
         '''
         self.logdispatcher.log(LogPriority.DEBUG,
                                'SHrcupdate.auditservice ' + service)
@@ -183,11 +192,13 @@ class SHrcupdate(ServiceHelperTemplate):
         return running
 
     def isRunning(self, service, **kwargs):
-        '''
-        Check to see if a service is currently running. 
+        '''Check to see if a service is currently running.
 
-        @param sting: Name of the service to check
-        @return: bool, True if the service is already running
+        :param sting: Name of the service to check
+        :param service: 
+        :param **kwargs: 
+        :returns: bool, True if the service is already running
+
         '''
         self.logdispatcher.log(LogPriority.DEBUG,
                                'SHrcupdate.isrunning ' + service)
@@ -209,13 +220,15 @@ class SHrcupdate(ServiceHelperTemplate):
         return running
 
     def reloadService(self, service, **kwargs):
-        '''
-        Reload (HUP) a service so that it re-reads it's config files. Called
+        '''Reload (HUP) a service so that it re-reads it's config files. Called
         by rules that are configuring a service to make the new configuration
         active.
 
-        @param string: Name of the service to reload
-        @return: bool indicating success status
+        :param string: Name of the service to reload
+        :param service: 
+        :param **kwargs: 
+        :returns: bool indicating success status
+
         '''
         self.logdispatcher.log(LogPriority.DEBUG,
                                'SHrcupdate.reload ' + service)
@@ -235,10 +248,11 @@ class SHrcupdate(ServiceHelperTemplate):
             return True
 
     def listServices(self, **kwargs):
-        '''
-        Return a list containing strings that are service names.
+        '''Return a list containing strings that are service names.
 
-        @return: list
+        :param **kwargs: 
+        :returns: list
+
         '''
         self.logdispatcher.log(LogPriority.DEBUG,
                                'SHrcupdate.listservices')

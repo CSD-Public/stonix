@@ -34,17 +34,16 @@ elif sys.platform.startswith("linux"):
 
 @unittest.skipUnless(sys.platform.startswith("linux"), "This test is not valid on this OS")
 class test_linuxTmpfsRamdisk(GenericRamdiskTest):
-    """
-    Test for the Linux tmpfs Ramdisk interface
-
+    '''Test for the Linux tmpfs Ramdisk interface
+    
     @author: Roy Nielsen
-    """
+
+
+    '''
 
     @classmethod
     def setUpInstanceSpecifics(self):
-        """
-        Initializer
-        """
+        '''Initializer'''
         # Start timer in miliseconds
         self.test_start_time = datetime.now()
 
@@ -55,11 +54,12 @@ class test_linuxTmpfsRamdisk(GenericRamdiskTest):
         self.initializeHelper = False
 
     def setUp(self):
-        """
-        This method runs before each test run.
-
+        '''This method runs before each test run.
+        
         @author: Roy Nielsen
-        """
+
+
+        '''
         pass
 
 
@@ -67,24 +67,20 @@ class test_linuxTmpfsRamdisk(GenericRamdiskTest):
 ##### Helper Classes
 
     def format_ramdisk(self):
-        """
-        Format Ramdisk
-        """
+        '''Format Ramdisk'''
         self.my_ramdisk._format()
 
 ###############################################################################
 ##### Method Tests
 
     def test_linuxTmpfsRamdiskFirstTest(self):
-        """
-        """
+        ''' '''
         pass
 
     ##################################
 
     def test_linuxTmpfsRamdiskSecondTest(self):
-        """
-        """
+        ''' '''
         pass
 
 
@@ -92,9 +88,7 @@ class test_linuxTmpfsRamdisk(GenericRamdiskTest):
 ##### unittest Tear down
     @classmethod
     def tearDownClass(self):
-        """
-        disconnect ramdisk
-        """
+        '''disconnect ramdisk'''
         pass
 
 ###############################################################################

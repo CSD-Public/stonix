@@ -35,10 +35,7 @@ from ..SystemIntegrityProtectionObject import SystemIntegrityProtectionObject
 
 
 class SystemIntegrityProtection(Rule):
-    '''
-
-    @author: ekkehard j. koch
-    '''
+    '''@author: ekkehard j. koch'''
 
 ###############################################################################
 
@@ -82,12 +79,14 @@ class SystemIntegrityProtection(Rule):
 ###############################################################################
 
     def resultAppend(self, pMessage=""):
-        '''
-        append results to detailed results.
+        '''append results to detailed results.
         @author: ekkehard j. koch
-        @param self:essential if you override this definition
-        @return: boolean - true
+
+        :param self: essential if you override this definition
+        :param pMessage:  (Default value = "")
+        :returns: boolean - true
         @note: None
+
         '''
         datatype = type(pMessage)
         if datatype == types.StringType:
@@ -117,11 +116,12 @@ class SystemIntegrityProtection(Rule):
 ###############################################################################
 
     def resultReset(self):
-        '''
-        reset detailed results.
+        '''reset detailed results.
         @author: ekkehard j. koch
-        @param self:essential if you override this definition
-        @return: boolean - true
+
+        :param self: essential if you override this definition
+        :returns: boolean - true
         @note: None
+
         '''
         self.detailedresults = ""

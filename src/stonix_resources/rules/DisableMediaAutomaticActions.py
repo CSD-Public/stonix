@@ -37,9 +37,7 @@ from ..ruleKVEditor import RuleKVEditor
 
 
 class DisableMediaAutomaticActions(RuleKVEditor):
-    '''
-    @author: ekkehard j. koch
-    '''
+    '''@author: ekkehard j. koch'''
 
     def __init__(self, config, environ, logger, statechglogger):
         RuleKVEditor.__init__(self, config, environ, logger, statechglogger)

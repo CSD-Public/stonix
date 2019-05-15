@@ -56,16 +56,17 @@ class zzzTestRuleDisableMediaAutomaticActions(RuleTest):
         self.simpleRuleTest()
 
     def setConditionsForRule(self):
-        '''
-        This makes sure the intial report fails by executing the following
+        '''This makes sure the intial report fails by executing the following
         commands:
         defaults -currentHost delete /Library/Preferences/com.apple.digihub com.apple.digihub.blank.cd.appeared
         defaults -currentHost delete /Library/Preferences/com.apple.digihub com.apple.digihub.blank.dvd.appeared
         defaults -currentHost delete /Library/Preferences/com.apple.digihub com.apple.digihub.cd.picture.appeared
         defaults -currentHost delete /Library/Preferences/com.apple.digihub com.apple.digihub.dvd.video.appeared
-        @param self: essential if you override this definition
-        @return: boolean - If successful True; If failure False
+
+        :param self: essential if you override this definition
+        :returns: boolean - If successful True; If failure False
         @author: ekkehard j. koch
+
         '''
         success = True
         if success:
@@ -97,15 +98,18 @@ class zzzTestRuleDisableMediaAutomaticActions(RuleTest):
         return success
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
-        '''
-        To see what happended run these commands:
+        '''To see what happended run these commands:
         defaults -currentHost read /Library/Preferences/com.apple.digihub com.apple.digihub.blank.cd.appeared
         defaults -currentHost read /Library/Preferences/com.apple.digihub com.apple.digihub.blank.dvd.appeared
         defaults -currentHost read /Library/Preferences/com.apple.digihub com.apple.digihub.cd.picture.appeared
         defaults -currentHost read /Library/Preferences/com.apple.digihub com.apple.digihub.dvd.video.appeared
-        @param self: essential if you override this definition
-        @return: boolean - If successful True; If failure False
+
+        :param self: essential if you override this definition
+        :param pCompliance: 
+        :param pRuleSuccess: 
+        :returns: boolean - If successful True; If failure False
         @author: ekkehard j. koch
+
         '''
         self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " + \
                              str(pCompliance) + ".")

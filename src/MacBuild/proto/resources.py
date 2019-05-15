@@ -2,11 +2,12 @@
 
 import os
 def getResourcesDir() :
-    """ 
-    Get the full path to the Resources directory of the current app 
+    '''Get the full path to the Resources directory of the current app
     
     Author: Roy Nielsen
-    """
+
+
+    '''
     # Gets the <app-path>/Contents/MacOS full path
     selffile = os.path.abspath(__file__)
     selfdir = os.path.dirname(selffile)

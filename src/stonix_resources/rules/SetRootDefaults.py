@@ -40,9 +40,7 @@ import pwd
 
 
 class SetRootDefaults(Rule):
-    '''
-    Set default group and home directory for root.
-    '''
+    '''Set default group and home directory for root.'''
 
     def __init__(self, config, environ, logger, statechglogger):
         '''
@@ -74,13 +72,15 @@ class SetRootDefaults(Rule):
                            'family': ['solaris']}
 
     def report(self):
-        '''
-        Retrieve and report the location of root user's home directory,
+        '''Retrieve and report the location of root user's home directory,
         and the integer value of root user's gid.
 
-        @return self.compliant
-        @rtype: bool
-        @author Breen Malmberg
+
+        :returns: self.compliant
+
+        :rtype: bool
+@author Breen Malmberg
+
         '''
 
         # defaults
@@ -116,13 +116,16 @@ class SetRootDefaults(Rule):
         return self.compliant
 
     def fix(self):
-        '''
-        Set the gid for the root account to 0. Set the home directory for the
+        '''Set the gid for the root account to 0. Set the home directory for the
         root account to /root.
-
+        
         @author Breen Malmberg
-        @return: success
-        @rtype: bool
+
+
+        :returns: success
+
+        :rtype: bool
+
         '''
 
         success = True
