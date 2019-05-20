@@ -216,80 +216,81 @@ FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
         havetimeoutlock = False
         havelogout = False
         havelogoutlock = False
-        if os.path.exists('/etc/dconf/db/local.d'):
-            if os.path.exists(self.gnomesettingpath):
-                havedconffile = True
-                self.logdispatch.log(LogPriority.DEBUG,
-                                     ['ForceIdleLogout.__chkgnome3',
-                                      'Found Gnome settings file'])
-                contents = readFile(self.gnomesettingpath, self.logger)
-                for line in contents:
-                    if re.search('sleep-inactive-ac-timeout=' + str(self.seconds),
-                                 line):
-                        havetimeout = True
-                        self.logdispatch.log(LogPriority.DEBUG,
-                                             ['ForceIdleLogout.__chkgnome3',
-                                              'Found Gnome timeout'])
-                    if re.search("sleep-inactive-ac-type='logout'", line):
-                        havelogout = True
-                        self.logdispatch.log(LogPriority.DEBUG,
-                                             ['ForceIdleLogout.__chkgnome3',
-                                              'Found Gnome logout'])
-            if os.path.exists(self.gnomelockpath):
-                havelockfile = True
-                self.logdispatch.log(LogPriority.DEBUG,
-                                     ['ForceIdleLogout.__chkgnome3',
-                                      'Found Gnome lock file'])
-                contents = readFile(self.gnomelockpath, self.logger)
-                for line in contents:
-                    if re.search('/org/gnome/settings-daemon/plugins/power/sleep-inactive-ac-timeout', line):
-                        havetimeoutlock = True
-                        self.logdispatch.log(LogPriority.DEBUG,
-                                             ['ForceIdleLogout.__chkgnome3',
-                                              'Found Gnome timeout lock'])
-                    if re.search("/org/gnome/settings-daemon/plugins/power/sleep-inactive-ac-type", line):
-                        havelogoutlock = True
-                        self.logdispatch.log(LogPriority.DEBUG,
-                                             ['ForceIdleLogout.__chkgnome3',
-                                              'Found Gnome logout lock'])
-        if not havedconffile:
-            self.detailedresults += "GNOME 3 autologout settings " + \
-                "file not found at: " + \
-                "/etc/dconf/db/local.d/00-autologout\n"
-            compliant = False
+        if os.path.exists("/usr/bin/gsettings"):
+            if os.path.exists('/etc/dconf/db/local.d'):
+                if os.path.exists(self.gnomesettingpath):
+                    havedconffile = True
+                    self.logdispatch.log(LogPriority.DEBUG,
+                                         ['ForceIdleLogout.__chkgnome3',
+                                          'Found Gnome settings file'])
+                    contents = readFile(self.gnomesettingpath, self.logger)
+                    for line in contents:
+                        if re.search('sleep-inactive-ac-timeout=' + str(self.seconds),
+                                     line):
+                            havetimeout = True
+                            self.logdispatch.log(LogPriority.DEBUG,
+                                                 ['ForceIdleLogout.__chkgnome3',
+                                                  'Found Gnome timeout'])
+                        if re.search("sleep-inactive-ac-type='logout'", line):
+                            havelogout = True
+                            self.logdispatch.log(LogPriority.DEBUG,
+                                                 ['ForceIdleLogout.__chkgnome3',
+                                                  'Found Gnome logout'])
+                if os.path.exists(self.gnomelockpath):
+                    havelockfile = True
+                    self.logdispatch.log(LogPriority.DEBUG,
+                                         ['ForceIdleLogout.__chkgnome3',
+                                          'Found Gnome lock file'])
+                    contents = readFile(self.gnomelockpath, self.logger)
+                    for line in contents:
+                        if re.search('/org/gnome/settings-daemon/plugins/power/sleep-inactive-ac-timeout', line):
+                            havetimeoutlock = True
+                            self.logdispatch.log(LogPriority.DEBUG,
+                                                 ['ForceIdleLogout.__chkgnome3',
+                                                  'Found Gnome timeout lock'])
+                        if re.search("/org/gnome/settings-daemon/plugins/power/sleep-inactive-ac-type", line):
+                            havelogoutlock = True
+                            self.logdispatch.log(LogPriority.DEBUG,
+                                                 ['ForceIdleLogout.__chkgnome3',
+                                                  'Found Gnome logout lock'])
+                if not havedconffile:
+                    self.detailedresults += "GNOME 3 autologout settings " + \
+                        "file not found at: " + \
+                        "/etc/dconf/db/local.d/00-autologout\n"
+                    compliant = False
 
-        if not havetimeout:
-            self.detailedresults += "GNOME 3 autologout timeout " + \
-                "not found or does not match expected value. Set " + \
-                "sleep-inactive-ac-timeout=" + str(self.seconds) + \
-                " in /etc/dconf/db/local.d/00-autologout\n"
-            compliant = False
+                if not havetimeout:
+                    self.detailedresults += "GNOME 3 autologout timeout " + \
+                        "not found or does not match expected value. Set " + \
+                        "sleep-inactive-ac-timeout=" + str(self.seconds) + \
+                        " in /etc/dconf/db/local.d/00-autologout\n"
+                    compliant = False
 
-        if not havelogout:
-            self.detailedresults += "GNOME 3 autologout logout " + \
-                "not found. Set sleep-inactive-ac-type='logout' in " + \
-                "/etc/dconf/db/local.d/00-autologout\n"
-            compliant = False
+                if not havelogout:
+                    self.detailedresults += "GNOME 3 autologout logout " + \
+                        "not found. Set sleep-inactive-ac-type='logout' in " + \
+                        "/etc/dconf/db/local.d/00-autologout\n"
+                    compliant = False
 
-        if not havelockfile:
-            self.detailedresults += "GNOME 3 autologout lock " + \
-                "file not found at: " + \
-                "/etc/dconf/db/local.d/locks/autologout\n"
-            compliant = False
+                if not havelockfile:
+                    self.detailedresults += "GNOME 3 autologout lock " + \
+                        "file not found at: " + \
+                        "/etc/dconf/db/local.d/locks/autologout\n"
+                    compliant = False
 
-        if not havetimeoutlock:
-            self.detailedresults += "GNOME 3 autologout timeout " + \
-                "lock not found. Set /org/gnome/settings-daemon/" + \
-                "plugins/power/sleep-inactive-ac-timeout in " + \
-                "/etc/dconf/db/local.d/locks/autologout\n"
-            compliant = False
+                if not havetimeoutlock:
+                    self.detailedresults += "GNOME 3 autologout timeout " + \
+                        "lock not found. Set /org/gnome/settings-daemon/" + \
+                        "plugins/power/sleep-inactive-ac-timeout in " + \
+                        "/etc/dconf/db/local.d/locks/autologout\n"
+                    compliant = False
 
-        if not havelogoutlock:
-            self.detailedresults += "GNOME 3 autologout lock not " + \
-                "found. Set /org/gnome/settings-daemon/plugins/" + \
-                "power/sleep-inactive-ac-type in " + \
-                "/etc/dconf/db/local.d/locks/autologout\n"
-            compliant = False
+                if not havelogoutlock:
+                    self.detailedresults += "GNOME 3 autologout lock not " + \
+                        "found. Set /org/gnome/settings-daemon/plugins/" + \
+                        "power/sleep-inactive-ac-type in " + \
+                        "/etc/dconf/db/local.d/locks/autologout\n"
+                    compliant = False
 
         if self.ph.check(self.gconf):
             self.logdispatch.log(LogPriority.DEBUG,
@@ -500,149 +501,152 @@ FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
         success = True
         createddir = False
         debug = ""
-        if not os.path.exists('/etc/dconf/db/local.d'):
-            if not os.mkdir('/etc/dconf/db/local.d/'):
-                success = False
-                debug = "Unable to create the /etc/dconf/db/local.d/ directory"
-                self.logger.log(LogPriority.DEBUG, debug)
-            else:
-                createddir = True
-                self.iditerator += 1
-                myid = iterate(self.iditerator, self.rulenumber)
-                event = {"eventtype": "creation",
-                         "filepath": "/etc/dconf/db/local.d"}
-        if os.path.exists('/etc/dconf/db/local.d'):
-            created1, created2 = False, False
-            self.logdispatch.log(LogPriority.DEBUG,
-                                 ['ForceIdleLogout.__fixgnome3',
-                                  'Working GNOME with dconf'])
-
-            try:
-                seconds = self.timeoutci.getcurrvalue() * 60
-            except(TypeError):
-                self.detailedresults += "FORCEIDLELOGOUTTIMEOUT value is " + \
-                    "not valid!\n"
-                self.rulesuccess = False
-                return False
-            if not os.path.exists(self.gnomesettingpath):
-                if not createFile(self.gnomesettingpath, self.logger):
+        if os.path.exists("/usr/bin/gsettings"):
+            if not os.path.exists('/etc/dconf/db/local.d'):
+                if not os.mkdir('/etc/dconf/db/local.d/'):
                     success = False
-                    self.detailedresults += "Unable to create " + self.gnomesettingpath + " file\n"
+                    debug = "Unable to create the /etc/dconf/db/local.d/ directory"
+                    self.detailedresults += "Unable to create the /etc/dconf/db/local.d/ directory"
+                    self.logger.log(LogPriority.DEBUG, debug)
                 else:
-                    created1 = True
-                    if not createddir:
-                        self.iditerator += 1
-                        myid = iterate(self.iditerator, self.rulenumber)
-                        event = {"eventtype": "creation",
-                                 "filepath": self.gnomesettingpath}
-                        self.statechglogger.recordchgevent(myid, event)
-            if os.path.exists(self.gnomesettingpath):
-                gdirectives = {"org.gnome.settings-daemon.plugins.power": {
-                                "sleep-inactive-ac-type": "'logout'",
-                                'sleep-inactive-ac-timeout': str(seconds)}}
-                geditor = KVEditorStonix(self.statechglogger, self.logger, "tagconf",
-                                         self.gnomesettingpath,
-                                         self.gnomesettingpath + '.tmp',
-                                         gdirectives, "present", "closedeq")
-                geditor.report()
-                if geditor.fixables:
-                    if geditor.fix():
-                        self.iditerator += 1
-                        myid = iterate(self.iditerator, self.rulenumber)
-                        geditor.setEventID(myid)
-                        if geditor.commit():
-                            debug = self.gnomesettingpath + "'s contents have been " + \
-                                "corrected\n"
-                            self.logger.log(LogPriority.DEBUG, debug)
-                            os.chown(self.gnomesettingpath, 0, 0)
-                            os.chmod(self.gnomesettingpath, 0o644)
-                            resetsecon(self.gnomesettingpath)
-
-                        else:
-                            debug = "kveditor commit not successful\n"
-                            self.logger.log(LogPriority.DEBUG, debug)
-                            self.detailedresults += self.gnomesettingpath + \
-                                " properties could not be set\n"
-                            succeess = False
-                    else:
-                        debug = "kveditor fix not successful\n"
-                        self.logger.log(LogPriority.DEBUG, debug)
-                        self.detailedresults += self.gnomesettingpath + \
-                                                " properties could not be set\n"
-                        succeess = False
-                if not checkPerms(self.gnomesettingpath, [0, 0, 644], self.logger):
-                    if not created1:
-                        self.iditerator += 1
-                        myid = iterate(self.iditerator, self.rulenumber)
-                        if not setPerms(self.gnomesettingpath, [0, 0, 644], self.logger,
-                                        self.statechglogger, myid):
-                            self.detailedresults += "Unable to set permissions on " + \
-                                self.gnomesettingpath + " file\n"
-                            success = False
-                    else:
-                        if not setPerms(self.gnomesettingpath, [0, 0, 644], self.logger):
-                            self.detailedresults += "Unable to set permissions on " + \
-                                                    self.gnomesettingpath + " file\n"
-                            success = False
-            havetimeoutlock = False
-            havelogoutlock = False
-            lockdata = []
-            if not os.path.exists(self.gnomelockpath):
-                if not createFile(self.gnomelockpath, self.logger):
-                    success = False
-                    self.detailedresults += "Unable to create " + self.gnomelockpath + " file\n"
-                else:
-                    created2 = True
-                    if not createddir:
-                        self.iditerator += 1
-                        myid = iterate(self.iditerator, self.rulenumber)
-                        event = {"eventtype": "creation",
-                                 "filepath": self.gnomelockpath}
-                        self.statechglogger.recordchgevent(myid, event)
-            if os.path.exists(self.gnomelockpath):
-                contents = readFile(self.gnomelockpath, self.logger)
-                for line in contents:
-                    if re.search('/org/gnome/settings-daemon/plugins/power/sleep-inactive-ac-timeout',
-                                 line):
-                        havetimeoutlock = True
-                    if re.search("/org/gnome/settings-daemon/plugins/power/sleep-inactive-ac-type",
-                                 line):
-                        havelogoutlock = True
-                if not havetimeoutlock:
-                    lockdata.append('/org/gnome/settings-daemon/plugins/power/sleep-inactive-ac-timeout\n')
-                if not havelogoutlock:
-                    lockdata.append("/org/gnome/settings-daemon/plugins/power/sleep-inactive-ac-type\n")
-                tempfile = self.gnomelockpath + ".tmp"
-                if writeFile(tempfile, lockdata, self.logger):
+                    createddir = True
                     self.iditerator += 1
                     myid = iterate(self.iditerator, self.rulenumber)
-                    event = {"eventtype": "conf",
-                             "filepath": self.gnomelockpath}
-                    self.statechglogger.recordchgevent(myid, event)
-                    self.statechglogger.recordfilechange(self.gnomelockpath,
-                                                         tempfile, myid)
-                    os.rename(tempfile, self.gnomelockpath)
-                    os.chown(self.gnomelockpath, 0, 0)
-                    os.chmod(self.gnomelockpath, 0o644)
-                    resetsecon(self.gnomelockpath)
-                else:
-                    self.detailedresults += "Unable to write contents to " + \
-                        self.gnomelockpath
-                    success = False
-                if not checkPerms(self.gnomelockpath, [0, 0, 0o644], self.logger):
-                    if not created2:
+                    event = {"eventtype": "creation",
+                             "filepath": "/etc/dconf/db/local.d"}
+                    self.statechglogger.rec
+            if os.path.exists('/etc/dconf/db/local.d'):
+                created1, created2 = False, False
+                self.logdispatch.log(LogPriority.DEBUG,
+                                     ['ForceIdleLogout.__fixgnome3',
+                                      'Working GNOME with dconf'])
+
+                try:
+                    seconds = self.timeoutci.getcurrvalue() * 60
+                except(TypeError):
+                    self.detailedresults += "FORCEIDLELOGOUTTIMEOUT value is " + \
+                        "not valid!\n"
+                    self.rulesuccess = False
+                    return False
+                if not os.path.exists(self.gnomesettingpath):
+                    if not createFile(self.gnomesettingpath, self.logger):
+                        success = False
+                        self.detailedresults += "Unable to create " + self.gnomesettingpath + " file\n"
+                    else:
+                        created1 = True
+                        if not createddir:
+                            self.iditerator += 1
+                            myid = iterate(self.iditerator, self.rulenumber)
+                            event = {"eventtype": "creation",
+                                     "filepath": self.gnomesettingpath}
+                            self.statechglogger.recordchgevent(myid, event)
+                if os.path.exists(self.gnomesettingpath):
+                    gdirectives = {"org.gnome.settings-daemon.plugins.power": {
+                                    "sleep-inactive-ac-type": "'logout'",
+                                    'sleep-inactive-ac-timeout': str(seconds)}}
+                    geditor = KVEditorStonix(self.statechglogger, self.logger, "tagconf",
+                                             self.gnomesettingpath,
+                                             self.gnomesettingpath + '.tmp',
+                                             gdirectives, "present", "closedeq")
+                    geditor.report()
+                    if geditor.fixables:
+                        if geditor.fix():
+                            self.iditerator += 1
+                            myid = iterate(self.iditerator, self.rulenumber)
+                            geditor.setEventID(myid)
+                            if geditor.commit():
+                                debug = self.gnomesettingpath + "'s contents have been " + \
+                                    "corrected\n"
+                                self.logger.log(LogPriority.DEBUG, debug)
+                                os.chown(self.gnomesettingpath, 0, 0)
+                                os.chmod(self.gnomesettingpath, 0o644)
+                                resetsecon(self.gnomesettingpath)
+
+                            else:
+                                debug = "kveditor commit not successful\n"
+                                self.logger.log(LogPriority.DEBUG, debug)
+                                self.detailedresults += self.gnomesettingpath + \
+                                    " properties could not be set\n"
+                                succeess = False
+                        else:
+                            debug = "kveditor fix not successful\n"
+                            self.logger.log(LogPriority.DEBUG, debug)
+                            self.detailedresults += self.gnomesettingpath + \
+                                                    " properties could not be set\n"
+                            succeess = False
+                    if not checkPerms(self.gnomesettingpath, [0, 0, 0o644], self.logger):
+                        if not created1:
+                            self.iditerator += 1
+                            myid = iterate(self.iditerator, self.rulenumber)
+                            if not setPerms(self.gnomesettingpath, [0, 0, 0o644], self.logger,
+                                            self.statechglogger, myid):
+                                self.detailedresults += "Unable to set permissions on " + \
+                                    self.gnomesettingpath + " file\n"
+                                success = False
+                        else:
+                            if not setPerms(self.gnomesettingpath, [0, 0, 0o644], self.logger):
+                                self.detailedresults += "Unable to set permissions on " + \
+                                                        self.gnomesettingpath + " file\n"
+                                success = False
+                havetimeoutlock = False
+                havelogoutlock = False
+                lockdata = []
+                if not os.path.exists(self.gnomelockpath):
+                    if not createFile(self.gnomelockpath, self.logger):
+                        success = False
+                        self.detailedresults += "Unable to create " + self.gnomelockpath + " file\n"
+                    else:
+                        created2 = True
+                        if not createddir:
+                            self.iditerator += 1
+                            myid = iterate(self.iditerator, self.rulenumber)
+                            event = {"eventtype": "creation",
+                                     "filepath": self.gnomelockpath}
+                            self.statechglogger.recordchgevent(myid, event)
+                if os.path.exists(self.gnomelockpath):
+                    contents = readFile(self.gnomelockpath, self.logger)
+                    for line in contents:
+                        if re.search('/org/gnome/settings-daemon/plugins/power/sleep-inactive-ac-timeout',
+                                     line):
+                            havetimeoutlock = True
+                        if re.search("/org/gnome/settings-daemon/plugins/power/sleep-inactive-ac-type",
+                                     line):
+                            havelogoutlock = True
+                    if not havetimeoutlock:
+                        lockdata.append('/org/gnome/settings-daemon/plugins/power/sleep-inactive-ac-timeout\n')
+                    if not havelogoutlock:
+                        lockdata.append("/org/gnome/settings-daemon/plugins/power/sleep-inactive-ac-type\n")
+                    tempfile = self.gnomelockpath + ".tmp"
+                    if writeFile(tempfile, lockdata, self.logger):
                         self.iditerator += 1
                         myid = iterate(self.iditerator, self.rulenumber)
-                        if not setPerms(self.gnomelockpath, [0, 0, 0o644], self.logger,
-                                        self.statechglogger, myid):
-                            self.detailedresults += "Unable to set permissions on " + \
-                                self.gnomelockpath + " file\n"
-                            success = False
+                        event = {"eventtype": "conf",
+                                 "filepath": self.gnomelockpath}
+                        self.statechglogger.recordchgevent(myid, event)
+                        self.statechglogger.recordfilechange(self.gnomelockpath,
+                                                             tempfile, myid)
+                        os.rename(tempfile, self.gnomelockpath)
+                        os.chown(self.gnomelockpath, 0, 0)
+                        os.chmod(self.gnomelockpath, 0o644)
+                        resetsecon(self.gnomelockpath)
                     else:
-                        if not setPerms(self.gnomelockpath, [0, 0, 0o644], self.logger):
-                            self.detailedresults += "Unable to set permissions on " + \
-                                                    self.gnomelockpath + " file\n"
-                            success = False
+                        self.detailedresults += "Unable to write contents to " + \
+                            self.gnomelockpath
+                        success = False
+                    if not checkPerms(self.gnomelockpath, [0, 0, 0o644], self.logger):
+                        if not created2:
+                            self.iditerator += 1
+                            myid = iterate(self.iditerator, self.rulenumber)
+                            if not setPerms(self.gnomelockpath, [0, 0, 0o644], self.logger,
+                                            self.statechglogger, myid):
+                                self.detailedresults += "Unable to set permissions on " + \
+                                    self.gnomelockpath + " file\n"
+                                success = False
+                        else:
+                            if not setPerms(self.gnomelockpath, [0, 0, 0o644], self.logger):
+                                self.detailedresults += "Unable to set permissions on " + \
+                                                        self.gnomelockpath + " file\n"
+                                success = False
 
         if self.ph.check(self.gconf):
             self.logdispatch.log(LogPriority.DEBUG,
