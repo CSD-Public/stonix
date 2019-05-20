@@ -93,15 +93,12 @@ class zzzTestRuleForceIdleLogout(RuleTest):
             self.kdesddm = self.ph.check("sddm")
             self.gnomesettingpath = "/etc/dconf/db/local.d/00-autologout"
             desktopmgr = False
-            desktopmgrs = ["gdm", "gdm3", "kdm", "kde-workspace"]
-            kde, gdm = False, False
+            desktopmgrs = ["gdm", "gdm3", "kdm", "kde-workspace", "sddm", "patterns-kde-kde_yast"]
             if self.ph.check("gdm") or self.ph.check("gdm3"):
                 desktopmgr = True
-                gdm = True
             if self.ph.check("kdm") or self.ph.check("kde-workspace")or \
                     self.ph.check("sddm") or self.ph.check("patterns-kde-kde_yast"):
                 desktopmgr = True
-                kde = True
             if not desktopmgr:
                 for mgr in desktopmgrs:
                     if self.ph.checkAvailable(mgr):
@@ -111,12 +108,8 @@ class zzzTestRuleForceIdleLogout(RuleTest):
                     success = False
                     debug = "Unable to install a desktop manager for testing\n"
                     self.logger.log(LogPriority.DEBUG, debug)
-            if gdm:
-                print "going inside setgnome()\n\n"
-                success = self.setgnome()
-            if kde:
-                print "going inside setkde()\n\n"
-                success = self.setkde()
+            success = self.setgnome()
+            success = self.setkde()
         elif self.environ.getosfamily() == 'darwin':
             if not self.setosx():
                 success = False
@@ -257,12 +250,12 @@ class zzzTestRuleForceIdleLogout(RuleTest):
         if self.kdesddm:
             self.kdecheck = ".config/kdeglobals"
             self.rcpath = ".config/kscreenlockerrc"
-            self.kdeprops = {"ScreenSaver": {"Timeout": garbagevalue}}
+            self.kdeprops = {"ScreenSaver": {"Timeout": str(garbagevalue)}}
         else:
             self.kdecheck = ".kde"
             self.rcpath = ".kde/share/config/kscreensaverrc"
             self.kdeprops = {"ScreenSaver": {"AutoLogout": "true",
-                                             "AutoLogoutTimeout": garbagevalue}}
+                                             "AutoLogoutTimeout": str(garbagevalue)}}
         self.editor = KVEditorStonix(self.statechglogger, self.logger, kvt,
                                      filehandle, tpath, self.kdeprops, intent,
                                      conftype)
