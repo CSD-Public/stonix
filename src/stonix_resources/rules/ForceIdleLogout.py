@@ -503,7 +503,7 @@ FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
         debug = ""
         if os.path.exists("/usr/bin/gsettings"):
             if not os.path.exists('/etc/dconf/db/local.d'):
-                if not os.mkdir('/etc/dconf/db/local.d/'):
+                if not os.makedirs('/etc/dconf/db/local.d/'):
                     success = False
                     debug = "Unable to create the /etc/dconf/db/local.d/ directory"
                     self.detailedresults += "Unable to create the /etc/dconf/db/local.d/ directory"
@@ -514,7 +514,7 @@ FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
                     myid = iterate(self.iditerator, self.rulenumber)
                     event = {"eventtype": "creation",
                              "filepath": "/etc/dconf/db/local.d"}
-                    self.statechglogger.rec
+                    self.statechglogger.recordchgevent(myid, event)
             if os.path.exists('/etc/dconf/db/local.d'):
                 created1, created2 = False, False
                 self.logdispatch.log(LogPriority.DEBUG,
