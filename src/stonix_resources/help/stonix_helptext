@@ -465,7 +465,14 @@ UsePAM
 Ciphers
 PermitUserEnvironment
 
-This rule will not install SSH if it is not already installed."
+This rule will not install SSH if it is not already installed.
+
+This rule can also be customized to configure sshd, on Mac OS, to accept smart card (piv) authentication. This process is incomplete without user intervention though. Here are the steps you need to take after configuring it with STONIX:
+1) Run the following command to export the public key from your smart card: ssh-keygen -D /usr/lib/keychainname.dylib
+2) Add the public key from the previous step to the ~/.ssh/authorized_keys file on the target computer
+3) Run the following command to back up the ssh_config file: sudo cp /etc/ssh/ssh_config /etc/ssh/ssh_config_backup_`date'+%Y-%m-%d_%H:%M'`
+4) In the /etc/ssh/ssh_config file, add the line 'PKCS11Provider=/usr/lib/keychainname.dylib'
+5) (Optional) Run the following command to add the private key to your ssh-agent: ssh-add -s /usr/lib/keychainname.dylib"
 
 <50>        "This rule secures access to the 'su' comand. The 'su' command allows a user to gain the privileges of another user by entering the password for that user's account. It is desirable to restrict the root user so that only known administrators are ever allowed to access the root account. This restricts password-guessing against the root account by unauthorized users or by accounts which have been compromised. By convention, the group wheel contains all users who areallowed to run privileged commands. The PAM module pam_wheel.so is used to restrict root access to this set of users.
 
