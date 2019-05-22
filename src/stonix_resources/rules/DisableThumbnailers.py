@@ -15,18 +15,18 @@
 #                                                                             #
 ###############################################################################
 
-'''
+"""
 Created on Apr 22, 2015
 
-@author: dwalker
-@change: 2015/10/07 eball Help text cleanup
-@change: 2017/08/28 rsn Fixing to use new help text methods
-@change: 2017/12/06 bgonz12 Removed the --direct option from the gconf commands
+@author: Derek Walker, Breen Malmberg
+@change: 2015/10/07 Eric Ball Help text cleanup
+@change: 2017/08/28 Roy Nielsen Fixing to use new help text methods
+@change: 2017/12/06 Brandon Gonzales Removed the --direct option from the gconf commands
             so the command doesn't fail while gconfd is running
 @change: 01/23/2018 - Breen Malmberg - re-wrote much of the class; cleaned up
         unnecessary bloat, condensed code, added code comments and doc's; added
         logging; improved code readability
-'''
+"""
 
 from __future__ import absolute_import
 
@@ -34,7 +34,6 @@ import os
 import re
 import traceback
 
-from ..stonixutilityfunctions import iterate
 from ..rule import Rule
 from ..logdispatcher import LogPriority
 from ..CommandHelper import CommandHelper
@@ -42,15 +41,16 @@ from ..pkghelper import Pkghelper
 
 
 class DisableThumbnailers(Rule):
-    '''disable the thumbnail creation feature in nautilus/gnome'''
+    """disable the thumbnail creation feature in nautilus/gnome"""
 
     def __init__(self, config, environ, logdispatcher, statechglogger):
-        '''
-        private method to intialize class variables and template object instance
+        """
 
-        @return: void
-        @author: Derek Walker
-        '''
+        :param config:
+        :param environ:
+        :param logdispatcher:
+        :param statechglogger:
+        """
 
         Rule.__init__(self, config, environ, logdispatcher, statechglogger)
         self.logger = logdispatcher
@@ -62,6 +62,7 @@ class DisableThumbnailers(Rule):
         self.guidance = ["NSA 2.2.2.6"]
         self.rulename = "DisableThumbnailers"
         self.rulesuccess = True
+        self.sethelptext()
 
         datatype = 'bool'
         key = 'DISABLETHUMBNAILERS'
@@ -69,127 +70,114 @@ class DisableThumbnailers(Rule):
         default = True
         self.ci = self.initCi(datatype, key, instructions, default)
 
-        self.iditerator = 0
+        self.localize()
+
+    def localize(self):
+        """
+        set paths based on what versions of which utilities exist on the system
+
+        :return: void
+        """
+
+        self.gsettings = "/usr/bin/gsettings"
         self.gconf = "/usr/bin/gconftool-2"
-        self.packages = ["gnome", "gdm"]
-        self.sethelptext()
+        self.dconf = "/usr/bin/dconf"
+        self.getcmd = ""
+        self.setcmd = ""
+        self.updatecmd = ""
+        packages = ["gnome", "gdm", "gdm3", "gnome3"]
+        self.lockfile = "/etc/dconf/db/local.d/locks/stonix-thumbnailers"
+        self.locksetting = "/org/gnome/desktop/thumbnailers/disable-all"
+
+        if os.path.exists(self.gsettings):
+            self.getcmd = self.gsettings + " get org.gnome.desktop.thumbnailers disable-all"
+            self.setcmd = self.gsettings + " set org.gnome.desktop.thummailerss disable-all true"
+        elif os.path.exists(self.gconf):
+            self.getcmd = self.gconf + " --get /schemas/org/gnome/desktop/thumbnailers/disable_all"
+            self.setcmd = self.gconf + " --type bool --set /schemass/org/gnome/desktop/thumbnailers/disable_all true"
+        if os.path.exists(self.dconf):
+            self.updatecmd = self.dconf + " update"
+
+        self.ch = CommandHelper(self.logger)
+        self.ph = Pkghelper(self.logger, self.environ)
+        self.gnome_installed = False
+        if [self.ph.check(p) for p in packages]:
+            self.gnome_installed = True
 
     def report(self):
-        '''check the gdm/gnome setting for thumbnailers to determine
+        """check the gdm/gnome setting for thumbnailers to determine
         if it is off or on. report compliant if it is off,
         non-compliant if it is on.
 
 
-        :returns: self.compliant
-
+        :return: self.compliant
         :rtype: bool
-@author: Derek Walker
-@change: 01/19/2018 - Breen Malmberg - re-wrote most of rule; added more detailed logging
-
-        '''
+        """
 
         self.compliant = True
         self.ch = CommandHelper(self.logger)
         self.ph = Pkghelper(self.logger, self.environ)
-        self.dconf = "/usr/bin/gsettings"
-        self.gconf = "/usr/bin/gconftool-2"
         self.detailedresults = ""
-        gnomeinstalled = True
 
         try:
 
-            # if gnome is not installed, we don't need to configure anything
-            gnomeinstalled = True in [self.ph.check(p) for p in self.packages]
-            if not gnomeinstalled:
-                self.detailedresults += "\nGnome not installed. Nothing to configure."
-                self.formatDetailedResults("report", self.compliant, self.detailedresults)
-                self.logdispatch.log(LogPriority.INFO, self.detailedresults)
-                return self.compliant
-
-            # gnome is installed and system is using dconf/gsettings
-            if os.path.exists(self.dconf) and not os.path.exists(self.gconf):
-                if not self.reportdconf():
-                    self.compliant = False
-            # gnome is installed system is using gconf/gconftool-2
-            elif os.path.exists(self.gconf):
-                if not self.reportgconf():
-                    self.compliant = False
+            if self.gnome_installed:
+                # This portion of the code is relevant to user context
+                if self.environ.geteuid() != 0:
+                    self.ch.executeCommand(self.getcmd)
+                    if not self.ch.findInOutput("true"):
+                        self.compliant = False
+                        self.detailedresults += "\nGnome thumbnailers are enabled"
+                # This portion of the code is relevant to root context
+                else:
+                    if not self.checkLockFile():
+                        self.compliant = False
             else:
-                self.detailedresults += "\nNo suitable reporting tool could be found (gconftool-2 or gsettings). Could not read configuration value."
-                self.compliant = False
-
-            if not self.compliant:
-                self.detailedresults += "\nThumbnailers is enabled or thumbnailers configuration value could not be read."
+                self.logger.log(LogPriority.DEBUG, "Gnome is not installed. Nothing to check.")
 
         except (KeyboardInterrupt, SystemExit):
-            # User initiated exit
             raise
         except Exception:
+            self.compliant = False
             self.detailedresults += "\n" + traceback.format_exc()
-            self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
+            self.logger.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("report", self.compliant, self.detailedresults)
-        self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+        self.logger.log(LogPriority.INFO, self.detailedresults)
+
         return self.compliant
 
-    def reportdconf(self):
-        ''' '''
+    def checkLockFile(self):
+        """
 
-        self.logger.log(LogPriority.DEBUG, "Using gsettings to determine configuration value...")
+        :return: compliant
+        :rtype: bool
+        """
 
-        retval = False
-        gsettings = "/usr/bin/gsettings"
-        schema = "org.gnome.desktop.thumbnailers"
-        key = "disable-all"
-        value = "true"
-        getthumbnailers = gsettings + " get " + schema + " " + key
+        compliant = True
 
-        self.ch.executeCommand(getthumbnailers)
-        retcode = self.ch.getReturnCode()
-        if retcode == 0:
-            outputstr = self.ch.getOutputString()
+        if not os.path.exists(self.locksetting):
+            compliant = False
+            self.detailedresults += "\nThe thumbnailers lock file doesn't exist"
+            return compliant
 
-            if re.search(value, outputstr):
-                retval = True
-        else:
-            errmsg = self.ch.getErrorString()
-            self.logger.log(LogPriority.DEBUG, errmsg)
+        f = open(self.lockfile, "r")
+        contents = f.read()
+        f.close()
 
-        return retval
+        if not re.search(self.locksetting, contents):
+            compliant = False
+            self.detailedresults += "\nThe thumbnailers lock file is not properly configured"
 
-    def reportgconf(self):
-        ''' '''
-
-        self.logger.log(LogPriority.DEBUG, "Using gconftool-2 to determine configuration value...")
-
-        retval = False
-        self.getcmd = self.gconf + " --config-source xml:readwrite:/etc/gconf/gconf.xml.mandatory --get /desktop/gnome/thumbnailers/disable_all"
-        value = "true"
-
-        self.ch.executeCommand(self.getcmd)
-        retcode = self.ch.getReturnCode()
-        if retcode == 0:
-            outputstr = self.ch.getOutputString()
-            if re.search(value, outputstr):
-                retval = True
-        else:
-            errmsg = self.ch.getErrorString()
-            self.logger.log(LogPriority.DEBUG, errmsg)
-
-        return retval
+        return compliant
 
     def fix(self):
-        '''run the gconftool-2 command to set the value for
-        thumbnailers to disable it
+        """
+        set the value of schema thumbnailers disable-all to true
+        and create the thumbnailers lock file if it doesn't exist
 
-
-        :returns: self.rulesuccess
-
+        :return: self.rulesuccess
         :rtype: bool
-@author: Derek Walker
-@change: 01/22/2018 - Breen Malmberg - re-wrote most of the rule; added
-        some more detailed logging
-
-        '''
+        """
 
         self.rulesuccess = True
         self.detailedresults = ""
@@ -197,81 +185,60 @@ class DisableThumbnailers(Rule):
 
         try:
 
-            if not self.ci.getcurrvalue():
-                self.detailedresults += "\nRule was not enabled. Nothing was done."
-                self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
-                self.logdispatch.log(LogPriority.INFO, self.detailedresults)
-                return self.rulesuccess
+            if self.ci.getcurrvalue():
+                # This portion of the code is run in user context
+                if self.environ.geteuid() != 0:
+                    if not self.setValue():
+                        self.rulesuccess = False
+                # This portion of the code has to be run in root context
+                else:
+                    self.setLockFile()
 
-            eventlist = self.statechglogger.findrulechanges(self.rulenumber)
-            for event in eventlist:
-                self.statechglogger.deleteentry(event)
-
-            # gnome is installed and system is using dconf/gsettings
-            if os.path.exists(self.dconf) and not os.path.exists(self.gconf):
-                if not self.fixdconf():
-                    self.rulesuccess = False
-            # gnome is installed system is using gconf/gconftool-2
-            elif os.path.exists(self.gconf):
-                if not self.fixgconf():
-                    self.rulesuccess = False
+                if self.dconf:
+                    self.ch.executeCommand(self.updatecmd)
             else:
-                self.detailedresults += "\nNo suitable configuration tool could be found (gconftool-2 or gsettings). Could not set configuration value."
-                self.rulesuccess = False
+                self.logger.log(LogPriority.DEBUG, "CI not enabled. Fix was not performed.")
 
         except (KeyboardInterrupt, SystemExit):
-            # User initiated exit
             raise
         except Exception:
             self.rulesuccess = False
             self.detailedresults += "\n" + traceback.format_exc()
-            self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
+            self.logger.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
-        self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+        self.logger.log(LogPriority.INFO, self.detailedresults)
+
         return self.rulesuccess
 
-    def fixgconf(self):
-        ''' '''
+    def setValue(self):
+        """
+        set the thumbnailers disable-all configuration value to true
 
-        self.logger.log(LogPriority.DEBUG, "Using gconftool-2 to set configuration value...")
+        :return: success
+        :rtype: bool
+        """
 
-        retval = True
-        self.gconfcmd = self.gconf + " --config-source xml:readwrite:/etc/gconf/gconf.xml.mandatory --type bool --set /desktop/gnome/thumbnailers/disable_all true"
-        undocmd = self.gconfcmd.replace("true", "false")
+        success = True
 
-        self.ch.executeCommand(self.gconfcmd)
+        self.ch.executeCommand(self.setcmd)
         retcode = self.ch.getReturnCode()
         if retcode != 0:
-            error = self.ch.getErrorString()
-            self.detailedresults += "\nRule encountered a problem while trying to disable thumbnailers.\n" + str(error)
-            retval = False
-        else:
-            self.iditerator += 1
-            event = {"eventtype": "commandstring",
-                     "command": undocmd}
-            myid = iterate(self.iditerator, self.rulenumber)
-            self.statechglogger.recordchgevent(myid, event)
-        return retval
+            success = False
+            errstr = self.ch.getErrorString()
+            self.detailedresults += "\n" + errstr
 
-    def fixdconf(self):
-        ''' '''
+        return success
 
-        self.logger.log(LogPriority.DEBUG, "Using gsettings to set configuration value...")
+    def setLockFile(self):
+        """
+        create the lock file for disable thumbnailers (if running in root context)
 
-        retval = True
-        self.dconfcmd = self.dconf + " set org.gnome.desktop.thumbnailers disable-all true"
-        undocmd = self.dconfcmd.replace("true", "false")
+        :return: void
+        """
 
-        self.ch.executeCommand(self.dconfcmd)
-        retcode = self.ch.getReturnCode()
-        if retcode != 0:
-            error = self.ch.getErrorString()
-            self.detailedresults += "\nRule encountered a problem while trying to disable thumbnailers.\n" + str(error)
-            retval = False
-        else:
-            self.iditerator += 1
-            event = {"eventtype": "commandstring",
-                     "command": undocmd}
-            myid = iterate(self.iditerator, self.rulenumber)
-            self.statechglogger.recordchgevent(myid, event)
-        return retval
+        if os.path.exists("/etc/dconf/db/local.d/locks"):
+            f = open(self.lockfile, "w")
+            f.write(self.locksetting)
+            f.close()
+            os.chmod(self.lockfile, 0644)
+            os.chown(self.lockfile, 0, 0)
