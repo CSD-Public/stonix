@@ -103,7 +103,7 @@ class DisableRemoveableStorage(Rule):
         self.pkgremovedlist = []
         self.iditerator = 0
         self.created = False
-        self.daemonpath = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]))) + "/stonix_resources/disablestorage"
+        self.daemonpath = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]))) + "/stonix_resources/disablestorage.py.py"
         self.sethelptext()
         self.grubperms = ""
         self.ph = Pkghelper(self.logger, self.environ)

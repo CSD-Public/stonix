@@ -81,8 +81,8 @@ class zzzTestRuleDisableRemoveableStorage(RuleTest):
         @return: boolean
         '''
         success = True
-        daemonpath = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]))) + "/src/stonix_resources/disablestorage"
-        plistpath = "/Library/LaunchDaemons/gov.lanl.stonix.disablestorage.plist"
+        daemonpath = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]))) + "/src/stonix_resources/disablestorage.py.py"
+        plistpath = "/Library/LaunchDaemons/gov.lanl.stonix.disablestorage.py.plist"
         self.rule.daemonpath = daemonpath
         if re.search("^10.11", self.environ.getosver()):
             usb = "IOUSBMassStorageDriver"
