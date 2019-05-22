@@ -38,13 +38,9 @@ Created on Feb 19, 2013
 
 from __future__ import absolute_import
 
-import os
 import traceback
-import re
 
 from ..rule import Rule
-from ..stonixutilityfunctions import iterate, checkPerms, setPerms, resetsecon
-from ..stonixutilityfunctions import createFile
 from ..KVEditorStonix import KVEditorStonix
 from ..logdispatcher import LogPriority
 from ..pkghelper import Pkghelper
@@ -52,22 +48,26 @@ from ..ServiceHelper import ServiceHelper
 
 
 class SecureSSH(Rule):
-    '''The SecureSSH class makes a number of configuration changes to SSH in \
+    """The SecureSSH class makes a number of configuration changes to SSH in
     order to ensure secure use of the functionality.
     
     @author: Breen Malmberg
 
-
-    '''
+    """
 
     def __init__(self, config, environ, logger, statechglogger):
         """
-        Constructor
+
+        :param config:
+        :param environ:
+        :param logger:
+        :param statechglogger:
         """
+
         Rule.__init__(self, config, environ, logger, statechglogger)
         self.logger = logger
         self.rulenumber = 8
-        self.rulename = 'SecureSSH'
+        self.rulename = "SecureSSH"
         self.formatDetailedResults("initialize")
         self.mandatory = True
         self.environ = environ
@@ -75,27 +75,41 @@ class SecureSSH(Rule):
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
                            'os': {'Mac OS X': ['10.12', 'r', '10.14.10']}}
-        datatype = 'bool'
-        key = 'SECURESSH'
-        instructions = "To disable this rule set the value " + \
-                       "of SECURESSH to False"
-        default = True
-        self.ci = self.initCi(datatype, key, instructions, default)
         self.guidance = ['CIS, NSA(3.5.2.1)', 'CCE 4325-7', 'CCE 4726-6',
                          'CCE 4475-0', 'CCE 4370-3', 'CCE 4387-7',
                          'CCE 3660-8', 'CCE 4431-3', 'CCE 14716-5',
                          'CCE 14491-5']
-        self.init_objs()
-        self.set_paths()
 
-    def init_objs(self):
-        ''' '''
+        main_datatype = "bool"
+        main_key = "SECURESSH"
+        main_instructions = "To disable this rule, set the value of SECURESSH to False"
+        main_default = True
+        self.main_CI = self.initCi(main_datatype, main_key, main_instructions, main_default)
+
+        self.initObjs()
+        self.setPaths()
+
+        if self.osname == "Mac OS":
+            mpa_datatype = "bool"
+            mpa_key = "ENABLEMACPIVAUTHSSH"
+            mpa_instructions = "To enable piv authentication over ssh, on Mac OS, set the value of ENABLEMACPIVAUTHSSH to True"
+            mpa_default = False
+            self.mac_piv_auth_CI = self.initCi(mpa_datatype, mpa_key, mpa_instructions, mpa_default)
+
+    def initObjs(self):
+        """
+
+        :return: void
+        """
 
         self.ph = Pkghelper(self.logger, self.environ)
         self.sh = ServiceHelper(self.environ, self.logger)
 
-    def set_paths(self):
-        ''' '''
+    def setPaths(self):
+        """
+
+        :return: void
+        """
 
         self.osname = self.environ.getosname()
 
@@ -108,142 +122,208 @@ class SecureSSH(Rule):
             self.server_path = "/etc/ssh/sshd_config"
             self.client_path = "/etc/ssh/ssh_config"
 
-    def isinstalled(self, packagenames):
-        '''
-
-        :param packagenames: return:
-
-        '''
-
-        self.installed = False
-
-        for p in packagenames:
-            if self.ph.check(p):
-                self.installed = True
-
-
     def report(self):
-        '''check if ssh is installed and if the correct configuration options
+        """check if ssh is installed and if the correct configuration options
         are set in the configuration files
 
-
-        :returns: self.compliant
-
+        :return: self.compliant
         :rtype: bool
-@author: Breen Malmberg
-@change: Breen Malmberg - 5/11/2017 - added checks for mac to ensure
-        that ssh is already loaded before we report on its configuration
 
-        '''
+        """
 
         self.detailedresults = ""
-        packages = ["ssh", "openssh", "openssh-server", "openssh-client"]
         self.compliant = True
-        self.macloaded = False
 
         try:
 
-            if self.osname != "Mac OS":
-                self.isinstalled(packages)
-                if not self.installed:
-                    self.detailedresults += "\nSSH is not installed. Nothing to configure."
-                    self.formatDetailedResults("report", self.compliant, self.detailedresults)
-                    self.logdispatch.log(LogPriority.INFO, self.detailedresults)
-                    return self.compliant
-            else:
-                if self.sh.auditService("/System/Library/LaunchDaemons/ssh.plist", serviceTarget="com.openssh.sshd"):
-                    self.macloaded = True
-                if not self.macloaded:
-                    self.detailedresults += "\nSSH not installed/enabled. Nothing to configure."
-                    self.formatDetailedResults("report", self.compliant, self.detailedresults)
-                    self.logdispatch.log(LogPriority.INFO, self.detailedresults)
-                    return self.compliant
+            if not self.checkInstalled():
+                self.detailedresults += "\nSSH is not installed/enabled. Nothing to configure."
+                self.formatDetailedResults("report", self.compliant, self.detailedresults)
+                self.logger.log(LogPriority.INFO, self.detailedresults)
+                return self.compliant
 
-            self.client_set_config = {"Host": "*",
-                                      "Protocol": "2",
-                                      "GSSAPIAuthentication": "yes",
-                                      "GSSAPIDelegateCredentials": "yes"}
-            self.server_set_config = {"Protocol": "2",
-                                      "SyslogFacility": "AUTHPRIV",
-                                      "PermitRootLogin": "no",
-                                      "MaxAuthTries": "5",
-                                      "RhostsRSAAuthentication": "no",
-                                      "HostbasedAuthentication": "no",
-                                      "IgnoreRhosts": "yes",
-                                      "PermitEmptyPasswords": "no",
-                                      "PasswordAuthentication": "yes",
-                                      "ChallengeResponseAuthentication": "no",
-                                      "KerberosAuthentication": "yes",
-                                      "GSSAPIAuthentication": "yes",
-                                      "GSSAPICleanupCredentials": "yes",
-                                      "UsePAM": "yes",
-                                      "Ciphers": "aes128-ctr,aes192-ctr,aes256-ctr",
-                                      "PermitUserEnvironment": "no"}
-
-            # ubuntu-specific considerations
-            self.client_remove_config = {"GSSAPIAuthentication": ""}
-            self.server_remove_config = {"GSSAPIAuthentication": "",
-                                         "KerberosAuthentication": ""}
-
-            # set up the client config editor
-            c_kvtype = "conf"
-            c_tmppath = self.client_path + ".stonixtmp"
-            c_intent = "present"
-            c_configtype = "space"
-            self.client_editor = KVEditorStonix(self.statechglogger, self.logger, c_kvtype, self.client_path, c_tmppath, self.client_set_config, c_intent, c_configtype)
-
-            # set up the server config editor
-            s_kvtype = "conf"
-            s_tmppath = self.server_path + ".stonixtmp"
-            s_intent = "present"
-            s_configtype = "space"
-            self.server_editor = KVEditorStonix(self.statechglogger, self.logger, s_kvtype, self.server_path, s_tmppath, self.server_set_config, s_intent, s_configtype)
-
-            # set up the ubuntu-specific removal client and server editors
-            if self.osname == "Ubuntu":
-                rm_intent = "notpresent"
-                self.client_rm_editor = KVEditorStonix(self.statechglogger, self.logger, c_kvtype, self.client_path, c_tmppath, self.client_remove_config, rm_intent, c_configtype)
-                self.server_rm_editor = KVEditorStonix(self.statechglogger, self.logger, s_kvtype, self.server_path, s_tmppath, self.server_remove_config, rm_intent, s_configtype)
-
-            # run report on each of the editors
-            if not self.client_editor.report():
+            if not self.reportCommon():
                 self.compliant = False
-                self.detailedresults += "\nThe following options are not configured correctly in ssh_config:\n" + "\n".join(self.client_editor.fixables) + "\n"
-            if not self.server_editor.report():
-                self.compliant = False
-                self.detailedresults += "\nThe following options are not configured correctly in sshd_config:\n" + "\n".join(self.server_editor.fixables)
-
-            if self.osname == "Ubuntu":
-                if not self.client_rm_editor.report():
+            if self.osname == "Mac OS":
+                if not self.reportMac():
                     self.compliant = False
-                    self.detailedresults += "\nThe following options are present but should be removed from ssh_config:\n" + "\n".join(self.client_rm_editor.removeables) + "\n"
-                if not self.server_rm_editor.report():
-                    self.compliant = False
-                    self.detailedresults += "\nThe following options are present but should be removed from sshd_config:\n" + "\n".join(self.server_rm_editor.removeables)
 
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception:
             self.compliant = False
             self.detailedresults += "\n" + traceback.format_exc()
-            self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
+            self.logger.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("report", self.compliant, self.detailedresults)
-        self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+        self.logger.log(LogPriority.INFO, self.detailedresults)
+
         return self.compliant
 
-    def fix(self):
-        '''apply configuration options to config files
+    def checkInstalled(self):
+        """
 
-
-        :returns: self.rulesuccess
-
+        :return: installed
         :rtype: bool
-@author: Breen Malmberg
-@change: Breen Malmberg - 5/11/2017 - added checks for mac to ensure
-        that ssh is already loaded before we attempt to configure it;
-        added logging
+        """
 
-        '''
+        installed = False
+
+        if self.osname == "Mac OS":
+            installed = self.checkInstalledMac()
+        else:
+            installed = self.checkInstalledLinux()
+
+        return installed
+
+    def checkInstalledLinux(self):
+        """
+
+        :return: installed
+        :rtype: bool
+        """
+
+        installed = False
+
+        packages = ["ssh", "openssh", "openssh-server", "openssh-client"]
+        if [self.ph.check(p) for p in packages]:
+            installed = True
+
+        return installed
+
+    def checkInstalledMac(self):
+        """
+
+        :return: enabled
+        :rtype: bool
+        """
+
+        enabled = False
+        service_long = "/System/Library/LaunchDaemons/ssh.plist"
+        service_short = "com.openssh.sshd"
+
+        if self.sh.auditService(service_long, serviceTarget=service_short):
+            enabled = True
+
+        return enabled
+
+    def reportCommon(self):
+        """
+
+        :return: compliant
+        :rtype: bool
+        """
+
+        compliant = True
+
+        client_set_config = {"Host": "*",
+                             "Protocol": "2",
+                             "GSSAPIAuthentication": "yes",
+                             "GSSAPIDelegateCredentials": "yes"}
+        server_set_config = {"Protocol": "2",
+                             "SyslogFacility": "AUTHPRIV",
+                             "PermitRootLogin": "no",
+                             "MaxAuthTries": "5",
+                             "RhostsRSAAuthentication": "no",
+                             "HostbasedAuthentication": "no",
+                             "IgnoreRhosts": "yes",
+                             "PermitEmptyPasswords": "no",
+                             "PasswordAuthentication": "yes",
+                             "ChallengeResponseAuthentication": "no",
+                             "KerberosAuthentication": "yes",
+                             "GSSAPIAuthentication": "yes",
+                             "GSSAPICleanupCredentials": "yes",
+                             "UsePAM": "yes",
+                             "Ciphers": "aes128-ctr,aes192-ctr,aes256-ctr",
+                             "PermitUserEnvironment": "no"}
+
+        # ubuntu-specific considerations
+        client_remove_config = {"GSSAPIAuthentication": ""}
+        server_remove_config = {"GSSAPIAuthentication": "",
+                                "KerberosAuthentication": ""}
+
+        # set up the client config editor
+        c_kvtype = "conf"
+        c_tmppath = self.client_path + ".stonixtmp"
+        c_intent = "present"
+        c_configtype = "space"
+        self.client_editor = KVEditorStonix(self.statechglogger, self.logger, c_kvtype, self.client_path, c_tmppath,
+                                            client_set_config, c_intent, c_configtype)
+
+        # set up the server config editor
+        s_kvtype = "conf"
+        s_tmppath = self.server_path + ".stonixtmp"
+        s_intent = "present"
+        s_configtype = "space"
+        self.server_editor = KVEditorStonix(self.statechglogger, self.logger, s_kvtype, self.server_path, s_tmppath,
+                                            server_set_config, s_intent, s_configtype)
+
+        # set up the ubuntu-specific removal client and server editors
+        if self.osname == "Ubuntu":
+            rm_intent = "notpresent"
+            self.client_rm_editor = KVEditorStonix(self.statechglogger, self.logger, c_kvtype, self.client_path,
+                                                   c_tmppath, client_remove_config, rm_intent, c_configtype)
+            self.server_rm_editor = KVEditorStonix(self.statechglogger, self.logger, s_kvtype, self.server_path,
+                                                   s_tmppath, server_remove_config, rm_intent, s_configtype)
+
+        # run report on each of the editors
+        if not self.client_editor.report():
+            compliant = False
+            self.detailedresults += "\nThe following options are not configured correctly in ssh_config:\n" + "\n".join(
+                self.client_editor.fixables) + "\n"
+        if not self.server_editor.report():
+            compliant = False
+            self.detailedresults += "\nThe following options are not configured correctly in sshd_config:\n" + "\n".join(
+                self.server_editor.fixables) + "\n"
+
+        if self.osname == "Ubuntu":
+            if not self.client_rm_editor.report():
+                compliant = False
+                self.detailedresults += "\nThe following options are present but should be removed from ssh_config:\n" + "\n".join(
+                    self.client_rm_editor.removeables) + "\n"
+            if not self.server_rm_editor.report():
+                compliant = False
+                self.detailedresults += "\nThe following options are present but should be removed from sshd_config:\n" + "\n".join(
+                    self.server_rm_editor.removeables)
+
+        return compliant
+
+    def reportMac(self):
+        """
+
+        :return: compliant
+        :rtype: bool
+        """
+
+        compliant = True
+
+        if self.mac_piv_auth_CI.getcurrvalue():
+            mpa_kvtype = "conf"
+            mpa_tmppath = self.server_path + ".stonixtmp"
+            mpa_intent = "present"
+            mpa_configtype = "space"
+
+            # set up macos smart card auth editor
+            mac_piv_auth_config = {"ChallengeResponseAuthentication": "no",
+                                   "PasswordAuthentication": "no"}
+            self.mac_piv_editor = KVEditorStonix(self.statechglogger, self.logger, mpa_kvtype, self.server_path,
+                                                 mpa_tmppath, mac_piv_auth_config, mpa_intent, mpa_configtype)
+            if not self.mac_piv_editor.report():
+                compliant = False
+                self.detailedresults += "\nThe following options are not configured correctly in sshd_config:\n" + "\n".join(
+                    self.mac_piv_editor.fixables)
+        else:
+            self.logger.log(LogPriority.DEBUG, "mac piv auth CI not enabled. will not configure")
+
+        return compliant
+
+    def fix(self):
+        """apply configuration options to config files
+
+
+        :return: self.rulesuccess
+        :rtype: bool
+
+        """
 
         self.detailedresults = ""
         self.iditerator = 0
@@ -251,75 +331,113 @@ class SecureSSH(Rule):
 
         try:
 
-            if not self.ci.getcurrvalue():
-                self.detailedresults += "\nThe rule CI was not enabled, so nothing was done."
-                self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
-                self.logdispatch.log(LogPriority.INFO, self.detailedresults)
-                return self.rulesuccess
-
-            if self.osname != "Mac OS":
-                if not self.installed:
-                    self.detailedresults += "\nSSH is not installed. Nothing to configure."
-                    self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
-                    self.logdispatch.log(LogPriority.INFO, self.detailedresults)
-                    return self.rulesuccess
-            else:
-                if not self.macloaded:
-                    self.detailedresults += "\nSSH is not loaded. Will not configure it."
-                    self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
-                    self.logdispatch.log(LogPriority.INFO, self.detailedresults)
-                    return self.rulesuccess
-
-            # run fix and commit actions for each editor
-            if not self.client_editor.fix():
-                self.rulesuccess = False
-                self.detailedresults += "\nFailed to correct ssh client options"
-            else:
-                if not self.client_editor.commit():
+            if self.main_CI.getcurrvalue():
+                if not self.fixCommon():
                     self.rulesuccess = False
-                    self.detailedresults += "\nFailed to write ssh client configuration changes to disk"
-            if not self.server_editor.fix():
-                self.rulesuccess = False
-                self.detailedresults += "\nFailed to correct ssh server options"
-            else:
-                if not self.server_editor.commit():
-                    self.rulesuccess = False
-                    self.detailedresults += "\nFailed to write ssh server configuration changes to disk"
-
-            # run fix and commit for ubuntu-specific removal editors
-            if self.osname == "Ubuntu":
-                if not self.client_rm_editor.fix():
-                    self.rulesuccess = False
-                    self.detailedresults += "\nFailed to remove unwanted options from ssh client config file"
-                else:
-                    if not self.client_rm_editor.commit():
+                if self.osname == "Mac OS":
+                    if not self.fixMac():
                         self.rulesuccess = False
-                        self.detailedresults += "\nFailed to write ssh client configuration changes to disk"
-                if not self.server_rm_editor.fix():
-                    self.rulesuccess = False
-                    self.detailedresults += "\nFailed to remove unwanted options from ssh server config file"
-                else:
-                    if not self.server_rm_editor.commit():
-                        self.rulesuccess = False
-                        self.detailedresults += "\nFailed to write ssh server configuration changes to disk"
-
-            # reload ssh to read the new configurations
-            self.logger.log(LogPriority.DEBUG, "Restarting sshd service to read/load the new configuration changes")
-            if self.osname == "Mac OS":
-                if not self.sh.reloadService("/System/Library/LaunchDaemons/ssh.plist", serviceTarget="com.openssh.sshd"):
-                    self.rulesuccess = False
-                    self.detailedresults += "\nFailed to load the new ssh configuration changes"
             else:
-                if not self.sh.reloadService("sshd"):
-                    self.rulesuccess = False
-                    self.detailedresults += "\nFailed to load the new ssh configuration changes"
+                self.logger.log(LogPriority.DEBUG, "main CI not enabled. nothing to do")
 
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception:
             self.rulesuccess = False
             self.detailedresults += "\n" + traceback.format_exc()
-            self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
+            self.logger.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
-        self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+        self.logger.log(LogPriority.INFO, self.detailedresults)
+
         return self.rulesuccess
+
+    def fixCommon(self):
+        """
+
+        :return: success
+        :rtype: bool
+        """
+
+        success = True
+
+        # run fix and commit actions for each editor
+        if not self.client_editor.fix():
+            success = False
+            self.detailedresults += "\nFailed to correct ssh client options"
+        else:
+            if not self.client_editor.commit():
+                success = False
+                self.detailedresults += "\nFailed to write ssh client configuration changes to disk"
+        if not self.server_editor.fix():
+            success = False
+            self.detailedresults += "\nFailed to correct ssh server options"
+        else:
+            if not self.server_editor.commit():
+                success = False
+                self.detailedresults += "\nFailed to write ssh server configuration changes to disk"
+
+        # run fix and commit for ubuntu-specific removal editors
+        if self.osname == "Ubuntu":
+            if not self.client_rm_editor.fix():
+                success = False
+                self.detailedresults += "\nFailed to remove unwanted options from ssh client config file"
+            else:
+                if not self.client_rm_editor.commit():
+                    success = False
+                    self.detailedresults += "\nFailed to write ssh client configuration changes to disk"
+            if not self.server_rm_editor.fix():
+                success = False
+                self.detailedresults += "\nFailed to remove unwanted options from ssh server config file"
+            else:
+                if not self.server_rm_editor.commit():
+                    success = False
+                    self.detailedresults += "\nFailed to write ssh server configuration changes to disk"
+
+        return success
+
+    def fixMac(self):
+        """
+
+        :return: success
+        :rtype: bool
+        """
+
+        success = True
+
+        if self.mac_piv_auth_CI.getcurrvalue():
+            if not self.configureSmartCardAuth():
+                success = False
+
+        # reload ssh to read the new configurations
+        self.logger.log(LogPriority.DEBUG, "Restarting sshd service to read/load the new configuration changes")
+        if self.osname == "Mac OS":
+            if not self.sh.reloadService("/System/Library/LaunchDaemons/ssh.plist",
+                                         serviceTarget="com.openssh.sshd"):
+                success = False
+                self.detailedresults += "\nFailed to load the new ssh configuration changes"
+        else:
+            if not self.sh.reloadService("sshd"):
+                success = False
+                self.detailedresults += "\nFailed to load the new ssh configuration changes"
+
+        return success
+
+    def configureSmartCardAuth(self):
+        """
+        configure smart card (piv) authentication for mac os sshd
+
+        :return: success
+        :rtype: bool
+        """
+
+        success = True
+
+        if not self.mac_piv_editor.fix():
+            success = False
+            self.detailedresults += "\nFailed to correctly set mac os piv authentication over ssh options"
+        else:
+            if not self.mac_piv_editor.commit():
+                success = False
+                self.detailedresults += "\nFailed to write mac os piv authentication over ssh changes to disk"
+
+        return success
