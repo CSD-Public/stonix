@@ -41,10 +41,13 @@ from __future__ import absolute_import
 
 import traceback
 import re
+import os
+import sys # for testing
 
 from ..ServiceHelper import ServiceHelper
 from ..rule import Rule
 from ..logdispatcher import LogPriority
+from ..CommandHelper import CommandHelper
 
 
 class MinimizeServices(Rule):
@@ -450,7 +453,6 @@ class MinimizeServices(Rule):
                                'systemd-vconsole-setup.service',
                                'systemd-resolved.service',
                                'systemd-resolved',
-                               # DAMN YOU UBUNTU!!!!!!!!!!
                                'dbus-org.freedesktop.resolve1.service'
                                'tcsd.service', 'tuned.service',
                                'udev',
@@ -492,6 +494,7 @@ elements should be space separated."""
 
         self.environ.setsystemtype()
         systemtype = self.environ.getsystemtype()
+        self.ch = CommandHelper(self.logger)
 
         if systemtype == "systemd":
             self.logger.log(LogPriority.DEBUG, ['MinimizeServices.__init__', "systemctl found. Using systemd white list"])
@@ -523,23 +526,55 @@ elements should be space separated."""
             #the set of what's in stonix.conf added to what's in self.systemddefault that isn't in stonix.conf
             self.svcslistci.updatecurrvalue(x + y)
 
+    def whiteListAliases(self):
+        """
+        add all alias names of white listed services to white list
+
+        :return: void
+        """
+
+        dirs = ["/usr/share/dbus-1/services/*", "/usr/share/dbus-1/system-services/*", "/etc/systemd/system/*", "/usr/lib/systemd/system/*"]
+        grep_alias_cmd = "/bin/grep -rih Alias= "
+        aliaslines = []
+        services = self.svcslistci.getcurrvalue()
+
+        for d in dirs:
+            self.ch.executeCommand(grep_alias_cmd + d)
+            output = self.ch.getOutput()
+            retcode = self.ch.getReturnCode()
+            if retcode == 0:
+                aliaslines += output
+
+            for al in aliaslines:
+                try:
+                    aliases = al.split("=")
+                    aliases = aliases[1].split()
+                    for i in range(len(aliases)):
+                        if ".target" in aliases[i]:
+                            continue
+                        else:
+                            services.append(aliases[i])
+                except IndexError:
+                    continue
+
+        services = list(set(services))
+
+        self.svcslistci.updatecurrvalue(services)
+
     def report(self):
         '''Report on whether any services not in the baseline or configured set
         are running.
 
-
-        :returns: self.compliant
-
+        :return: self.compliant
         :rtype: bool
-@author: Dave Kennel
-
         '''
 
-        running = False # default init var
         self.compliant = True
         self.detailedresults = ""
         unauthorizedservices = []
         authorizedservices = []
+        if self.environ.getsystemtype() == "systemd":
+            self.whiteListAliases()
 
         try:
 
@@ -550,7 +585,6 @@ elements should be space separated."""
             self.logger.log(LogPriority.DEBUG, "AllowedList: " + str(allowedlist))
 
             for service in servicelist:
-                running = False # re-init var for new service
                 if service in allowedlist or re.search('user@[0-9]*.service', service):
                     if service in allowedlist:
                         authorizedservices.append(str(service))
@@ -585,10 +619,9 @@ elements should be space separated."""
 
     def fix(self):
         '''Disable all services not in the 'enable services' list.
-        
-        @author: Dave Kennel
 
-
+        :return: self.rulesuccess
+        :rtype: bool
         '''
 
         self.detailedresults = ""
