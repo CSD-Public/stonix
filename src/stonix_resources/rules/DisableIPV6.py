@@ -82,11 +82,10 @@ class DisableIPV6(Rule):
         try:
             self.detailedresults = ""
             if self.environ.getosfamily() == "linux":
+                self.ph = Pkghelper(self.logger, self.environ)
                 self.compliant = self.reportLinux()
             elif self.environ.getosfamily() == "freebsd":
                 self.compliant = self.reportFree()
-            elif self.environ.getosfamily() == "solaris":
-                self.compliant = self.reportSol()
             elif self.environ.getostype() == "Mac OS X":
                 self.compliant = self.reportMac()
         except (KeyboardInterrupt, SystemExit):
@@ -120,9 +119,6 @@ class DisableIPV6(Rule):
                 self.rulesuccess = self.fixFree()
             elif self.environ.getosfamily() == "darwin":
                 self.rulesuccess = self.fixMac()
-            elif self.environ.getosfamily() == "solaris":
-                self.detailedresults = "Solaris systems require a manual fix"
-                self.logger.log(LogPriority.INFO, self.detailedresults)
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception:
@@ -133,22 +129,6 @@ class DisableIPV6(Rule):
                                    self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.rulesuccess
-
-##############################################################################
-
-    def reportSol(self):
-        cmd = ["/usr/sbin/ifconfig", "-a"]
-        if not self.cmdhelper.executeCommand(cmd):
-            self.detailedresults += "Unable to run ifconfig command\n"
-            self.logger.log(LogPriority.DEBUG, self.detailedresults)
-            return False
-        output = self.cmdhelper.getOutput()
-        for line in output:
-            if re.search("(.*)inet6(.*)", line):
-                self.detailedresults += "IPV6 is still showing as enabled\n"
-                self.logger.log(LogPriority.DEBUG, self.detailedresults)
-                return False
-        return True
 
 ###############################################################################
 
@@ -192,8 +172,6 @@ class DisableIPV6(Rule):
                     self.iditerator += 1
                     myid = iterate(self.iditerator, self.rulenumber)
                     event = {'eventtype': 'comm',
-                             'startstate': 'notconfigured',
-                             'endstate': 'configured',
                              'command': ['/usr/sbin/networksetup',
                                          'setv6automatic', item]}
                     self.statechglogger.recordchgevent(myid, event)
@@ -354,27 +332,29 @@ and/or wasn't able to be created\n"
 ##############################################################################
 
     def reportLinux(self):
+        compliant = True
         netwrkfile = ""
         ifacefile = ""
+        self.modprobefiles = []
+        self.modprobeOK = False
+        # self.editor1: sysctl file editor
+        # self.editor2: network file editor
+        # self.editor3: sshd file editor
         self.editor1, self.editor2, self.editor3 = "", "", ""
         sysctl = "/etc/sysctl.conf"
-#         modprobecompliant = True
-#         modprobefile = "/etc/modprobe.conf"
-#         modprobedir = "/etc/modprobe.d/"
-        interface = {"IPV6INIT": "no",
+        self.interface = {"IPV6INIT": "no",
                      "NETWORKING_IPV6": "no"}
-        self.rulesuccess = True
-        compliant = True
-        sysctls = {"net.ipv6.conf.all.disable_ipv6": "1",
+        self.sysctls = {"net.ipv6.conf.all.disable_ipv6": "1",
                    "net.ipv6.conf.default.disable_ipv6": "1"}
-        self.helper = Pkghelper(self.logger, self.environ)
+        self.modprobes = {"options": ["ipv6 disable=1"],
+                          "install": ["ipv6 /bin/true"]}
 
-        #stig portion
-        if self.helper.manager == "apt-get":
+        # stig portion, check netconfig file for correct contents
+        if self.ph.manager == "apt-get":
             nfspkg = "nfs-common"
         else:
             nfspkg = "nfs-utils.x86_64"
-        if self.helper.check(nfspkg):
+        if self.ph.check(nfspkg):
             if os.path.exists("/etc/netconfig"):
                 item1 = "udp6 tpi_clts v inet6 udp - -"
                 item2 = "tcp6 tpi_cots_ord v inet6 tcp - -"
@@ -386,28 +366,9 @@ and/or wasn't able to be created\n"
                             "lines we don't want present\n"
                         compliant = False
 
-        if self.helper.manager == "yum":
-            ifacefile = "/etc/sysconfig/network-scripts/"
-            if not os.path.exists(ifacefile):
-                ifacefile = ""
-            netwrkfile = "/etc/sysconfig/network"
-            if not os.path.exists(netwrkfile):
-                netwrkfile = ""
-        elif self.helper.manager == "zypper":
-            ifacefile = "/etc/sysconfig/network/"
-            if not os.path.exists(ifacefile):
-                ifacefile = ""
-#         if self.sh.auditService("ip6tables", _="_"):
-#             compliant = False
-#             debug = "ip6tables is still set to run\n"
-#             self.logger.log(LogPriority.DEBUG, debug)
-        # we will search for directives2 in any file in modprobe.d and
-        # modprobe.conf
-#         self.modprobes1 = {"options ipv6 disable": "1"}
-#         self.modprobes2 = {"options ipv6 disable": "1"}
-#         remove1 = []
-#         remove2 = []
-        # "ifconfig"has been deprecated on Debian9 so use "ip addr" instead
+        # "ifconfig" has been deprecated on Debian9 and some otherd distros
+        # so use "ip addr" instead
+        # Here we check if the system is giving out ipv6 ip addresses
         if os.path.exists("/sbin/ifconfig"):
             cmd = ["/sbin/ifconfig"]
         else:
@@ -423,7 +384,8 @@ and/or wasn't able to be created\n"
                         "ifconfig output\n"
                     compliant = False
                     break
-#----------------------check for ipv6 address in hostname file----------------#
+
+        # check for ipv6 address in hostname file
         if os.path.exists("/etc/hosts"):
             contents = readFile("/etc/hosts", self.logger)
             for line in contents:
@@ -431,7 +393,8 @@ and/or wasn't able to be created\n"
                     continue
                 if re.search(":", line):
                     compliant = False
-#-----------------------check /etc/sysctl.conf--------------------------------#
+
+        # check /etc/sysctl.conf contents
         if not os.path.exists(sysctl):
             self.detailedresults += "File " + sysctl + " does not exist\n"
             compliant = False
@@ -442,137 +405,75 @@ and/or wasn't able to be created\n"
                 compliant = False
             tmpfile = sysctl + ".tmp"
             self.editor1 = KVEditorStonix(self.statechglogger, self.logger,
-                                          "conf", sysctl, tmpfile, sysctls,
+                                          "conf", sysctl, tmpfile, self.sysctls,
                                           "present", "openeq")
             if not self.editor1.report():
                 self.detailedresults += "/etc/sysctl file doesn't contain \
 the correct contents\n"
                 compliant = False
-# #---------------------check out /etc/modprobe.conf----------------------------#
-#         # this file is optional so if it doesn't exist, no harm done, however
-#         # if it does exist, it needs to be configured correctly
-#         if os.path.exists(modprobefile):  # optional file
-#             contents = []
-#             if not checkPerms(modprobefile, [0, 0, 420], self.logger):
-#                 compliant = False
-#             contents = readFile(modprobefile, self.logger)
-#             if contents:
-#                 for key, val in self.modprobes1.iteritems():
-#                     found = False
-#                     blfound = ""
-#                     for line in contents:
-#                         if re.search("^" + key, line.strip()):
-#                             if key == "options ipv6 disable":
-#                                 if re.search("=", line):
-#                                     temp = line.split("=")
-#                                     if len(temp) == 2:
-#                                         if temp[1] == val:
-#                                             found = True
-#                                         else:
-#                                             self.detailedresults += \
-# "/etc/modprobe.conf does not contain the correct value for " + key + "\n"
-#                                             found = False
-#                                             break
-#                                     else:
-#                                         self.detailedresults += modprobefile + \
-# " is in bad format at line: " + line + "\n"
-#                                         found = False
-#                             elif key == "blacklist":
-#                                 temp = line.strip().split()
-#                                 if len(temp) == 2:
-#                                     if temp[1] == val:
-#                                         blfound = True
-#                                         found = True
-#                                         break
-#                             else:
-#                                 templine = line.split()
-#                                 tempval = templine[-1]
-#                                 if tempval == val:
-#                                     found = True
-#                                 else:
-#                                     found = False
-#                                     self.detailedresults += \
-# "/etc/modprobe.conf does not contain the correct value for " + key + "\n"
-#                                     break
-#                     if blfound != "":
-#                         if not blfound:
-#                             self.detailedresults += "didn't find the \
-# blacklist item: " + key + "\n"
-#                     if not found:
-#                         compliant = False
-#                     else:
-#                         remove1.append(key)
-#                 for item in remove1:
-#                     del(self.modprobes1[item])
-# #-----------------------------------------------------------------------------#
-#         if os.path.exists(modprobedir):
-#             contents = []
-#             dirs = glob.glob(modprobedir + '*')
-#             for key, val in self.modprobes2.iteritems():
-#                 blfound = ""
-#                 found = False
-#                 valwrong = False
-#                 for loc in dirs:
-#                     contents = readFile(loc, self.logger)
-#                     if contents:
-#                         for line in contents:
-#                             if re.search("^" + key, line.strip()):
-#                                 if key == "options ipv6 disable":
-#                                     if re.search("=", line):
-#                                         temp = line.split("=")
-#                                         if len(temp) == 2:
-#                                             if temp[1].strip() == val:
-#                                                 found = True
-#                                             else:
-#                                                 self.detailedresults += \
-# "/etc/modprobe.conf does not contain the correct value for " + key + "\n"
-#                                                 valwrong = True
-#                                                 found = False
-#                                                 break
-#                                         else:
-#                                             self.detailedresults += loc + \
-# " is in bad format on line: " + line + "\n"
-#                                 elif key == "blacklist":
-#                                     temp = line.strip().split()
-#                                     if len(temp) == 2:
-#                                         if temp[1] == val:
-#                                             blfound = True
-#                                             found = True
-#                                             break
-#                                 else:
-#                                     templine = line.split()
-#                                     tempval = templine[-1].strip()
-#                                     if tempval == val:
-#                                         found = True
-#                                     else:
-#                                         self.detailedresults += \
-# "/etc/modprobe.conf does not contain the correct value for " + key + "\n"
-#                                         valwrong = True
-#                                         found = False
-#                                         break
-#                         if valwrong:
-#                             compliant = False
-#                             modprobecompliant = False
-#                             break
-#                 if blfound != "":
-#                     if not blfound:
-#                         self.detailedresults += "didn't find the \
-# blacklist item: " + key + "\n"
-#                 if not found:
-#                     compliant = False
-#                     modprobecompliant = False
-#                 else:
-#                     remove2.append(key)
-#             for item in remove2:
-#                 del(self.modprobes2[item])
-#             filename = modprobedir + 'stonix-blacklist.conf'
-#             if not modprobecompliant:
-#                 if not os.path.exists(filename):
-#                     self.detailedresults += filename + " does not exist\n"
-#                     compliant = False
-#         else:
-#             compliant = False
 
+        # check files inside modprobe.d directory for correct contents
+        if os.path.exists("/etc/modprobe.d/"):
+            goodfile = ""
+            modprobefiles = glob.glob("/etc/modprobe.d/*")
+            for modfile in modprobefiles:
+                modprobekveditor = KVEditorStonix(self.statechglogger, self.logger,
+                                                  "conf", modfile, tmpfile, self.modprobes,
+                                                  "present", "space")
+                if modprobekveditor.report():
+                    self.modprobeOK = True
+            #        goodfile = modfile
+                    break
+            # future code to check other files for incorrect content
+            # currently kveditor does not have a way for caller to determine
+            # whether file has incorrect contents and/or missing contents
+            # possible stonix 2.0 improvement
+            # if goodfile:
+            #     modprobefiles.remove(goodfile)
+            # # we go back through all the files to make sure none of the other files
+            # # have incorrect contents
+            # for modfile in modprobefiles:
+            #     # we didn't find the contents we were looking for in THIS file
+            #     if not modprobekveditor.report():
+            #         # it's ok that we didn't find the contents we're looking for
+            #         # but let's also make sure the file we're looking at doesn't
+            #         # contain the directive but the wrong value, because that will
+            #         # also need to be corrected for our changes to work
+            #         if modprobekveditor.fixables:
+            #             self.detailedresults += modfile + " doesn't contain correct contents\n"
+            #             compliant = False
+            #             # append this messed up file to the modprobefiles global variable
+            #             # for correcting in the fix
+            #             self.modprobefiles.append(modfile)
+            # if self.modprobefiles:
+            #     self.detailedresults += "The following files have undesired contents " + \
+            #         "that need to be removed because it may conflict withe correct " + \
+            #         "values:\n"
+            #     for item in self.modprobefiles:
+            #         self.detailedresults += "\t" + item + "\n"
+            if not self.modprobeOK:
+                self.detailedresults += "Didn't find desired contents inside files " + \
+                    "within /etc/modprobe.d/"
+                compliant = False
+        else:
+            # system isn't using loadable kernel modules, not an issue
+            self.modprobeOK = True
+
+        # Check for existence of interface and network files to be configured
+        if self.ph.manager == "yum":
+            ifacefile = "/etc/sysconfig/network-scripts/"
+            if not os.path.exists(ifacefile):
+                ifacefile = ""
+            netwrkfile = "/etc/sysconfig/network"
+            if not os.path.exists(netwrkfile):
+                netwrkfile = ""
+        elif self.ph.manager == "zypper":
+            ifacefile = "/etc/sysconfig/network/"
+            if not os.path.exists(ifacefile):
+                ifacefile = ""
+
+        # go through interface directory and check each interface file
+        # for correct contents
         if ifacefile:
             dirs = glob.glob(ifacefile + '*')
             for loc in dirs:
@@ -582,16 +483,15 @@ the correct contents\n"
                         compliant = False
                     contents = readFile(loc, self.logger)
                     if contents:
-                        for key in interface:
+                        for key in self.interface:
                             found = False
                             for line in contents:
-                                if re.search("^#", line) or re.match("^\s*$",
-                                                                     line):
+                                if re.search("^#", line) or re.match("^\s*$", line):
                                     continue
                                 if re.search("^" + key, line):
                                     if re.search("=", line):
                                         temp = line.split("=")
-                                        if temp[1].strip() == interface[key]:
+                                        if temp[1].strip() == self.interface[key]:
                                             found = True
                                             continue
                                         else:
@@ -611,6 +511,7 @@ the correct contents\n"
                     else:
                         compliant = False
 
+        # check network file for correct contents
         if netwrkfile:
             if os.path.exists(netwrkfile):
                 if not checkPerms(netwrkfile, [0, 0, 420], self.logger):
@@ -618,7 +519,7 @@ the correct contents\n"
                 tmpfile = netwrkfile + ".tmp"
                 self.editor2 = KVEditorStonix(self.statechglogger, self.logger,
                                               "conf", netwrkfile, tmpfile,
-                                              interface, "present", "closedeq")
+                                              self.interface, "present", "closedeq")
                 if not self.editor2.report():
                     self.detailedresults += netwrkfile + " doesn't contain \
 the correct contents\n"
@@ -627,8 +528,9 @@ the correct contents\n"
                 self.detailedresults += netwrkfile + " doesn't exist\n"
                 compliant = False
 
-        '''This subpart is only for apt-get based systems'''
-        if self.helper.manager == "apt-get":
+        # This subpart is only for apt-get based systems
+        # sshd needs the inet directive for ipv6 disablement
+        if self.ph.manager == "apt-get":
             data = {"AddressFamily": "inet"}
             kvtype = "conf"
             path = "/etc/ssh/sshd_config"
@@ -642,8 +544,6 @@ the correct contents\n"
                 self.detailedresults += "/etc/ssh/ssdh_config doesn't \
 contain the correct contents\n"
                 compliant = False
-        if self.detailedresults:
-            self.logger.log(LogPriority.DEBUG, self.detailedresults)
         return compliant
 
 ###############################################################################
@@ -660,18 +560,14 @@ contain the correct contents\n"
         tempstring1 = ""
         tempstring2 = ""
         sysctl = "/etc/sysctl.conf"
-        sysctls = {"net.ipv6.conf.all.disable_ipv6": "1",
-                   "net.ipv6.conf.default.disable_ipv6": "1"}
-        modprobefile = "/etc/modprobe.conf"
-        modprobedir = "/etc/modprobe.d/"
-        interface = {"IPV6INIT": "no",
-                     "NETWORKING_IPV6": "no"}
-        #stig stuff
-        if self.helper.manager == "apt-get":
+        blacklistfile = "/etc/modprobe.d/stonix-blacklist.conf"
+
+        #stig portion, correct netconfig file
+        if self.ph.manager == "apt-get":
             nfspkg = "nfs-common"
         else:
             nfspkg = "nfs-utils.x86_64"
-        if self.helper.check(nfspkg):
+        if self.ph.check(nfspkg):
             if os.path.exists("/etc/netconfig"):
                 filestring = ""
                 item1 = "udp6 tpi_clts v inet6 udp - -"
@@ -698,10 +594,10 @@ contain the correct contents\n"
                     os.chown("/etc/netconfig", 0, 0)
                     os.chmod("/etc/netconfig", 420)
                     resetsecon("/etc/netconfig")
-        if self.helper.manager == "yum":
+        if self.ph.manager == "yum":
             ifacefile = "/etc/sysconfig/network-scripts/"
             netwrkfile = "/etc/sysconfig/network"
-        elif self.helper.manager == "zypper":
+        elif self.ph.manager == "zypper":
             ifacefile = "/etc/sysconfig/network/"
 #---------------------remove any ipv6 addresses-------------------------------#
         if os.path.exists("/etc/hosts"):
@@ -732,15 +628,6 @@ contain the correct contents\n"
                 success = False
                 debug = "Unable to write to file /etc/hosts\n"
                 self.logger.log(LogPriority.DEBUG, debug)
-#-------------------------disableipv6 from loading----------------------------#
-#         if self.sh.auditService("ip6tables", _="_"):
-#             debug = "auditservice returned: " + \
-#                 str(self.sh.auditService("ip6tables", _="_")) + "\n\n\n"
-#             self.logger.log(LogPriority.DEBUG, debug)
-#             if not self.sh.disableService("ip6tables", _="_"):
-#                 success = False
-#                 debug = "Unable to disable ip6tables service\n"
-#                 self.logger.log(LogPriority.DEBUG, debug)
 #---------------------------fix Sysctl----------------------------------------#
         if not os.path.exists(sysctl):
             if createFile(sysctl, self.logger):
@@ -758,7 +645,7 @@ contain the correct contents\n"
                 self.logger.log(LogPriority.DEBUG, debug)
         if os.path.exists(sysctl):
             self.editor1 = KVEditorStonix(self.statechglogger, self.logger,
-                                          "conf", sysctl, tmpfile, sysctls,
+                                          "conf", sysctl, tmpfile, self.sysctls,
                                           "present", "openeq")
             if not self.editor1.report():
                 if self.editor1.fixables:
@@ -790,197 +677,79 @@ contain the correct contents\n"
                     cmdhelper = CommandHelper(self.logger)
                     cmd = ["/sbin/sysctl", "-q", "-e", "-p"]
                     if not cmdhelper.executeCommand(cmd):
+                        uknownkey = False
+                        output = cmdhelper.getOutput()
+                        for line in output:
+                            if re.search("is an unknown key error", line):
+                                unknownkey = True
+                        if not unknownkey:
+                            success = False
+                            debug = "Unable to reset sysctl\n"
+                            self.logger.log(LogPriority.DEBUG, debug)
+
+        # We never found the correct contents in any of the modprobe.d files
+        # so we're going to created the stonix-blacklist file
+        # this file is used in other rules
+        if not self.modprobeOK:
+            created = False
+            tmpfile = blacklistfile + ".tmp"
+            modprobekveditor = KVEditorStonix(self.statechglogger, self.logger,
+                                              "conf", blacklistfile, tmpfile, self.modprobes,
+                                              "present", "space")
+            if not os.path.exists(blacklistfile):
+                # create the file and record the event as file creation
+                if createFile(blacklistfile, self.logger):
+                    created = True
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    event = {"eventtype": "creation",
+                             "filepath": blacklistfile}
+                    self.statechglogger.recordchgevent(myid, event)
+            if os.path.exists(blacklistfile):
+                if not modprobekveditor.report():
+                    if not modprobekveditor.fix():
                         success = False
-                        debug = "Unable to reset sysctl\n"
-                        self.logger.log(LogPriority.DEBUG, debug)
-#--------------------------fix /etc/modprobe.conf-----------------------------#
-#         tempstring = ""
-#         tmpfile = modprobefile + ".tmp"
-#         found = False
-#         if os.path.exists(modprobefile):
-#             if not checkPerms(modprobefile, [0, 0, 420], self.logger):
-#                 self.iditerator += 1
-#                 myid = iterate(self.iditerator, self.rulenumber)
-#                 if not setPerms(modprobefile, [0, 0, 420], self.logger,
-#                                 self.statechglogger, myid):
-#                     success = False
-#                     debug = "Unable to set permissions on " + modprobefile + \
-#                         "\n"
-#                     self.logger.log(LogPriority.DEBUG, debug)
-#             contents = readFile(modprobefile, self.logger)
-#             if contents:
-#                 for key, val in self.modprobes1.iteritems():
-#                     found = False
-#                     if contents:
-#                         i = 0
-#                         for line in contents:
-#                             if re.search("^" + key, line.strip()):
-#                                 if key == "options ipv6 disable":
-#                                     if re.search("=", line):
-#                                         temp = line.split("=")
-#                                         if temp[1] == val:
-#                                             found = True
-#                                             i += 1
-#                                         else:
-#                                             contents.pop(i)
-#                                             filechanged = True
-#                                             break
-#                                     else:
-#                                         i += 1
-#                                 else:
-#                                     if re.search("^" + key, line.strip()):
-#                                         templine = line.split()
-#                                         tempval = templine[-1]
-#                                         if tempval == val:
-#                                             found = True
-#                                             i += 1
-#                                         else:
-#                                             contents.pop(i)
-#                                             filechanged = True
-#                                             break
-#                                     else:
-#                                         i += 1
-#                         if filechanged:
-#                             for line in contents:
-#                                 tempstring += line
-#                             if writeFile(tmpfile, tempstring, self.logger):
-#                                 self.iditerator += 1
-#                                 myid = iterate(self.iditerator, self.rulenumber)
-#                                 event = {"eventtype": "conf",
-#                                          "filepath": modprobefile}
-#                                 self.statechglogger.recordchgevent(myid, event)
-#                                 self.statechglogger.recordfilechange(modprobefile, tmpfile, myid)
-#                                 os.rename(tmpfile, modprobefile)
-#                                 os.chown(modprobefile, 0, 0)
-#                                 os.chmod(modprobefile, 420)
-#                                 resetsecon(modprobefile)
-#                             else:
-#                                 success = False
-#                                 debug = "Unable to write to file " + \
-#                                     modprobefile + "\n"
-#                                 self.logger.log(LogPriority.DEBUG, debug)
-#                     if found:
-#                         del(self.modprobes1[key])  # may need to get rid of these two lines
-#         else:
-#             info = "modprobe.conf file doesn't exist but this file is \
-# optional so your system's compliance is not effected by it's absence\n"
-#             self.logger.log(LogPriority.INFO, info)
-#-----------------fix modprobe.d----------------------------------------------#
-##
-#    Commented out 2018/04/10 by D. Kennel for artf48817
-##
-#         filename = modprobedir + 'stonix-blacklist.conf'
-#         tmpfile = filename + ".tmp"
-#         if os.path.exists(modprobedir):
-#             tempstring = ""
-#             contents = []
-#             dirs = glob.glob(modprobedir + '*')
-#             for loc in dirs:
-#                 contents = readFile(loc, self.logger)
-#                 filechanged = False
-#                 for key, val in self.modprobes2.iteritems():
-#                     if key == "blacklist":
-#                         continue
-#                     if contents:
-#                         i = 0
-#                         for line in contents:
-#                             if re.search("^" + key, line.strip()):
-#                                 if key == "options ipv6 disable":
-#                                     if re.search("=", line):
-#                                         temp = line.split("=")
-#                                         if temp[1] != val:
-#                                             contents.pop(i)
-#                                             filechanged = True
-#                                             i += 1
-#                                     else:
-#                                         i += 1
-#                                 else:
-#                                     templine = line.split()
-#                                     tempval = templine[-1]
-#                                     if tempval != val:
-#                                         val = contents.pop(i)
-#                                         filechanged = True
-#                                         i += 1
-#                             else:
-#                                 i += 1
-#                 if filechanged:
-#                     for line in contents:
-#                         tempstring += line
-#                     tmpfile = loc + ".tmp"
-#                     if writeFile(tmpfile, tempstring, self.logger):
-#                         self.iditerator += 1
-#                         myid = iterate(self.iditerator, self.rulenumber)
-#                         event = {"eventtype": "conf",
-#                                  "filepath": loc}
-#                         self.statechglogger.recordchgevent(myid, event)
-#                         self.statechglogger.recordfilechange(loc, tmpfile,
-#                                                              myid)
-#                         os.rename(tmpfile, loc)
-#                         os.chown(loc, 0, 0)
-#                         os.chmod(loc, 420)
-#                         resetsecon(loc)
-#                     else:
-#                         success = False
-#                         debug = "Unable to write to file " + loc + "\n"
-#                         self.logger.log(LogPriority.DEBUG, debug)
-#             if self.modprobes2:
-#                 for key, val in self.modprobes2.iteritems():
-#                     if key == "options ipv6 disable":
-#                         tempstring1 += key + "=" + val + "\n"
-#                     else:
-#                         tempstring1 += key + " " + val + "\n"
-#             if not os.path.exists(filename):
-#                 if createFile(filename, self.logger):
-#                     self.created2 = True
-#                     self.iditerator += 1
-#                     myid = iterate(self.iditerator, self.rulenumber)
-#                     event = {"eventtype": "creation",
-#                              "filepath": filename}
-#                     self.statechglogger.recordchgevent(myid, event)
-#                     if tempstring1:
-#                         if writeFile(tmpfile, tempstring1, self.logger):
-#                             os.rename(tmpfile, filename)
-#                             os.chown(filename, 0, 0)
-#                             os.chmod(filename, 420)
-#                             resetsecon(filename)
-#                         else:
-#                             success = False
-#                             debug = "Unable to write to file " + filename + "\n"
-#                             self.logger.log(LogPriority.DEBUG, debug)
-#                 else:
-#                     success = False
-#                     debug = "Could not create " + filename + "\n"
-#                     self.logger.log(LogPriority.DEBUG, debug)
-#             else:
-#                 contents = readFile(filename, self.logger)
-#
-#                 for line in contents:
-#                     if line == universal:
-#                         continue
-#                     else:
-#                         tempstring2 += line
-#                 tempstring2 += universal + tempstring1
-#                 if writeFile(tmpfile, tempstring2, self.logger):
-#                     self.iditerator += 1
-#                     myid = iterate(self.iditerator, self.rulenumber)
-#                     event = {"eventtype": "conf",
-#                              "filepath": filename}
-#                     self.statechglogger.recordchgevent(myid, event)
-#                     self.statechglogger.recordfilechange(filename, tmpfile,
-#                                                          myid)
-#                     os.rename(tmpfile, filename)
-#                     os.chown(filename, 0, 0)
-#                     os.chmod(filename, 420)
-#                     resetsecon(filename)
-#                 else:
-#                     success = False
-#                     debug = "Unable to write to file " + filename + "\n"
-#                     self.logger.log(LogPriority.DEBUG, debug)
-#         else:
-#             debug = "modprobe.d doesn't exist\n"
-#             success = False
-#             self.logger.log(LogPriority.DEBUG, debug)
-#--------------------------------fix ifcfg files------------------------------#
+                        self.detailedresults += "Unable to correct contents in " + \
+                                                blacklistfile + "\n"
+                    else:
+                        # if the file was created, then we already recorded an event
+                        # for that, so this step would get skipped
+                        if not created:
+                            self.iditerator += 1
+                            myid = iterate(self.iditerator, self.rulenumber)
+                            modprobekveditor.setEventID(myid)
+                        if not modprobekveditor.commit():
+                            success = False
+                            self.detailedresults += "Unable to correct contents in " + \
+                                                blacklistfile + "\n"
+        # this portion looks at the other files inside modprobe.d
+        # for any conflicting key value pairs such as a key appearing in two
+        # files but having different values.  self.modprobefiles list contains these
+        # such files from the report
+        if self.modprobefiles:
+            # go through each file in the list
+            for modfile in self.modprobefiles:
+                # to be safe, still check if the file exists
+                if os.path.exists(modfile):
+                    # create a kveditor object to establish the fix procedure
+                    tmpfile = modfile + ".tmp"
+                    modprobekveditor = KVEditorStonix(self.statechglogger, self.logger,
+                                                      "conf", modfile, tmpfile, self.modprobes,
+                                                      "present", "space")
+                    if not modprobekveditor.report():
+                        modprobekveditor.fixables = ""
+                        self.iditerator += 1
+                        myid = iterate(self.iditerator, self.rulenumber)
+                        modprobekveditor.setEventID(myid)
+                        if not modprobekveditor.fix():
+                            success = False
+                            self.detailedresults += "Unable to correct contents in " + \
+                                                    modfile + "\n"
+                        elif not modprobekveditor.commit():
+                            success = False
+                            self.detailedresults += "Unable to correct contents in " + \
+                                                    modfile + "\n"
+        #fix ifcfg (interface) files
         if ifacefile:
             if os.path.exists(ifacefile):
                 dirs = glob.glob(ifacefile + "*")
@@ -1052,7 +821,8 @@ contain the correct contents\n"
                 directory or the files contained therein"
                 success = False
                 self.logger.log(LogPriority.DEBUG, debug)
-#-----------------------------------------------------------------------------#
+
+        # fix network file if it exists
         if netwrkfile:
             if not os.path.exists(netwrkfile):
                 if not createFile(netwrkfile, self.logger):
@@ -1070,11 +840,9 @@ contain the correct contents\n"
                             self.logger.log(LogPriority.DEBUG, debug)
                             success = False
                     tmpfile = netwrkfile + ".tmp"
-                    self.editor2 = KVEditorStonix(self.statechglogger,
-                                                  self.logger, "conf",
-                                                  netwrkfile, tmpfile,
-                                                  interface, "present",
-                                                  "closedeq")
+                    self.editor2 = KVEditorStonix(self.statechglogger, self.logger,
+                                                  "conf", netwrkfile, tmpfile,
+                                                  self.interface, "present", "closedeq")
                     if not self.editor2.report():
                         self.detailedresults += netwrkfile + " doesn't contain \
 the correct contents\n"
@@ -1096,8 +864,9 @@ the correct contents\n"
                     os.chown(netwrkfile, 0, 0)
                     os.chmod(netwrkfile, 420)
                     resetsecon(netwrkfile)
-#-----------------------------------------------------------------------------#
-        if self.helper.manager == "apt-get":
+
+        # fix sshd_config file for apt-get systems if ssh is installed
+        if self.ph.manager == "apt-get":
             if not os.path.exists("/etc/ssh/sshd_config"):
                 msg = "/etc/ssh/ssd_config doesn\'t exist.  This could mean ssh \
     is not installed or the file has been inadvertantly deleted.  Due to the \
