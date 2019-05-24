@@ -254,66 +254,121 @@ class KVAConf():
         fixables = []
         removeables = []
 
-        if self.contents:
-            if self.intent == "present":  #self.data contains key val pairs we want in the file
-                if isinstance(value, list):  # value can be a list in cases, see init pydoc
-                    debug = "This key can be present multiple times: " + key + "\n"
-                    self.logger.log(LogPriority.DEBUG, debug)
-                    for item in value:
-                        foundalready = False
-                        for line in self.contents:
-                            if re.match('^#', line) or re.match(r'^\s*$', line):  # ignore if comment or blank line
-                                continue
-                            # changed by Breen Malmberg 03/14/2019; re escaped keys so re.py will not crash if the key
-                            # has any special regex characters in it
-                            elif re.search("^" + re.escape(key) + "\s+", line):  # we found the key, which in this case can be repeatable
-                                debug = "found the key: " + key + "\n"
-                                self.logger.log(LogPriority.DEBUG, debug)
-                                if item != "":
-                                    debug = "the value we're looking for isn't blank\n"
-                                    self.logger.log(LogPriority.DEBUG, debug)
-                                    temp = line.strip()  # strip off all trailing and leading whitespace
-                                else:
-                                    debug = "the value we're looking for is blank\n"
-                                    self.logger.log(LogPriority.DEBUG, debug)
-                                    temp = line
-                                temp = re.sub("\s+", " ", temp)  # replace all whitespace with just one whitespace character
-                                temp = temp.split()  # separate contents into list separated by spaces
-                                try:
-                                    if len(temp) > 2:  # this could indicate the file's format may be corrupted but that's not our issue
-                                        continue
-                                    elif temp[1] == item:  # value is correct
-                                        debug = "the value is correct\n"
-                                        self.logger.log(LogPriority.DEBUG, debug)
-                                        foundalready = True
-                                        continue
-                                except IndexError:
-                                    #value is blank but key is repeatable so not a problem
-                                    if item == "":
-                                        debug = "there is no value for key but we want no value\n"
-                                        self.logger.log(LogPriority.DEBUG, debug)
-                                        foundalready = True
-                                    continue
-                        if not foundalready:
-                            debug = "didn't find key and/or value, adding to fixables\n"
-                            self.logger.log(LogPriority.DEBUG, debug)
-                            fixables.append(item)
-                    if fixables:
-                        return fixables
-                    else:
-                        debug = "found the key and the correct value\n"
-                        return True
-                else:  # value must be a string, normal case
+        if self.intent == "present":  #self.data contains key val pairs we want in the file
+            if isinstance(value, list):  # value can be a list in cases, see init pydoc
+                debug = "This key can be present multiple times: " + key + "\n"
+                self.logger.log(LogPriority.DEBUG, debug)
+                for item in value:
                     foundalready = False
                     for line in self.contents:
                         if re.match('^#', line) or re.match(r'^\s*$', line):  # ignore if comment or blank line
                             continue
                         # changed by Breen Malmberg 03/14/2019; re escaped keys so re.py will not crash if the key
                         # has any special regex characters in it
-                        elif re.search("^" + re.escape(key) + "\s+", line):  # the key is in this line
+                        elif re.search("^" + re.escape(key) + "\s+", line):  # we found the key, which in this case can be repeatable
+                            debug = "found the key: " + key
+                            self.logger.log(LogPriority.DEBUG, debug)
+                            if item != "":
+                                debug = "the value we're looking for isn't blank"
+                                self.logger.log(LogPriority.DEBUG, debug)
+                                temp = line.strip()  # strip off all trailing and leading whitespace
+                            else:
+                                #There are some instances where a file just has one word
+                                #and no value after, which is completely legitimate
+                                debug = "the value we're looking for is blank"
+                                self.logger.log(LogPriority.DEBUG, debug)
+                                temp = line
+                            temp = re.sub(key, "", temp)
+                            temp = temp.strip()
+                            temp = re.sub("\s+", " ", temp)  # replace all whitespace with just one whitespace character
+                            #temp = temp.split()  # separate contents into list separated by spaces
+
+                            try:
+                                #if len(temp) > 2:  # this could indicate the file's format may be corrupted but that's not our issue
+                                #    continue
+                                #elif temp[1] == item:  # value is correct
+                                if temp == item:
+                                #if temp[1] == item:
+                                    debug = "the value is correct\n"
+                                    self.logger.log(LogPriority.DEBUG, debug)
+                                    foundalready = True
+                                    continue
+                            except IndexError:
+                                #value is blank but key is repeatable so not a problem
+                                if item == "":
+                                    debug = "there is no value for key but we want no value\n"
+                                    self.logger.log(LogPriority.DEBUG, debug)
+                                    foundalready = True
+                                continue
+                    if not foundalready:
+                        debug = "didn't find key and/or value, adding to fixables\n"
+                        self.logger.log(LogPriority.DEBUG, debug)
+                        fixables.append(item)
+                if fixables:
+                    return fixables
+                else:
+                    debug = "found the key and the correct value\n"
+                    return True
+            else:  # value must be a string, normal case
+                foundalready = False
+                for line in self.contents:
+                    if re.match('^#', line) or re.match(r'^\s*$', line):  # ignore if comment or blank line
+                        continue
+                    # changed by Breen Malmberg 03/14/2019; re escaped keys so re.py will not crash if the key
+                    # has any special regex characters in it
+                    elif re.search("^" + re.escape(key) + "\s+", line):  # the key is in this line
+                        debug = "found the key: " + key + "\n"
+                        self.logger.log(LogPriority.DEBUG, debug)
+                        if value != "":
+                            debug = "the value we're looking for isn't blank\n"
+                            self.logger.log(LogPriority.DEBUG, debug)
+                            temp = line.strip()  # strip off all trailing and leading whitespace
+                        else:
+                            debug = "the value we're looking for is blank\n"
+                            self.logger.log(LogPriority.DEBUG, debug)
+                            temp = line
+                        temp = re.sub("\s+", " ", temp)  # replace all whitespace with just one whitespace character
+                        temp = temp.split()  # separate contents into list separated by spaces
+                        try:
+                            # added by Breen Malmberg 03/14/2019; will now look at the correct index, for the value,
+                            # if the key has spaces in it and the key-value delimiter is also a space
+                            if len(temp) > 2:
+                                index = len(temp) - 1
+                            else:
+                                index = 1
+
+                            if temp[index] == value:  # the value is correct
+                                debug = "the value is correct\n"
+                                self.logger.log(LogPriority.DEBUG, debug)
+                                foundalready = True  # however we continue to make sure the key doesn't appear later in the file and have the wrong value
+                                continue
+                            else:  # the value is wrong so we break out of the loop.  Unecessary to continue, it will be fixed in the update
+                                debug = "value is incorrect\n"
+                                self.logger.log(LogPriority.DEBUG, debug)
+                                foundalready = False
+                                break
+                        except IndexError:
+                            if value == "":
+                                debug = "there is no value for key but we want no value\n"
+                                self.logger.log(LogPriority.DEBUG, debug)
+                                foundalready = True
+                                continue
+                            foundalready = False
+                            debug = "Index error\n"
+                            self.logger.log(LogPriority.DEBUG, debug)
+                            break
+                return foundalready
+        elif self.intent == "notpresent":  # self.data contains key val pairs we don't want in the file
+            if isinstance(value, list):  # value can be a list in cases, see init pydoc
+                for item in value:
+                    foundalready = False
+                    for line in self.contents:
+                        if re.match('^#', line) or re.match(r'^\s*$', line):  # ignore if comment or blank line
+                            continue
+                        elif re.search("^" + key + "\s+", line):  # we found the key, which in this case can be repeatable
                             debug = "found the key: " + key + "\n"
                             self.logger.log(LogPriority.DEBUG, debug)
-                            if value != "":
+                            if item != "":
                                 debug = "the value we're looking for isn't blank\n"
                                 self.logger.log(LogPriority.DEBUG, debug)
                                 temp = line.strip()  # strip off all trailing and leading whitespace
@@ -323,105 +378,19 @@ class KVAConf():
                                 temp = line
                             temp = re.sub("\s+", " ", temp)  # replace all whitespace with just one whitespace character
                             temp = temp.split()  # separate contents into list separated by spaces
-                            try:
-                                # added by Breen Malmberg 03/14/2019; will now look at the correct index, for the value,
-                                # if the key has spaces in it and the key-value delimiter is also a space
-                                if len(temp) > 2:
-                                    index = len(temp) - 1
-                                else:
-                                    index = 1
-
-                                if temp[index] == value:  # the value is correct
-                                    debug = "the value is correct\n"
-                                    self.logger.log(LogPriority.DEBUG, debug)
-                                    foundalready = True  # however we continue to make sure the key doesn't appear later in the file and have the wrong value
-                                    continue
-                                else:  # the value is wrong so we break out of the loop.  Unecessary to continue, it will be fixed in the update
-                                    debug = "value is incorrect\n"
-                                    self.logger.log(LogPriority.DEBUG, debug)
-                                    foundalready = False
-                                    break
-                            except IndexError:
-                                if value == "":
-                                    debug = "there is no value for key but we want no value\n"
-                                    self.logger.log(LogPriority.DEBUG, debug)
-                                    foundalready = True
-                                    continue
-                                foundalready = False
-                                debug = "Index error\n"
-                                self.logger.log(LogPriority.DEBUG, debug)
-                                break
-                    return foundalready
-            elif self.intent == "notpresent":  # self.data contains key val pairs we don't want in the file
-                if isinstance(value, list):  # value can be a list in cases, see init pydoc
-                    for item in value:
-                        foundalready = False
-                        for line in self.contents:
-                            if re.match('^#', line) or re.match(r'^\s*$', line):  # ignore if comment or blank line
-                                continue
-                            elif re.search("^" + key + "\s+", line):  # we found the key, which in this case can be repeatable
-                                debug = "found the key: " + key + "\n"
-                                self.logger.log(LogPriority.DEBUG, debug)
-                                if item != "":
-                                    debug = "the value we're looking for isn't blank\n"
-                                    self.logger.log(LogPriority.DEBUG, debug)
-                                    temp = line.strip()  # strip off all trailing and leading whitespace
-                                else:
-                                    debug = "the value we're looking for is blank\n"
-                                    self.logger.log(LogPriority.DEBUG, debug)
-                                    temp = line
-                                temp = re.sub("\s+", " ", temp)  # replace all whitespace with just one whitespace character
-                                temp = temp.split()  # separate contents into list separated by spaces
-                                if temp[0] == key:  # check to make sure key appears in beginning
-                                    debug = "found the key: " + key + "\n"
-                                    self.logger.log(LogPriority.DEBUG, debug)
-                                    try:
-                                        if len(temp) > 2:
-                                            continue  # this could indicate the file's format may be corrupted but that's not our issue
-                                        elif temp[1] == item:  # the value is correct
-                                            debug = "the value is correct, adding to removeables\n"
-                                            self.logger.log(LogPriority.DEBUG, debug)
-                                            foundalready = True
-                                    except IndexError:
-                                        if item == "":
-                                            debug = "value in line is blank but we want it to be blank\n"
-                                            self.logger.log(LogPriority.DEBUG, debug)
-                                            foundalready = True
-                                            continue
-                                        debug = "Index error\n"
-                                        self.logger.log(LogPriority.DEBUG, debug)
-                                        return False
-                        if foundalready:
-                            removeables.append(item)
-                    if removeables:
-                        return removeables
-                    else:
-                        return False
-                else:  # value must be a string, normal case
-                    foundalready = False
-                    for line in self.contents:
-                        if re.match('^#', line) or re.match(r'^\s*$', line):  # ignore is comment or blank line
-                            continue
-                        elif re.match("^" + key + "\s+", line):  # we found the key
-                            if value != "":
-                                temp = line.strip()  # strip off all trailing and leading whitespace
-                            else:
-                                temp = line
-                            temp = re.sub("\s+", " ", temp)  # replace all whitespace with just one whitespace character
-                            temp = temp.split()  # separate contents into list separated by spaces
                             if temp[0] == key:  # check to make sure key appears in beginning
                                 debug = "found the key: " + key + "\n"
                                 self.logger.log(LogPriority.DEBUG, debug)
                                 try:
                                     if len(temp) > 2:
-                                        continue
-                                    elif temp[1] == value:
-                                        debug = "value is correct, adding to removeables\n"
+                                        continue  # this could indicate the file's format may be corrupted but that's not our issue
+                                    elif temp[1] == item:  # the value is correct
+                                        debug = "the value is correct, adding to removeables\n"
                                         self.logger.log(LogPriority.DEBUG, debug)
                                         foundalready = True
                                 except IndexError:
-                                    if value == "":
-                                        debug = "value in line is blank but we want it to be blank, adding to removeables\n"
+                                    if item == "":
+                                        debug = "value in line is blank but we want it to be blank\n"
                                         self.logger.log(LogPriority.DEBUG, debug)
                                         foundalready = True
                                         continue
@@ -429,9 +398,46 @@ class KVAConf():
                                     self.logger.log(LogPriority.DEBUG, debug)
                                     return False
                     if foundalready:
-                        return True
-                    else:
-                        return False
+                        removeables.append(item)
+                if removeables:
+                    return removeables
+                else:
+                    return False
+            else:  # value must be a string, normal case
+                foundalready = False
+                for line in self.contents:
+                    if re.match('^#', line) or re.match(r'^\s*$', line):  # ignore is comment or blank line
+                        continue
+                    elif re.match("^" + key + "\s+", line):  # we found the key
+                        if value != "":
+                            temp = line.strip()  # strip off all trailing and leading whitespace
+                        else:
+                            temp = line
+                        temp = re.sub("\s+", " ", temp)  # replace all whitespace with just one whitespace character
+                        temp = temp.split()  # separate contents into list separated by spaces
+                        if temp[0] == key:  # check to make sure key appears in beginning
+                            debug = "found the key: " + key + "\n"
+                            self.logger.log(LogPriority.DEBUG, debug)
+                            try:
+                                if len(temp) > 2:
+                                    continue
+                                elif temp[1] == value:
+                                    debug = "value is correct, adding to removeables\n"
+                                    self.logger.log(LogPriority.DEBUG, debug)
+                                    foundalready = True
+                            except IndexError:
+                                if value == "":
+                                    debug = "value in line is blank but we want it to be blank, adding to removeables\n"
+                                    self.logger.log(LogPriority.DEBUG, debug)
+                                    foundalready = True
+                                    continue
+                                debug = "Index error\n"
+                                self.logger.log(LogPriority.DEBUG, debug)
+                                return False
+                if foundalready:
+                    return True
+                else:
+                    return False
 
     def update(self, fixables, removeables):
         '''Private outer method to call submethod setOpenClosedValue() or
@@ -594,8 +600,7 @@ class KVAConf():
                         continue
             for key, val in fixables.iteritems():
                 if isinstance(val, list):
-                    for key2 in fixables[key]:
-                        contents.append(key + " " + key2 + "\n")
+                    continue
                 else:
                     contents.append(key + " " + val + "\n")
         self.contents = contents
@@ -645,7 +650,6 @@ class KVAConf():
         self.contents = []
 
         try:
-
             f = open(path, 'r')
             self.contents = f.readlines()
             f.close()
