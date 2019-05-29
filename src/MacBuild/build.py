@@ -682,14 +682,14 @@ class SoftwareBuilder():
                 #####
                 # Copy the stonix_resources directory into the
                 # stonix.app/Contents/MacOS directory
-                #rsync = [self.RSYNC, "-avp", "--exclude=\".svn\"",
-                #         "--exclude=\"*.tar.gz\"", "--exclude=\"*.dmg\"",
-                #         "--exclude=\".git*\"", self.tmphome + \
-                #         "/src/stonix_resources",
-                #         self.tmphome + "/src/MacBuild/stonix" + "/dist/" + \
-                #         appName + ".app/Contents/MacOS"]
-                #output = Popen(rsync, stdout=PIPE, stderr=STDOUT).communicate()[0]
-                #print output
+                rsync = [self.RSYNC, "-avp", "--exclude=\".svn\"",
+                         "--exclude=\"*.tar.gz\"", "--exclude=\"*.dmg\"",
+                         "--exclude=\".git*\"", self.tmphome + \
+                         "/src/stonix_resources",
+                         self.tmphome + "/src/MacBuild/stonix" + "/dist/" + \
+                         appName + ".app/Contents/MacOS"]
+                output = Popen(rsync, stdout=PIPE, stderr=STDOUT).communicate()[0]
+                print output
                 self.libc.sync()
                 self.libc.sync()
                 #####
