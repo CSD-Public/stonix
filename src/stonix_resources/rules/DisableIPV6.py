@@ -332,6 +332,7 @@ and/or wasn't able to be created\n"
 ##############################################################################
 
     def reportLinux(self):
+        self.ch = CommandHelper(self.logger)
         compliant = True
         netwrkfile = ""
         ifacefile = ""
@@ -373,11 +374,11 @@ and/or wasn't able to be created\n"
             cmd = ["/sbin/ifconfig"]
         else:
             cmd = ["/sbin/ip", "addr"]
-        cmdhelper = CommandHelper(self.logger)
-        if not cmdhelper.executeCommand(cmd):
+
+        if not self.ch.executeCommand(cmd):
             compliant = False
         else:
-            output = cmdhelper.getOutput()
+            output = self.ch.getOutput()
             for line in output:
                 if re.search("^inet6", line.strip()):
                     self.detailedresults += "inet6 exists in the " + \
@@ -414,7 +415,7 @@ the correct contents\n"
 
         # check files inside modprobe.d directory for correct contents
         if os.path.exists("/etc/modprobe.d/"):
-            goodfile = ""
+            #goodfile = ""
             modprobefiles = glob.glob("/etc/modprobe.d/*")
             for modfile in modprobefiles:
                 modprobekveditor = KVEditorStonix(self.statechglogger, self.logger,
@@ -557,12 +558,10 @@ contain the correct contents\n"
         success = True
         ifacefile = ""
         netwrkfile = ""
-        tempstring1 = ""
-        tempstring2 = ""
         sysctl = "/etc/sysctl.conf"
         blacklistfile = "/etc/modprobe.d/stonix-blacklist.conf"
 
-        #stig portion, correct netconfig file
+        # STIG portion, correct netconfig file
         if self.ph.manager == "apt-get":
             nfspkg = "nfs-common"
         else:
@@ -594,12 +593,8 @@ contain the correct contents\n"
                     os.chown("/etc/netconfig", 0, 0)
                     os.chmod("/etc/netconfig", 420)
                     resetsecon("/etc/netconfig")
-        if self.ph.manager == "yum":
-            ifacefile = "/etc/sysconfig/network-scripts/"
-            netwrkfile = "/etc/sysconfig/network"
-        elif self.ph.manager == "zypper":
-            ifacefile = "/etc/sysconfig/network/"
-#---------------------remove any ipv6 addresses-------------------------------#
+
+        # remove any ipv6 addresses from /etc/hosts file
         if os.path.exists("/etc/hosts"):
             contents = readFile("/etc/hosts", self.logger)
             tempstring = ""
@@ -628,7 +623,9 @@ contain the correct contents\n"
                 success = False
                 debug = "Unable to write to file /etc/hosts\n"
                 self.logger.log(LogPriority.DEBUG, debug)
-#---------------------------fix Sysctl----------------------------------------#
+
+        # fix sysctl / tuning kernel parameters
+        # manually write key value pairs to /etc/sysctl.conf
         if not os.path.exists(sysctl):
             if createFile(sysctl, self.logger):
                 self.created = True
@@ -674,19 +671,39 @@ contain the correct contents\n"
                             debug = "Unable to set permissions on /etc/sysctl.conf\n"
                             self.logger.log(LogPriority.DEBUG, debug)
                     resetsecon(sysctl)
-                    cmdhelper = CommandHelper(self.logger)
-                    cmd = ["/sbin/sysctl", "-q", "-e", "-p"]
-                    if not cmdhelper.executeCommand(cmd):
-                        uknownkey = False
-                        output = cmdhelper.getOutput()
-                        for line in output:
-                            if re.search("is an unknown key error", line):
-                                unknownkey = True
-                        if not unknownkey:
-                            success = False
-                            debug = "Unable to reset sysctl\n"
-                            self.logger.log(LogPriority.DEBUG, debug)
 
+        # fix sysctl parameters using sysctl -w command
+        for key in self.sysctls:
+            if self.ch.executeCommand("/sbin/sysctl " + key):
+                output = self.ch.getOutputString().strip()
+                if not re.search(self.sysctls[key] + "$", output):
+                    undovalue = output[-1]
+                    self.ch.executeCommand("/sbin/sysctl -w " + key + "=" + self.sysctls[key])
+                    retcode = self.ch.getReturnCode()
+                    if retcode != 0:
+                        success = False
+                        self.detailedresults += "\nFailed to set core dumps variable suid_dumpable to 0"
+                        errmsg = self.ch.getErrorString()
+                        self.logger.log(LogPriority.DEBUG, errmsg)
+                    else:
+                        self.ch.executeCommand("/sbin/sysctl -q -e -p")
+                        retcode2 = self.ch.getReturnCode()
+                        if retcode2 != 0:
+                            success = False
+                            self.detailedresults += "\nFailed to load new sysctl configuration from config file"
+                            errmsg2 = self.ch.getErrorString()
+                            self.logger.log(LogPriority.DEBUG, errmsg2)
+                        else:
+                            self.iditerator += 1
+                            myid = iterate(self.iditerator, self.rulenumber)
+                            command = "/sbin/sysctl -w " + key + "=0"
+                            event = {"eventtype": "commandstring",
+                                     "command": command}
+                            self.statechglogger.recordchgevent(myid, event)
+            else:
+                self.detailedresults += "Unable to get value for " + key + "\n"
+                success = False
+        self.ch.executeCommand()
         # We never found the correct contents in any of the modprobe.d files
         # so we're going to created the stonix-blacklist file
         # this file is used in other rules
@@ -722,34 +739,41 @@ contain the correct contents\n"
                             success = False
                             self.detailedresults += "Unable to correct contents in " + \
                                                 blacklistfile + "\n"
+        # possible future implementation
         # this portion looks at the other files inside modprobe.d
         # for any conflicting key value pairs such as a key appearing in two
         # files but having different values.  self.modprobefiles list contains these
         # such files from the report
-        if self.modprobefiles:
-            # go through each file in the list
-            for modfile in self.modprobefiles:
-                # to be safe, still check if the file exists
-                if os.path.exists(modfile):
-                    # create a kveditor object to establish the fix procedure
-                    tmpfile = modfile + ".tmp"
-                    modprobekveditor = KVEditorStonix(self.statechglogger, self.logger,
-                                                      "conf", modfile, tmpfile, self.modprobes,
-                                                      "present", "space")
-                    if not modprobekveditor.report():
-                        modprobekveditor.fixables = ""
-                        self.iditerator += 1
-                        myid = iterate(self.iditerator, self.rulenumber)
-                        modprobekveditor.setEventID(myid)
-                        if not modprobekveditor.fix():
-                            success = False
-                            self.detailedresults += "Unable to correct contents in " + \
-                                                    modfile + "\n"
-                        elif not modprobekveditor.commit():
-                            success = False
-                            self.detailedresults += "Unable to correct contents in " + \
-                                                    modfile + "\n"
-        #fix ifcfg (interface) files
+        # if self.modprobefiles:
+        #     # go through each file in the list
+        #     for modfile in self.modprobefiles:
+        #         # to be safe, still check if the file exists
+        #         if os.path.exists(modfile):
+        #             # create a kveditor object to establish the fix procedure
+        #             tmpfile = modfile + ".tmp"
+        #             modprobekveditor = KVEditorStonix(self.statechglogger, self.logger,
+        #                                               "conf", modfile, tmpfile, self.modprobes,
+        #                                               "present", "space")
+        #             if not modprobekveditor.report():
+        #                 modprobekveditor.fixables = ""
+        #                 self.iditerator += 1
+        #                 myid = iterate(self.iditerator, self.rulenumber)
+        #                 modprobekveditor.setEventID(myid)
+        #                 if not modprobekveditor.fix():
+        #                     success = False
+        #                     self.detailedresults += "Unable to correct contents in " + \
+        #                                             modfile + "\n"
+        #                 elif not modprobekveditor.commit():
+        #                     success = False
+        #                     self.detailedresults += "Unable to correct contents in " + \
+        #                                             modfile + "\n"
+
+        # fix ifcfg (interface) files
+        if self.ph.manager == "yum":
+            ifacefile = "/etc/sysconfig/network-scripts/"
+            netwrkfile = "/etc/sysconfig/network"
+        elif self.ph.manager == "zypper":
+            ifacefile = "/etc/sysconfig/network/"
         if ifacefile:
             if os.path.exists(ifacefile):
                 dirs = glob.glob(ifacefile + "*")
