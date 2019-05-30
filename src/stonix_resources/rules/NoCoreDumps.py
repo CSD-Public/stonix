@@ -335,13 +335,12 @@ class NoCoreDumps(Rule):
         success = True
 
         # manually writing key and value to /etc/sysctl.conf
-        sysctl = "/etc/sysctl"
+        sysctl = "/etc/sysctl.conf"
         created = False
         if not os.path.exists(sysctl):
             if createFile(sysctl, self.logger):
                 created = True
                 setPerms(sysctl, [0, 0, 420], self.logger)
-                tmpfile = sysctl + ".tmp"
                 self.iditerator += 1
                 myid = iterate(self.iditerator, self.rulenumber)
                 event = {"eventtype": "creation",
@@ -352,10 +351,12 @@ class NoCoreDumps(Rule):
                 debug = "Unable to create " + sysctl + "\n"
                 self.logger.log(LogPriority.DEBUG, debug)
         if os.path.exists(sysctl):
+            tmpfile = sysctl + ".tmp"
             editor = KVEditorStonix(self.statechglogger, self.logger,
-                                          "conf", sysctl, tmpfile, self.sysctls,
+                                          "conf", sysctl, tmpfile, {"fs.suid_dumpable": "0"},
                                           "present", "openeq")
             if not editor.report():
+                print "editor.report is false\n\n"
                 if editor.fixables:
                     self.iditerator += 1
                     # If we did not create the file, set an event ID for the

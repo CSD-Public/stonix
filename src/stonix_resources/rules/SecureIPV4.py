@@ -416,27 +416,31 @@ class SecureIPV4(Rule):
                 debug = "KVEditor commit to " + \
                     self.path + " was not successful\n"
                 self.logger.log(LogPriority.DEBUG, debug)
+            if not checkPerms(self.path, [0, 0, 0o644], self.logger):
+                if not created:
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    if not setPerms(self.path, [0, 0, 0o644], self.logger,
+                                    self.statechglogger, myid):
+                        self.detailedresults += "Could not set permissions on " + \
+                                                self.path + "\n"
+                        success = False
+                else:
+                    if not setPerms(self.path, [0, 0, 0o644], self.logger):
+                        self.detailedresults += "Could not set permissions on " + \
+                                                self.path + "\n"
+                        success = False
             resetsecon(self.path)
-            cmd = "/sbin/sysctl -p"
-            if not self.ch.executeCommand(cmd):
+        for key in lfc:
+            if not self.ch.executeCommand("/sbin/sysctl " + key):
+                
+
+
                 success = False
                 self.detailedresults += "Unable to reload changes to " + self.path + "\n"
                 debug = "Unable to reload changes to " + self.path + "\n"
                 self.logger.log(LogPriority.DEBUG, debug)
-        if not checkPerms(self.path, [0, 0, 0o644], self.logger):
-            if not created:
-                self.iditerator += 1
-                myid = iterate(self.iditerator, self.rulenumber)
-                if not setPerms(self.path, [0, 0, 0o644], self.logger,
-                                self.statechglogger, myid):
-                    self.detailedresults += "Could not set permissions on " + \
-                        self.path + "\n"
-                    success = False
-            else:
-                if not setPerms(self.path, [0, 0, 0o644], self.logger):
-                    self.detailedresults += "Could not set permissions on " + \
-                                            self.path + "\n"
-                    success = False
+
         return success
 
     def fixMac(self):

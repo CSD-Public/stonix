@@ -400,7 +400,7 @@ and/or wasn't able to be created\n"
             self.detailedresults += "File " + sysctl + " does not exist\n"
             compliant = False
         else:
-            if not checkPerms(sysctl, [0, 0, 420], self.logger):
+            if not checkPerms(sysctl, [0, 0, 0o644], self.logger):
                 self.detailedresults += "Permissions for " + sysctl + \
                     "are incorrect\n"
                 compliant = False
@@ -412,7 +412,21 @@ and/or wasn't able to be created\n"
                 self.detailedresults += "/etc/sysctl file doesn't contain \
 the correct contents\n"
                 compliant = False
+        for key in self.sysctls:
+            self.ch.executeCommand("/sbin/sysctl " + key)
+            retcode = self.ch.getReturnCode()
 
+            if retcode != 0:
+                self.detailedresults += "Failed to get value of core dumps configuration with sysctl command\n"
+                errmsg = self.ch.getErrorString()
+                self.logger.log(LogPriority.DEBUG, errmsg)
+                compliant = False
+            else:
+                output = self.ch.getOutputString()
+                if output.strip() != key + " = " + self.sysctls[key]:
+                    compliant = False
+                    self.detailedresults += "sysctl output has incorrect value: " + \
+                        output + "\n"
         # check files inside modprobe.d directory for correct contents
         if os.path.exists("/etc/modprobe.d/"):
             #goodfile = ""
@@ -626,11 +640,11 @@ contain the correct contents\n"
 
         # fix sysctl / tuning kernel parameters
         # manually write key value pairs to /etc/sysctl.conf
+        created = False
         if not os.path.exists(sysctl):
             if createFile(sysctl, self.logger):
-                self.created = True
-                setPerms(sysctl, [0, 0, 420], self.logger)
-                tmpfile = sysctl + ".tmp"
+                created = True
+                setPerms(sysctl, [0, 0, 0o644], self.logger)
                 self.iditerator += 1
                 myid = iterate(self.iditerator, self.rulenumber)
                 event = {"eventtype": "creation",
@@ -641,6 +655,7 @@ contain the correct contents\n"
                 debug = "Unable to create " + sysctl + "\n"
                 self.logger.log(LogPriority.DEBUG, debug)
         if os.path.exists(sysctl):
+            tmpfile = sysctl + ".tmp"
             self.editor1 = KVEditorStonix(self.statechglogger, self.logger,
                                           "conf", sysctl, tmpfile, self.sysctls,
                                           "present", "openeq")
@@ -649,7 +664,7 @@ contain the correct contents\n"
                     self.iditerator += 1
                     # If we did not create the file, set an event ID for the
                     # KVEditor's undo event
-                    if not self.created:
+                    if not created:
                         myid = iterate(self.iditerator, self.rulenumber)
                         self.editor1.setEventID(myid)
                     if not self.editor1.fix():
@@ -662,14 +677,19 @@ contain the correct contents\n"
                         debug = "Unable to complete kveditor commit " + \
                             "method for /etc/sysctl.conf file\n"
                         self.logger.log(LogPriority.DEBUG, debug)
-                    if not checkPerms(sysctl, [0, 0, 420], self.logger):
-                        self.iditerator += 1
-                        myid = iterate(self.iditerator, self.rulenumber)
-                        if not setPerms(sysctl, [0, 0, 420], self.logger,
-                                        self.statechglogger, myid):
-                            success = False
-                            debug = "Unable to set permissions on /etc/sysctl.conf\n"
-                            self.logger.log(LogPriority.DEBUG, debug)
+                    if not checkPerms(sysctl, [0, 0, 0o644], self.logger):
+                        if not created:
+                            self.iditerator += 1
+                            myid = iterate(self.iditerator, self.rulenumber)
+                            if not setPerms(sysctl, [0, 0, 0o644], self.logger,
+                                            self.statechglogger, myid):
+                                success = False
+                                self.detailedresults += "Unable to set permissions on /etc/sysctl.conf\n"
+                        else:
+                            if not setPerms(self.path, [0, 0, 0o644], self.logger):
+                                self.detailedresults += "Could not set permissions on " + \
+                                                        self.path + "\n"
+                                success = False
                     resetsecon(sysctl)
 
         # fix sysctl parameters using sysctl -w command
