@@ -356,7 +356,6 @@ class NoCoreDumps(Rule):
                                           "conf", sysctl, tmpfile, {"fs.suid_dumpable": "0"},
                                           "present", "openeq")
             if not editor.report():
-                print "editor.report is false\n\n"
                 if editor.fixables:
                     self.iditerator += 1
                     # If we did not create the file, set an event ID for the

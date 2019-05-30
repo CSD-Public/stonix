@@ -74,6 +74,9 @@ class DisableIPV6(Rule):
         self.iditerator = 0
         self.created = False
         self.created2 = False
+        # self.editor1: sysctl file editor
+        # self.editor2: network file editor
+        # self.editor3: sshd file editor
         self.editor1, self.editor2, self.editor3 = "", "", ""
         self.sh = ServiceHelper(self.environ, self.logger)
         self.sethelptext()
@@ -338,15 +341,11 @@ and/or wasn't able to be created\n"
         ifacefile = ""
         self.modprobefiles = []
         self.modprobeOK = False
-        # self.editor1: sysctl file editor
-        # self.editor2: network file editor
-        # self.editor3: sshd file editor
-        self.editor1, self.editor2, self.editor3 = "", "", ""
         sysctl = "/etc/sysctl.conf"
         self.interface = {"IPV6INIT": "no",
                      "NETWORKING_IPV6": "no"}
         self.sysctls = {"net.ipv6.conf.all.disable_ipv6": "1",
-                   "net.ipv6.conf.default.disable_ipv6": "1"}
+                        "net.ipv6.conf.default.disable_ipv6": "1"}
         self.modprobes = {"options": ["ipv6 disable=1"],
                           "install": ["ipv6 /bin/true"]}
 
@@ -395,23 +394,26 @@ and/or wasn't able to be created\n"
                 if re.search(":", line):
                     compliant = False
 
-        # check /etc/sysctl.conf contents
+        # check compliancy of /etc/sysctl.conf file
         if not os.path.exists(sysctl):
             self.detailedresults += "File " + sysctl + " does not exist\n"
             compliant = False
         else:
-            if not checkPerms(sysctl, [0, 0, 0o644], self.logger):
-                self.detailedresults += "Permissions for " + sysctl + \
-                    "are incorrect\n"
-                compliant = False
             tmpfile = sysctl + ".tmp"
             self.editor1 = KVEditorStonix(self.statechglogger, self.logger,
                                           "conf", sysctl, tmpfile, self.sysctls,
                                           "present", "openeq")
             if not self.editor1.report():
                 self.detailedresults += "/etc/sysctl file doesn't contain \
-the correct contents\n"
+                    the correct contents\n"
                 compliant = False
+            if not checkPerms(sysctl, [0, 0, 0o644], self.logger):
+                self.detailedresults += "Permissions for " + sysctl + \
+                    "are incorrect\n"
+                compliant = False
+
+        # in addition to checking /etc/sysctl.conf contents we need to
+        # also check sysctl compliancy using the sysctl command
         for key in self.sysctls:
             self.ch.executeCommand("/sbin/sysctl " + key)
             retcode = self.ch.getReturnCode()
@@ -580,14 +582,19 @@ contain the correct contents\n"
             nfspkg = "nfs-common"
         else:
             nfspkg = "nfs-utils.x86_64"
+        # if package not installed, no need to configure it
         if self.ph.check(nfspkg):
             if os.path.exists("/etc/netconfig"):
                 filestring = ""
+                # we want to make sure the following two lines don't
+                # appear in the netconfig file
                 item1 = "udp6 tpi_clts v inet6 udp - -"
                 item2 = "tcp6 tpi_cots_ord v inet6 tcp - -"
                 contents = readFile("/etc/netconfig", self.logger)
                 for line in contents:
                     templine = re.sub("\s+", " ", line.strip())
+                    # if we find the lines, skip them thus leaving them out of
+                    # of the rewrite
                     if re.search(item1, templine) or re.search(item2, templine):
                         continue
                     else:
@@ -596,6 +603,7 @@ contain the correct contents\n"
                 if not writeFile(tmpfile, filestring, self.logger):
                     success = False
                 else:
+                    # record event, rename file, set perms
                     self.iditerator += 1
                     myid = iterate(self.iditerator, self.rulenumber)
                     event = {"eventtype": "conf",
@@ -655,16 +663,24 @@ contain the correct contents\n"
                 debug = "Unable to create " + sysctl + "\n"
                 self.logger.log(LogPriority.DEBUG, debug)
         if os.path.exists(sysctl):
+            if not checkPerms(sysctl, [0, 0, 0o644], self.logger):
+                if not created:
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    if not setPerms(sysctl, [0, 0, 0o644], self.logger,
+                                    self.statechglogger, myid):
+                        success = False
+
             tmpfile = sysctl + ".tmp"
             self.editor1 = KVEditorStonix(self.statechglogger, self.logger,
                                           "conf", sysctl, tmpfile, self.sysctls,
                                           "present", "openeq")
             if not self.editor1.report():
                 if self.editor1.fixables:
-                    self.iditerator += 1
                     # If we did not create the file, set an event ID for the
                     # KVEditor's undo event
                     if not created:
+                        self.iditerator += 1
                         myid = iterate(self.iditerator, self.rulenumber)
                         self.editor1.setEventID(myid)
                     if not self.editor1.fix():
@@ -692,7 +708,8 @@ contain the correct contents\n"
                                 success = False
                     resetsecon(sysctl)
 
-        # fix sysctl parameters using sysctl -w command
+        # here we also check the output of the sysctl command for each key
+        # to cover all bases
         for key in self.sysctls:
             if self.ch.executeCommand("/sbin/sysctl " + key):
                 output = self.ch.getOutputString().strip()
@@ -702,28 +719,29 @@ contain the correct contents\n"
                     retcode = self.ch.getReturnCode()
                     if retcode != 0:
                         success = False
-                        self.detailedresults += "\nFailed to set core dumps variable suid_dumpable to 0"
+                        self.detailedresults += "Failed to set " + key + " = " + self.sysctls[key] + "\n"
                         errmsg = self.ch.getErrorString()
                         self.logger.log(LogPriority.DEBUG, errmsg)
                     else:
-                        self.ch.executeCommand("/sbin/sysctl -q -e -p")
-                        retcode2 = self.ch.getReturnCode()
-                        if retcode2 != 0:
-                            success = False
-                            self.detailedresults += "\nFailed to load new sysctl configuration from config file"
-                            errmsg2 = self.ch.getErrorString()
-                            self.logger.log(LogPriority.DEBUG, errmsg2)
-                        else:
-                            self.iditerator += 1
-                            myid = iterate(self.iditerator, self.rulenumber)
-                            command = "/sbin/sysctl -w " + key + "=0"
-                            event = {"eventtype": "commandstring",
-                                     "command": command}
-                            self.statechglogger.recordchgevent(myid, event)
+                        self.iditerator += 1
+                        myid = iterate(self.iditerator, self.rulenumber)
+                        command = "/sbin/sysctl -w " + key + "=" + undovalue
+                        event = {"eventtype": "commandstring",
+                                 "command": command}
+                        self.statechglogger.recordchgevent(myid, event)
             else:
                 self.detailedresults += "Unable to get value for " + key + "\n"
                 success = False
-        self.ch.executeCommand()
+        # at the end do a print and ignore any key errors to ensure
+        # the new values are read into the kernel
+        self.ch.executeCommand("/sbin/sysctl -q -e -p")
+        retcode2 = self.ch.getReturnCode()
+        if retcode2 != 0:
+            success = False
+            self.detailedresults += "Failed to load new sysctl configuration from config file\n"
+            errmsg2 = self.ch.getErrorString()
+            self.logger.log(LogPriority.DEBUG, errmsg2)
+
         # We never found the correct contents in any of the modprobe.d files
         # so we're going to created the stonix-blacklist file
         # this file is used in other rules
