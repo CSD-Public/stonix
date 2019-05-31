@@ -251,106 +251,69 @@ class KVAConf():
         :returns: Bool
 
         '''
+        # list that keeps track of key value pairs we didn't find that need
+        # to be present and added in the fix() and commit()
         fixables = []
+
+        #list that keeps track of key value pairs that shouldn't be present
+        # but were and need to be removed in the fix() and commit()
         removeables = []
 
-        if self.intent == "present":  #self.data contains key val pairs we want in the file
+        # self.data contains key val pairs we want in the file
+        if self.intent == "present":
             # if "value" is a list that means the key can be repeatable
             if isinstance(value, list):
                 debug = "This key can be present multiple times: " + key + "\n"
                 self.logger.log(LogPriority.DEBUG, debug)
                 for item in value:
+                    # this variable keeps track if at any point we found the key-value
                     foundalready = False
                     for line in self.contents:
-                        if re.match('^#', line) or re.match(r'^\s*$', line):  # ignore if comment or blank line
+                        # ignore if comment or blank line
+                        if re.match('^#', line) or re.match(r'^\s*$', line):
                             continue
                         # we found the key, which in this case can be repeatable
                         elif re.search("^" + re.escape(key) + "\s+", line):
+                            # remove any leading or traling whitespace
+                            temp = line.strip()
+                            # check to see if "item" in our self.data dictionary is blank or not
                             if item != "":
-                                debug = "the value we're looking for isn't blank"
-                                self.logger.log(LogPriority.DEBUG, debug)
-                                temp = line.strip()  # strip off all trailing and leading whitespace
+                                temp = re.sub("\s+", " ", temp)
+                                if temp == key + " " + item:
+                                    foundalready = True
+                            # if it is, that means we're just looking for a special one word
+                            # key with no value after
                             else:
-                                #There are some instances where a file just has one word
-                                #and no value after, which is completely legitimate
-                                debug = "the value we're looking for is blank"
-                                self.logger.log(LogPriority.DEBUG, debug)
-                                temp = line
-                            temp = re.sub(key, "", temp)
-                            temp = temp.strip()
-                            temp = re.sub("\s+", " ", temp)  # replace all whitespace with just one whitespace character
-                            #temp = temp.split()  # separate contents into list separated by spaces
-
-                            try:
-                                if temp == item:
-                                    debug = "the value is correct\n"
-                                    self.logger.log(LogPriority.DEBUG, debug)
+                                if temp == key:
                                     foundalready = True
-                                    continue
-                            except IndexError:
-                                #value is blank but key is repeatable so not a problem
-                                if item == "":
-                                    debug = "there is no value for key but we want no value\n"
-                                    self.logger.log(LogPriority.DEBUG, debug)
-                                    foundalready = True
-                                continue
                     if not foundalready:
-                        debug = "didn't find key and/or value, adding to fixables\n"
-                        self.logger.log(LogPriority.DEBUG, debug)
                         fixables.append(item)
+                        debug = "didn't find key-value: " + key + " " + item + \
+                            ", but should be present"
+                        self.logger.log(LogPriority.DEBUG, debug)
                 if fixables:
                     return fixables
                 else:
-                    debug = "found the key and the correct value\n"
                     return True
-            else:  # value must be a string, normal case
+            # value must be a string, normal case
+            else:
                 foundalready = False
                 for line in self.contents:
-                    if re.match('^#', line) or re.match(r'^\s*$', line):  # ignore if comment or blank line
+                    # ignore if comment or blank line
+                    if re.match('^#', line) or re.match(r'^\s*$', line):
                         continue
-                    # changed by Breen Malmberg 03/14/2019; re escaped keys so re.py will not crash if the key
-                    # has any special regex characters in it
-                    elif re.search("^" + re.escape(key) + "\s+", line):  # the key is in this line
-                        debug = "found the key: " + key + "\n"
-                        self.logger.log(LogPriority.DEBUG, debug)
+                    # we found the key
+                    elif re.search("^" + re.escape(key) + "\s+", line):
+                        # remove any leading or trailing whitespace
+                        temp = line.strip()
+                        # check to see if "value" in our self.data dictionary is blank or not
                         if value != "":
-                            debug = "the value we're looking for isn't blank\n"
-                            self.logger.log(LogPriority.DEBUG, debug)
-                            temp = line.strip()  # strip off all trailing and leading whitespace
-                        else:
-                            debug = "the value we're looking for is blank\n"
-                            self.logger.log(LogPriority.DEBUG, debug)
-                            temp = line
-                        temp = re.sub("\s+", " ", temp)  # replace all whitespace with just one whitespace character
-                        temp = temp.split()  # separate contents into list separated by spaces
-                        try:
-                            # added by Breen Malmberg 03/14/2019; will now look at the correct index, for the value,
-                            # if the key has spaces in it and the key-value delimiter is also a space
-                            if len(temp) > 2:
-                                index = len(temp) - 1
-                            else:
-                                index = 1
-
-                            if temp[index] == value:  # the value is correct
-                                debug = "the value is correct\n"
-                                self.logger.log(LogPriority.DEBUG, debug)
-                                foundalready = True  # however we continue to make sure the key doesn't appear later in the file and have the wrong value
-                                continue
-                            else:  # the value is wrong so we break out of the loop.  Unecessary to continue, it will be fixed in the update
-                                debug = "value is incorrect\n"
-                                self.logger.log(LogPriority.DEBUG, debug)
-                                foundalready = False
-                                break
-                        except IndexError:
-                            if value == "":
-                                debug = "there is no value for key but we want no value\n"
-                                self.logger.log(LogPriority.DEBUG, debug)
+                            temp = re.sub("\s+", " ", temp)
+                            if temp == key + " " + value:
                                 foundalready = True
-                                continue
-                            foundalready = False
-                            debug = "Index error\n"
-                            self.logger.log(LogPriority.DEBUG, debug)
-                            break
+                        else:
+                            if temp == key:
+                                foundalready = True
                 return foundalready
         # self.data contains key val pairs we don't want in the file
         elif self.intent == "notpresent":
@@ -383,6 +346,9 @@ class KVAConf():
                                     foundalready = True
                     if foundalready:
                         removeables.append(item)
+                        debug = "Found the key-value: " + key + " " + item + \
+                                ", but should not be present"
+                        self.logger.log(LogPriority.DEBUG, debug)
                 if removeables:
                     return removeables
                 else:
@@ -398,17 +364,16 @@ class KVAConf():
                     elif re.search("^" + re.escape(key) + "\s+", line):
                         temp = line.strip()
                         if value != "":
-                            debug = "the value we're looking for isn't blank\n"
-                            self.logger.log(LogPriority.DEBUG, debug)
                             temp = re.sub("\s+", " ", temp)
                             if temp == key + " " + value:
                                 foundalready = True
                         else:
-                            debug = "the value we're looking for is blank\n"
-                            self.logger.log(LogPriority.DEBUG, debug)
                             if temp == key:
                                 foundalready = True
                 if foundalready:
+                    debug = "Found the key-value: " + key + " " + value + \
+                            ", but should not be present"
+                    self.logger.log(LogPriority.DEBUG, debug)
                     return True
                 else:
                     return False
