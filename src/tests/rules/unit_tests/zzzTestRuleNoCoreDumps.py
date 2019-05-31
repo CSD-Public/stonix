@@ -44,6 +44,7 @@ from src.tests.lib.logdispatcher_mock import LogPriority
 from src.stonix_resources.rules.NoCoreDumps import NoCoreDumps
 from src.stonix_resources.stonixutilityfunctions import readFile, writeFile, checkPerms, setPerms
 from src.stonix_resources.CommandHelper import CommandHelper
+from src.stonix_resources.KVEditorStonix import KVEditorStonix
 
 
 class zzzTestRuleNoCoreDumps(RuleTest):
@@ -59,6 +60,7 @@ class zzzTestRuleNoCoreDumps(RuleTest):
         self.rulenumber = self.rule.rulenumber
         self.checkUndo = True
         self.ch = CommandHelper(self.logger)
+
     def tearDown(self):
         pass
 
@@ -87,9 +89,9 @@ class zzzTestRuleNoCoreDumps(RuleTest):
         self.ch.executeCommand("/usr/bin/launchctl limit core")
         retcode = self.ch.getReturnCode()
         if retcode != 0:
-            self.detailedresults += "\nFailed to run launchctl command to get current value of core dumps configuration"
-            errmsg = self.ch.getErrorString()
-            self.logger.log(LogPriority.DEBUG, errmsg)
+            debug = "Failed to run launchctl command to get current value of core dumps configuration\n"
+            debug += self.ch.getErrorString()
+            self.logger.log(LogPriority.DEBUG, debug)
         else:
             output = self.ch.getOutputString()
             if output:
@@ -98,6 +100,7 @@ class zzzTestRuleNoCoreDumps(RuleTest):
 
     def setLinuxConditions(self):
         success = True
+        debug = ""
         path1 = "/etc/security/limits.conf"
         if os.path.exists(path1):
             lookfor1 = "(^\*)\s+hard\s+core\s+0?"
@@ -108,25 +111,47 @@ class zzzTestRuleNoCoreDumps(RuleTest):
                     if not re.search(lookfor1, line.strip()):
                         tempstring += line
                 if not writeFile(path1, tempstring, self.logger):
-                    debug = "unable to write incorrect contents to " + path1 + "\n"
+                    debug = "unable to write incorrect contents to " + path1
                     self.logger.log(LogPriority.DEBUG, debug)
                     success = False
-            if checkPerms(path1, [0, 0, 0o644], self.logger):
+            if not checkPerms(path1, [0, 0, 0o777], self.logger):
                 if not setPerms(path1, [0, 0, 0o777], self.logger):
-                    debug = "Unable to set incorrect permissions on " + path1 + "\n"
+                    debug = "Unable to set incorrect permissions on " + path1
                     self.logger.log(LogPriority.DEBUG, debug)
                     success = False
                 else:
-                    debug = "successfully set incorrect permissions on " + path1 + "\n"
+                    debug = "successfully set incorrect permissions on " + path1
                     self.logger.log(LogPriority.DEBUG, debug)
+
+        sysctl = "/etc/sysctl.conf"
+        tmpfile = sysctl + ".tmp"
+        editor = KVEditorStonix(self.statechglogger, self.logger, "conf",
+                                sysctl, tmpfile, {"fs.suid_dumpable": "1"},
+                                "present", "openeq")
+        if not checkPerms(sysctl, [0, 0, 0o777], self.logger):
+            if not setPerms(sysctl, [0, 0, 0o777], self.logger):
+                debug = "Unable to set incorrect permissions on " + path1
+                self.logger.log(LogPriority.DEBUG, debug)
+                success = False
+            else:
+                debug = "successfully set incorrect permissions on " + path1
+                self.logger.log(LogPriority.DEBUG, debug)
+        if not editor.report():
+            if not editor.fix():
+                success = False
+                debug = "Unable to set conditions for /etc/sysctl.conf file"
+                self.logger.log(LogPriority.DEBUG, debug)
+            elif not editor.commit():
+                success = False
+                debug = "Unable to set conditions for /etc/sysctl.conf file"
+                self.logger.log(LogPriority.DEBUG, debug)
 
         self.ch.executeCommand("/sbin/sysctl fs.suid_dumpable")
         retcode = self.ch.getReturnCode()
-
         if retcode != 0:
-            self.detailedresults += "Failed to get value of core dumps configuration with sysctl command\n"
-            errmsg = self.ch.getErrorString()
-            self.logger.log(LogPriority.DEBUG, errmsg)
+            debug = "Failed to get value of core dumps configuration with sysctl command"
+            debug += self.ch.getErrorString()
+            self.logger.log(LogPriority.DEBUG, debug)
             success = False
         else:
             output = self.ch.getOutputString()
@@ -135,7 +160,7 @@ class zzzTestRuleNoCoreDumps(RuleTest):
                     debug = "Unable to set incorrect value for fs.suid_dumpable"
                     self.logger.log(LogPriority.DEBUG, debug)
                     success = False
-                elif not self.ch.executeCommand("/sbin/sysctl -p"):
+                elif not self.ch.executeCommand("/sbin/sysctl -q -e -p"):
                     debug = "Unable to set incorrect value for fs.suid_dumpable"
                     self.logger.log(LogPriority.DEBUG, debug)
                     success = False

@@ -694,18 +694,10 @@ contain the correct contents\n"
                             "method for /etc/sysctl.conf file\n"
                         self.logger.log(LogPriority.DEBUG, debug)
                     if not checkPerms(sysctl, [0, 0, 0o644], self.logger):
-                        if not created:
-                            self.iditerator += 1
-                            myid = iterate(self.iditerator, self.rulenumber)
-                            if not setPerms(sysctl, [0, 0, 0o644], self.logger,
-                                            self.statechglogger, myid):
-                                success = False
-                                self.detailedresults += "Unable to set permissions on /etc/sysctl.conf\n"
-                        else:
-                            if not setPerms(self.path, [0, 0, 0o644], self.logger):
-                                self.detailedresults += "Could not set permissions on " + \
-                                                        self.path + "\n"
-                                success = False
+                        if not setPerms(self.path, [0, 0, 0o644], self.logger):
+                            self.detailedresults += "Could not set permissions on " + \
+                                                    self.path + "\n"
+                            success = False
                     resetsecon(sysctl)
 
         # here we also check the output of the sysctl command for each key

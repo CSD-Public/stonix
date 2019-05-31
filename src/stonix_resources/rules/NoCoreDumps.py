@@ -340,7 +340,7 @@ class NoCoreDumps(Rule):
         if not os.path.exists(sysctl):
             if createFile(sysctl, self.logger):
                 created = True
-                setPerms(sysctl, [0, 0, 420], self.logger)
+                setPerms(sysctl, [0, 0, 0o644], self.logger)
                 self.iditerator += 1
                 myid = iterate(self.iditerator, self.rulenumber)
                 event = {"eventtype": "creation",
@@ -351,18 +351,25 @@ class NoCoreDumps(Rule):
                 debug = "Unable to create " + sysctl + "\n"
                 self.logger.log(LogPriority.DEBUG, debug)
         if os.path.exists(sysctl):
+            if not checkPerms(sysctl, [0, 0, 0o644], self.logger):
+                if not created:
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    if not setPerms(sysctl, [0, 0, 0o644], self.logger,
+                                    self.statechglogger, myid):
+                        success = False
             tmpfile = sysctl + ".tmp"
             editor = KVEditorStonix(self.statechglogger, self.logger,
                                           "conf", sysctl, tmpfile, {"fs.suid_dumpable": "0"},
                                           "present", "openeq")
             if not editor.report():
                 if editor.fixables:
-                    self.iditerator += 1
                     # If we did not create the file, set an event ID for the
                     # KVEditor's undo event
                     if not created:
+                        self.iditerator += 1
                         myid = iterate(self.iditerator, self.rulenumber)
-                        self.editor.setEventID(myid)
+                        editor.setEventID(myid)
                     if not editor.fix():
                         success = False
                         debug = "Unable to complete kveditor fix method" + \
@@ -373,14 +380,11 @@ class NoCoreDumps(Rule):
                         debug = "Unable to complete kveditor commit " + \
                             "method for /etc/sysctl.conf file\n"
                         self.logger.log(LogPriority.DEBUG, debug)
-                    if not checkPerms(sysctl, [0, 0, 420], self.logger):
-                        self.iditerator += 1
-                        myid = iterate(self.iditerator, self.rulenumber)
-                        if not setPerms(sysctl, [0, 0, 420], self.logger,
-                                        self.statechglogger, myid):
+                    if not checkPerms(sysctl, [0, 0, 0o644], self.logger):
+                        if not setPerms(sysctl, [0, 0, 0o644], self.logger):
+                            self.detailedresults += "Could not set permissions on " + \
+                                                    self.path + "\n"
                             success = False
-                            debug = "Unable to set permissions on /etc/sysctl.conf\n"
-                            self.logger.log(LogPriority.DEBUG, debug)
                     resetsecon(sysctl)
 
         # using sysctl -w command
@@ -389,7 +393,7 @@ class NoCoreDumps(Rule):
         retcode = self.ch.getReturnCode()
         if retcode != 0:
             success = False
-            self.detailedresults += "\nFailed to set core dumps variable suid_dumpable to 0"
+            self.detailedresults += "Failed to set core dumps variable suid_dumpable to 0\n"
             errmsg = self.ch.getErrorString()
             self.logger.log(LogPriority.DEBUG, errmsg)
         else:
@@ -398,7 +402,7 @@ class NoCoreDumps(Rule):
             retcode2 = self.ch.getReturnCode()
             if retcode2 != 0:
                 success = False
-                self.detailedresults += "\nFailed to load new sysctl configuration from config file"
+                self.detailedresults += "Failed to load new sysctl configuration from config file\n"
                 errmsg2 = self.ch.getErrorString()
                 self.logger.log(LogPriority.DEBUG, errmsg2)
             else:
