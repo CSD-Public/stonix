@@ -711,10 +711,10 @@ class SoftwareBuilder():
                 self.libc.sync()
                 self.libc.sync()
                 if self.doCodesign and self.signature:
-                    # Sign stonix app
-                    self.signObject(self.tmphome + '/src/Macbuild/stonix4mac',
-                                    self.tmphome + '/src/Macbuild/stonix4mac/build/Release/stonix4mac.app/Contents/Resources',
-                                    'stonix.app')
+                    # Sign stonix app (Commented out, as the stonix app is included in the stonix4mac signing)
+                    #self.signObject(self.tmphome + '/src/Macbuild/stonix4mac',
+                    #                self.tmphome + '/src/Macbuild/stonix4mac/build/Release/stonix4mac.app/Contents/Resources',
+                    #                'stonix.app')
 
                     # Sign stonix4mac app
                     self.signObject(self.tmphome + '/src/Macbuild/stonix4mac',
