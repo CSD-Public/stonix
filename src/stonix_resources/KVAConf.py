@@ -255,7 +255,8 @@ class KVAConf():
         removeables = []
 
         if self.intent == "present":  #self.data contains key val pairs we want in the file
-            if isinstance(value, list):  # value can be a list in cases, see init pydoc
+            # if "value" is a list that means the key can be repeatable
+            if isinstance(value, list):
                 debug = "This key can be present multiple times: " + key + "\n"
                 self.logger.log(LogPriority.DEBUG, debug)
                 for item in value:
@@ -263,11 +264,8 @@ class KVAConf():
                     for line in self.contents:
                         if re.match('^#', line) or re.match(r'^\s*$', line):  # ignore if comment or blank line
                             continue
-                        # changed by Breen Malmberg 03/14/2019; re escaped keys so re.py will not crash if the key
-                        # has any special regex characters in it
-                        elif re.search("^" + re.escape(key) + "\s+", line):  # we found the key, which in this case can be repeatable
-                            debug = "found the key: " + key
-                            self.logger.log(LogPriority.DEBUG, debug)
+                        # we found the key, which in this case can be repeatable
+                        elif re.search("^" + re.escape(key) + "\s+", line):
                             if item != "":
                                 debug = "the value we're looking for isn't blank"
                                 self.logger.log(LogPriority.DEBUG, debug)
@@ -354,26 +352,33 @@ class KVAConf():
                             self.logger.log(LogPriority.DEBUG, debug)
                             break
                 return foundalready
-        elif self.intent == "notpresent":  # self.data contains key val pairs we don't want in the file
-            if isinstance(value, list):  # value can be a list in cases, see init pydoc
+        # self.data contains key val pairs we don't want in the file
+        elif self.intent == "notpresent":
+            # if "value" is a list that means the key can be repeatable
+            if isinstance(value, list):
+                # iterate through all values of repeatable key
                 for item in value:
+                    # this variable keeps track if at any point we found the key-value
                     foundalready = False
+                    # iterate through the file's contents
                     for line in self.contents:
-                        if re.match('^#', line) or re.match(r'^\s*$', line):  # ignore if comment or blank line
+                        # ignore if comment or blank line
+                        if re.match('^#', line) or re.match(r'^\s*$', line):
                             continue
-                        elif re.search("^" + re.escape(key) + "\s+", line):  # we found the key, which in this case can be repeatable
-                            debug = "found the key: " + key + "\n"
-                            self.logger.log(LogPriority.DEBUG, debug)
+                        # we found the key, which in this case can be repeatable
+                        elif re.search("^" + re.escape(key) + "\s+", line):
+                            # remove any leading or trailing whitespace
                             temp = line.strip()
+                            # check to see if "item" in our self.data dictionary is blank or not
                             if item != "":
-                                debug = "the value we're looking for isn't blank\n"
-                                self.logger.log(LogPriority.DEBUG, debug)
                                 temp = re.sub("\s+", " ", temp)
                                 if temp == key + " " + item:
                                     foundalready = True
+                            # if it is, that means we're just looking for a special one word
+                            # key with no value after
+                            # normally the implementer in this case should not have put the "value" in a list
+                            # but this will still cover it if they did
                             else:
-                                debug = "the value we're looking for is blank\n"
-                                self.logger.log(LogPriority.DEBUG, debug)
                                 if temp == key:
                                     foundalready = True
                     if foundalready:
@@ -382,12 +387,15 @@ class KVAConf():
                     return removeables
                 else:
                     return False
-            else:  # value must be a string, normal case
+            # value must be a string, normal case
+            else:
                 foundalready = False
                 for line in self.contents:
-                    if re.match('^#', line) or re.match(r'^\s*$', line):  # ignore is comment or blank line
+                    # ignore is comment or blank line
+                    if re.match('^#', line) or re.match(r'^\s*$', line):
                         continue
-                    elif re.search("^" + re.escape(key) + "\s+", line):  # we found the key
+                    # we found the key
+                    elif re.search("^" + re.escape(key) + "\s+", line):
                         temp = line.strip()
                         if value != "":
                             debug = "the value we're looking for isn't blank\n"
