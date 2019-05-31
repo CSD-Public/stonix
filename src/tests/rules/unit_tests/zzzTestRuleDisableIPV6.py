@@ -30,12 +30,16 @@ import unittest
 import sys
 import os
 import re
+import glob
 
 sys.path.append("../../../..")
 from src.tests.lib.RuleTestTemplate import RuleTest
 from src.stonix_resources.CommandHelper import CommandHelper
 from src.tests.lib.logdispatcher_mock import LogPriority
 from src.stonix_resources.rules.DisableIPV6 import DisableIPV6
+from src.stonix_resources.pkghelper import Pkghelper
+from src.stonix_resources.stonixutilityfunctions import readFile, writeFile
+from src.stonix_resources.KVEditorStonix import KVEditorStonix
 
 
 class zzzTestRuleDisableIPV6(RuleTest):
@@ -50,6 +54,7 @@ class zzzTestRuleDisableIPV6(RuleTest):
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
         self.ch = CommandHelper(self.logdispatch)
+        self.checkUndo = True
 
     def tearDown(self):
         pass
@@ -73,28 +78,16 @@ class zzzTestRuleDisableIPV6(RuleTest):
         return success
 
     def setLinuxConditions(self):
-        self.sysctl = ""
-        debug = ""
         success = True
-        sysctllocs = ["/sbin/sysctl", "/usr/sbin/sysctl"]
-        for loc in sysctllocs:
-            if os.path.exists(loc):
-                self.sysctl = loc
-        directives = ["net.ipv6.conf.all.disable_ipv6=0",
-                      "net.ipv6.conf.default.disable_ipv6=0"]
-        if self.sysctl:
-            for d in directives:
-                setbadopt = self.sysctl + " -w " + d
-                self.ch.executeCommand(setbadopt)
-                retcode = self.ch.getReturnCode()
-                if retcode != 0:
-                    success = False
-                    debug = "Failed to write configuration change: " + d + "\n"
-                    self.logger.log(LogPriority.DEBUG, debug)
-        else:
-            debug = "sysctl command not found on system\n"
-            self.logger.log(LogPriority.DEBUG, debug)
-            success =  False
+        self.ph = Pkghelper(self.logger, self.environ)
+        if not self.messupNetconfigFile():
+            success = False
+        if not self.messupSysctl():
+            success = False
+        if not self.messupModprobeFiles():
+            success = False
+        if not self.messupInterfaceFile():
+            success = False
         return success
 
     def setMacConditions(self):
@@ -124,6 +117,145 @@ class zzzTestRuleDisableIPV6(RuleTest):
                         debug = "Failed to get information for network service: " + ns
                         self.logger.log(LogPriority.DEBUG, debug)
         return success
+
+    def messupNetconfigFile(self):
+        success = True
+        # stig portion, check netconfig file for correct contents
+        if self.ph.manager == "apt-get":
+            nfspkg = "nfs-common"
+        else:
+            nfspkg = "nfs-utils.x86_64"
+        if self.ph.check(nfspkg):
+            if not self.ph.remove(nfspkg):
+                success = False
+                debug = "Unable to remove nfs package for preconditions"
+                self.logger.log(LogPriority.DEBUG, debug)
+        if os.path.exists("/etc/netconfig"):
+            item1 = "udp6 tpi_clts v inet6 udp - -"
+            item2 = "tcp6 tpi_cots_ord v inet6 tcp - -"
+            item1found, item2found, fixFile = False, False, False
+            writestring = ""
+            contents = readFile("/etc/netconfig", self.logger)
+            for line in contents:
+                writestring += line
+                line = re.sub("\s+", " ", line.strip())
+                if re.search(item1, line):
+                    item1found = True
+                if re.search(item2, line):
+                    item2found = True
+            if not item1found:
+                writestring += item1
+                fixFile = True
+            if not item2found:
+                writestring += item2
+                fixFile = True
+            if fixFile:
+                if not writeFile("/etc/netconfig", writestring, self.logger):
+                    success = False
+                    debug = "Unable tomess up /etc/netconfig file for preconditions"
+                    self.logger.log(LogPriority.DEBUG, debug)
+        return success
+
+    def messupSysctl(self):
+        success = True
+        sysctlcmd = ""
+        sysctl = "/etc/sysctl.conf"
+        directives = ["net.ipv6.conf.all.disable_ipv6=0",
+                      "net.ipv6.conf.default.disable_ipv6=0"]
+        filedirectives = {"net.ipv6.conf.all.disable_ipv6": "0",
+                        "net.ipv6.conf.default.disable_ipv6": "0"}
+        tmpfile = sysctl + ".tmp"
+
+        if os.path.exists(sysctl):
+            editor = KVEditorStonix(self.statechglogger, self.logger, "conf", sysctl,
+                                    tmpfile, filedirectives, "present", "openeq")
+            if not editor.report():
+                if not editor.fix():
+                    success = False
+                    debug = "Unable to mess up " + sysctl + " file for preconditions"
+                    self.logger.log(LogPriority.DEBUG, debug)
+                elif not editor.commit():
+                    success = False
+                    debug = "Unable to mess up " + sysctl + " file for preconditions"
+                    self.logger.log(LogPriority.DEBUG, debug)
+        sysctllocs = ["/sbin/sysctl", "/usr/sbin/sysctl"]
+        for loc in sysctllocs:
+            if os.path.exists(loc):
+                sysctlcmd = loc
+
+        if sysctlcmd:
+            for d in directives:
+                setbadopt = sysctlcmd + " -w " + d
+                self.ch.executeCommand(setbadopt)
+                retcode = self.ch.getReturnCode()
+                if retcode != 0:
+                    success = False
+                    debug = "Failed to write configuration change: " + d + "\n"
+                    self.logger.log(LogPriority.DEBUG, debug)
+        else:
+            debug = "sysctl command not found on system\n"
+            self.logger.log(LogPriority.DEBUG, debug)
+            success = False
+        return success
+
+    def messupModprobeFiles(self):
+        success = True
+        modprobes = {"options": "ipv6 disable=1",
+                     "install": "ipv6 /bin/true",
+                     "helloworld": ""}
+        if os.path.exists("/etc/modprobe.d/"):
+            modprobefiles = glob.glob("/etc/modprobe.d/*")
+            for modfile in modprobefiles:
+                print "current modprobe file is: " + modfile + "\n"
+                tmpfile = modfile + ".tmp"
+                editor = KVEditorStonix(self.statechglogger, self.logger, "conf",
+                                        modfile, tmpfile, modprobes, "notpresent",
+                                        "space")
+                if not editor.report():
+                    if not editor.fix():
+                        success = False
+                        debug = "Unable to mess up " + modfile + " file for preconditions"
+                        self.logger.log(LogPriority.DEBUG, debug)
+                    elif not editor.commit():
+                        success = False
+                        debug = "Unable to mess up " + modfile + " file for preconditions"
+                        self.logger.log(LogPriority.DEBUG, debug)
+        return success
+
+    def messupInterfaceFile(self):
+        success = True
+        interface = {"IPV6INIT": '"yes"',
+                     "NETWORKING_IPV6": '"yes"'}
+        # Check for existence of interface and network files to be configured
+        if self.ph.manager == "yum":
+            ifacefile = "/etc/sysconfig/network-scripts/"
+            if not os.path.exists(ifacefile):
+                ifacefile = ""
+            netwrkfile = "/etc/sysconfig/network"
+            if not os.path.exists(netwrkfile):
+                netwrkfile = ""
+        elif self.ph.manager == "zypper":
+            ifacefile = "/etc/sysconfig/network/"
+            if not os.path.exists(ifacefile):
+                ifacefile = ""
+        if ifacefile:
+            dirs = glob.glob(ifacefile + "*")
+            for loc in dirs:
+                contents = []
+                if re.search('^' + ifacefile + 'ifcfg', loc):
+                    tmpfile = loc + ".tmp"
+                    editor = KVEditorStonix(self.statechglogger, self.logger,
+                                            "conf", loc, tmpfile, interface,
+                                            "present", "closedeq")
+                    if not editor.report():
+                        if not editor.fix():
+                            success = False
+                            debug = "Unable to mess up " + loc + " file for preconditions"
+                            self.logger.log(LogPriority.DEBUG, debug)
+                        elif not editor.commit():
+                            success = False
+                            debug = "Unable to mess up " + loc + " file for preconditions"
+                            self.logger.log(LogPriority.DEBUG, debug)
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
         '''check on whether report was correct

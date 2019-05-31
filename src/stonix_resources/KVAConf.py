@@ -284,11 +284,7 @@ class KVAConf():
                             #temp = temp.split()  # separate contents into list separated by spaces
 
                             try:
-                                #if len(temp) > 2:  # this could indicate the file's format may be corrupted but that's not our issue
-                                #    continue
-                                #elif temp[1] == item:  # value is correct
                                 if temp == item:
-                                #if temp[1] == item:
                                     debug = "the value is correct\n"
                                     self.logger.log(LogPriority.DEBUG, debug)
                                     foundalready = True
@@ -365,38 +361,21 @@ class KVAConf():
                     for line in self.contents:
                         if re.match('^#', line) or re.match(r'^\s*$', line):  # ignore if comment or blank line
                             continue
-                        elif re.search("^" + key + "\s+", line):  # we found the key, which in this case can be repeatable
+                        elif re.search("^" + re.escape(key) + "\s+", line):  # we found the key, which in this case can be repeatable
                             debug = "found the key: " + key + "\n"
                             self.logger.log(LogPriority.DEBUG, debug)
+                            temp = line.strip()
                             if item != "":
                                 debug = "the value we're looking for isn't blank\n"
                                 self.logger.log(LogPriority.DEBUG, debug)
-                                temp = line.strip()  # strip off all trailing and leading whitespace
+                                temp = re.sub("\s+", " ", temp)
+                                if temp == key + " " + item:
+                                    foundalready = True
                             else:
                                 debug = "the value we're looking for is blank\n"
                                 self.logger.log(LogPriority.DEBUG, debug)
-                                temp = line
-                            temp = re.sub("\s+", " ", temp)  # replace all whitespace with just one whitespace character
-                            temp = temp.split()  # separate contents into list separated by spaces
-                            if temp[0] == key:  # check to make sure key appears in beginning
-                                debug = "found the key: " + key + "\n"
-                                self.logger.log(LogPriority.DEBUG, debug)
-                                try:
-                                    if len(temp) > 2:
-                                        continue  # this could indicate the file's format may be corrupted but that's not our issue
-                                    elif temp[1] == item:  # the value is correct
-                                        debug = "the value is correct, adding to removeables\n"
-                                        self.logger.log(LogPriority.DEBUG, debug)
-                                        foundalready = True
-                                except IndexError:
-                                    if item == "":
-                                        debug = "value in line is blank but we want it to be blank\n"
-                                        self.logger.log(LogPriority.DEBUG, debug)
-                                        foundalready = True
-                                        continue
-                                    debug = "Index error\n"
-                                    self.logger.log(LogPriority.DEBUG, debug)
-                                    return False
+                                if temp == key:
+                                    foundalready = True
                     if foundalready:
                         removeables.append(item)
                 if removeables:
@@ -408,32 +387,19 @@ class KVAConf():
                 for line in self.contents:
                     if re.match('^#', line) or re.match(r'^\s*$', line):  # ignore is comment or blank line
                         continue
-                    elif re.match("^" + key + "\s+", line):  # we found the key
+                    elif re.search("^" + re.escape(key) + "\s+", line):  # we found the key
+                        temp = line.strip()
                         if value != "":
-                            temp = line.strip()  # strip off all trailing and leading whitespace
-                        else:
-                            temp = line
-                        temp = re.sub("\s+", " ", temp)  # replace all whitespace with just one whitespace character
-                        temp = temp.split()  # separate contents into list separated by spaces
-                        if temp[0] == key:  # check to make sure key appears in beginning
-                            debug = "found the key: " + key + "\n"
+                            debug = "the value we're looking for isn't blank\n"
                             self.logger.log(LogPriority.DEBUG, debug)
-                            try:
-                                if len(temp) > 2:
-                                    continue
-                                elif temp[1] == value:
-                                    debug = "value is correct, adding to removeables\n"
-                                    self.logger.log(LogPriority.DEBUG, debug)
-                                    foundalready = True
-                            except IndexError:
-                                if value == "":
-                                    debug = "value in line is blank but we want it to be blank, adding to removeables\n"
-                                    self.logger.log(LogPriority.DEBUG, debug)
-                                    foundalready = True
-                                    continue
-                                debug = "Index error\n"
-                                self.logger.log(LogPriority.DEBUG, debug)
-                                return False
+                            temp = re.sub("\s+", " ", temp)
+                            if temp == key + " " + value:
+                                foundalready = True
+                        else:
+                            debug = "the value we're looking for is blank\n"
+                            self.logger.log(LogPriority.DEBUG, debug)
+                            if temp == key:
+                                foundalready = True
                 if foundalready:
                     return True
                 else:
@@ -563,12 +529,16 @@ class KVAConf():
                     for line in contents:
                         if re.search("^#", line) or re.match("^\s*$", line):
                             continue
-                        elif re.search("^" + re.escape(key) + "\s+", line.strip()):
-                            temp = line.strip()
-                            temp = re.sub("\s+", " ", temp)
-                            temp= temp.split()
-                            if re.match("^" + re.escape(key) + "$", temp[0]):
-                                poplist.append(line)
+                        elif re.search("^" + re.escape(key) + "\s+", line):
+                            if val != "":
+                                temp = line.strip()
+                                temp = re.sub("\s+", " ", temp)
+                                if re.search("^" + re.escape(key) + " " + val, temp):
+                                    poplist.append(line)
+                            else:
+                                temp = line.strip()
+                                if re.search("^" + key + "$", temp):
+                                    poplist.append(line)
             if poplist:
                 for item in poplist:
                     try:
@@ -600,23 +570,11 @@ class KVAConf():
                         continue
             for key, val in fixables.iteritems():
                 if isinstance(val, list):
-                    continue
+                    for item in val:
+                        contents.append(key + " " + item + "\n")
                 else:
                     contents.append(key + " " + val + "\n")
         self.contents = contents
-#             if listPresent:
-#                 self.contents = contents
-#                 return True
-#             else:
-#                 self.contents = []
-#                 for line in contents:  # reconstruct the self.contents list to contain the most updated list
-#                     self.contents.append(line)
-#                 self.contents.append("\n" + self.universal)
-#                 if fixables:  # if there are fixables, we need to then add those, removeables have already been taken care of above
-#                     for key in fixables:
-#                         temp = key + " " + fixables[key] + "\n"
-#                         self.contents.append(temp)
-#                 return True
         return True
 
     def commit(self):
