@@ -434,6 +434,7 @@ and/or wasn't able to be created\n"
             #goodfile = ""
             modprobefiles = glob.glob("/etc/modprobe.d/*")
             for modfile in modprobefiles:
+                tmpfile = ""
                 modprobekveditor = KVEditorStonix(self.statechglogger, self.logger,
                                                   "conf", modfile, tmpfile, self.modprobes,
                                                   "present", "space")
@@ -496,7 +497,7 @@ and/or wasn't able to be created\n"
             for loc in dirs:
                 contents = []
                 if re.search('^' + ifacefile + 'ifcfg', loc):
-                    if not checkPerms(loc, [0, 0, 420], self.logger):
+                    if not checkPerms(loc, [0, 0, 0o644], self.logger):
                         compliant = False
                     contents = readFile(loc, self.logger)
                     if contents:
@@ -531,7 +532,7 @@ and/or wasn't able to be created\n"
         # check network file for correct contents
         if netwrkfile:
             if os.path.exists(netwrkfile):
-                if not checkPerms(netwrkfile, [0, 0, 420], self.logger):
+                if not checkPerms(netwrkfile, [0, 0, 0o644], self.logger):
                     compliant = False
                 tmpfile = netwrkfile + ".tmp"
                 self.editor2 = KVEditorStonix(self.statechglogger, self.logger,
