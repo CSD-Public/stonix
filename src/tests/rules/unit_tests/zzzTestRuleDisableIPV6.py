@@ -88,6 +88,9 @@ class zzzTestRuleDisableIPV6(RuleTest):
             success = False
         if not self.messupInterfaceFile():
             success = False
+        if self.ph.manager == "apt-get":
+            if not self.messupSSHDFile():
+                success = False
         return success
 
     def setMacConditions(self):
@@ -206,7 +209,6 @@ class zzzTestRuleDisableIPV6(RuleTest):
         if os.path.exists("/etc/modprobe.d/"):
             modprobefiles = glob.glob("/etc/modprobe.d/*")
             for modfile in modprobefiles:
-                print "current modprobe file is: " + modfile + "\n"
                 tmpfile = modfile + ".tmp"
                 editor = KVEditorStonix(self.statechglogger, self.logger, "conf",
                                         modfile, tmpfile, modprobes, "notpresent",
@@ -256,6 +258,27 @@ class zzzTestRuleDisableIPV6(RuleTest):
                             success = False
                             debug = "Unable to mess up " + loc + " file for preconditions"
                             self.logger.log(LogPriority.DEBUG, debug)
+        return success
+
+    def messupSSHDFile(self):
+        success = True
+        sshfile = "/etc/ssh/sshd_config"
+        if os.path.exists(sshfile):
+            tmpfile = sshfile + ".tmp"
+            data = {"AddressFamily": "inet"}
+            editor = KVEditorStonix(self.statechglogger, self.logger,
+                                    "conf", sshfile, tmpfile,
+                                    data, "notpresent", "space")
+            if not editor.report():
+                if not editor.fix():
+                    success = False
+                    debug = "Unable to mess up " + sshfile + " file for preconditions"
+                    self.logger.log(LogPriority.DEBUG, debug)
+                elif not editor.commit():
+                    success = False
+                    debug = "Unable to mess up " + sshfile + " file for preconditions"
+                    self.logger.log(LogPriority.DEBUG, debug)
+        return success
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
         '''check on whether report was correct
