@@ -5,3 +5,5 @@ Bob Knight - Floated the initial idea of a single code base hardening tool for *
 Steve McLenithan - Much of Steve's code has been refactored into oblivion but some chunks survive.
 
 Allan Marcus - Early architecture and GUI design contributions.
+
+Rob Lamb - Application icons and graphics.
