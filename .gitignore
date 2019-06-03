@@ -1,2 +1,6 @@
 .*
 *.pyc
+/src/MacBuild/stonix4mac/stonix4mac.xcodeproj/project.xcworkspace/xcshareddata
+/src/MacBuild/stonix4mac/stonix4mac.xcodeproj/project.xcworkspace/xcuserdata
+/src/MacBuild/stonix4mac/stonix4mac.xcodeproj/xcuserdata
+/stonix.xcodeproj
