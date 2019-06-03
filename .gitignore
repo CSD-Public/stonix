@@ -1,2 +1,5 @@
 .*
 *.pyc
+xcshareddata
+xcuserdata
+/stonix.xcodeproj
