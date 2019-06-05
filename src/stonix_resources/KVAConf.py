@@ -74,6 +74,7 @@ class KVAConf():
         self.tempstring = ""
         self.intent = intent
         self.detailedresults = ""
+        self.isdir = False
 
     def setPath(self, path):
         '''Private method to set the path of the configuration file
@@ -258,7 +259,6 @@ class KVAConf():
         #list that keeps track of key value pairs that shouldn't be present
         # but were and need to be removed in the fix() and commit()
         removeables = []
-
         # self.data contains key val pairs we want in the file
         if self.intent == "present":
             # if "value" is a list that means the key can be repeatable
@@ -352,7 +352,7 @@ class KVAConf():
                 if removeables:
                     return removeables
                 else:
-                    return False
+                    return True
             # value must be a string, normal case
             else:
                 foundalready = False
@@ -374,9 +374,9 @@ class KVAConf():
                     debug = "Found the key-value: " + key + " " + value + \
                             ", but should not be present"
                     self.logger.log(LogPriority.DEBUG, debug)
-                    return True
-                else:
                     return False
+                else:
+                    return True
 
     def update(self, fixables, removeables):
         '''Private outer method to call submethod setOpenClosedValue() or
@@ -472,7 +472,8 @@ class KVAConf():
         # re-read the contents of the desired file
         self.storeContents(self.path)
         contents = self.contents
-        if removeables:  # we have items that need to be removed from file
+        # we have items that need to be removed from file
+        if removeables:
             poplist = []
             for key, val in removeables.iteritems():
                 # we have a list where the key can repeat itself
@@ -481,36 +482,27 @@ class KVAConf():
                         for line in contents:
                             if re.search("^#", line) or re.match("^\s*$", line):
                                 continue
-                            else:
+                            elif re.search("^" + re.escape(key) + "\s+", line):
                                 temp = line.strip()
-                                temp = re.sub("\s+", " ", temp)
-                                temp = temp.split()
-                                try:
-                                    if len(temp) > 2:
-                                        continue
-                                    elif re.search("^" + re.escape(key) + "$", temp[0]):
-                                        if re.search("^" + item + "$", temp[1]):
-                                            poplist.append(line)
-                                except IndexError:
-                                    if item == "":
+                                if val != "":
+                                    temp = re.sub("\s+", " ", temp)
+                                    if re.search("^" + re.escape(key) + " " + item, temp):
                                         poplist.append(line)
-                                        continue
-                                    debug = "Index error, continuing\n"
-                                    self.logger.log(LogPriority.DEBUG, debug)
-                                    continue
+                                else:
+                                    if re.search("^" + re.escape(key) + "$", temp):
+                                        poplist.append(line)
                 else:
                     for line in contents:
                         if re.search("^#", line) or re.match("^\s*$", line):
                             continue
                         elif re.search("^" + re.escape(key) + "\s+", line):
+                            temp = line.strip()
                             if val != "":
-                                temp = line.strip()
                                 temp = re.sub("\s+", " ", temp)
                                 if re.search("^" + re.escape(key) + " " + val, temp):
                                     poplist.append(line)
                             else:
-                                temp = line.strip()
-                                if re.search("^" + key + "$", temp):
+                                if re.search("^" + re.escape(key) + "$", temp):
                                     poplist.append(line)
             if poplist:
                 for item in poplist:
@@ -521,7 +513,13 @@ class KVAConf():
         if fixables:
             poplist = []
             contents.append(self.universal)
+            # in this next section we cover a situation where the key
+            # may appear more than once and have wrong values, so anywhere
+            # the key exists that's not repeatable, we remove it from the file
+            # to ensure no conflicting key value pairs.
             for key, val in fixables.iteritems():
+                # since these keys can be repeatable we won't take the same
+                # precaution as unique keys.
                 if isinstance(val, list):
                     for key2 in fixables[key]:
                         contents.append(key + " " + key2 + "\n")
@@ -529,24 +527,28 @@ class KVAConf():
                     for line in contents:
                         if re.search("^#", line) or re.match("^\s*$", line):
                             continue
-                        elif re.search("^" + re.escape(key) + "\s+", line): #we found the key in the file
-                            temp = line.strip() #remove all beginning and trailing whitespace
-                            temp = re.sub("\s+", " ", temp) #replace all whitespace with just one space
-                            temp = line.split()
-                            if re.match("^" + re.escape(key) + "$", temp[0].strip()):
-                                poplist.append(line)
+                        # we found the key in the file
+                        elif re.search("^" + re.escape(key) + "\s+", line):
+                            temp = line.strip()
+                            if val != "":
+                                temp = re.sub("\s+", " ", temp)
+                                if re.search("^" + re.escape(key) + " " + val, temp):
+                                    poplist.append(line)
+                            else:
+                                if re.search("^" + re.escape(key) + "$", temp):
+                                    poplist.append(line)
             if poplist:
                 for item in poplist:
                     try:
                         contents.remove(item)
                     except Exception:
                         continue
-            for key, val in fixables.iteritems():
-                if isinstance(val, list):
-                    for item in val:
-                        contents.append(key + " " + item + "\n")
-                else:
-                    contents.append(key + " " + val + "\n")
+                for key, val in fixables.iteritems():
+                    if isinstance(val, list):
+                        for item in val:
+                            contents.append(key + " " + item + "\n")
+                    else:
+                        contents.append(key + " " + val + "\n")
         self.contents = contents
         return True
 

@@ -34,6 +34,9 @@ Created on Apr 9, 2013
 @change: 2018/04/10 dkennel - commented out module killing code and set
                         default to False per artf48817
 @change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
+@change: 2019/06/05 dwalker - changed rule back to its original implementation.
+    Needs code that was previously taken out to actually disable ipv6.  Added
+    extra comments throughout code for future maintenance
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import iterate, setPerms, checkPerms, writeFile
@@ -340,7 +343,8 @@ and/or wasn't able to be created\n"
         netwrkfile = ""
         ifacefile = ""
         self.modprobefiles = []
-        self.modprobeOK = False
+        #self.modprobeOK = False
+        self.modprobeOK = True
         sysctl = "/etc/sysctl.conf"
         self.interface = {"IPV6INIT": "no",
                      "NETWORKING_IPV6": "no"}
@@ -743,7 +747,7 @@ contain the correct contents\n"
             tmpfile = blacklistfile + ".tmp"
             modprobekveditor = KVEditorStonix(self.statechglogger, self.logger,
                                               "conf", blacklistfile, tmpfile, self.modprobes,
-                                              "present", "space")
+                                              "notpresent", "space")
             if not os.path.exists(blacklistfile):
                 # create the file and record the event as file creation
                 if createFile(blacklistfile, self.logger):
