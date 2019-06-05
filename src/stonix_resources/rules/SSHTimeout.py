@@ -214,6 +214,7 @@ class SSHTimeout(Rule):
                 self.editor.report()
 
             if os.path.exists(self.path):
+                print "path exists\n"
                 if not checkPerms(self.path, [0, 0, 0o644], self.logger):
                     if not created:
                         self.iditerator += 1
@@ -228,7 +229,7 @@ class SSHTimeout(Rule):
                             success = False
 
                 if self.editor.fixables:
-
+                    print "editor has fixables and they are " + str(self.editor.fixables) + "\n"
                     if not created:
                         self.iditerator += 1
                         myid = iterate(self.iditerator, self.rulenumber)
