@@ -272,7 +272,7 @@ class KVEditor(object):
                 elif isinstance(retval, list):
                     self.removeables[k] = retval
                     validate = False
-                elif retval is True:
+                elif not retval:
                     validate = False
                     self.removeables[k] = v
         if validate == "invalid":
