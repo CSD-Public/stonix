@@ -520,35 +520,25 @@ class KVAConf():
             for key, val in fixables.iteritems():
                 # since these keys can be repeatable we won't take the same
                 # precaution as unique keys.
-                if isinstance(val, list):
-                    for key2 in fixables[key]:
-                        contents.append(key + " " + key2 + "\n")
-                else:
+                if not isinstance(val, list):
                     for line in contents:
                         if re.search("^#", line) or re.match("^\s*$", line):
                             continue
                         # we found the key in the file
                         elif re.search("^" + re.escape(key) + "\s+", line):
-                            temp = line.strip()
-                            if val != "":
-                                temp = re.sub("\s+", " ", temp)
-                                if re.search("^" + re.escape(key) + " " + val, temp):
-                                    poplist.append(line)
-                            else:
-                                if re.search("^" + re.escape(key) + "$", temp):
-                                    poplist.append(line)
+                            poplist.append(line)
             if poplist:
                 for item in poplist:
                     try:
                         contents.remove(item)
                     except Exception:
                         continue
-                for key, val in fixables.iteritems():
-                    if isinstance(val, list):
-                        for item in val:
-                            contents.append(key + " " + item + "\n")
-                    else:
-                        contents.append(key + " " + val + "\n")
+            for key, val in fixables.iteritems():
+                if isinstance(val, list):
+                    for item in val:
+                        contents.append(key + " " + item + "\n")
+                else:
+                    contents.append(key + " " + val + "\n")
         self.contents = contents
         return True
 
