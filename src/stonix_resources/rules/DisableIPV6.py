@@ -421,14 +421,17 @@ and/or wasn't able to be created\n"
         for key in self.sysctls:
             self.ch.executeCommand("/sbin/sysctl " + key)
             retcode = self.ch.getReturnCode()
-
+            output = self.ch.getOutputString()
+            errmsg = output + self.ch.getErrorString()
             if retcode != 0:
-                self.detailedresults += "Failed to get value of core dumps configuration with sysctl command\n"
-                errmsg = self.ch.getErrorString()
-                self.logger.log(LogPriority.DEBUG, errmsg)
-                compliant = False
+                if re.search("unknown key", errmsg):
+                    continue
+                else:
+                    self.detailedresults += "Failed to get value " + key + " using sysctl command\n"
+                    errmsg = self.ch.getErrorString()
+                    self.logger.log(LogPriority.DEBUG, errmsg)
+                    compliant = False
             else:
-                output = self.ch.getOutputString()
                 if output.strip() != key + " = " + self.sysctls[key]:
                     compliant = False
                     self.detailedresults += "sysctl output has incorrect value: " + \
@@ -710,9 +713,12 @@ contain the correct contents\n"
         for key in self.sysctls:
             if self.ch.executeCommand("/sbin/sysctl " + key):
                 output = self.ch.getOutputString().strip()
+                errmsg = output + self.ch.getErrorString()
+                if re.search("unknown key", errmsg):
+                    continue
                 if not re.search(self.sysctls[key] + "$", output):
                     undovalue = output[-1]
-                    self.ch.executeCommand("/sbin/sysctl -w " + key + "=" + self.sysctls[key])
+                    self.ch.executeCommand("/sbin/sysctl -q -e -w " + key + "=" + self.sysctls[key])
                     retcode = self.ch.getReturnCode()
                     if retcode != 0:
                         success = False
@@ -722,7 +728,7 @@ contain the correct contents\n"
                     else:
                         self.iditerator += 1
                         myid = iterate(self.iditerator, self.rulenumber)
-                        command = "/sbin/sysctl -w " + key + "=" + undovalue
+                        command = "/sbin/sysctl -q -e -w " + key + "=" + undovalue
                         event = {"eventtype": "commandstring",
                                  "command": command}
                         self.statechglogger.recordchgevent(myid, event)
