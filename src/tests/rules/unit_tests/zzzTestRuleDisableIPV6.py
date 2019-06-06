@@ -24,6 +24,8 @@ This is a Unit Test for Rule ConfigureAppleSoftwareUpdate
 @change: 03/18/2013 Original Implementation
 @change: 2016/02/10 roy Added sys.path.append for being able to unit test this
                         file as well as with the test harness.
+@change: 2019/06/05 dwalker - Add set conditions portion to fuzz up rule for
+    testing
 '''
 from __future__ import absolute_import
 import unittest

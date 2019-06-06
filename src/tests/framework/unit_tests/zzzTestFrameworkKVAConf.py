@@ -65,7 +65,7 @@ class zzzTestFrameworkKVAConf(unittest.TestCase):
              'net.ipv4.conf.default.secure_redirects': '0',
              'net.ipv4.conf.default.rp_filter': '1',
              'net.ipv4.conf.default.accept_source_route': '0',
-             'net.ipv4.icmp_ignore_bogus_error_messages': '1',
+             'net.ipv4.icmp_ignore_bogus_error_responses': '1',
              'net.ipv4.tcp_syncookies': '1',
              'net.ipv4.icmp_echo_ignore_broadcasts': '1',
              'net.ipv4.tcp_max_syn_backlog': '4096'}))
