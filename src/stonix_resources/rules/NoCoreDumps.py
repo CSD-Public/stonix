@@ -38,9 +38,9 @@ which conflicted with DisableIPV6 and NoCoreDumps which expected 644.
 @change: 2019/05/01 Breen Malmberg - removed check and fix profile methods as we can't set the
         ulimit core size in more than one place (it will throw an error on log-in if it is set both
         in limits.conf and in /etc/profile.d/*)
-@change: 2019 dwalker - updating fixsysctl portion to manually write key value
-    into /etc/sysctl.conf as using sysctl -w is only temporary and not persistent
-    between boots
+@change: 2019/06/05 dwalker - refactored linux portion of rule to be
+    consistent with other rules that handle sysctl and to properly
+    handle sysctl by writing to /etc/sysctl.conf and also using command
 """
 
 from __future__ import absolute_import

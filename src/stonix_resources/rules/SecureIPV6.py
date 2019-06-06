@@ -29,6 +29,9 @@ Created on Jan 14, 2014
 @change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
 @change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
+@change: 2019/06/05 dwalker - refactored linux portion of rule to be
+    consistent with other rules that handle sysctl and to properly
+    handle sysctl by writing to /etc/sysctl.conf and also using command
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import iterate, setPerms, checkPerms, writeFile
