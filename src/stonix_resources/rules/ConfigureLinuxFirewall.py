@@ -162,6 +162,7 @@ CONFIGURELINUXFIREWALL to False.'''
                         scriptExists = False
                 else:
                     scriptExists = True
+
                 if self.scriptType != "debian":
                     self.servicehelper.stopService('iptables')
                     self.servicehelper.startService('iptables')
@@ -194,10 +195,6 @@ CONFIGURELINUXFIREWALL to False.'''
                                          '\s+all\s+--\s+anywhere\s+anywhere', line):
                                 catchall = True
                                 break
-                        if not catchall:
-                            compliant = False
-                            self.detailedresults += "Incorrect IPV4 firewall INPUT rule\n"
-                            self.logger.log(LogPriority.DEBUG, self.detailedresults)
 
                 if self.ip6tables:
                     cmd6 = [self.ip6tables, "-L"]
@@ -212,9 +209,6 @@ CONFIGURELINUXFIREWALL to False.'''
                                          '\s+all\s+anywhere\s+anywhere', line):
                                 catchall6 = True
                                 break
-                        if not catchall6:
-                            self.detailedresults += "Incorrect IPV6 firewall INPUT rule\n"
-                            self.logger.log(LogPriority.DEBUG, self.detailedresults)
 
                 if not catchall:
                     compliant = False
@@ -226,7 +220,9 @@ CONFIGURELINUXFIREWALL to False.'''
                 if not catchall6:
                     compliant = False
                     self.detailedresults += 'This system appears to use ' + \
-                        'ip6tables but does not contain the expected rules\n'
+                        'ip6tables but does not contain the expected rules. ' + \
+                        'If the DisableIPV6 rule was run before this rule, this is ' + \
+                        'acceptable behavior.\n'
                     self.logger.log(LogPriority.DEBUG,
                                     ['ConfigureLinuxFirewall.report',
                                      "Missing v6 deny all."])
@@ -242,11 +238,15 @@ CONFIGURELINUXFIREWALL to False.'''
                     self.detailedresults += "iptables not enabled\n"
                 if not ip6tablesenabled:
                     compliant = False
-                    self.detailedresults += "ip6tables not enabled\n"
+                    self.detailedresults += "ip6tables not enabled " + \
+                        'If the DisableIPV6 rule was run before this rule, this is ' + \
+                        'acceptable behavior.\n'
                 if not ip6tablesrunning:
                     compliant = False
                     self.detailedresults += 'This system appears to use ' + \
-                        'ip6tables but it is not running as required.\n'
+                        'ip6tables but it is not running as required. ' + \
+                        'If the DisableIPV6 rule was run before this rule, this is ' + \
+                        'acceptable behavior.\n'
                     self.logger.log(LogPriority.DEBUG,
                                     ['ConfigureLinuxFirewall.report',
                                      "RHEL 6 type system. IP6tables not running."])
