@@ -580,7 +580,7 @@ CONFIGURELDAPSERV to False.'''
                 if os.path.exists("/etc/pki/tls/CA/"):
                     dirs = glob.glob("/etc/pki/tls/CA/*")
                     for loc in dirs:
-                        if not os.path.isdir():
+                        if not os.path.isdir(loc):
                             if not checkPerms(loc, [0, 0, 420], self.logger):
                                 self.iditerator += 1
                                 myid = iterate(self.iditerator, self.rulenumber)

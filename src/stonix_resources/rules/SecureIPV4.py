@@ -38,6 +38,9 @@ variable.
 @change: 2019/4/11/ dwalker - removed solaris code and other unnecessary
     code, updated linux fix to be more efficient and record change events
     properly.
+@change: 2019/06/05 dwalker - refactored linux portion of rule to be
+    consistent with other rules that handle sysctl and to properly
+    handle sysctl by writing to /etc/sysctl.conf and also using command
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import resetsecon, iterate, readFile, writeFile
