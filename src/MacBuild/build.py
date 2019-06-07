@@ -40,6 +40,10 @@ from subprocess import Popen, STDOUT, PIPE, call
 from shutil import rmtree, copy2
 from ConfigParser import SafeConfigParser
 
+# For localize
+sys.path.append("..")
+from stonix_resources.localize import FISMACAT
+
 # For setupRamdisk() and detachRamdisk()
 sys.path.append("./ramdisk/")
 from ramdisk.macRamdisk import RamDisk, detach
@@ -128,6 +132,11 @@ class SoftwareBuilder():
                 raise
         #if options.clean:
         #    self.clean()
+
+        if FISMACAT is not None and FISMACAT != '':
+            self.FISMACAT = FISMACAT
+        else:
+            self.FISMACAT = "low"
 
         # If version was not included at command line, use hardcoded version
         # number
@@ -673,8 +682,10 @@ class SoftwareBuilder():
                 self.mbl.modplist(plist, "CFBundleIconFile", self.STONIXICON + ".icns")
 
                 # Copy icons to the resources directory
-                copy2(self.tmphome + "/src/MacBuild/" + self.STONIXICON + ".icns",
-                      self.tmphome + "/src/MacBuild/stonix/dist/" + appName + ".app/Contents/Resources")
+                copy2(self.tmphome + "/src/MacBuild/stonix4macfisma" + self.FISMACAT + ".icns",
+                      self.tmphome + "/src/MacBuild/stonix/dist/" \
+                      + appName + ".app/Contents/Resources/" + \
+                      self.STONIXICON + ".icns")
 
                 # Change mode of Info.plist to 0o664
                 os.chmod(plist, 0o664)
@@ -702,10 +713,6 @@ class SoftwareBuilder():
                 print output
                 self.libc.sync()
 
-            elif appName == 'stonix4mac':
-                self.logger.log(lp.DEBUG, "Starting stonix4mac postCompile.")
-                os.chdir(self.tmphome + "/src/MacBuild/stonix4mac/build/Release")
-
                 #####
                 # Optional codesign
                 self.libc.sync()
@@ -715,7 +722,23 @@ class SoftwareBuilder():
                     #self.signObject(self.tmphome + '/src/Macbuild/stonix4mac',
                     #                self.tmphome + '/src/Macbuild/stonix4mac/build/Release/stonix4mac.app/Contents/Resources',
                     #                'stonix.app')
+                    pass
 
+            elif appName == 'stonix4mac':
+                self.logger.log(lp.DEBUG, "Starting stonix4mac postCompile.")
+                os.chdir(self.tmphome + "/src/MacBuild/stonix4mac/build/Release")
+
+                # Copy icons to the resources directory
+                copy2(self.tmphome + "/src/MacBuild/stonix4macfisma" + self.FISMACAT + ".icns",
+                      self.tmphome + "/src/MacBuild/stonix4mac/build/Release/" \
+                      + appName + ".app/Contents/Resources/" + \
+                      self.STONIXICON + ".icns")
+
+                #####
+                # Optional codesign
+                self.libc.sync()
+                self.libc.sync()
+                if self.doCodesign and self.signature:
                     # Sign stonix4mac app
                     self.signObject(self.tmphome + '/src/Macbuild/stonix4mac',
                                     self.tmphome + '/src/Macbuild/stonix4mac/build/Release',
