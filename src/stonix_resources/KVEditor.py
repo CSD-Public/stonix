@@ -299,6 +299,8 @@ class KVEditor(object):
                     "KVEditor.update()\n"
                 self.logger.log(LogPriority.DEBUG, debug)
                 return False
+        else:
+            return True
 
     def checkConf(self):
         if isinstance(self.data, dict):
