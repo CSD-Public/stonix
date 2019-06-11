@@ -23,7 +23,7 @@ from logdispatcher import LogPriority
 
 
 class Pkghelper(object):
-    '''Package helper class that interacts with rules needing to install, remove
+    """Package helper class that interacts with rules needing to install, remove
      or check the status of software packages. Relies on platform specific
      subclasses to do the heavy lifting.
     
@@ -33,7 +33,7 @@ class Pkghelper(object):
                               are not included, specifically OS X.
 
 
-    '''
+    """
 
     def __init__(self, logdispatcher, environment):
         self.enviro = environment
@@ -45,31 +45,31 @@ class Pkghelper(object):
                              'freebsd': 'freebsd', 'solaris': 'solaris'}
         self.manager = self.determineMgr()
         self.detailedresults = ''
-        '''FOR YUM (RHEL,CENTOS)'''
+        """FOR YUM (RHEL,CENTOS)"""
         if self.manager is "yum":
             self.pckgr = yum.Yum(self.logger)
 
-            '''FOR DNF (FEDORA)'''
+            """FOR DNF (FEDORA)"""
         elif self.manager is "dnf":
             self.pckgr = dnf.Dnf(self.logger)
 
-            '''FOR APT-GET (DEBIAN,UBUNTU,MINT)'''
+            """FOR APT-GET (DEBIAN,UBUNTU,MINT)"""
         elif self.manager is "apt-get":
             self.pckgr = aptGet.AptGet(self.logger)
 
-            '''FOR ZYPPER (OPENSUSE)'''
+            """FOR ZYPPER (OPENSUSE)"""
         elif self.manager is "zypper":
             self.pckgr = zypper.Zypper(self.logger)
 
-            '''FOR PORTAGE (GENTOO)'''
+            """FOR PORTAGE (GENTOO)"""
         elif self.manager is "portage":
             self.pckgr = portage.Portage(self.logger)
 
-            '''FOR PKG_ADD (FREEBSD,BSD,OPENBSD)'''
+            """FOR PKG_ADD (FREEBSD,BSD,OPENBSD)"""
         elif self.manager is "freebsd":
             self.pckgr = freebsd.Freebsd(self.logger)
 
-            '''FOR PKGADD (SOLARIS)'''
+            """FOR PKGADD (SOLARIS)"""
         elif self.manager is "solaris":
             self.pckgr = solaris.Solaris(self.logger)
 
@@ -77,14 +77,14 @@ class Pkghelper(object):
             self.pckgr = None
 
     def determineMgr(self):
-        '''determines the package manager for the current os
+        """determines the package manager for the current os
         
         @author: ???
         @change: Breen Malmberg - Feb 25 2019 - added "packageMgr" return variable
                 initialization; added doc string
 
 
-        '''
+        """
 
         packageMgr = None
 
@@ -127,17 +127,17 @@ class Pkghelper(object):
             raise
 
     def install(self, package):
-        '''Install the named package. Return a bool indicating installation
+        """Install the named package. Return a bool indicating installation
         success or failure.
 
-        :param string: package : Name of the package to be installed, must be
+        :param string package: Name of the package to be installed, must be
             recognizable to the underlying package manager.
         :param package: 
         :returns: bool :
         @author: Derek T Walker July 2012
         @change: Breen Malmberg - Feb 25 2019 - Removed unreachable code line 146
 
-        '''
+        """
 
         try:
             if self.enviro.geteuid() is 0 and self.pckgr:
@@ -157,15 +157,15 @@ install command"
             raise
 
     def remove(self, package):
-        '''Remove a package. Return a bool indicating success or failure.
+        """Remove a package. Return a bool indicating success or failure.
 
-        :param string: package : Name of the package to be removed, must be
+        :param string package: Name of the package to be removed, must be
             recognizable to the underlying package manager.
         :param package: 
         :returns: bool :
         @author Derek T Walker July 2012
 
-        '''
+        """
 
         try:
             if self.enviro.geteuid() == 0:
@@ -185,7 +185,7 @@ remove command"
             raise
 
     def check(self, package):
-        '''Check for the existence of a package in the package manager.
+        """Check for the existence of a package in the package manager.
         Return a bool; True if found.
 
         :param string: package : Name of the package whose installation status
@@ -195,7 +195,7 @@ remove command"
         :returns: bool :
         @author Derek T Walker July 2012
 
-        '''
+        """
 
         try:
             if self.pckgr.checkInstall(package):
@@ -210,7 +210,7 @@ remove command"
             raise
 
     def checkAvailable(self, package):
-        '''check the reachable repositories to see if the specified package
+        """check the reachable repositories to see if the specified package
         is available to install or not
 
         :param package: string; name of package to check
@@ -220,7 +220,7 @@ remove command"
 @change: Breen Malmberg - Feb 25 2019 - added doc string; moved
         unreachable logging call to before call to raise, on line 228
 
-        '''
+        """
 
         try:
             if self.pckgr.checkAvailable(package):
@@ -235,7 +235,7 @@ remove command"
             raise
 
     def checkUpdate(self, package=""):
-        '''check for updates on the system
+        """check for updates on the system
         return True if there are updates available
         return False if there are no updates available
 
@@ -246,7 +246,7 @@ remove command"
         :rtype: bool
 @author: Breen Malmberg
 
-        '''
+        """
 
         updatesavail = False
 
@@ -270,7 +270,7 @@ remove command"
         return updatesavail
 
     def Update(self, package=""):
-        '''update either the specified package
+        """update either the specified package
         or all available updates if no package is specified
 
         :param package: string; name of package to update
@@ -280,7 +280,7 @@ remove command"
         :rtype: bool
 @author: Breen Malmberg
 
-        '''
+        """
 
         updated = True
         updatesavail = False
@@ -304,14 +304,14 @@ remove command"
         return updated
 
     def getPackageFromFile(self, filename):
-        '''Returns the name of the package that provides the given
+        """Returns the name of the package that provides the given
         filename/path.
 
         :param filename: 
         :returns: string name of package if found, None otherwise
         @author: Eric Ball
 
-        '''
+        """
 
         try:
             return self.pckgr.getPackageFromFile(filename)
@@ -323,7 +323,7 @@ remove command"
             raise(self.detailedresults)
 
     def getInstall(self):
-        '''return the commandline command for installing a package
+        """return the commandline command for installing a package
         with the current, detected package manager
 
 
@@ -332,7 +332,7 @@ remove command"
         @change: Breen Malmberg - Feb 25 2019 - added doc string; added try/except;
                 added logging
 
-        '''
+        """
 
         try:
             return self.pckgr.getInstall()
@@ -341,7 +341,7 @@ remove command"
             return ""
 
     def getRemove(self):
-        '''return the commandline command for removing a package
+        """return the commandline command for removing a package
         with the current, detected package manager
 
 
@@ -350,7 +350,7 @@ remove command"
         @change: Breen Malmberg - Feb 25 2019 - added doc string; added try/except;
                 added logging
 
-        '''
+        """
 
         try:
             return self.pckgr.getRemove()
