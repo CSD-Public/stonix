@@ -455,7 +455,7 @@ the correct contents\n"
                          "filepath": sysctl}
                 self.statechglogger.recordchgevent(myid, event)
             else:
-                self.detailedresults += "Could not create file " + self.path + \
+                self.detailedresults += "Could not create file " + sysctl + \
                                         "\n"
                 success = False
         if os.path.exists(sysctl):
@@ -490,9 +490,9 @@ the correct contents\n"
                         self.logger.log(LogPriority.DEBUG, debug)
                     # permissions on file are incorrect
                     if not checkPerms(sysctl, [0, 0, 0o644], self.logger):
-                        if not setPerms(self.path, [0, 0, 0o644], self.logger):
+                        if not setPerms(sysctl, [0, 0, 0o644], self.logger):
                             self.detailedresults += "Could not set permissions on " + \
-                                                    self.path + "\n"
+                                                    sysctl + "\n"
                             success = False
                     resetsecon(sysctl)
 
