@@ -38,6 +38,8 @@ Created on Feb 19, 2013
 @change: 2017/10/23 Roy Nielsen - change to new service helper interface
 @change: 2017/11/13 Ekkehard - make eligible for OS X El Capitan 10.11+
 @change: 2018/06/08 Ekkehard - make eligible for macOS Mojave 10.14
+@change: 2019/06/11 dwalker - updated rule to properly record events, created sub
+    methods for linux and mac.
 """
 
 from __future__ import absolute_import
@@ -199,16 +201,13 @@ class SecureSSH(Rule):
         compliant = True
 
         if self.mac_piv_auth_CI.getcurrvalue():
-            mpa_kvtype = "conf"
-            mpa_tmppath = self.path1 + ".stonixtmp"
-            mpa_intent = "present"
-            mpa_configtype = "space"
-
+            tmppath = self.serverfile + ".stonixtmp"
             # set up macos smart card auth editor
-            mac_piv_auth_config = {"ChallengeResponseAuthentication": "no",
+            directives = {"ChallengeResponseAuthentication": "no",
                                    "PasswordAuthentication": "no"}
-            self.mac_piv_editor = KVEditorStonix(self.statechglogger, self.logger, mpa_kvtype, self.path1,
-                                                 mpa_tmppath, mac_piv_auth_config, mpa_intent, mpa_configtype)
+            self.mac_piv_editor = KVEditorStonix(self.statechglogger, self.logger, "conf",
+                                                 self.serverfile, tmppath, directives,
+                                                 "present", "space")
             if not self.mac_piv_editor.report():
                 compliant = False
                 self.detailedresults += "\nThe following options are not configured correctly in sshd_config:\n" + "\n".join(
