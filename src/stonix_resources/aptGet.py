@@ -15,14 +15,13 @@
 #                                                                             #
 ###############################################################################
 
-'''
+"""
 Created on Aug 06, 2012
 
 @author: Derek T. Walker
-'''
+"""
 
 import re
-import os
 import time
 
 from stonixutilityfunctions import psRunning
@@ -32,7 +31,7 @@ from StonixExceptions import repoError
 
 
 class AptGet(object):
-    '''Linux specific package manager for distributions that use the apt-get
+    """Linux specific package manager for distributions that use the apt-get
     command to install packages.
     
     @author: Derek T Walker
@@ -57,7 +56,7 @@ class AptGet(object):
             reliability of that method
 
 
-    '''
+    """
 
     def __init__(self, logger):
 
@@ -71,14 +70,14 @@ class AptGet(object):
         self.aptinstall = "DEBIAN_FRONTEND=noninteractive " + self.aptgetloc + " -y --assume-yes install "
         self.aptremove = "DEBIAN_FRONTEND=noninteractive " + self.aptgetloc + " -y remove "
 
-        self.dpkgsearch = self.dpkgloc + " -S "
-        self.dpkgchkinstalled = self.dpkgloc + " -l "
         self.aptchkupdates = self.aptgetloc + " -u upgrade --assume-no "
         self.aptupgrade = self.aptgetloc + " -u upgrade --assume-yes "
-        self.aptchkavail = self.aptcacheloc +  " policy "
+        self.checkinstalled = "/usr/bin/apt list --installed "
+        self.checkavailable = "/usr/bin/apt-cache search --names-only "
+        self.findpkgforfilename = "/usr/bin/dpkg -S "
 
     def installpackage(self, package):
-        '''Install a package. Return a bool indicating success or failure.
+        """Install a package. Return a bool indicating success or failure.
 
         :param package: string; Name of the package to be installed, must be
                 recognizable to the underlying package manager.
@@ -90,7 +89,7 @@ class AptGet(object):
         detailedresults replaced with logging
 @change: Breen Malmberg - 10/1/2018 - added check for package manager lock and retry loop
 
-        '''
+        """
 
         installed = True
         maxtries = 12
@@ -114,8 +113,14 @@ class AptGet(object):
                 self.ch.executeCommand(self.aptinstall + package)
                 retcode = self.ch.getReturnCode()
                 errstr = self.ch.getErrorString()
-                if retcode != 0:
+                # recursive call to this method if package manager is still locked
+                if re.search("Could not get lock", errstr, re.I):
+                    self.logger.log(LogPriority.DEBUG, "Apt package manager is in-use by another process. Waiting for it to be freed...")
+                    time.sleep(5)
+                    return self.installpackage(package)
+                elif retcode != 0:
                     raise repoError('apt', retcode)
+
             except repoError as repoerr:
                 if not repoerr.success:
                     installed = False
@@ -131,7 +136,7 @@ class AptGet(object):
         return installed
 
     def removepackage(self, package):
-        '''Remove a package. Return a bool indicating success or failure.
+        """Remove a package. Return a bool indicating success or failure.
 
         :param package: string; Name of the package to be removed, must be
                 recognizable to the underlying package manager.
@@ -139,7 +144,7 @@ class AptGet(object):
         :rtype: bool
 @author: Derek T. Walker
 
-        '''
+        """
 
         removed = True
         maxtries = 12
@@ -180,7 +185,7 @@ class AptGet(object):
         return removed
 
     def checkInstall(self, package):
-        '''Check the installation status of a package. Return a bool; True if
+        """Check the installation status of a package. Return a bool; True if
         the package is installed.
 
         :param package: 
@@ -191,10 +196,9 @@ class AptGet(object):
         method now returns a variable; replaced detailedresults with
         logging
 
-        '''
+        """
 
         installed = False
-        stringToMatch = "ii\s+" + str(package)
         outputstr = ""
         maxtries = 12
         trynum = 0
@@ -214,7 +218,7 @@ class AptGet(object):
         try:
 
             try:
-                self.ch.executeCommand(self.dpkgchkinstalled + package)
+                self.ch.executeCommand(self.checkinstalled + package)
                 retcode = self.ch.getReturnCode()
                 outputstr = self.ch.getOutputString()
                 errstr = self.ch.getErrorString()
@@ -225,7 +229,7 @@ class AptGet(object):
                     self.logger.log(LogPriority.WARNING, str(repoerr))
                     return False
 
-            if re.search(stringToMatch, outputstr, re.IGNORECASE):
+            if re.search(package + ".*installed", outputstr, re.I):
                 installed = True
 
             if not installed:
@@ -238,7 +242,7 @@ class AptGet(object):
         return installed
 
     def checkAvailable(self, package):
-        '''check if a given package is available
+        """check if a given package is available
 
         :param package: string; Name of package to check
         :returns: found
@@ -247,7 +251,7 @@ class AptGet(object):
 @change: Breen Malmberg - 4/27/2017 - created doc string;
         pulled result logging out of conditional
 
-        '''
+        """
 
         found = False
         repoerr = ""
@@ -272,7 +276,7 @@ class AptGet(object):
         try:
 
             try:
-                self.ch.executeCommand(self.aptchkavail + package)
+                self.ch.executeCommand(self.checkavailable + "^" + package + "$")
                 retcode = self.ch.getReturnCode()
                 outputstr = self.ch.getOutputString()
                 errstr = self.ch.getErrorString()
@@ -283,7 +287,7 @@ class AptGet(object):
                     self.logger.log(LogPriority.WARNING, str(repoerr))
                     return False
 
-            if re.search(package, outputstr, re.IGNORECASE):
+            if re.search("^" + package, outputstr, re.I):
                 found = True
 
             if found:
@@ -296,7 +300,7 @@ class AptGet(object):
         return found
 
     def Update(self, package=""):
-        '''update the specified package if any
+        """update the specified package if any
         updates are available for it
         if no package is specified, apply
         all available updates for the system
@@ -306,7 +310,7 @@ class AptGet(object):
         :rtype: bool
 @author: Breen Malmberg
 
-        '''
+        """
 
         updated = True
 
@@ -339,7 +343,7 @@ class AptGet(object):
         return updated
 
     def checkUpdate(self, package=""):
-        '''check for updates for specified package
+        """check for updates for specified package
         if no package is specified, then check
         for updates for the entire system
 
@@ -348,7 +352,7 @@ class AptGet(object):
         :rtype: bool
 @author: Breen Malmberg
 
-        '''
+        """
 
         updatesavail = False
 
@@ -383,7 +387,7 @@ class AptGet(object):
         return updatesavail
 
     def getPackageFromFile(self, filename):
-        '''Returns the name of the package that provides the given
+        """Returns the name of the package that provides the given
         filename/path.
 
         :param filename: 
@@ -393,14 +397,14 @@ class AptGet(object):
 @change: Breen Malmberg - 4/17/2017 - fixed doc string formatting;
         method now returns a variable; added param validation
 
-        '''
+        """
 
         packagename = ""
 
         try:
 
             try:
-                self.ch.executeCommand(self.dpkgsearch + filename)
+                self.ch.executeCommand(self.findpkgforfilename + filename)
                 retcode = self.ch.getReturnCode()
                 errstr = self.ch.getErrorString()
                 if retcode != 0:
