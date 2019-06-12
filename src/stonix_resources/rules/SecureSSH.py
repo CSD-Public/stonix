@@ -169,8 +169,8 @@ class SecureSSH(Rule):
                     self.formatDetailedResults("report", self.compliant, self.detailedresults)
                     self.logdispatch.log(LogPriority.INFO, self.detailedresults)
                     return self.compliant
-                if not self.reportMac():
-                    compliant = False
+                # if not self.reportMac():
+                #     compliant = False
 
             # Portion for both mac and linux reporting
             if not self.reportSSHFile(self.serverfile, self.server):
@@ -190,32 +190,6 @@ class SecureSSH(Rule):
                                    self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
-
-    def reportMac(self):
-        """
-
-        :return: compliant
-        :rtype: bool
-        """
-
-        compliant = True
-
-        if self.mac_piv_auth_CI.getcurrvalue():
-            tmppath = self.serverfile + ".stonixtmp"
-            # set up macos smart card auth editor
-            directives = {"ChallengeResponseAuthentication": "no",
-                                   "PasswordAuthentication": "no"}
-            self.mac_piv_editor = KVEditorStonix(self.statechglogger, self.logger, "conf",
-                                                 self.serverfile, tmppath, directives,
-                                                 "present", "space")
-            if not self.mac_piv_editor.report():
-                compliant = False
-                self.detailedresults += "\nThe following options are not configured correctly in sshd_config:\n" + "\n".join(
-                    self.mac_piv_editor.fixables)
-        else:
-            self.logger.log(LogPriority.DEBUG, "mac piv auth CI not enabled. will not configure")
-
-        return compliant
 
     def fix(self):
         """
@@ -244,17 +218,16 @@ class SecureSSH(Rule):
             for event in eventlist:
                 self.statechglogger.deleteentry(event)
 
-            # Mac only portion
-            if self.osname == "Mac OS":
-                # runs the fix for the smartcard authentication for mac
-                if not self.fixMac():
-                    success = False
-
             # Portion for both linux and Mac
             if not self.fixSSHFile(self.serverfile, self.server):
                 success = False
             if not self.fixSSHFile(self.clientfile, self.client):
                 success = False
+            # Mac only portion
+            if self.osname == "Mac OS":
+                # runs the fix for the smartcard authentication for mac
+                if not self.fixMac():
+                    success = False
             self.rulesuccess = success
 
         except (KeyboardInterrupt, SystemExit):
@@ -289,6 +262,10 @@ class SecureSSH(Rule):
                     del (directives["KerberosAuthentication"])
                 elif sshfile == "/etc/ssh/ssh_config":
                     del (directives["GSSAPIAuthentication"])
+            elif self.environ.getostype() == "Mac OS X" and self.mac_piv_auth_CI.getcurrvalue():
+                if sshfile == "/private/etc/ssh/sshd_config":
+                    directives["PasswordAuthentication"] = "no"
+                    self.server = directives
             editor = KVEditorStonix(self.statechglogger,
                                       self.logger, "conf",
                                       sshfile, tpath,
@@ -353,6 +330,10 @@ class SecureSSH(Rule):
                     del (directives["KerberosAuthentication"])
                 elif sshfile == "/etc/ssh/ssh_config":
                     del (directives["GSSAPIAuthentication"])
+            elif self.environ.getostype() == "Mac OS X" and self.mac_piv_auth_CI.getcurrvalue():
+                if sshfile == "/private/etc/ssh/sshd_config":
+                    directives["ChallengeResponseAuthentication"] = "no"
+                    directives["PasswordAuthentication"] = "no"
             editor = KVEditorStonix(self.statechglogger,
                                       self.logger, "conf", sshfile,
                                       tpath, directives, "present",
@@ -383,9 +364,10 @@ class SecureSSH(Rule):
                     myid = iterate(self.iditerator, self.rulenumber)
                     editor.setEventID(myid)
                 if editor.fix():
-                    debug = "kveditor1 fix ran successfully"
                     if editor.commit():
-                        debug = "kveditor1 commit ran successfully"
+                        os.chown(sshfile, 0, 0)
+                        os.chmod(sshfile, 0o644)
+                        resetsecon(sshfile)
                     else:
                         self.detailedresults += "Unable to correct contents " + \
                             "in " + sshfile + "\n"
@@ -398,9 +380,6 @@ class SecureSSH(Rule):
                     debug = "kveditor1 fix did not run successfully"
                     self.logger.log(LogPriority.DEBUG, debug)
                     success = False
-                os.chown(sshfile, 0, 0)
-                os.chmod(sshfile, 0o644)
-                resetsecon(sshfile)
         return success
 
     def fixMac(self):
@@ -412,40 +391,16 @@ class SecureSSH(Rule):
 
         success = True
 
-        if self.mac_piv_auth_CI.getcurrvalue():
-            if not self.configureSmartCardAuth():
-                success = False
-
         # reload ssh to read the new configurations
         self.logger.log(LogPriority.DEBUG, "Restarting sshd service to read/load the new configuration changes")
         if self.osname == "Mac OS":
             if not self.sh.reloadService("/System/Library/LaunchDaemons/ssh.plist",
                                          serviceTarget="com.openssh.sshd"):
                 success = False
-                self.detailedresults += "\nFailed to load the new ssh configuration changes"
+                self.detailedresults += "Failed to load the new ssh configuration changes\n"
         else:
             if not self.sh.reloadService("sshd"):
                 success = False
-                self.detailedresults += "\nFailed to load the new ssh configuration changes"
-
-        return success
-
-    def configureSmartCardAuth(self):
-        """
-        configure smart card (piv) authentication for mac os sshd
-
-        :return: success
-        :rtype: bool
-        """
-
-        success = True
-
-        if not self.mac_piv_editor.fix():
-            success = False
-            self.detailedresults += "\nFailed to correctly set mac os piv authentication over ssh options"
-        else:
-            if not self.mac_piv_editor.commit():
-                success = False
-                self.detailedresults += "\nFailed to write mac os piv authentication over ssh changes to disk"
+                self.detailedresults += "Failed to load the new ssh configuration changes\n"
 
         return success
