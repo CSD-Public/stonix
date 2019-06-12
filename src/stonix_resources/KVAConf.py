@@ -445,7 +445,7 @@ class KVAConf():
             self.contents = []
             for line in contents:  # contents should now have a list of items we are ok with having in the file but will still be missing the fixables
                 self.contents.append(line)  # make self.contents contain the correct file contents before fixing
-            self.contents.append("\n" + self.universal)  # add our universal line to show line(s) were added by stonix to self.contents
+            # self.contents.append("\n" + self.universal)  # add our universal line to show line(s) were added by stonix to self.contents
             for key in fixables:
                 if self.configType == "openeq":  # construct the appropriate line and add to bottom of self.contents
                     temp = key + " = " + fixables[key] + "\n"
@@ -512,7 +512,7 @@ class KVAConf():
                         continue
         if fixables:
             poplist = []
-            contents.append(self.universal)
+            # contents.append(self.universal)
             # in this next section we cover a situation where the key
             # may appear more than once and have wrong values, so anywhere
             # the key exists that's not repeatable, we remove it from the file

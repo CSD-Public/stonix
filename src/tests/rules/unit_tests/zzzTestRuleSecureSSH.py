@@ -71,15 +71,14 @@ class zzzTestRuleSecureSSH(RuleTest):
                        "IgnoreRhosts": "no",
                        "PermitEmptyPasswords": "yes",
                        "PasswordAuthentication": "no",
-                       "ChallengeResponseAuthentication": "yes",
+                       "ChallengeResponseAuthentication": "no",
                        "KerberosAuthentication": "no",
                        "GSSAPIAuthentication": "no",
                        "GSSAPICleanupCredentials": "no",
                        "UsePAM": "no",
                        "Ciphers": "aes128-ctrs,aes192-ctrs,aes256-ctrs,aes128-cbcs,3des-cbcs,aes192-cbcs,aes256-cbcs",
                        "PermitUserEnvironment": "yes"}
-        self.macpiv = {"ChallengeResponseAuthentication": "yes",
-                                   "PasswordAuthentication": "yes"}
+
 
     def tearDown(self):
         pass
@@ -101,8 +100,8 @@ class zzzTestRuleSecureSSH(RuleTest):
             self.serverfile = '/private/etc/ssh/sshd_config'
             self.clientfile = '/private/etc/ssh/ssh_config'
             if self.rule.mac_piv_auth_CI.getcurrvalue():
-                if not self.setMacPIVConditions(self.serverfile, self.macpiv):
-                    success = False
+                self.server["ChallengeResponseAuthentication"] = "yes"
+                self.server["PasswordAuthentication"] = "yes"
         else:
             self.serverfile = "/etc/ssh/sshd_config"  # server file
             self.clientfile = "/etc/ssh/ssh_config"  # client file
@@ -154,40 +153,6 @@ class zzzTestRuleSecureSSH(RuleTest):
                 success = False
                 debug = "Unable to set incorrect permissions on " + \
                     sshfile + " for setting pre-conditions"
-                self.logger.log(LogPriority.DEBUG, debug)
-        return success
-
-    def setMacPIVConditions(self, sshfile, directives):
-        '''Mac only system pre condition setting for PIV authentication
-
-        :param self: essential if you override this definition
-        :param sshfile: ssh file to be fuzzed
-        :param directives: intentionally incorrect directives to fuzz file with
-        :returns: boolean - If successful True; If failure False
-        @author: dwalker
-
-        '''
-        success = True
-        tmppath = sshfile + ".tmp"
-        editor = KVEditorStonix(self.statechglogger, self.logger, "conf",
-                                sshfile, tmppath, directives,
-                                "present", "space")
-        if not editor.report():
-            if not editor.fix():
-                success = False
-                debug = "Kveditor fix for file " + sshfile + \
-                        " not successful for mac PIV pre-condition setting"
-                self.logger.log(LogPriority.DEBUG, debug)
-            elif not editor.commit():
-                success = False
-                debug = "Kveditor commit for file " + sshfile + \
-                        " not successful for mac PIV pre-condition setting"
-                self.logger.log(LogPriority.DEBUG, debug)
-        if checkPerms(sshfile, [0, 0, 0o755], self.logger):
-            if not setPerms(sshfile, [0, 0, 0o755], self.logger):
-                success = False
-                debug = "Unable to set incorrect permissions on " + \
-                        sshfile + " for setting pre-conditions"
                 self.logger.log(LogPriority.DEBUG, debug)
         return success
 
