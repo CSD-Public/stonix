@@ -545,6 +545,16 @@ class SoftwareBuilder():
                 print "Changing .app version string..."
                 self.mbl.modplist(plist, "CFBundleShortVersionString", self.APPVERSION)
                 self.mbl.changeViewControllerTitle("stonix4mac " + str(self.APPVERSION))
+
+                #####
+                # Change the app icon to be used in the xcode build
+                pbxproj = self.tmphome + "/src/MacBuild/" + appName + "/stonix4mac.xcodeproj/project.pbxproj"
+
+                self.mbl.regexReplace(pbxproj,
+                                      r"ASSETCATALOG_COMPILER_APPICON_NAME =.*$",
+                                      r"ASSETCATALOG_COMPILER_APPICON_NAME = stonix4macfisma" + self.FISMACAT + ";\n",
+                                      backupname=pbxproj + ".bak")
+
             os.chdir(returnDir)
         except:
             print traceback.format_exc()
@@ -747,12 +757,6 @@ class SoftwareBuilder():
             elif appName == 'stonix4mac':
                 self.logger.log(lp.DEBUG, "Starting stonix4mac postCompile.")
                 os.chdir(self.tmphome + "/src/MacBuild/stonix4mac/build/Release")
-
-                # Copy icon to the resources directory
-                copy2(self.tmphome + "/src/MacBuild/stonix4macfisma" + self.FISMACAT + ".icns",
-                      self.tmphome + "/src/MacBuild/stonix4mac/build/Release/" \
-                      + appName + ".app/Contents/Resources/" + \
-                      self.STONIXICON + ".icns")
 
                 #####
                 # Optional codesign
