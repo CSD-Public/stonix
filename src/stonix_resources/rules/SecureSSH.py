@@ -38,6 +38,8 @@ Created on Feb 19, 2013
 @change: 2017/10/23 Roy Nielsen - change to new service helper interface
 @change: 2017/11/13 Ekkehard - make eligible for OS X El Capitan 10.11+
 @change: 2018/06/08 Ekkehard - make eligible for macOS Mojave 10.14
+@change: 2019/06/11 dwalker - updated rule to properly record events, created sub
+    methods for linux and mac.
 """
 
 from __future__ import absolute_import
@@ -106,39 +108,16 @@ class SecureSSH(Rule):
         :rtype: bool
 
         """
-
-        self.detailedresults = ""
-        self.installed = False
-        packages = ["ssh", "openssh", "openssh-server", "openssh-client"]
-        self.ph = Pkghelper(self.logger, self.environ)
-        self.compliant = True
-        self.sh = ServiceHelper(self.environ, self.logger)
-        self.macloaded = False
-        compliant = True
-        debug = ""
-
         try:
-
-            if self.environ.getostype() != "Mac OS X":
-                for package in packages:
-                    if self.ph.check(package):
-                        self.installed = True
-                        break
-                if not self.installed:
-                    self.formatDetailedResults("report", self.compliant, self.detailedresults)
-                    self.logdispatch.log(LogPriority.INFO, self.detailedresults)
-                    return self.compliant
-            else:
-                if self.sh.auditService("/System/Library/LaunchDaemons/ssh.plist", serviceTarget="com.openssh.sshd"):
-                    self.macloaded = True
-                if not self.macloaded:
-                    self.detailedresults += "\nSSH not installed/enabled. Nothing to configure."
-                    self.formatDetailedResults("report", self.compliant, self.detailedresults)
-                    self.logdispatch.log(LogPriority.INFO, self.detailedresults)
-                    return self.compliant
-                if not self.reportMac():
-                    compliant = False
-
+            self.detailedresults = ""
+            self.installed = False
+            packages = ["ssh", "openssh", "openssh-server", "openssh-client"]
+            self.ph = Pkghelper(self.logger, self.environ)
+            self.compliant = True
+            self.sh = ServiceHelper(self.environ, self.logger)
+            self.macloaded = False
+            compliant = True
+            debug = ""
             self.client = {"Host": "*",
                            "Protocol": "2",
                            "GSSAPIAuthentication": "yes",
@@ -161,71 +140,42 @@ class SecureSSH(Rule):
                            "PermitUserEnvironment": "no"}
 
             if self.environ.getostype() == "Mac OS X":
-                self.path1 = '/private/etc/ssh/sshd_config'
-                self.path2 = '/private/etc/ssh/ssh_config'
+                self.serverfile = '/private/etc/ssh/sshd_config'
+                self.clientfile = '/private/etc/ssh/ssh_config'
             else:
-                self.path1 = "/etc/ssh/sshd_config"  # server file
-                self.path2 = "/etc/ssh/ssh_config"  # client file
+                self.serverfile = "/etc/ssh/sshd_config"  # server file
+                self.clientfile = "/etc/ssh/ssh_config"  # client file
 
-            if os.path.exists(self.path1):
-                tpath1 = self.path1 + ".stonixtmp"
-                if re.search("Ubuntu", self.environ.getostype()):
-                    del(self.server["GSSAPIAuthentication"])
-                    del(self.server["KerberosAuthentication"])
-                self.ed1 = KVEditorStonix(self.statechglogger,
-                                          self.logger, "conf",
-                                          self.path1, tpath1,
-                                          self.server, "present",
-                                          "space")
-                if not self.ed1.report():
-                    self.detailedresults += "Did not find the correct " + \
-                        "contents in sshd_config\n"
-                    compliant = False
-                if re.search("Ubuntu", self.environ.getostype()):
-                    self.server = {"GSSAPIAuthentication": "",
-                                   "KerberosAuthentication": ""}
-                    self.ed1.setIntent("notpresent")
-                    self.ed1.setData(self.server)
-                    if not self.ed1.report():
-                        debug = "didn't find the correct" + \
-                            " contents in sshd_config\n"
-                        self.logger.log(LogPriority.DEBUG, debug)
-                        compliant = False
-                if not checkPerms(self.path1, [0, 0, 420],
-                                  self.logger):
-                    self.detailedresults += "Incorrect permissions for " + \
-                        "file " + self.path1 + "\n"
-                    compliant = False
+            # Portion for non mac systems i.e. linux
+            if self.environ.getostype() != "Mac OS X":
+                for package in packages:
+                    if self.ph.check(package):
+                        self.installed = True
+                        break
+                # If ssh is not installed there is no need to configure, return True
+                if not self.installed:
+                    self.formatDetailedResults("report", self.compliant, self.detailedresults)
+                    self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+                    return self.compliant
+            # Portion for Mac systems
             else:
-                self.detailedresults += self.path1 + " does not exist\n"
+                # ssh is installed/enabled
+                if self.sh.auditService("/System/Library/LaunchDaemons/ssh.plist", serviceTarget="com.openssh.sshd"):
+                    self.macloaded = True
+
+                # if ssh not installed/enabled, no need to configure, return True
+                if not self.macloaded:
+                    self.detailedresults += "SSH not installed/enabled. Nothing to configure.\n"
+                    self.formatDetailedResults("report", self.compliant, self.detailedresults)
+                    self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+                    return self.compliant
+                if not self.reportMac():
+                    compliant = False
+
+            # Portion for both mac and linux reporting
+            if not self.reportSSHFile(self.serverfile, self.server):
                 compliant = False
-            if os.path.exists(self.path2):
-                tpath2 = self.path2 + ".stonixtmp"
-                if re.search("Ubuntu", self.environ.getostype()):
-                    del(self.client["GSSAPIAuthentication"])
-                self.ed2 = KVEditorStonix(self.statechglogger,
-                                          self.logger, "conf",
-                                          self.path2, tpath2,
-                                          self.client, "present",
-                                          "space")
-                if not self.ed2.report():
-                    self.detailedresults += "Did not find the correct " + \
-                        "contents in ssh_config\n"
-                    compliant = False
-                if re.search("Ubuntu", self.environ.getostype()):
-                    self.client = {"GSSAPIAuthentication": ""}
-                    self.ed2.setIntent("notpresent")
-                    self.ed2.setData(self.client)
-                    if not self.ed2.report():
-                        self.detailedresults += "Did not find the correct " + \
-                            "contents in ssh_config\n"
-                if not checkPerms(self.path2, [0, 0, 420],
-                                  self.logger):
-                    self.detailedresults += "Incorrect permissions for " + \
-                        "file " + self.path2 + "\n"
-                    compliant = False
-            else:
-                self.detailedresults += self.path2 + " does not exist\n"
+            if not self.reportSSHFile(self.clientfile, self.client):
                 compliant = False
             self.compliant = compliant
 
@@ -251,16 +201,13 @@ class SecureSSH(Rule):
         compliant = True
 
         if self.mac_piv_auth_CI.getcurrvalue():
-            mpa_kvtype = "conf"
-            mpa_tmppath = self.path1 + ".stonixtmp"
-            mpa_intent = "present"
-            mpa_configtype = "space"
-
+            tmppath = self.serverfile + ".stonixtmp"
             # set up macos smart card auth editor
-            mac_piv_auth_config = {"ChallengeResponseAuthentication": "no",
+            directives = {"ChallengeResponseAuthentication": "no",
                                    "PasswordAuthentication": "no"}
-            self.mac_piv_editor = KVEditorStonix(self.statechglogger, self.logger, mpa_kvtype, self.path1,
-                                                 mpa_tmppath, mac_piv_auth_config, mpa_intent, mpa_configtype)
+            self.mac_piv_editor = KVEditorStonix(self.statechglogger, self.logger, "conf",
+                                                 self.serverfile, tmppath, directives,
+                                                 "present", "space")
             if not self.mac_piv_editor.report():
                 compliant = False
                 self.detailedresults += "\nThe following options are not configured correctly in sshd_config:\n" + "\n".join(
@@ -272,162 +219,43 @@ class SecureSSH(Rule):
 
     def fix(self):
         """
-        apply configuration options to config files
+        Main fix method divided up into mac and linux sub methods for
+        correcting ssh server and client files as well as configuring
+        Mac OS smart card authentication.
 
         :return: self.rulesuccess
         :rtype: bool
 
         """
-
-        self.detailedresults = ""
-        self.iditerator = 0
-        self.rulesuccess = True
-        debug = ""
-
         try:
-
+            self.detailedresults = ""
+            self.iditerator = 0
+            success = True
+            debug = ""
             if not self.ci.getcurrvalue():
-                self.detailedresults += "\nThe rule CI was not enabled, so nothing was done."
+                self.detailedresults += "The rule CI was not enabled, so nothing was done.\n"
                 self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
                 self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+                self.rulesuccess = success
                 return self.rulesuccess
 
-            if self.environ.getostype() != "Mac OS X":
-                if not self.installed:
-                    self.detailedresults += "\nSSH is not installed. Nothing to configure."
-                    self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
-                    self.logdispatch.log(LogPriority.INFO, self.detailedresults)
-                    return self.rulesuccess
-
-            if self.environ.getostype() == "Mac OS X":
-                if not self.macloaded:
-                    self.detailedresults += "\nSSH is not loaded. Will not configure it."
-                    self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
-                    self.logdispatch.log(LogPriority.INFO, self.detailedresults)
-                    return self.rulesuccess
-
-            if self.osname == "Mac OS":
-                if not self.fixMac():
-                    self.rulesuccess = False
-
-            created1, created2 = False, False
-
+            # Clear events from any previous fix run
             eventlist = self.statechglogger.findrulechanges(self.rulenumber)
             for event in eventlist:
                 self.statechglogger.deleteentry(event)
-            tpath1 = self.path1 + ".stonixtmp"
 
-            if not os.path.exists(self.path1):
-                createFile(self.path1, self.logger)
-                created1 = True
-                self.iditerator += 1
-                myid = iterate(self.iditerator, self.rulenumber)
-                event = {"eventtype": "creation",
-                         "filepath": self.path1}
-                self.statechglogger.recordchgevent(myid, event)
+            # Mac only portion
+            if self.osname == "Mac OS":
+                # runs the fix for the smartcard authentication for mac
+                if not self.fixMac():
+                    success = False
 
-            if os.path.exists(self.path1):
-                if not self.ed1:
-                    tpath1 = self.path1 + ".stonixtmp"
-                    if re.search("Ubuntu", self.environ.getostype()):
-                        del(self.server["GSSAPIAuthentication"])
-                        del(self.server["KerberosAuthentication"])
-                    self.ed1 = KVEditorStonix(self.statechglogger,
-                                              self.logger, "conf", self.path1,
-                                              tpath1, self.server, "present",
-                                              "space")
-                    self.ed1.report()
-                    if re.search("Ubuntu", self.environ.getostype()):
-                        self.server = {"GSSAPIAuthentication": "",
-                                       "KerberosAuthentication": ""}
-                        self.ed1.setIntent("notpresent")
-                        self.ed1.setData(self.server)
-                        self.ed1.report()
-                if not checkPerms(self.path1, [0, 0, 420], self.logger):
-                    if not created1:
-                        self.iditerator += 1
-                        myid = iterate(self.iditerator, self.rulenumber)
-                        if not setPerms(self.path1, [0, 0, 420], self.logger,
-                                        self.statechglogger, myid):
-                            self.rulesuccess = False
-                    else:
-                        if not setPerms(self.path1, [0, 0, 420], self.logger):
-                            self.rulesuccess = False
-                if self.ed1.fixables or self.ed1.removeables:
-                    if not created1:
-                        self.iditerator += 1
-                        myid = iterate(self.iditerator, self.rulenumber)
-                        self.ed1.setEventID(myid)
-                    if self.ed1.fix():
-                        self.detailedresults += "kveditor1 fix ran successfully\n"
-                        if self.ed1.commit():
-                            self.detailedresults += "kveditor1 commit ran successfully\n"
-                        else:
-                            self.detailedresults += "kveditor1 commit did not run successfully\n"
-                            self.rulesuccess = False
-                    else:
-                        self.detailedresults += "kveditor1 fix did not run successfully\n"
-                        self.rulesuccess = False
-                    os.chown(self.path1, 0, 0)
-                    os.chmod(self.path1, 420)
-                    resetsecon(self.path1)
-
-            tpath2 = self.path2 + ".stonixtmp"
-            if not os.path.exists(self.path2):
-                createFile(self.path2, self.logger)
-                created2 = True
-                self.iditerator += 1
-                myid = iterate(self.iditerator, self.rulenumber)
-                event = {"eventtype": "creation",
-                         "filepath": self.path2}
-                self.statechglogger.recordchgevent(myid, event)
-
-            if os.path.exists(self.path2):
-                if not self.ed2:
-                    tpath2 = self.path2 + ".stonixtmp"
-                    if re.search("Ubuntu", self.environ.getostype()):
-                        del(self.client["GSSAPIAuthentication"])
-                    self.ed2 = KVEditorStonix(self.statechglogger,
-                                              self.logger, "conf", self.path2,
-                                              tpath2, self.client, "present",
-                                              "space")
-                    self.ed2.report()
-                    if re.search("Ubuntu", self.environ.getostype()):
-                        self.server = {"GSSAPIAuthentication": "",
-                                       "KerberosAuthentication": ""}
-                        self.ed2.setIntent("notpresent")
-                        self.ed2.setData(self.client)
-                        self.ed2.report()
-                if not checkPerms(self.path2, [0, 0, 420], self.logger):
-                    if not created2:
-                        self.iditerator += 1
-                        myid = iterate(self.iditerator, self.rulenumber)
-                        if not setPerms(self.path2, [0, 0, 420], self.logger,
-                                        self.statechglogger, myid):
-                            self.rulesuccess = False
-                    else:
-                        if not setPerms(self.path2, [0, 0, 420], self.logger):
-                            self.rulesuccess = False
-                if self.ed2.fixables or self.ed2.removeables:
-                    if not created2:
-                        self.iditerator += 1
-                        myid = iterate(self.iditerator, self.rulenumber)
-                        self.ed2.setEventID(myid)
-                    if self.ed2.fix():
-                        self.detailedresults += "kveditor2 fix ran successfully\n"
-                        if self.ed2.commit():
-                            self.detailedresults += "kveditor2 commit ran successfully\n"
-                        else:
-                            self.detailedresults += "kveditor2 commit did not run successfully\n"
-                            self.rulesuccess = False
-                    else:
-                        self.detailedresults += "kveditor2 fix did not run successfully\n"
-                        self.rulesuccess = False
-                    os.chown(self.path2, 0, 0)
-                    os.chmod(self.path2, 420)
-                    resetsecon(self.path2)
-            if debug:
-                self.logger.log(LogPriority.DEBUG, debug)
+            # Portion for both linux and Mac
+            if not self.fixSSHFile(self.serverfile, self.server):
+                success = False
+            if not self.fixSSHFile(self.clientfile, self.client):
+                success = False
+            self.rulesuccess = success
 
         except (KeyboardInterrupt, SystemExit):
             raise
@@ -439,6 +267,141 @@ class SecureSSH(Rule):
                                    self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.rulesuccess
+
+    def reportSSHFile(self, sshfile, directives):
+        """
+        Report configuration options of config files
+        :param: sshfile - filepath string
+        :param: directives - dictionary of desired directives
+        :return: compliant
+        :rtype: bool
+
+        """
+        compliant = True
+        debug = ""
+        directives = dict(directives)
+        tpath = sshfile + ".tmp"
+
+        if os.path.exists(sshfile):
+            if re.search("Ubuntu", self.environ.getostype()):
+                if sshfile == "/etc/ssh/sshd_config":
+                    del (directives["GSSAPIAuthentication"])
+                    del (directives["KerberosAuthentication"])
+                elif sshfile == "/etc/ssh/ssh_config":
+                    del (directives["GSSAPIAuthentication"])
+            editor = KVEditorStonix(self.statechglogger,
+                                      self.logger, "conf",
+                                      sshfile, tpath,
+                                      directives, "present",
+                                      "space")
+            if not editor.report():
+                self.detailedresults += "Did not find the correct " + \
+                                        "contents in sshd_config\n"
+                compliant = False
+
+            # for ubuntu systems we want to make sure the following two
+            # directives don't exist in the server file
+            if re.search("Ubuntu", self.environ.getostype()):
+                if sshfile == "/etc/ssh/sshd_config":
+                    directives = {"GSSAPIAuthentication": "",
+                               "KerberosAuthentication": ""}
+                elif sshfile == "/etc/ssh/ssh_config":
+                    directives = {"GSSAPIAuthentication": ""}
+                editor.setIntent("notpresent")
+                editor.setData(directives)
+                if not editor.report():
+                    self.detailedresults += "didn't find the correct" + \
+                            " contents in sshd_config\n"
+                    self.logger.log(LogPriority.DEBUG, debug)
+                    compliant = False
+            if not checkPerms(sshfile, [0, 0, 0o644],
+                              self.logger):
+                self.detailedresults += "Incorrect permissions for " + \
+                                        "file " + self.serverfile + "\n"
+                compliant = False
+        else:
+            self.detailedresults += sshfile + " does not exist\n"
+            compliant = False
+        return compliant
+
+    def fixSSHFile(self, sshfile, directives):
+        """
+        apply configuration options to config files
+        :param: sshfile - filepath string
+        :param: directives - dictionary of desired directives
+        :return: compliant
+        :rtype: bool
+
+        """
+        success = True
+        debug = ""
+        directives = dict(directives)
+        tpath = sshfile + ".tmp"
+        created = False
+        if not os.path.exists(sshfile):
+            createFile(sshfile, self.logger)
+            created = True
+            self.iditerator += 1
+            myid = iterate(self.iditerator, self.rulenumber)
+            event = {"eventtype": "creation",
+                     "filepath": sshfile}
+            self.statechglogger.recordchgevent(myid, event)
+        if os.path.exists(sshfile):
+            if re.search("Ubuntu", self.environ.getostype()):
+                if sshfile == "/etc/ssh/sshd_config":
+                    del (directives["GSSAPIAuthentication"])
+                    del (directives["KerberosAuthentication"])
+                elif sshfile == "/etc/ssh/ssh_config":
+                    del (directives["GSSAPIAuthentication"])
+            editor = KVEditorStonix(self.statechglogger,
+                                      self.logger, "conf", sshfile,
+                                      tpath, directives, "present",
+                                      "space")
+            editor.report()
+            if re.search("Ubuntu", self.environ.getostype()):
+                if sshfile == "/etc/ssh/sshd_config":
+                    directives = {"GSSAPIAuthentication": "",
+                                  "KerberosAuthentication": ""}
+                elif sshfile == "/etc/ssh/ssh_config":
+                    directives = {"GSSAPIAuthentication": ""}
+                editor.setIntent("notpresent")
+                editor.setData(directives)
+                editor.report()
+            if not checkPerms(sshfile, [0, 0, 0o644], self.logger):
+                if not created:
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    if not setPerms(sshfile, [0, 0, 0o644], self.logger,
+                                    self.statechglogger, myid):
+                        success = False
+                else:
+                    if not setPerms(sshfile, [0, 0, 0o644], self.logger):
+                        success = False
+            if editor.fixables or editor.removeables:
+                if not created:
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    editor.setEventID(myid)
+                if editor.fix():
+                    debug = "kveditor1 fix ran successfully"
+                    if editor.commit():
+                        debug = "kveditor1 commit ran successfully"
+                    else:
+                        self.detailedresults += "Unable to correct contents " + \
+                            "in " + sshfile + "\n"
+                        debug = "kveditor1 commit did not run successfully"
+                        self.logger.log(LogPriority.DEBUG, debug)
+                        success = False
+                else:
+                    self.detailedresults += "Unable to correct contents " + \
+                                            "in " + sshfile + "\n"
+                    debug = "kveditor1 fix did not run successfully"
+                    self.logger.log(LogPriority.DEBUG, debug)
+                    success = False
+                os.chown(sshfile, 0, 0)
+                os.chmod(sshfile, 0o644)
+                resetsecon(sshfile)
+        return success
 
     def fixMac(self):
         """
