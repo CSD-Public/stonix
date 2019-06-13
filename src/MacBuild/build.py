@@ -33,6 +33,7 @@ import stat
 import optparse
 import traceback
 import getpass
+import datetime
 from glob import glob
 from tempfile import mkdtemp
 from time import time, sleep
@@ -99,16 +100,26 @@ class SoftwareBuilder():
         else:
             debug = 40
 
+        # format log file name according to tracker artf55027
+        datestamp = datetime.datetime.now()
+        stamp = datestamp.strftime("%Y-%m-%d_%H-%M-%S")
+        log_name = "build-output_" + str(stamp) + ".log"
+        # set macbuild logging path according to tracker artf55027
+        try:
+            log_path = os.path.dirname(os.path.realpath(__file__))
+        except (IOError, OSError, AttributeError):
+            log_path = os.getcwd()
+
         #####
         # helper class initialization
         self.logger = CyLogger(level=debug)
-        self.logger.initializeLogs()
+        # initialize the logger object to log macbuild.py logs according to tracker artf55027
+        self.logger.initializeLogs(log_dir=log_path, filename=log_name)
         self.rw = RunWith(self.logger)
         self.mu = ManageUser(self.logger)
         self.mk = ManageKeychain(self.logger)
         self.ramdisk_size = ramdisk_size
         self.libc = getLibc()
-
 
         #####
         # Handle command line options
