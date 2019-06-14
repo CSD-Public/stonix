@@ -15,7 +15,7 @@
 #                                                                             #
 ###############################################################################
 
-'''
+"""
 Created on Apr 2, 2013
 
 The BlockSystemAccounts rule will search through /etc/passwd to determine if
@@ -27,24 +27,25 @@ by administrators in certain situations.
 
 @author: Breen Malmberg
 @change: 01/29/2014 Derek Walker revised
-@change: 02/12/2014 ekkehard Implemented self.detailedresults flow
-@change: 02/12/2014 ekkehard Implemented isapplicable
-@change: 02/19/2014 ekkehard Make sure report always runs
+@change: 02/12/2014 Ekkehard Implemented self.detailedresults flow
+@change: 02/12/2014 Ekkehard Implemented isapplicable
+@change: 02/19/2014 Ekkehard Make sure report always runs
 @change: 04/18/2014 Dave Kennel Updated to new style configuration item.
-@change: 2014/10/17 ekkehard OS X Yosemite 10.10 Update
+@change: 2014/10/17 Ekkehard OS X Yosemite 10.10 Update
 @change: 2015/04/14 Dave Kennel Updated for new style isApplicable
 @change: 2015/06/10 Breen Malmberg - updated author names; implemented correct
 mac os x functionality; refactored code for readability; fixed pep8 violations
-@change: 2015/08/28 ekkehard [artf37764] : BlockSystemAccounts(40) - NCAF - OS X El Capitan 10.11
-@change: 2015/11/09 ekkehard - make eligible of OS X El Capitan
-@change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
-@change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
-@change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
+@change: 2015/08/28 Ekkehard [artf37764] : BlockSystemAccounts(40) - NCAF - OS X El Capitan 10.11
+@change: 2015/11/09 Ekkehard - make eligible of OS X El Capitan
+@change: 2017/07/07 Ekkehard - make eligible for macOS High Sierra 10.13
+@change: 2017/11/13 Ekkehard - make eligible for OS X El Capitan 10.11+
+@change: 2018/06/08 Ekkehard - make eligible for macOS Mojave 10.14
 @change: 2018/10/50 Breen Malmberg - refactor of rule
-@change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
-'''
+@change: 2019/03/12 Ekkehard - make eligible for macOS Sierra 10.12+
+"""
 
 from __future__ import absolute_import
+
 import os
 import re
 import traceback
@@ -57,15 +58,21 @@ from ..stonixutilityfunctions import resetsecon
 
 
 class BlockSystemAccounts(Rule):
-    '''classdocs'''
+    """this module ensures that no system accounts have a login shell"""
 
     def __init__(self, config, enviro, logger, statechglogger):
-        '''
-        Constructor
-        @change: 04/18/2014 Dave Kennel Updated to new style configuration item.
-        '''
+        """
+        private method to initialize this module
+
+        :param config: configuration object instance
+        :param enviro: environment object instance
+        :param logger: logdispatcher object instance
+        :param statechglogger: statechglogger object instance
+        """
+
         Rule.__init__(self, config, enviro, logger, statechglogger)
         self.logger = logger
+        self.environ = enviro
         self.rulenumber = 40
         self.rulename = 'BlockSystemAccounts'
         self.formatDetailedResults("initialize")
@@ -75,8 +82,8 @@ class BlockSystemAccounts(Rule):
         self.rootrequired = True
         datatype = 'bool'
         key = 'BLOCKSYSACCOUNTS'
-        instructions = '''If you have system accounts that need to have valid \
-shells set the value of this to False, or No.'''
+        instructions = """If you have system accounts that need to have valid \
+shells set the value of this to False, or No."""
         default = True
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
@@ -92,22 +99,12 @@ shells set the value of this to False, or No.'''
         self.iditerator = 0
 
     def report(self):
-        '''The report method examines the current configuration and determines
-        whether or not it is correct. If the config is correct then the
-        self.compliant, self.detailed results and self.currstate properties are
-        updated to reflect the system status. self.rulesuccess will be updated
-        if the rule does not succeed.
+        """report on the status of the system's compliance with disallowing
+        system accounts to log in
 
+        :return: self.compliant - boolean; True if compliant, False if not
 
-        :returns: self.compliant
-
-        :rtype: bool
-@author: Breen Malmberg
-@change: Derek Walker
-@change: Breen Malmberg - 06/10/2015 - fixed some reporting variables;
-added correct mac os x implementation (/usr/bin/false)
-
-        '''
+        """
 
         self.detailedresults = ""
         self.compliant = True
@@ -128,22 +125,20 @@ added correct mac os x implementation (/usr/bin/false)
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception:
+            self.compliant = False
             self.detailedresults = traceback.format_exc()
             self.logger.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("report", self.compliant, self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+
         return self.compliant
 
     def getUIDMIN(self):
-        '''return this system's minimum user ID start value, if configured
+        """return this system's minimum user ID start value, if configured
 
+        :return: uid_min - string; system's user id starting value
 
-        :returns: uid_min
-
-        :rtype: string
-@author: Breen Malmberg
-
-        '''
+        """
 
         uid_min = ""
         logindefs = "/etc/login.defs"
@@ -170,13 +165,12 @@ added correct mac os x implementation (/usr/bin/false)
         return uid_min
 
     def getsystemaccounts(self):
-        '''
+        """
+        return a list of system accounts
 
+        :return: system_accounts_list - list of system accounts
 
-        :returns: system_accounts_list
-        #@rtype: list
-
-        '''
+        """
 
         system_accounts_list = []
 
@@ -213,12 +207,12 @@ added correct mac os x implementation (/usr/bin/false)
         return system_accounts_list
 
     def getloginshell(self, account):
-        '''
+        """
+        retrieve the login shell, of the passed account, from passwd
 
-        :param accountname: return:
-        :param account: 
-
-        '''
+        :param account: string; name of user account to get info for
+        :return: loginshell - string; default login shell path for account
+        """
 
         loginshell = ""
 
@@ -243,7 +237,11 @@ added correct mac os x implementation (/usr/bin/false)
         return loginshell
 
     def getsysloginshells(self):
-        ''' '''
+        """
+        return a dictionary of system accounts and their login shells
+
+        :return: system_login_shells - dictionary of system accounts and their login shells
+        """
 
         system_login_shells = {}
         system_accounts = self.getsystemaccounts()
@@ -254,31 +252,24 @@ added correct mac os x implementation (/usr/bin/false)
         return system_login_shells
 
     def setdefaultloginshell(self, account, shell):
-        '''
+        """
+        set default shell for given user account
 
-        :param account: return:
-        :param shell: 
+        :param account: string; name of user account to set default shell for
+        :param shell: the type of shell to set for the given user account
 
-        '''
+        """
 
         change_shell_cmd = "/usr/bin/chsh -s " + shell + " " + account
         self.ch.executeCommand(change_shell_cmd)
 
     def fix(self):
-        '''The fix method will apply the required settings to the system.
+        """The fix method will apply the required settings to the system.
         self.rulesuccess will be updated if the rule does not succeed.
 
+        :return: self.rulesuccess - boolean; True if fix succeeds, False if not
 
-        :returns: self.rulesuccess
-
-        :rtype: bool
-@author: Breen Malmberg
-@change: Derek Walker
-@change: Breen Malmberg - 06/10/2015 - pep8 housekeeping; readability improvements;
-refactored some logging and reporting and try/except code; implemented correct
-mac os x fix functionality
-
-        '''
+        """
 
         self.detailedresults = ""
         self.rulesuccess = True
@@ -322,8 +313,10 @@ mac os x fix functionality
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception:
+            self.rulesuccess = False
             self.detailedresults = traceback.format_exc()
             self.logger.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+
         return self.rulesuccess
