@@ -15,27 +15,28 @@
 #                                                                             #
 ###############################################################################
 
-'''
+"""
 Created on Sep 17, 2015
 The Boot Security rule configures the system to run a job at system boot time
 that handles turning off potential vulnerability points such as: wifi,
 bluetooth, microphones, and cameras.
 
-@author: dkennel
-@change: 2015/10/07 eball Help text cleanup
-@change: 2016/02/22 ekkehard Updated Plist Name from
-@change: 2016/04/26 ekkehard Results Formatting
-/Library/LaunchDaemons/stonixBootSecurity.plist to
-/Library/LaunchDaemons/gov.lanl.stonix.bootsecurity.plist
-@change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
-@change: 2017/08/28 - ekkehard - Added self.sethelptext()
-@change: 2017/10/23 rsn - change to new service helper interface
-@change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
-@change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
-@change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
-'''
+@author: Dave Kennel
+@change: 2015/10/07 Eric Ball Help text cleanup
+@change: 2016/02/22 Ekkehard Updated Plist Name from
+@change: 2016/04/26 Ekkehard Results Formatting
+        /Library/LaunchDaemons/stonixBootSecurity.plist to
+        /Library/LaunchDaemons/gov.lanl.stonix.bootsecurity.plist
+@change: 2017/07/07 Ekkehard - make eligible for macOS High Sierra 10.13
+@change: 2017/08/28 - Ekkehard - Added self.sethelptext()
+@change: 2017/10/23 Roy Nielsen - change to new service helper interface
+@change: 2017/11/13 Ekkehard - make eligible for OS X El Capitan 10.11+
+@change: 2018/06/08 Ekkehard - make eligible for macOS Mojave 10.14
+@change: 2019/03/12 Ekkehard - make eligible for macOS Sierra 10.12+
+"""
 
 from __future__ import absolute_import
+
 import traceback
 import os
 import re
@@ -47,17 +48,22 @@ from ..ServiceHelper import ServiceHelper
 
 
 class BootSecurity(Rule):
-    '''The Boot Security rule configures the system to run a job at system boot
+    """The Boot Security rule configures the system to run a job at system boot
     time that handles turning off potential vulnerability points such as: wifi,
     bluetooth, microphones, and cameras.
 
-
-    '''
+    """
 
     def __init__(self, config, environ, logger, statechglogger):
-        '''
-        Constructor
-        '''
+        """
+        private method to initialize the module
+
+        :param config: configuration object instance
+        :param environ: environment object instance
+        :param logger: logdispatcher object instance
+        :param statechglogger: statechglogger object instance
+        """
+
         Rule.__init__(self, config, environ, logger, statechglogger)
         self.rulenumber = 18
         self.rulename = 'BootSecurity'
@@ -86,7 +92,7 @@ class BootSecurity(Rule):
         self.launchdservice = '/Library/LaunchDaemons/gov.lanl.stonix.bootsecurity.plist'
         self.launchdservicename = 'gov.lanl.stonix.bootsecurity'
 
-        self.plist = '''<?xml version="1.0" encoding="UTF-8"?>
+        self.plist = """<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
@@ -97,23 +103,31 @@ class BootSecurity(Rule):
     <key>RunAtLoad</key>
     <true/>
 </dict>
-</plist>'''
+</plist>"""
 
         datatype = 'bool'
         key = 'BOOTSECURITY'
-        instructions = '''To disable this rule set the value of BOOTSECURITY \
-to False.'''
+        instructions = """To disable this rule set the value of BOOTSECURITY \
+to False."""
         default = True
         self.bootci = self.initCi(datatype, key, instructions, default)
 
     def auditsystemd(self):
+        """
+        check whether the stonixbootsecurity.service service
+        module is loaded
+
+        :return: boolean; True if the stonixbootsecurity.service service
+        module is loaded, False if not
+        """
+
         try:
             if self.servicehelper.auditService('stonixBootSecurity.service', serviceTarget=self.launchdservicename):
                 return True
             else:
                 return False
         except (KeyboardInterrupt, SystemExit):
-            # User initiated exit
+            
             raise
         except Exception:
             self.detailedresults = 'BootSecurity.auditsystemd: '
@@ -122,6 +136,13 @@ to False.'''
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
 
     def auditrclocal(self):
+        """
+        check whether the rclocal configuration file contains the correct
+        stonixBootSecurity line entry
+
+        :return: compliant - boolean; True if compliant, False if not
+        """
+
         try:
             compliant = False
             rhandle = open(self.rclocalpath, 'r')
@@ -134,24 +155,29 @@ to False.'''
                     continue
                 elif re.search('stonixBootSecurity', line):
                     compliant = True
-            return compliant
+
         except (KeyboardInterrupt, SystemExit):
-            # User initiated exit
             raise
         except Exception:
-            self.detailedresults = 'BootSecurity.auditrclocal: '
-            self.detailedresults = self.detailedresults + \
-            traceback.format_exc()
+            self.detailedresults += "\n" + traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
 
+        return compliant
+
     def auditmac(self):
+        """
+        check whether the stonixbootsecurity launchd job exists
+
+        :return: boolean; True if the stonixbootsecurity launchd job exists, False if not
+        """
+
         try:
             if os.path.exists(self.launchdservice):
                 return True
             else:
                 return False
         except (KeyboardInterrupt, SystemExit):
-            # User initiated exit
+            
             raise
         except Exception:
             self.detailedresults = 'BootSecurity.auditmac: '
@@ -160,6 +186,13 @@ to False.'''
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
 
     def report(self):
+        """
+        check whether the current system complies with the boot security settings
+        to disable wifi, bluetooth and microphone at boot time
+
+        :return: self.compliant - boolean; True if system is compliant, False if not
+        """
+
         self.detailedresults = ""
         if self.type == 'mac':
             self.logdispatch.log(LogPriority.DEBUG,
@@ -185,11 +218,18 @@ to False.'''
         if self.compliant:
             self.detailedresults = 'stonixBootSecurity correctly scheduled for execution at boot.'
             self.currstate = 'configured'
-        self.formatDetailedResults("report", self.compliant,
-                                   self.detailedresults)
+        self.formatDetailedResults("report", self.compliant, self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
 
+        return self.compliant
+
     def setsystemd(self):
+        """
+        create a systemd service unit which will run an installed script to
+        disable wifi, bluetooth and microphone at boot time
+
+        """
+
         try:
             fmode = 436  # Integer representation of 664
             unitFileContents = """[Unit]
@@ -216,7 +256,7 @@ WantedBy=multi-user.target
                 pass
             self.servicehelper.enableService('stonixBootSecurity', serviceTarget=self.launchdservicename)
         except (KeyboardInterrupt, SystemExit):
-            # User initiated exit
+            
             raise
         except Exception:
             self.detailedresults = 'BootSecurity.setsystemd: '
@@ -226,6 +266,12 @@ WantedBy=multi-user.target
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
 
     def setrclocal(self):
+        """
+        install and run a boot security script which will disable
+        wifi, bluetooth and microphone at boot time
+
+        """
+
         try:
             tempfile = self.rclocalpath + '.stonixtmp'
             command = '/usr/bin/stonix_resources/stonixBootSecurityLinux.py'
@@ -272,7 +318,7 @@ WantedBy=multi-user.target
             os.chown(self.rclocalpath, 0, 0)
             os.chmod(self.rclocalpath, 493)  # Integer of 0755
         except (KeyboardInterrupt, SystemExit):
-            # User initiated exit
+            
             raise
         except Exception:
             self.detailedresults = 'BootSecurity.setrclocal: '
@@ -282,6 +328,12 @@ WantedBy=multi-user.target
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
 
     def setmac(self):
+        """
+        install a boot security plist on mac, which will run an oascript
+        to disable microphone on mac at boot time
+
+        """
+
         try:
             self.removemacservices(True)
             whandle = open(self.launchdservice, 'w')
@@ -290,7 +342,7 @@ WantedBy=multi-user.target
             os.chown(self.launchdservice, 0, 0)
             os.chmod(self.launchdservice, 420)  # Integer of 0644
         except (KeyboardInterrupt, SystemExit):
-            # User initiated exit
+            
             raise
         except Exception:
             self.detailedresults = 'BootSecurity.setmac: '
@@ -300,6 +352,11 @@ WantedBy=multi-user.target
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
 
     def fix(self):
+        """
+        perform actions to disable wifi, bluetooth and microphone at boot time
+
+        """
+
         self.detailedresults = ""
         fixed = False
         if self.bootci.getcurrvalue():
@@ -327,7 +384,14 @@ WantedBy=multi-user.target
                                    self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
 
-    def removemacservices(self, oldServiceOnly = False):
+    def removemacservices(self, oldServiceOnly=False):
+        """
+        remove the boot security plist installed by STONIX during fix()
+
+        :param boolean oldServiceOnly: specify format of service to target
+
+        """
+
         try:
             self.detailedresults = 'BootSecurity.removemacservices: '
             oldservice = '/Library/LaunchDaemons/stonixBootSecurity.plist'
@@ -356,7 +420,7 @@ WantedBy=multi-user.target
                     self.detailedresults = self.detailedresults + \
                     "\r- removed " + str(self.launchdservice)
         except (KeyboardInterrupt, SystemExit):
-            # User initiated exit
+            
             raise
         except Exception:
             self.detailedresults = 'BootSecurity.removemacservices: '
@@ -366,6 +430,13 @@ WantedBy=multi-user.target
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
 
     def undo(self):
+        """
+        undo all fix actions which were previously performed on
+        this system, by this rule
+
+        :return:
+        """
+
         if self.type == 'mac':
             self.removemacservices()
         elif self.type == 'systemd':
