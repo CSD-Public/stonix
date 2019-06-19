@@ -15,34 +15,39 @@
 #                                                                             #
 ###############################################################################
 
-
-'''
+"""
 This method runs all the report methods for RuleKVEditors in defined in the
 dictionary
 
-@author: ekkehard j. koch
+@author: Ekkehard J. Koch
 @change: 2018/08/08 Original Implementation
 @change: 2019/03/12 Updated
-'''
+"""
+
 from __future__ import absolute_import
+
 import re
 import types
+
 from ..ruleKVEditor import RuleKVEditor
 from ..CommandHelper import CommandHelper
 from ..localize import APPLESOFTUPDATESERVER
 
 
 class ConfigureAppleAppStore(RuleKVEditor):
-    '''defaults write /Library/Preferences/com.apple.commerce AutoUpdate -bool [TRUE|FALSE]
-    
-    @author: ekkehard j. koch
-
-
-    '''
-
-###############################################################################
+    """This method runs all the report methods for RuleKVEditors in defined in the
+dictionary"""
 
     def __init__(self, config, environ, logdispatcher, statechglogger):
+        """
+        private method to initialize the module
+
+        :param config:
+        :param environ:
+        :param logdispatcher:
+        :param statechglogger:
+        """
+
         RuleKVEditor.__init__(self, config, environ, logdispatcher,
                               statechglogger)
         self.rulenumber = 263
@@ -57,7 +62,7 @@ class ConfigureAppleAppStore(RuleKVEditor):
                            'os': {'Mac OS X': ['10.14', 'r', '10.14.10']}}
 
         if self.environ.getostype() == "Mac OS X":
-        	self.addKVEditor("EnableAutomaticAppUpdate",
+            self.addKVEditor("EnableAutomaticAppUpdate",
                             "defaults",
                             "/Library/Preferences/com.apple.commerce",
                             "",
@@ -74,16 +79,31 @@ class ConfigureAppleAppStore(RuleKVEditor):
         self.appstorehasnotrun = True
 
     def beforereport(self):
+        """
+        return boolean indicating whether the rule has already run
+
+        :return: success - True if rule store has run; False if not
+        :rtype: bool
+
+        """
+
         success = True
         if self.appstorehasnotrun:
             self.appstorehasnotrun = False
         else:
             success = True
+
         return success
 
-###############################################################################
-
     def formatValue(self, pValue):
+        """
+        format unicode characters to their string literal equivalents
+
+        :param pValue: string; value to format
+        :return: outputvalue - formatted string
+        :rtype: basestring
+        """
+
         outputvalue = pValue
         datatype = type(outputvalue)
         if datatype == types.StringType:
@@ -97,4 +117,5 @@ class ConfigureAppleAppStore(RuleKVEditor):
                 outputvalue[i] = item
         else:
             outputvalue = outputvalue
+
         return outputvalue
