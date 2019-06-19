@@ -15,19 +15,22 @@
 #                                                                             #
 ###############################################################################
 
-'''
+"""
 Created on Oct 10, 2012
+
 This class checks the system partitions to see if best partitioning practices
 have been followed. The class is audit only.
-@author: dkennel
-@change: 02/12/2014 ekkehard Implemented self.detailedresults flow
-@change: 02/12/2014 ekkehard Implemented isapplicable
-@change: 2015/04/14 dkennel updated to use new isApplicable
-@change: 2015/10/07 eball Help text cleanup
-@change: 2017/08/28 ekkehard - Added self.sethelptext()
-'''
+
+@author: Dave Kennel
+@change: 02/12/2014 Ekkehard Implemented self.detailedresults flow
+@change: 02/12/2014 Ekkehard Implemented isapplicable
+@change: 2015/04/14 Dave Kennel updated to use new isApplicable
+@change: 2015/10/07 Eric Ball Help text cleanup
+@change: 2017/08/28 Ekkehard - Added self.sethelptext()
+"""
 
 from __future__ import absolute_import
+
 import re
 import traceback
 
@@ -36,17 +39,22 @@ from ..logdispatcher import LogPriority
 
 
 class CheckPartitioning(Rule):
-    '''This class checks the system partitions to see if best partitioning
+    """This class checks the system partitions to see if best partitioning
     practices have been followed. The class is audit only.This class inherits
     the base Rule class, which in turn inherits observable.
 
-
-    '''
+    """
 
     def __init__(self, config, environ, logger, statechglogger):
-        '''
-        Constructor
-        '''
+        """
+        private method to initialize the module
+
+        :param config: configuration object instance
+        :param environ: environment object instance
+        :param logger: logdispatcher object instance
+        :param statechglogger: statechglogger object instance
+        """
+
         Rule.__init__(self, config, environ, logger, statechglogger)
         self.config = config
         self.environ = environ
@@ -66,18 +74,13 @@ class CheckPartitioning(Rule):
         self.auditonly = True
 
     def report(self):
-        '''CheckPartitioning.report(): produce a report on whether or not the
+        """CheckPartitioning.report(): produce a report on whether or not the
         systems partitioning appears to follow best practices.
 
-
-        :returns: self.compliant
-
+        :return: self.compliant - True if compliant; False if not
         :rtype: bool
-@author: David Kennel
-@change: Breen Malmberg - 07/30/2018 - added potential missing format
-        detailedresults; minor docstring edit
 
-        '''
+        """
 
         self.detailedresults = ""
         self.compliant = True
