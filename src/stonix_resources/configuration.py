@@ -31,10 +31,11 @@
 #               Modified Date     $Date: 2011/10/24 14:00:00 $
 # ============================================================================ #
 
-'''
+"""
 Created on Aug 24, 2010
 
-@author: dkennel
+@author: Dave Kennel
+
 The Configuration object handles the STONIX config file. The config file is
 organized into sections by rule name as follows:
 ['MAIN']
@@ -49,7 +50,7 @@ Each directive has a user comment (uc) directive associated with it.
 Calls to getconfvalue for non-existent entries will generate a KeyError.
 
 @change: 2017/03/07 Added fismacat to [MAIN]
-'''
+"""
 
 import ConfigParser
 import sys
@@ -57,17 +58,19 @@ import os
 import re
 import inspect
 
+from .localize import STONIXVERSION
+
 
 class Configuration:
-
-    '''Manages the stonix configuration data. Constructor takes no arguments.
-    :version: 1.0
-    :author: David Kennel
-
-
-    '''
+    """Manages the stonix configuration data. Constructor takes no arguments"""
 
     def __init__(self, environment):
+        """
+        private method to initialize the module
+
+        :param environment: environment object instance
+        """
+
         self.environment = environment
         self.configpath = self.environment.get_config_path()
         # print 'DEBUG: CONFIGURATION: Config_path: ' + self.configpath
@@ -75,16 +78,16 @@ class Configuration:
         # print self.programconfig
 
     def getconfvalue(self, rulename, confkey):
-        '''Fetch the value for a given rule and key
+        """Fetch the value for a given rule and key
 
-        :param string: rulename : name of the rule
-        :param string: confkey : Keyword for configuration value
+        :param string rulename: name of the rule
+        :param string confkey: Keyword for configuration value
         :param rulename: 
         :param confkey: 
-        :returns: string :
-        @author D. Kennel
+        :returns: string
 
-        '''
+        """
+
         try:
             value = self.programconfig[rulename][confkey]
         except KeyError:
@@ -93,30 +96,26 @@ class Configuration:
         return value
 
     def writeconfig(self, simpleconf, ruledata):
-        '''Writes current configuration data to the config file. If simpleconf is
+        """Writes current configuration data to the config file. If simpleconf is
         True we only write values that are changed or values that are marked
         as being in the simple configuration.
 
-        :param bool: simpleconf : Bool for whether or not the configuration file
-        generated should be simple or full.
-        :param dict: ruledata a dictionary of lists keyed by rulename and
-        containing a packed list where index 0 is the rule help text and all
-        remaining entries (if any) are configurationitem instances.
+        :param bool simpleconf: whether or not the configuration file
+                generated should be simple or full.
+        :param dict ruledata: a dictionary of lists keyed by rulename and
+                containing a packed list where index 0 is the rule help text and all
+                remaining entries (if any) are configurationitem instances.
         :param simpleconf: 
         :param ruledata: 
-        :returns: void
-        @author D. Kennel
-        @change: 03/08/2018 - Breen Malmberg - changed 'uckey =' from
-                'UC' + key - to - key + "_UserComments" to be more user-friendly
-                in stonix.conf
 
-        '''
+        """
+
         confheader = """# STONIX.CONF
 # STONIX configuration file
 # This file is documented in the STONIX documentation. You may also review the
 # documentation for this file with man stonix.conf.
 [MAIN]
-version = 100
+version = """ + str(STONIXVERSION) + """
 
 # fismacat
 # Global variable that affects the rules selection and behavior.
@@ -125,9 +124,10 @@ version = 100
 # lower than the default set in localize.py. The higher the fismacat value
 # the more stringent STONIX's behavior becomes.
 # fismacat = 'low'"""
+
         conf = ''
         newline = '\n'
-        conf = conf + confheader
+        conf = conf + confheader + newline
         for rule in ruledata:
             sectionhead = '[' + rule + ']' + newline
             helptext = ruledata[rule][0]
@@ -135,6 +135,7 @@ version = 100
             helptext = re.sub('\\n', '\n# ', helptext)
             conf = conf + sectionhead
             conf = conf + helptext + newline
+
             for item in ruledata[rule]:
                 try:
                     key = item.getkey()
@@ -150,8 +151,11 @@ version = 100
                         for element in value:
                             newval = newval + element + ' '
                         value = newval
-                except(AttributeError):
+                except AttributeError:
                     continue
+                except:
+                    raise
+
                 uckey = key + '_UserComments'
                 kvline = key + ' = ' + str(value) + newline
                 instruct = instruct + newline
@@ -180,21 +184,20 @@ version = 100
         except IOError as err:
             print "ERROR: " + __name__ + ": line number " + str(inspect.currentframe().f_lineno) + ": " + type(err).__name__ + ": " + str(err)
             sys.exit(1)
+        except:
+            raise
 
     def getusercomment(self, rulename, confkey):
-        '''Returns the user comment text associated with a given rule and
+        """Returns the user comment text associated with a given rule and
         configuration key.
 
-        :param string: rulename : name of the rule
-        :param string: confkey :
+        :param string rulename: name of the rule
+        :param string confkey:
         :param rulename: 
         :param confkey: 
-        :returns: string :
-        @author D. Kennel
-        @change: 03/08/2018 - Breen Malmberg - changed uckey from 'uc' + confkey.lower() to
-                confkey.lower() + "_usercomments" so that entry in stonix.conf is more user-friendly
+        :returns: string
 
-        '''
+        """
 
         uckey = confkey.lower() + "_usercomments"
         usercomment = self.programconfig[rulename][uckey]

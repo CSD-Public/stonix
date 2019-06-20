@@ -15,33 +15,35 @@
 #                                                                             #
 ###############################################################################
 
-'''
+"""
 This method runs all the report methods for RuleKVEditors in defined in the
 dictionary
 
-@author: ekkehard j. koch
+@author: Ekkehard J. Koch
 @change: 2013/10/16 Original Implementation
-@change: 2014/02/12 ekkehard Implemented self.detailedresults flow
-@change: 2014/02/12 ekkehard Implemented isapplicable
-@change: 2014/04/09 ekkehard Decription Update
-@change: 2014/07/21 ekkehard added AllowPreReleaseInstallation
-@change: 2014/09/15 ekkehard fixed CatalogURL string
-@change: 2015/04/14 dkennel updated for new style isApplicable
-@change: 2015/09/21 ekkehard OS X El Capitan 10.11 & Implement New Guidance
-@change: 2015/10/07 eball Help text cleanup
-@change: 2016/04/28 ekkehard test enhancements
-@change: 2016/11/01 ekkehard add disable automatic macOS (OS X) updates
-@change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
-@change: 2017/08/28 ekkehard - Added self.sethelptext()
-@change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
-@change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
+@change: 2014/02/12 Ekkehard Implemented self.detailedresults flow
+@change: 2014/02/12 Ekkehard Implemented isapplicable
+@change: 2014/04/09 Ekkehard Decription Update
+@change: 2014/07/21 Ekkehard added AllowPreReleaseInstallation
+@change: 2014/09/15 Ekkehard fixed CatalogURL string
+@change: 2015/04/14 Dave Kennel updated for new style isApplicable
+@change: 2015/09/21 Ekkehard OS X El Capitan 10.11 & Implement New Guidance
+@change: 2015/10/07 Eric Ball Help text cleanup
+@change: 2016/04/28 Ekkehard test enhancements
+@change: 2016/11/01 Ekkehard add disable automatic macOS (OS X) updates
+@change: 2017/07/07 Ekkehard - make eligible for macOS High Sierra 10.13
+@change: 2017/08/28 Ekkehard - Added self.sethelptext()
+@change: 2017/11/13 Ekkehard - make eligible for OS X El Capitan 10.11+
+@change: 2018/06/08 Ekkehard - make eligible for macOS Mojave 10.14
 @change: 2018/11/07 Brandon R. Gonzales - Add reporting output/instructions to
             detailed results when the system requires software updates
 @change: 2018/11/16 Brandon R. Gonzales - ConfigureCatalogURL is now fixed
             through command helper.
-@change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
-'''
+@change: 2019/03/12 Ekkehard - make eligible for macOS Sierra 10.12+
+"""
+
 from __future__ import absolute_import
+
 import re
 import types
 import traceback
@@ -51,8 +53,9 @@ from ..CommandHelper import CommandHelper
 from ..logdispatcher import LogPriority
 from ..localize import APPLESOFTUPDATESERVER
 
+
 class ConfigureAppleSoftwareUpdate(RuleKVEditor):
-    '''This Mac Only rule does three things:
+    """This Mac Only rule does three things:
     To fix issue the following commands:
     
     1. Set the default Apple Software Update Server for the organization server
@@ -86,15 +89,19 @@ class ConfigureAppleSoftwareUpdate(RuleKVEditor):
     
     OS X Yosemite considerations:
     defaults write /Library/Preferences/com.apple.commerce AutoUpdate -bool [TRUE|FALSE]
-    
-    @author: ekkehard j. koch
 
-
-    '''
-
-###############################################################################
+    """
 
     def __init__(self, config, environ, logdispatcher, statechglogger):
+        """
+        private method to initialize the module
+
+        :param config: configuration object instance
+        :param environ: environment object instance
+        :param logdispatcher: logdispatcher object instance
+        :param statechglogger: statechglogger object instance
+        """
+
         RuleKVEditor.__init__(self, config, environ, logdispatcher,
                               statechglogger)
         self.rulenumber = 262
@@ -280,6 +287,12 @@ class ConfigureAppleSoftwareUpdate(RuleKVEditor):
         self.softwareupdatehasnotrun = True
 
     def beforereport(self):
+        """set a flag to indicate whether report has run yet or not
+
+        :return: success
+        :rtype: bool
+        """
+
         success = True
         if self.softwareupdatehasnotrun:
 # FIXME this is way to slow
@@ -290,18 +303,17 @@ class ConfigureAppleSoftwareUpdate(RuleKVEditor):
         return success
 
     def report(self):
-        '''Calls the inherited RuleKVEditor report method.
+        """Calls the inherited RuleKVEditor report method.
         
         Additionally checks that the APPLESOFTWAREUPDATESERVER constant is
         set, the ConfigureCatalogueURL kveditor item is enabled, and gives
         instructions on how to manually fix the RecommendedUpdates kveditor
         item if it is not compliant.
-        @author: Brandon R. Gonzales
 
+        :return: compliant - true if rule is compliant, false otherwise
+        :rtype: bool
 
-        :returns: bool - true if rule is compliant, false otherwise
-
-        '''
+        """
 
         # Invoke super method
         self.resultReset()
@@ -370,20 +382,18 @@ class ConfigureAppleSoftwareUpdate(RuleKVEditor):
         self.formatDetailedResults("report", self.compliant,
                                    self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+
         return compliant
 
     def fix(self):
-        '''Calls the inherited RuleKVEditor fix method.
+        """Calls the inherited RuleKVEditor fix method.
         
         Additionally fixes the ConfigureCatalogURL kveditor item though
         command helper(instead of using RuleKVEditor).
-        
-        @author: Brandon R. Gonzales
 
-
-        :returns: bool - True if fix was successful, False otherwise
-
-        '''
+        :return: success - True if fix was successful, False otherwise
+        :rtype: bool
+        """
         rulekvesuccess = RuleKVEditor.fix(self, True)
 
         try:
@@ -408,6 +418,7 @@ class ConfigureAppleSoftwareUpdate(RuleKVEditor):
 
             success = success and rulekvesuccess
             self.resultAppend(detailedresults)
+
         except (KeyboardInterrupt, SystemExit):
             success = False
             raise
@@ -426,17 +437,15 @@ class ConfigureAppleSoftwareUpdate(RuleKVEditor):
         return success
 
     def undo(self):
-        '''Calls the inherited RuleKVEditor undo method.
+        """Calls the inherited RuleKVEditor undo method.
         
         Additionally reverts the ConfigureCatalogURL kveditor item though
         command helper(instead of using RuleKVEditor).
-        
-        @author: Brandon R. Gonzales
 
+        :return: success - True if fix was successful, False otherwise
+        :rtype: bool
 
-        :returns: bool - True if fix was successful, False otherwise
-
-        '''
+        """
         rulekvesuccess = RuleKVEditor.undo(self)
 
         try:
@@ -449,12 +458,10 @@ class ConfigureAppleSoftwareUpdate(RuleKVEditor):
             success = success and rulekvesuccess
             self.resultAppend(detailedresults)
         except (KeyboardInterrupt, SystemExit):
-            success = False
             raise
-        except Exception, err:
+        except Exception as err:
             success = False
-            self.detailedresults = self.detailedresults + \
-            str(traceback.format_exc())
+            self.detailedresults += "\n" + traceback.format_exc()
             self.rulesuccess = False
             self.logdispatch.log(LogPriority.ERROR,
                                  [self.prefix(),
@@ -462,9 +469,14 @@ class ConfigureAppleSoftwareUpdate(RuleKVEditor):
                                   " - " + self.detailedresults])
         return success
 
-###############################################################################
-
     def formatValue(self, pValue):
+        """format a given argument as a clean string
+
+        :param pValue: argument to format
+        :return: outputvalue
+        :rtype: basestring
+        """
+
         outputvalue = pValue
         datatype = type(outputvalue)
         if datatype == types.StringType:
@@ -478,4 +490,5 @@ class ConfigureAppleSoftwareUpdate(RuleKVEditor):
                 outputvalue[i] = item
         else:
             outputvalue = outputvalue
+
         return outputvalue
