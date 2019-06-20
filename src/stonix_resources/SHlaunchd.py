@@ -15,7 +15,7 @@
 #                                                                             #
 ###############################################################################
 
-'''
+"""
 This object encapsulates the /bin/launchctl command for Service Helper
 
 @author: ekkehard
@@ -31,7 +31,7 @@ This object encapsulates the /bin/launchctl command for Service Helper
 @change: 2017/10/23 - rsn - switching service helper call interfaces to
         service helper second generation, not second generation
         functionality
-'''
+"""
 
 import re
 import CommandHelper
@@ -41,16 +41,16 @@ from stonixutilityfunctions import reportStack
 
 
 class SHlaunchd(ServiceHelperTemplate):
-    '''SHlaunchd is the Service Helper for systems using the launchd command to
+    """SHlaunchd is the Service Helper for systems using the launchd command to
     configure services. (Apple's OS X 10.6, 10.7, 10.8, 10.9, 10.10, etc.)
 
 
-    '''
+    """
 
     def __init__(self, environment, logdispatcher):
-        '''
+        """
         Constructor
-        '''
+        """
         super(SHlaunchd, self).__init__(environment, logdispatcher)
         self.environment = environment
         self.logdispatcher = logdispatcher
@@ -62,7 +62,7 @@ class SHlaunchd(ServiceHelperTemplate):
         self.ch = CommandHelper.CommandHelper(logdispatcher)
 
     def targetValid(self, service, **kwargs):
-        '''Validate a service or domain target, possibly via
+        """Validate a service or domain target, possibly via
         servicename|serviceName|servicetarget|serviceTarget|domaintarget|domainTarget.
 
         :param service: 
@@ -72,8 +72,8 @@ class SHlaunchd(ServiceHelperTemplate):
         
         @author: Roy Nielsen
 
-        '''
-        target = False
+        """
+
         if service:
             pass
         if 'servicename' in kwargs:
@@ -86,7 +86,7 @@ class SHlaunchd(ServiceHelperTemplate):
             target = kwargs.get('domainTarget')
         elif 'serviceTarget' in kwargs:
             target = kwargs.get('servicetarget')
-        elif 'domainTarget' in kwargs:
+        elif 'domaintarget' in kwargs:
             target = kwargs.get('domaintarget')
         else:
             raise ValueError(reportStack(2) + "Either the service (full " +
@@ -98,7 +98,7 @@ class SHlaunchd(ServiceHelperTemplate):
         return target
 
     def disableService(self, service, **kwargs):
-        '''Disables the service and terminates it if it is running.
+        """Disables the service and terminates it if it is running.
 
         :param service: string: Name of the service to be disabled
         :param serviceTarget: string: Short Name of the service to be disabled
@@ -108,7 +108,7 @@ class SHlaunchd(ServiceHelperTemplate):
         :returns: servicesuccess
         :rtype: bool
 
-        '''
+        """
 
         servicesuccess = False
 
@@ -136,7 +136,7 @@ class SHlaunchd(ServiceHelperTemplate):
         return servicesuccess
 
     def enableService(self, service, **kwargs):
-        '''Enables a service and starts it if it is not running as long as we are
+        """Enables a service and starts it if it is not running as long as we are
         not in install mode
 
         :param service: string: Name of the service to be enabled
@@ -144,7 +144,7 @@ class SHlaunchd(ServiceHelperTemplate):
         :param **kwargs: 
         :returns: Bool indicating success status
 
-        '''
+        """
         serviceTarget = self.targetValid(service, **kwargs)
         if serviceTarget:
             try:
@@ -196,10 +196,9 @@ class SHlaunchd(ServiceHelperTemplate):
 
             except Exception:
                 raise
-            return False
 
     def auditService(self, service, **kwargs):
-        '''Use launchctl to determine if a given service is configured
+        """Use launchctl to determine if a given service is configured
         to run (aka currently loaded). Return True if so. Return
         False if not.
 
@@ -219,7 +218,7 @@ class SHlaunchd(ServiceHelperTemplate):
         :returns: isloaded
         :rtype: bool
 
-        '''
+        """
 
         self.logdispatcher.log(LogPriority.DEBUG, "Entering SHlaunchd.auditservice()...")
 
@@ -277,7 +276,7 @@ class SHlaunchd(ServiceHelperTemplate):
         return isloaded
 
     def isRunning(self, service, **kwargs):
-        '''Use launchctl to determine if the given service is currnetly
+        """Use launchctl to determine if the given service is currnetly
         running or not. Return True if it is. Return False if it is not.
 
         :param service: string: Name of the service to be checked
@@ -291,7 +290,7 @@ class SHlaunchd(ServiceHelperTemplate):
         :returns: isrunning
         :rtype: bool
 
-        '''
+        """
 
         self.logdispatcher.log(LogPriority.DEBUG, "Entering SHlaunchd.isrunning()...")
 
@@ -354,7 +353,7 @@ class SHlaunchd(ServiceHelperTemplate):
         return isrunning
 
     def reloadService(self, service, **kwargs):
-        '''Reload (HUP) a service so that it re-reads it's config files. Called
+        """Reload (HUP) a service so that it re-reads it's config files. Called
         by rules that are configuring a service to make the new configuration
         active.
 
@@ -363,18 +362,17 @@ class SHlaunchd(ServiceHelperTemplate):
         :returns: reloadsuccess
         :rtype: bool
 
-        '''
+        """
 
         self.logdispatcher.log(LogPriority.DEBUG, "Entering SHlaunchd.reloadservice()...")
+
+        reloadsuccess = True
 
         serviceTarget = self.targetValid(service, **kwargs)
         if serviceTarget:
             servicelong = service
-            reloadsuccess = True
             unloadcmd = [self.launchd, "unload", servicelong]
             loadcmd = [self.launchd, "load", servicelong]
-            errmsg = ""
-            errmsg2 = ""
 
             try:
 
@@ -402,15 +400,17 @@ class SHlaunchd(ServiceHelperTemplate):
 
             except Exception:
                 raise
+        else:
+            reloadsuccess = False
         return reloadsuccess
 
     def listServices(self):
-        '''Return a list containing strings that are service names.
+        """Return a list containing strings that are service names.
 
 
         :returns: list
 
-        '''
+        """
         servicelist = []
         command = [self.launchd, 'list']
         if self.ch.executeCommand(command):
@@ -420,14 +420,14 @@ class SHlaunchd(ServiceHelperTemplate):
         return servicelist
 
     def startService(self, service, **kwargs):
-        '''start a service.
+        """start a service.
 
         :param service: string: Name of the service to be started
         :param serviceTarget: string: Short Name of the service to be started
         :param **kwargs: 
         :returns: bool indicating success
 
-        '''
+        """
         servicesuccess = False
         serviceTarget = self.targetValid(service, **kwargs)
         if serviceTarget:
@@ -447,13 +447,13 @@ class SHlaunchd(ServiceHelperTemplate):
         return servicesuccess
 
     def stopService(self, service, **kwargs):
-        '''stop a service.
+        """stop a service.
 
         :param service: 
         :param **kwargs: 
         :returns: bool indicating success
 
-        '''
+        """
         servicesuccess = True
         serviceTarget = self.targetValid(service, **kwargs)
         if serviceTarget:
@@ -473,52 +473,52 @@ class SHlaunchd(ServiceHelperTemplate):
         return servicesuccess
 
     def getStartCommand(self, service):
-        '''retrieve the start command.  Mostly used by event recording
+        """retrieve the start command.  Mostly used by event recording
 
         :param service: 
         :returns: string - start command
         @author: dwalker
 
-        '''
+        """
         serviceTarget = self.targetValid(service)
         if serviceTarget:
             command = [self.launchd, 'start', 'job', serviceTarget]
             return command
 
     def getStopCommand(self, service):
-        '''retrieve the stop command.  Mostly used by event recording
+        """retrieve the stop command.  Mostly used by event recording
 
         :param service: 
         :returns: string - stop command
         @author: dwalker
 
-        '''
+        """
         serviceTarget = self.targetValid(service)
         if serviceTarget:
             command = [self.launchd, 'stop', 'job ', serviceTarget]
             return command
 
     def getEnableCommand(self, service):
-        '''retrieve the enable command.  Mostly used by event recording
+        """retrieve the enable command.  Mostly used by event recording
 
         :param service: 
         :returns: string - enable command
         @author: dwalker
 
-        '''
+        """
         serviceTarget = self.targetValid(service)
         if serviceTarget:
             command = [self.launchd, 'load', "-w", service]
             return command
 
     def getDisableCommand(self, service):
-        '''retrieve the start command.  Mostly used by event recording
+        """retrieve the start command.  Mostly used by event recording
 
         :param service: 
         :returns: string - disable command
         @author: dwalker
 
-        '''
+        """
         serviceTarget = self.targetValid(service)
         if serviceTarget:
             command = [self.launchd, 'unload', service]
