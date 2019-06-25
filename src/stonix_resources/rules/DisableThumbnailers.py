@@ -101,8 +101,9 @@ class DisableThumbnailers(Rule):
         self.ch = CommandHelper(self.logger)
         self.ph = Pkghelper(self.logger, self.environ)
         self.gnome_installed = False
-        if [self.ph.check(p) for p in packages]:
-            self.gnome_installed = True
+        if self.environ.getosname() != "Mac OS":
+            if [self.ph.check(p) for p in packages]:
+                self.gnome_installed = True
 
     def report(self):
         """check the gdm/gnome setting for thumbnailers to determine
@@ -194,7 +195,7 @@ class DisableThumbnailers(Rule):
                 else:
                     self.setLockFile()
 
-                if self.dconf:
+                if os.path.exists(self.dconf):
                     self.ch.executeCommand(self.updatecmd)
             else:
                 self.logger.log(LogPriority.DEBUG, "CI not enabled. Fix was not performed.")
