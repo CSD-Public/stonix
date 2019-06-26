@@ -114,7 +114,7 @@ class SoftwareBuilder():
         # helper class initialization
         self.logger = CyLogger(level=debug)
         # initialize the logger object to log macbuild.py logs according to tracker artf55027
-        self.logger.initializeLogs(log_dir=log_path, filename=log_name)
+        self.logger.initializeLogs(logdir=log_path, filename=log_name)
         self.rw = RunWith(self.logger)
         self.mu = ManageUser(self.logger)
         self.mk = ManageKeychain(self.logger)
