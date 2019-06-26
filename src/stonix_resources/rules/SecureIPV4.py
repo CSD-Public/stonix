@@ -41,6 +41,7 @@ variable.
 @change: 2019/06/05 dwalker - refactored linux portion of rule to be
     consistent with other rules that handle sysctl and to properly
     handle sysctl by writing to /etc/sysctl.conf and also using command
+@change: 2019/06/26 Brandon R. Gonzales - Fix MacOS CI logic in fix()
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import resetsecon, iterate, readFile, writeFile
@@ -265,6 +266,7 @@ class SecureIPV4(Rule):
         compliant = True
 
         try:
+            self.editor = None
 
             if not os.path.exists(self.path):
                 self.detailedresults += self.path + " does not exist\n"
@@ -371,8 +373,6 @@ class SecureIPV4(Rule):
 
         '''
         try:
-            if not self.networkTuning1 and not self.networkTuning2:
-                return
             self.detailedresults = ""
             success = True
             self.iditerator = 0
@@ -381,20 +381,34 @@ class SecureIPV4(Rule):
                 self.statechglogger.deleteentry(event)
 
             if self.environ.getosfamily() == "linux":
-                self.rulesuccess = self.fixLinux()
+                if self.networkTuning1 and self.networkTuning2:
+                    success = self.fixLinux()
+                else:
+                    self.detailedresults += "Required CI has not been initialized."
+                    success = False
             elif self.environ.getosfamily() == "freebsd":
-                self.rulesuccess = self.fixFreebsd()
+                if self.networkTuning1 and self.networkTuning2:
+                    success = self.fixFreebsd()
+                else:
+                    self.detailedresults += "Required CI has not been initialized."
+                    success = False
             elif self.environ.getosfamily() == "darwin":
-                self.rulesuccess = self.fixMac()
+                if self.networkTuning2:
+                    success = self.fixMac()
+                else:
+                    self.detailedresults += "Required CI has not been initialized."
+                    success = False
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception:
-            self.rulesuccess = False
             self.detailedresults += "\n" + traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("fix", self.rulesuccess,
-                                   self.detailedresults)
+            success = False
+        self.formatDetailedResults("fix", success, self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+
+        self.rulesuccess = success
+        return success
 
     def fixLinux(self):
         success = True
@@ -424,7 +438,7 @@ class SecureIPV4(Rule):
                                 self.statechglogger, myid):
                     success = False
         lfc = {}
-        if self.networkTuning1.getcurrvalue():
+        if self.networkTuning1 and self.networkTuning1.getcurrvalue():
             lfc.update({"net.ipv4.conf.all.secure_redirects": "0",
                         "net.ipv4.conf.all.accept_redirects": "0",
                         "net.ipv4.conf.all.rp_filter": "1",
@@ -437,7 +451,7 @@ class SecureIPV4(Rule):
                         "net.ipv4.tcp_syncookies": "1",
                         "net.ipv4.icmp_echo_ignore_broadcasts": "1",
                         "net.ipv4.tcp_max_syn_backlog": "4096"})
-        if self.networkTuning2.getcurrvalue():
+        if self.networkTuning2 and self.networkTuning2.getcurrvalue():
             lfc.update({"net.ipv4.conf.default.send_redirects": "0",
                         "net.ipv4.conf.all.send_redirects": "0",
                         "net.ipv4.ip_forward": "0"})
