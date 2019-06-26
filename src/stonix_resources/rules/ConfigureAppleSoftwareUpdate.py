@@ -127,19 +127,20 @@ class ConfigureAppleSoftwareUpdate(RuleKVEditor):
 
             self.ccurlci = None
             if self.checkConsts([APPLESOFTUPDATESERVER]):
+                # ConfigureCatalogURL ci needs to be set up manually because
+                # it is reported with kveditor and fixed with command helper
+                datatype = 'bool'
+                key = 'CONFIGURECATALOGURL'
+                instructions = "Set software update server (AppleCatalogURL) to '" + \
+                               str(APPLESOFTUPDATESERVER) + \
+                               "'. This should always be enabled. If disabled " + \
+                               " it will point to the Apple Software Update " + \
+                               "Server. NOTE: your system will report as not " + \
+                               "compliant if you disable this option."
+                default = True
+                self.ccurlci = self.initCi(datatype, key, instructions, default)
+
                 if self.environ.geteuid() == 0:
-                    # ConfigureCatalogURL ci needs to be set up manually because
-                    # it is reported with kveditor and fixed with command helper
-                    datatype = 'bool'
-                    key = 'CONFIGURECATALOGURL'
-                    instructions = "Set software update server (AppleCatalogURL) to '" + \
-                                   str(APPLESOFTUPDATESERVER) + \
-                                   "'. This should always be enabled. If disabled " + \
-                                   " it will point to the Apple Software Update " + \
-                                   "Server. NOTE: your system will report as not " + \
-                                   "compliant if you disable this option."
-                    default = True
-                    self.ccurlci = self.initCi(datatype, key, instructions, default)
                     self.addKVEditor("ConfigureCatalogURL",
                                      "defaults",
                                      softwareupdate_path,
