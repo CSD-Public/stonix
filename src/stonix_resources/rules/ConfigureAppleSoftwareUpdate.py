@@ -40,6 +40,8 @@ dictionary
 @change: 2018/11/16 Brandon R. Gonzales - ConfigureCatalogURL is now fixed
             through command helper.
 @change: 2019/03/12 Ekkehard - make eligible for macOS Sierra 10.12+
+@change: 2019/06/26 Brandon R. Gonzales - Stop user from reporting on
+            ConfigureCatalogueURL as it can only be fixed by root
 """
 
 from __future__ import absolute_import
@@ -125,30 +127,31 @@ class ConfigureAppleSoftwareUpdate(RuleKVEditor):
 
             self.ccurlci = None
             if self.checkConsts([APPLESOFTUPDATESERVER]):
-                # ConfigureCatalogURL ci needs to be set up manually because
-                # it is reported with kveditor and fixed with command helper
-                datatype = 'bool'
-                key = 'CONFIGURECATALOGURL'
-                instructions = "Set software update server (AppleCatalogURL) to '" + \
-                               str(APPLESOFTUPDATESERVER) + \
-                               "'. This should always be enabled. If disabled " + \
-                               " it will point to the Apple Software Update " + \
-                               "Server. NOTE: your system will report as not " + \
-                               "compliant if you disable this option."
-                default = True
-                self.ccurlci = self.initCi(datatype, key, instructions, default)
-                self.addKVEditor("ConfigureCatalogURL",
-                                 "defaults",
-                                 softwareupdate_path,
-                                 "",
-                                 {"AppleCatalogURL": [str(APPLESOFTUPDATESERVER),
-                                                      str(APPLESOFTUPDATESERVER)]},
-                                 "present",
-                                 "",
-                                 instructions,
-                                 None,
-                                 True,
-                                 {})
+                if self.environ.geteuid() == 0:
+                    # ConfigureCatalogURL ci needs to be set up manually because
+                    # it is reported with kveditor and fixed with command helper
+                    datatype = 'bool'
+                    key = 'CONFIGURECATALOGURL'
+                    instructions = "Set software update server (AppleCatalogURL) to '" + \
+                                   str(APPLESOFTUPDATESERVER) + \
+                                   "'. This should always be enabled. If disabled " + \
+                                   " it will point to the Apple Software Update " + \
+                                   "Server. NOTE: your system will report as not " + \
+                                   "compliant if you disable this option."
+                    default = True
+                    self.ccurlci = self.initCi(datatype, key, instructions, default)
+                    self.addKVEditor("ConfigureCatalogURL",
+                                     "defaults",
+                                     softwareupdate_path,
+                                     "",
+                                     {"AppleCatalogURL": [str(APPLESOFTUPDATESERVER),
+                                                          str(APPLESOFTUPDATESERVER)]},
+                                     "present",
+                                     "",
+                                     instructions,
+                                     None,
+                                     True,
+                                     {})
             else:
                 self.detailedresults += "\nThe Configure Catalogue URL portion of this rule requires that the constant: APPLESOFTWAREUPDATESERVER be defined and not None. Please ensure this constant is set properly in localize.py"
             osxversion = str(self.environ.getosver())
