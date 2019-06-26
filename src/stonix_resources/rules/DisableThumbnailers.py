@@ -156,7 +156,7 @@ class DisableThumbnailers(Rule):
 
         compliant = True
 
-        if not os.path.exists(self.locksetting):
+        if not os.path.exists(self.lockfile):
             compliant = False
             self.detailedresults += "\nThe thumbnailers lock file doesn't exist"
             return compliant
@@ -243,3 +243,4 @@ class DisableThumbnailers(Rule):
             f.close()
             os.chmod(self.lockfile, 0644)
             os.chown(self.lockfile, 0, 0)
+        else:
