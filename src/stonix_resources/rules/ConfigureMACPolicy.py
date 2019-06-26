@@ -277,6 +277,7 @@ class ConfigureMACPolicy(Rule):
 
         success = True
         self.iditerator = 0
+        activate_utility = "/usr/sbin/selinux-activate"
 
         # install selinux package if it is not installed
         if not self.ph.check(self.mac_package):
@@ -289,6 +290,12 @@ class ConfigureMACPolicy(Rule):
                 event = {"eventtype":"pkghelper",
                          "pkgname":self.mac_package}
                 self.statechglogger.recordchgevent(myid, event)
+
+        if os.path.exists(activate_utility):
+            self.ch.executeCommand(activate_utility)
+            output = self.ch.getOutputString()
+            if re.search("need to reboot", output, re.I):
+                self.detailedresults += "\nSElinux has been configured, but you will need to reboot before selinux can become active. This rule will not report compliant until this is done."
 
         # set enforcement mode for selinux
         self.ch.executeCommand("/usr/sbin/setenforce " + self.mode)
