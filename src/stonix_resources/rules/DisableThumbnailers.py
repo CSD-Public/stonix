@@ -243,4 +243,3 @@ class DisableThumbnailers(Rule):
             f.close()
             os.chmod(self.lockfile, 0644)
             os.chown(self.lockfile, 0, 0)
-        else:
