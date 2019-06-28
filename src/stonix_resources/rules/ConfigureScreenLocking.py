@@ -314,8 +314,8 @@ class ConfigureScreenLocking(RuleKVEditor):
                             del tempdict[cmd]
                     #check if value is correct with associated key
                     elif output[0].strip() != getcmds[cmd]:
-                        self.detailedresults += cmd2 + " didn't produce the \
-                            desired value after being run which is " + \
+                        self.detailedresults += cmd2 + " didn't produce the " + \
+                            "desired value after being run which is " + \
                             getcmds[cmd] + "\n"
                     #value is correct so remove it from the tempdict
                     else:
@@ -461,7 +461,7 @@ class ConfigureScreenLocking(RuleKVEditor):
                 # reboot.  Check the file for the correct contents
                 self.dconfsettingslock = "/etc/dconf/db/local.d/locks/stonix-settings.conf"
                 self.dconflockdata = ["/org/gnome/desktop/session/idle-delay",
-                                      "/org/gnome/desktop/session/idle-activation-enabled",
+                                      "/org/gnome/desktop/screensaver/idle-activation-enabled",
                                       "/org/gnome/desktop/screensaver/lock-enabled",
                                       "/org/gnome/desktop/screensaver/lock-delay",
                                       "/org/gnome/desktop/screensaver/picture-uri"]
@@ -714,21 +714,20 @@ class ConfigureScreenLocking(RuleKVEditor):
                         success = False
 
         if os.path.exists(gsettings):
-            setcmds = [" set org.gnome.desktop.screensaver " +
-                       "idle-activation-enabled true",
-                       " set org.gnome.desktop.screensaver lock-enabled true",
-                       " set org.gnome.desktop.screensaver lock-delay 0",
-                       " set org.gnome.desktop.screensaver picture-opacity 100",
-                       " set org.gnome.desktop.screensaver picture-uri ''",
-                       " set org.gnome.desktop.session idle-delay 900"]
+            setcmds = ["org.gnome.desktop.screensaver idle-activation-enabled true",
+                       "org.gnome.desktop.screensaver lock-enabled true",
+                       "org.gnome.desktop.screensaver lock-delay 0",
+                       "org.gnome.desktop.screensaver picture-opacity 100",
+                       "org.gnome.desktop.screensaver picture-uri ''",
+                       "org.gnome.desktop.session idle-delay 900"]
                        # " set org.gnome.desktop.session idle-delay " + self.gsettingsidletime]
             for cmd in setcmds:
-                cmd2 = gsettings + cmd
+                cmd2 = gsettings + " set " + cmd
                 self.cmdhelper.executeCommand(cmd2)
                 if self.cmdhelper.getReturnCode() != 0:
                     success = False
                     info += "Unable to set value for " + cmd + \
-                        "using gsettings\n"
+                        " using gsettings\n"
 
             # Set gsettings with dconf
             # Unlock dconf settings
@@ -756,7 +755,7 @@ class ConfigureScreenLocking(RuleKVEditor):
                         else:
                             os.rename(tmpfile, self.dconfsettingslock)
                             os.chown(self.dconfsettingslock, 0, 0)
-                            os.chmod(self.dconfsettingslock, 493)
+                            os.chmod(self.dconfsettingslock, 0o644)
                             resetsecon(self.dconfsettingslock)
                 # Create dconf user profile file
                 if not os.path.exists(self.dconfuserprofile):
@@ -780,7 +779,7 @@ class ConfigureScreenLocking(RuleKVEditor):
                     else:
                         os.rename(tmpfile, self.dconfuserprofile)
                         os.chown(self.dconfuserprofile, 0, 0)
-                        os.chmod(self.dconfuserprofile, 493)
+                        os.chmod(self.dconfuserprofile, 0o644)
                         resetsecon(self.dconfuserprofile)
                 # Fix dconf settings
                 if not os.path.exists(self.dconfsettings):
@@ -901,7 +900,7 @@ class ConfigureScreenLocking(RuleKVEditor):
         uid = getpwnam(user)[2]
         gid = getpwnam(user)[3]
 
-        if uid and gid:
+        if uid != "" and gid != "":
             os.chmod(kfile, 0600)
             os.chown(kfile, uid, gid)
             resetsecon(kfile)

@@ -38,6 +38,10 @@ variable.
 @change: 2019/4/11/ dwalker - removed solaris code and other unnecessary
     code, updated linux fix to be more efficient and record change events
     properly.
+@change: 2019/06/05 dwalker - refactored linux portion of rule to be
+    consistent with other rules that handle sysctl and to properly
+    handle sysctl by writing to /etc/sysctl.conf and also using command
+@change: 2019/06/26 Brandon R. Gonzales - Fix MacOS CI logic in fix()
 '''
 from __future__ import absolute_import
 from ..stonixutilityfunctions import resetsecon, iterate, readFile, writeFile
@@ -185,6 +189,21 @@ class SecureIPV4(Rule):
                 self.detailedresults += "Permissions are incorrect on " + \
                     self.path + "\n"
                 compliant = False
+        for key in lfc:
+            self.ch.executeCommand("/sbin/sysctl " + key)
+            retcode = self.ch.getReturnCode()
+
+            if retcode != 0:
+                self.detailedresults += "Failed to get value of core dumps configuration with sysctl command\n"
+                errmsg = self.ch.getErrorString()
+                self.logger.log(LogPriority.DEBUG, errmsg)
+                compliant = False
+            else:
+                output = self.ch.getOutputString()
+                if output.strip() != key + " = " + lfc[key]:
+                    compliant = False
+                    self.detailedresults += "sysctl output has incorrect value: " + \
+                        output + "\n"
         return compliant
 
     def reportLinux2(self):
@@ -210,6 +229,22 @@ class SecureIPV4(Rule):
                 self.detailedresults += self.path + " is not configured " + \
                     "correctly for configuration item 2\n"
                 compliant = False
+
+        for key in lfc:
+            self.ch.executeCommand("/sbin/sysctl " + key)
+            retcode = self.ch.getReturnCode()
+
+            if retcode != 0:
+                self.detailedresults += "Failed to get value of core dumps configuration with sysctl command\n"
+                errmsg = self.ch.getErrorString()
+                self.logger.log(LogPriority.DEBUG, errmsg)
+                compliant = False
+            else:
+                output = self.ch.getOutputString()
+                if output.strip() != key + " = " + lfc[key]:
+                    compliant = False
+                    self.detailedresults += "sysctl output has incorrect value: " + \
+                        output + "\n"
         return compliant
 
     def reportMac(self):
@@ -231,6 +266,7 @@ class SecureIPV4(Rule):
         compliant = True
 
         try:
+            self.editor = None
 
             if not os.path.exists(self.path):
                 self.detailedresults += self.path + " does not exist\n"
@@ -337,8 +373,6 @@ class SecureIPV4(Rule):
 
         '''
         try:
-            if not self.networkTuning1 and not self.networkTuning2:
-                return
             self.detailedresults = ""
             success = True
             self.iditerator = 0
@@ -347,40 +381,64 @@ class SecureIPV4(Rule):
                 self.statechglogger.deleteentry(event)
 
             if self.environ.getosfamily() == "linux":
-                self.rulesuccess = self.fixLinux()
+                if self.networkTuning1 and self.networkTuning2:
+                    success = self.fixLinux()
+                else:
+                    self.detailedresults += "Required CI has not been initialized."
+                    success = False
             elif self.environ.getosfamily() == "freebsd":
-                self.rulesuccess = self.fixFreebsd()
+                if self.networkTuning1 and self.networkTuning2:
+                    success = self.fixFreebsd()
+                else:
+                    self.detailedresults += "Required CI has not been initialized."
+                    success = False
             elif self.environ.getosfamily() == "darwin":
-                self.rulesuccess = self.fixMac()
+                if self.networkTuning2:
+                    success = self.fixMac()
+                else:
+                    self.detailedresults += "Required CI has not been initialized."
+                    success = False
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception:
-            self.rulesuccess = False
             self.detailedresults += "\n" + traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("fix", self.rulesuccess,
-                                   self.detailedresults)
+            success = False
+        self.formatDetailedResults("fix", success, self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+
+        self.rulesuccess = success
+        return success
 
     def fixLinux(self):
         success = True
         created = False
         debug = ""
-        if not os.path.exists(self.path):
-            if createFile(self.path, self.logger):
+        sysctl = "/etc/sysctl.conf"
+        tmpfile = sysctl + ".tmp"
+        if not os.path.exists(sysctl):
+            if createFile(sysctl, self.logger):
                 created = True
+                setPerms(sysctl, [0, 0, 0o644], self.logger)
                 self.iditerator += 1
                 myid = iterate(self.iditerator, self.rulenumber)
                 event = {"eventtype": "creation",
-                         "filepath": self.path}
+                         "filepath": sysctl}
                 self.statechglogger.recordchgevent(myid, event)
             else:
                 self.detailedresults += "Could not create file " + self.path + \
                     "\n"
                 self.formatDetailedResults("fix", False,
                                            self.detailedresults)
+        if not checkPerms(sysctl, [0, 0, 0o644], self.logger):
+            if not created:
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                if not setPerms(sysctl, [0, 0, 0o644], self.logger,
+                                self.statechglogger, myid):
+                    success = False
         lfc = {}
-        if self.networkTuning1.getcurrvalue():
+        if self.networkTuning1 and self.networkTuning1.getcurrvalue():
             lfc.update({"net.ipv4.conf.all.secure_redirects": "0",
                         "net.ipv4.conf.all.accept_redirects": "0",
                         "net.ipv4.conf.all.rp_filter": "1",
@@ -393,50 +451,72 @@ class SecureIPV4(Rule):
                         "net.ipv4.tcp_syncookies": "1",
                         "net.ipv4.icmp_echo_ignore_broadcasts": "1",
                         "net.ipv4.tcp_max_syn_backlog": "4096"})
-        if self.networkTuning2.getcurrvalue():
+        if self.networkTuning2 and self.networkTuning2.getcurrvalue():
             lfc.update({"net.ipv4.conf.default.send_redirects": "0",
                         "net.ipv4.conf.all.send_redirects": "0",
                         "net.ipv4.ip_forward": "0"})
         self.editor = KVEditorStonix(self.statechglogger, self.logger,
-                                         "conf", self.path, self.tmpPath,
+                                         "conf", sysctl, tmpfile,
                                          lfc, "present", "openeq")
-        self.editor.report()
-        if self.editor.fixables:
-            if not created:
-                self.iditerator += 1
-                myid = iterate(self.iditerator, self.rulenumber)
-                self.editor.setEventID(myid)
-            if not self.editor.fix():
-                success = False
-                debug = "KVEditor fix of " + self.path + \
-                                        " was not successful\n"
-                self.logger.log(LogPriority.DEBUG, debug)
-            elif not self.editor.commit():
-                success = False
-                debug = "KVEditor commit to " + \
-                    self.path + " was not successful\n"
-                self.logger.log(LogPriority.DEBUG, debug)
-            resetsecon(self.path)
-            cmd = "/sbin/sysctl -p"
-            if not self.ch.executeCommand(cmd):
-                success = False
-                self.detailedresults += "Unable to reload changes to " + self.path + "\n"
-                debug = "Unable to reload changes to " + self.path + "\n"
-                self.logger.log(LogPriority.DEBUG, debug)
-        if not checkPerms(self.path, [0, 0, 0o644], self.logger):
-            if not created:
-                self.iditerator += 1
-                myid = iterate(self.iditerator, self.rulenumber)
-                if not setPerms(self.path, [0, 0, 0o644], self.logger,
-                                self.statechglogger, myid):
-                    self.detailedresults += "Could not set permissions on " + \
-                        self.path + "\n"
+        if not self.editor.report():
+            if self.editor.fixables:
+                # If we did not create the file, set an event ID for the
+                # KVEditor's undo event to record the file write
+                if not created:
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    self.editor.setEventID(myid)
+                if not self.editor.fix():
                     success = False
+                    debug = "KVEditor fix of " + self.path + \
+                                            " was not successful\n"
+                    self.logger.log(LogPriority.DEBUG, debug)
+                elif not self.editor.commit():
+                    success = False
+                    debug = "KVEditor commit to " + \
+                        self.path + " was not successful\n"
+                    self.logger.log(LogPriority.DEBUG, debug)
+                # permissions on file are incorrect
+                if not checkPerms(self.path, [0, 0, 0o644], self.logger):
+                    if not setPerms(self.path, [0, 0, 0o644], self.logger):
+                        self.detailedresults += "Could not set permissions on " + \
+                                                self.path + "\n"
+                        success = False
+                resetsecon(self.path)
+
+        # here we also check the output of the sysctl command for each key
+        # to cover all bases
+        for key in lfc:
+            if self.ch.executeCommand("/sbin/sysctl " + key):
+                output = self.ch.getOutputString().strip()
+                if not re.search(lfc[key] + "$", output):
+                    undovalue = output[-1]
+                    self.ch.executeCommand("/sbin/sysctl -w " + key + "=" + lfc[key])
+                    retcode = self.ch.getReturnCode()
+                    if retcode != 0:
+                        success = False
+                        self.detailedresults += "Failed to set " + key + " = " + lfc[key] + "\n"
+                        errmsg = self.ch.getErrorString()
+                        self.logger.log(LogPriority.DEBUG, errmsg)
+                    else:
+                        self.iditerator += 1
+                        myid = iterate(self.iditerator, self.rulenumber)
+                        command = "/sbin/sysctl -w " + key + "=" + undovalue
+                        event = {"eventtype": "commandstring",
+                                 "command": command}
+                        self.statechglogger.recordchgevent(myid, event)
             else:
-                if not setPerms(self.path, [0, 0, 0o644], self.logger):
-                    self.detailedresults += "Could not set permissions on " + \
-                                            self.path + "\n"
-                    success = False
+                self.detailedresults += "Unable to get value for " + key + "\n"
+                success = False
+        # at the end do a print and ignore any key errors to ensure
+        # the new values are read into the kernel
+        self.ch.executeCommand("/sbin/sysctl -q -e -p")
+        retcode2 = self.ch.getReturnCode()
+        if retcode2 != 0:
+            success = False
+            self.detailedresults += "Failed to load new sysctl configuration from config file\n"
+            errmsg2 = self.ch.getErrorString()
+            self.logger.log(LogPriority.DEBUG, errmsg2)
         return success
 
     def fixMac(self):

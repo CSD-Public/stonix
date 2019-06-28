@@ -15,7 +15,7 @@
 #                                                                             #
 ###############################################################################
 
-'''
+"""
 Created on Jul 6, 2016
 
 This class audits for passwordless ssh keys on the system.
@@ -25,9 +25,12 @@ This class audits for passwordless ssh keys on the system.
 @change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
 @change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
-'''
+@change: 2019/06/13 Breen Malmberg - updated documentation to reST format;
+        added missing documentation
+"""
 
 from __future__ import absolute_import
+
 import traceback
 import os
 import re
@@ -40,17 +43,21 @@ from ..stonixutilityfunctions import getOctalPerms
 
 
 class AuditSSHKeys(Rule):
-    '''This class audits for password-less ssh keys on the system.
-    
-    @author: Breen Malmberg
+    """
+    This class audits for password-less ssh keys on the system
 
-
-    '''
+    """
 
     def __init__(self, config, environ, logger, statechglogger):
-        '''
-        Constructor
-        '''
+        """
+        private method to initialize module
+
+        :param config: configuration object instance
+        :param environ: environment object instance
+        :param logger: logdispatcher object instance
+        :param statechglogger: statechglogger object instance
+        """
+
         Rule.__init__(self, config, environ, logger, statechglogger)
         self.logger = logger
         self.environ = environ
@@ -72,14 +79,10 @@ class AuditSSHKeys(Rule):
         self.localize()
 
     def localize(self):
-        '''determine which OS the system is, and set
+        """determine which OS the system is, and set
         certain variables accordingly
 
-
-        :returns: void
-        @author: Breen Malmberg
-
-        '''
+        """
 
         self.logger.log(LogPriority.DEBUG, "Running localize() ...")
 
@@ -95,15 +98,11 @@ class AuditSSHKeys(Rule):
             self.linux = True
 
     def report(self):
-        '''check status of private ssh keys (whether they are encrypted with passwords or not)
+        """check status of private ssh keys (whether they are encrypted with passwords or not)
 
+        :returns: self.compliant - boolean; True if compliant, False if not compliant
 
-        :returns: self.compliant
-
-        :rtype: bool
-@author: Breen Malmberg
-
-        '''
+        """
 
         searchterm = "Proc-Type:"
         self.searchdirs = []
@@ -158,14 +157,12 @@ class AuditSSHKeys(Rule):
         return self.compliant
 
     def get_key_list(self, searchdirs):
-        '''walk the ssh directory/ies and build and return a list of private keys (file names)
+        """walk the ssh directory/ies and build and return a list of private keys (file names)
 
         :param searchdirs: list of directories to search for private ssh keys
-        :returns: keylist
-        :rtype: list
-@author: Breen Malmberg
+        :returns: keylist - list; list of ssh key files
 
-        '''
+        """
 
         keylist = []
 
@@ -195,15 +192,11 @@ class AuditSSHKeys(Rule):
         return keylist
 
     def get_search_dirs(self):
-        '''build and return a list of search directories to look for private ssh keys
+        """build and return a list of search directories to look for ssh keys
 
+        :returns: searchdirs - list; directories to search for ssh keys in
 
-        :returns: searchdirs
-
-        :rtype: list
-@author: Breen Malmberg
-
-        '''
+        """
 
         searchdirs = []
 
@@ -267,14 +260,11 @@ class AuditSSHKeys(Rule):
         return searchdirs
 
     def fix(self):
-        '''set permissions on all private keys
-        to 600
+        """set permissions on all ssh keys to 0600 (384; -rw------)
 
+        :returns: self.rulesuccess - boolean; True if fix operations succeeded, False if not
 
-        :returns: self.rulesuccess
-        @author: Breen Malmberg
-
-        '''
+        """
 
         fixedkeys = []
         self.rulesuccess = True

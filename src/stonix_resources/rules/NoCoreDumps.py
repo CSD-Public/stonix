@@ -38,6 +38,9 @@ which conflicted with DisableIPV6 and NoCoreDumps which expected 644.
 @change: 2019/05/01 Breen Malmberg - removed check and fix profile methods as we can't set the
         ulimit core size in more than one place (it will throw an error on log-in if it is set both
         in limits.conf and in /etc/profile.d/*)
+@change: 2019/06/05 dwalker - refactored linux portion of rule to be
+    consistent with other rules that handle sysctl and to properly
+    handle sysctl by writing to /etc/sysctl.conf and also using command
 """
 
 from __future__ import absolute_import
@@ -50,6 +53,7 @@ from ..CommandHelper import CommandHelper
 from ..rule import Rule
 from ..logdispatcher import LogPriority
 from ..stonixutilityfunctions import iterate, readFile, checkPerms, createFile, setPerms, writeFile, resetsecon
+from ..KVEditorStonix import KVEditorStonix
 
 
 class NoCoreDumps(Rule):
@@ -237,6 +241,17 @@ class NoCoreDumps(Rule):
                 compliant = False
                 self.detailedresults += "Core dumps are currently enabled\n"
 
+        if not os.path.exists("/etc/sysctl.conf"):
+            compliant = False
+            self.detailedresults += "/etc/sysctl.conf file doesn't exist\n"
+        else:
+            self.editor = KVEditorStonix(self.statechglogger, self.logger,
+                                         "conf", "/etc/sysctl.conf",
+                                         "/etc/sysctl.conf.tmp",
+                                         {"fs.suid_dumpable": "0"}, "present", "openeq")
+            if not self.editor.report():
+                compliant = False
+                self.detailedresults += "Did not find correct contents inside /etc/sysctl.conf\n"
         return compliant
 
     def fix(self):
@@ -319,21 +334,75 @@ class NoCoreDumps(Rule):
 
         success = True
 
+        # manually writing key and value to /etc/sysctl.conf
+        sysctl = "/etc/sysctl.conf"
+        created = False
+        if not os.path.exists(sysctl):
+            if createFile(sysctl, self.logger):
+                created = True
+                setPerms(sysctl, [0, 0, 0o644], self.logger)
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                event = {"eventtype": "creation",
+                         "filepath": sysctl}
+                self.statechglogger.recordchgevent(myid, event)
+            else:
+                success = False
+                debug = "Unable to create " + sysctl + "\n"
+                self.logger.log(LogPriority.DEBUG, debug)
+        if os.path.exists(sysctl):
+            if not checkPerms(sysctl, [0, 0, 0o644], self.logger):
+                if not created:
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    if not setPerms(sysctl, [0, 0, 0o644], self.logger,
+                                    self.statechglogger, myid):
+                        success = False
+            tmpfile = sysctl + ".tmp"
+            editor = KVEditorStonix(self.statechglogger, self.logger,
+                                          "conf", sysctl, tmpfile, {"fs.suid_dumpable": "0"},
+                                          "present", "openeq")
+            if not editor.report():
+                if editor.fixables:
+                    # If we did not create the file, set an event ID for the
+                    # KVEditor's undo event
+                    if not created:
+                        self.iditerator += 1
+                        myid = iterate(self.iditerator, self.rulenumber)
+                        editor.setEventID(myid)
+                    if not editor.fix():
+                        success = False
+                        debug = "Unable to complete kveditor fix method" + \
+                            "for /etc/sysctl.conf file\n"
+                        self.logger.log(LogPriority.DEBUG, debug)
+                    elif not editor.commit():
+                        success = False
+                        debug = "Unable to complete kveditor commit " + \
+                            "method for /etc/sysctl.conf file\n"
+                        self.logger.log(LogPriority.DEBUG, debug)
+                    if not checkPerms(sysctl, [0, 0, 0o644], self.logger):
+                        if not setPerms(sysctl, [0, 0, 0o644], self.logger):
+                            self.detailedresults += "Could not set permissions on " + \
+                                                    self.path + "\n"
+                            success = False
+                    resetsecon(sysctl)
+
+        # using sysctl -w command
         self.logger.log(LogPriority.DEBUG, "Configuring /etc/sysctl fs.suid_dumpable directive")
         self.ch.executeCommand("/sbin/sysctl -w fs.suid_dumpable=0")
         retcode = self.ch.getReturnCode()
         if retcode != 0:
             success = False
-            self.detailedresults += "\nFailed to set core dumps variable suid_dumpable to 0"
+            self.detailedresults += "Failed to set core dumps variable suid_dumpable to 0\n"
             errmsg = self.ch.getErrorString()
             self.logger.log(LogPriority.DEBUG, errmsg)
         else:
             self.logger.log(LogPriority.DEBUG, "Re-reading sysctl configuration from files")
-            self.ch.executeCommand("/sbin/sysctl -p")
+            self.ch.executeCommand("/sbin/sysctl -q -e -p")
             retcode2 = self.ch.getReturnCode()
             if retcode2 != 0:
                 success = False
-                self.detailedresults += "\nFailed to load new sysctl configuration from config file"
+                self.detailedresults += "Failed to load new sysctl configuration from config file\n"
                 errmsg2 = self.ch.getErrorString()
                 self.logger.log(LogPriority.DEBUG, errmsg2)
             else:

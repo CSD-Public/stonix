@@ -27,6 +27,8 @@ in promiscuous mode or not.
 @change: 2017/07/07 Ekkehard - make eligible for macOS High Sierra 10.13
 @change: 2017/11/13 Ekkehard - make eligible for OS X El Capitan 10.11+
 @change: 2018/06/08 Ekkehard - make eligible for macOS Mojave 10.14
+@change: 2019/06/13 Breen Malmberg - updated documentation to reST format;
+        added missing documentation
 """
 
 from __future__ import absolute_import
@@ -41,17 +43,23 @@ from ..CommandHelper import CommandHelper
 
 
 class AuditNetworkSniffing(Rule):
-    '''The system should not be acting as a network sniffer, which can capture
+    """The system should not be acting as a network sniffer, which can capture
     all traffic on the network to which it is connected.
     Check to see if any network interface on the current system is running
     in promiscuous mode or not.
 
 
-    '''
+    """
     def __init__(self, config, environ, logger, statechglogger):
         """
-        Constructor
+        private method to initialize the module
+
+        :param config: configuration object instance
+        :param environ: environment object instance
+        :param logger: logdispatcher object instance
+        :param statechglogger: statechglogger object instance
         """
+
         Rule.__init__(self, config, environ, logger, statechglogger)
         self.config = config
         self.environ = environ
@@ -74,22 +82,16 @@ class AuditNetworkSniffing(Rule):
         self.localize()
 
     def initobjs(self):
-        '''initialize objects to be used by this class
-        
-        @author: Breen Malmberg
+        """initialize objects to be used by this class
 
-
-        '''
+        """
 
         self.ch = CommandHelper(self.logger)
 
     def localize(self):
-        '''set variables according to which platform this is running on
-        
-        @author: Breen Malmberg
+        """set variables according to which platform this is running on
 
-
-        '''
+        """
 
         self.osname = self.environ.getosname()
         tools = ["/usr/sbin/ifconfig", "/usr/sbin/ip", "/sbin/ifconfig", "/sbin/ip"]
@@ -114,15 +116,11 @@ class AuditNetworkSniffing(Rule):
             self.searchterm = "<.*PROMISC"
 
     def report(self):
-        '''detect whether any interface is running in promiscuous mode
+        """detect whether any network interface is running in 'promiscuous' mode
 
+        :returns: self.compliant - boolean; True if compliant, False if not compliant
 
-        :returns: self.compliant
-
-        :rtype: bool
-@author: Breen Malmberg
-
-        '''
+        """
 
         self.detailedresults = ""
         self.compliant = True
@@ -155,6 +153,7 @@ class AuditNetworkSniffing(Rule):
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception:
+            self.compliant = False
             self.detailedresults += "\n" + traceback.format_exc()
             self.logger.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("report", self.compliant, self.detailedresults)

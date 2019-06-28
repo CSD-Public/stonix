@@ -15,20 +15,16 @@
 #                                                                             #
 ###############################################################################
 
-'''
+"""
 Created on Aug 4, 2015
 
-@author: dwalker
-@change: 2017/08/28 ekkehard - Added self.sethelptext()
-'''
-
+@author: Derek Walker
+@change: 2017/08/28 Ekkehard - Added self.sethelptext()
+@change: 2019/06/12 Breen Malmberg - refactored rule
+"""
 
 from __future__ import absolute_import
-from ..stonixutilityfunctions import iterate, getUserGroupName, checkPerms
-from ..stonixutilityfunctions import setPerms, resetsecon
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..pkghelper import Pkghelper
+
 import traceback
 import os
 import glob
@@ -36,10 +32,24 @@ import stat
 import grp
 import pwd
 
+from ..stonixutilityfunctions import iterate, getUserGroupName, resetsecon
+from ..rule import Rule
+from ..logdispatcher import LogPriority
+
 
 class ConfigureLDAPServer(Rule):
+    """
+    """
 
     def __init__(self, config, enviro, logger, statechglogger):
+        """
+
+        :param config:
+        :param enviro:
+        :param logger:
+        :param statechglogger:
+        """
+
         Rule.__init__(self, config, enviro, logger, statechglogger)
         self.logger = logger
         self.rulenumber = 139
@@ -49,558 +59,165 @@ class ConfigureLDAPServer(Rule):
         self.sethelptext()
         datatype = "bool"
         key = "CONFIGURELDAPSERV"
-        instructions = '''To disable this rule set the value of \
-CONFIGURELDAPSERV to False.'''
+        instructions = """To disable this rule set the value of CONFIGURELDAPSERV to False."""
         default = True
         self.ci = self.initCi(datatype, key, instructions, default)
 
         self.guidance = []
         self.applicable = {"type": "white",
                            "family": ["linux"]}
-        self.iditerator = 0
-        self.created = False
 
     def report(self):
-        ''' '''
-        try:
-            compliant = True
-            self.ph = Pkghelper(self.logger, self.environ)
-            self.detailedresults = ""
-            if self.ph.manager == "apt-get":
-                self.ldap = "slapd"
-            elif self.ph.manager == "zypper":
-                self.ldap = "openldap2"
-            else:
-                self.ldap = "openldap-servers"
-            if self.ph.check(self.ldap):
-                #is ldap configured for tls?
+        """
+        report on system's ldap server configuration compliance status
 
-                #do the ldap files have the correct permissions?
-                slapd = "/etc/openldap/slapd.conf"
-                if os.path.exists(slapd):
-                    statdata = os.stat(slapd)
+        :return: self.compliant
+        :rtype: bool
+        """
+
+        self.detailedresults = ""
+        self.compliant = True
+        self.incorrect_perms_files = {}
+        self.incorrect_ownership_files = {}
+
+        try:
+
+            # start building ldap configuration files and permissions/ownership dictionary
+            self.ldap_conf_files = {"/etc/openldap/slapd.conf": ["root", "ldap", 416],
+                               "/etc/ldap/ldap.conf": ["root", "root", 420]}
+
+            ldap_conf_dirs = {"/etc/openldap/slapd.d/*": ["ldap", "ldap", 420],
+                               "/etc/ldap/slapd.d/*": ["openldap", "openldap", 384],
+                               "/etc/openldap/slapd.d/cn=config/*": ["ldap", "ldap", 416],
+                               "/etc/ldap/slapd.d/cn=config/*": ["openldap", "openldap", 384],
+                               "/etc/pki/tls/ldap/*": ["root", "ldap", 416],
+                               "/etc/pki/tls/CA/*": ["root", "root", 420]}
+
+            # add all files in certain ldap directories to the ldap_conf_files dict
+            for cd in ldap_conf_dirs:
+                self.logger.log(LogPriority.DEBUG, "Checking directory: " + str(cd)[:-1] + " for ldap configuration files")
+                if os.path.exists(cd):
+                    files = glob.glob(cd)
+                else:
+                    files = []
+                if not files:
+                    self.logger.log(LogPriority.DEBUG, "Didn't find any ldap configuration files in directory: " + str(cd)[:-1])
+                else:
+                    for f in files:
+                        if os.path.isfile(f):
+                            self.logger.log(LogPriority.DEBUG, "Adding ldap configuration file: " + str(f) + " to list")
+                            self.ldap_conf_files[f] = ldap_conf_dirs[cd]
+
+            # check all ldap files for correct ownership and permissions
+            for cf in self.ldap_conf_files:
+                if os.path.exists(cf):
+                    self.logger.log(LogPriority.DEBUG, "Checking file: " + str(cf) + " for permissions/ownership")
+
+                    # gather permissions and ownership data
+                    statdata = os.stat(cf)
                     mode = stat.S_IMODE(statdata.st_mode)
-                    ownergrp = getUserGroupName(slapd)
+                    ownergrp = getUserGroupName(cf)
                     owner = ownergrp[0]
                     group = ownergrp[1]
-                    if mode != 416:
-                        self.detailedresults += "permissions on " + slapd + \
-                            " aren't 640\n"
-                        debug = "permissions on " + slapd + " aren't 640\n"
-                        self.logger.log(LogPriority.DEBUG, debug)
-                        compliant = False
-                    if owner != "root":
-                        self.detailedresults += "Owner of " + slapd + \
-                            " isn't root\n"
-                        debug = "Owner of " + slapd + " isn't root\n"
-                        self.logger.log(LogPriority.DEBUG, debug)
-                        compliant = False
-                    if group != "ldap":
-                        self.detailedresults += "Group owner of " + slapd + \
-                            " isn't ldap\n"
-                        debug = "Group owner of " + slapd + " isn't ldap\n"
-                        self.logger.log(LogPriority.DEBUG, debug)
-                        compliant = False
-                #apt-get systems
-                slapd = "/etc/ldap/ldap.conf"
-                if os.path.exists(slapd):
-                    statdata = os.stat(slapd)
-                    mode = stat.S_IMODE(statdata.st_mode)
-                    ownergrp = getUserGroupName(slapd)
-                    owner = ownergrp[0]
-                    group = ownergrp[1]
-                    if mode != 420:
-                        self.detailedresults += "permissions on " + slapd + \
-                            " aren't 644\n"
-                        debug = "permissions on " + slapd + " aren't 644\n"
-                        self.logger.log(LogPriority.DEBUG, debug)
-                        compliant = False
-                    if owner != "root":
-                        self.detailedresults += "Owner of " + slapd + \
-                            " isn't root\n"
-                        debug = "Owner of " + slapd + " isn't root\n"
-                        self.logger.log(LogPriority.DEBUG, debug)
-                        compliant = False
-                    if group != "root":
-                        self.detailedresults += "Group owner of " + slapd + \
-                            " isn't root\n"
-                        debug = "Group owner of " + slapd + " isn't root\n"
-                        self.logger.log(LogPriority.DEBUG, debug)
-                        compliant = False
-                slapdd = "/etc/openldap/slapd.d/"
-                if os.path.exists(slapdd):
-                    dirs = glob.glob(slapdd + "*")
-                    for loc in dirs:
-                        if not os.path.isdir(loc):
-                            statdata = os.stat(loc)
-                            mode = stat.S_IMODE(statdata.st_mode)
-                            ownergrp = getUserGroupName(loc)
-                            owner = ownergrp[0]
-                            group = ownergrp[1]
-                            if mode != 416:
-                                self.detailedresults += "Permissions " + \
-                                    "aren't 640 on " + loc + "\n"
-                                debug = "Permissions aren't 640 on " + loc + \
-                                    "\n"
-                                self.logger.log(LogPriority.DEBUG, debug)
-                                compliant = False
-                            if owner != "ldap":
-                                self.detailedresults += "Owner of " + loc + \
-                                    " isn't ldap\n"
-                                debug = "Owner of " + loc + " isn't ldap\n"
-                                self.logger.log(LogPriority.DEBUG, debug)
-                                compliant = False
-                            if group != "ldap":
-                                self.detailedresults += "Group of " + loc + \
-                                    " isn't ldap\n"
-                                debug = "Group of " + loc + " isn't ldap\n"
-                                self.logger.log(LogPriority.DEBUG, debug)
-                                compliant = False
-                #apt-get systems
-                slapdd = "/etc/ldap/slapd.d/"
-                if os.path.exists(slapdd):
-                    dirs = glob.glob(slapdd + "*")
-                    for loc in dirs:
-                        if not os.path.isdir(loc):
-                            statdata = os.stat(loc)
-                            mode = stat.S_IMODE(statdata.st_mode)
-                            ownergrp = getUserGroupName(loc)
-                            owner = ownergrp[0]
-                            group = ownergrp[1]
-                            if mode != 384:
-                                self.detailedresults += "Permissions " + \
-                                    "aren't 640 on " + loc + "\n"
-                                debug = "Permissions aren't 600 on " + loc + \
-                                    "\n"
-                                self.logger.log(LogPriority.DEBUG, debug)
-                                compliant = False
-                            if owner != "openldap":
-                                self.detailedresults += "Owner of " + loc + \
-                                    " isn't ldap\n"
-                                debug = "Owner of " + loc + " isn't openldap\n"
-                                self.logger.log(LogPriority.DEBUG, debug)
-                                compliant = False
-                            if group != "openldap":
-                                self.detailedresults += "Group of " + loc + \
-                                    " isn't ldap\n"
-                                debug = "Group of " + loc + " isn't openldap\n"
-                                self.logger.log(LogPriority.DEBUG, debug)
-                                compliant = False
-                cnconfig = "/etc/openldap/slapd.d/cn=config/"
-                if os.path.exists(cnconfig):
-                    dirs = glob.glob(cnconfig + "*")
-                    for loc in dirs:
-                        if not os.path.isdir(loc):
-                            statdata = os.stat(loc)
-                            mode = stat.S_IMODE(statdata.st_mode)
-                            ownergrp = getUserGroupName(loc)
-                            owner = ownergrp[0]
-                            group = ownergrp[1]
-                            if mode != 416:
-                                self.detailedresults += "Permissions " + \
-                                    "aren't 640 on " + loc + "\n"
-                                debug = "Permissions aren't 640 on " + loc + \
-                                    "\n"
-                                self.logger.log(LogPriority.DEBUG, debug)
-                                compliant = False
-                            if owner != "ldap":
-                                self.detailedresults += "Owner of " + loc + \
-                                    " isn't ldap\n"
-                                debug = "Owner of " + loc + " isn't ldap\n"
-                                self.logger.log(LogPriority.DEBUG, debug)
-                                compliant = False
-                            if group != "ldap":
-                                self.detailedresults += "Group of " + loc + \
-                                    " isn't ldap\n"
-                                debug = "Group of " + loc + " isn't ldap\n"
-                                self.logger.log(LogPriority.DEBUG, debug)
-                                compliant = False
-                #apt-get systems
-                cnconfig = "/etc/ldap/slapd.d/cn=config/"
-                if os.path.exists(cnconfig):
-                    dirs = glob.glob(cnconfig + "*")
-                    for loc in dirs:
-                        if not os.path.isdir(loc):
-                            statdata = os.stat(loc)
-                            mode = stat.S_IMODE(statdata.st_mode)
-                            ownergrp = getUserGroupName(loc)
-                            owner = ownergrp[0]
-                            group = ownergrp[1]
-                            if mode != 384:
-                                self.detailedresults += "Permissions " + \
-                                    "aren't 600 on " + loc + "\n"
-                                debug = "Permissions aren't 600 on " + loc + \
-                                    "\n"
-                                self.logger.log(LogPriority.DEBUG, debug)
-                                compliant = False
-                            if owner != "openldap":
-                                self.detailedresults += "Owner of " + loc + \
-                                    " isn't openldap\n"
-                                debug = "Owner of " + loc + " isn't openldap\n"
-                                self.logger.log(LogPriority.DEBUG, debug)
-                                compliant = False
-                            if group != "openldap":
-                                self.detailedresults += "Group of " + loc + \
-                                    " isn't ldap\n"
-                                debug = "Group of " + loc + " isn't openldap\n"
-                                self.logger.log(LogPriority.DEBUG, debug)
-                                compliant = False
-                pki = "/etc/pki/tls/ldap/"
-                if os.path.exists(pki):
-                    dirs = glob.glob(pki + "*")
-                    for loc in dirs:
-                        if not os.path.isdir():
-                            statdata = os.stat(loc)
-                            mode = stat.S_IMODE(statdata.st_mode)
-                            ownergrp = getUserGroupName(loc)
-                            owner = ownergrp[0]
-                            group = ownergrp[1]
-                            if mode != 416:
-                                self.detailedresults += "Permissions " + \
-                                    "aren't 640 on " + loc + "\n"
-                                debug = "Permissions aren't 640 on " + loc + \
-                                    "\n"
-                                self.logger.log(LogPriority.DEBUG, debug)
-                                compliant = False
-                            if owner != "root":
-                                self.detailedresults += "Owner of " + loc + \
-                                    " isn't root\n"
-                                debug = "Owner of " + loc + " isn't root\n"
-                                self.logger.log(LogPriority.DEBUG, debug)
-                                compliant = False
-                            if group != "ldap":
-                                self.detailedresults += "Group of " + loc + \
-                                    " isn't ldap\n"
-                                debug = "Group of " + loc + " isn't ldap\n"
-                                self.logger.log(LogPriority.DEBUG, debug)
-                                compliant = False
-                if os.path.exists("/etc/pki/tls/CA/"):
-                    dirs = glob.glob("/etc/pki/tls/CA/*")
-                    for loc in dirs:
-                        if not os.path.isdir():
-                            if not checkPerms(loc, [0, 0, 420], self.logger):
-                                compliant = False
-                                self.detailedresults += "Permissions " + \
-                                    "aren't correct on " + loc + " file\n"
-                                debug = "Permissions aren't correct on " + \
-                                    loc + " file\n"
-                                self.logger.log(LogPriority.DEBUG, debug)
-            self.compliant = compliant
+                    uid = pwd.getpwnam(self.ldap_conf_files[cf][0])
+                    gid = grp.getgrnam(self.ldap_conf_files[cf][1])
+
+                    # record non compliant files for reporting
+                    if mode != self.ldap_conf_files[cf][2]:
+                        self.incorrect_perms_files[cf] = mode
+                    if owner != self.ldap_conf_files[cf][0]:
+                        self.incorrect_ownership_files[cf] = [uid,gid]
+                    # elif so we don't have duplicate entries in the report
+                    elif group != self.ldap_conf_files[cf][1]:
+                        self.incorrect_ownership_files[cf] = [uid, gid]
+                else:
+                    self.logger.log(LogPriority.DEBUG, "LDAP Configuration file: " + str(cf) + " does not exist")
+
+            if self.incorrect_ownership_files:
+                self.detailedresults += "\nThe following files have incorrect ownership set:\n" + "\n".join(self.incorrect_ownership_files)
+                self.compliant = False
+            if self.incorrect_perms_files:
+                self.detailedresults += "\nThe following files have incorrect permissions set:\n" + "\n".join(self.incorrect_perms_files)
+                self.compliant = False
+
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception:
-            self.rulesuccess = False
+            self.compliant = False
             self.detailedresults += "\n" + traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("report", self.compliant,
-                                   self.detailedresults)
+        self.formatDetailedResults("report", self.compliant, self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
-        return self.compliant
-        self.compliant = compliant
 
-###############################################################################
+        return self.compliant
 
     def fix(self):
-        try:
-            if not self.ci.getcurrvalue():
-                return
-            success = True
-            self.iditerator = 0
-            eventlist = self.statechglogger.findrulechanges(self.rulenumber)
-            for event in eventlist:
-                self.statechglogger.deleteentry(event)
-            if self.ph.check(self.ldap):
-                #is ldap configured for tls?
+        """
+        correct permissions and ownership on all ldap server configuration files
 
-                #do the ldap files have the correct permissions?
-                slapd = "/etc/openldap/slapd.conf"
-                if os.path.exists(slapd):
-                    statdata = os.stat(slapd)
-                    mode = stat.S_IMODE(statdata.st_mode)
-                    ownergrp = getUserGroupName(slapd)
-                    owner = ownergrp[0]
-                    group = ownergrp[1]
-                    if mode != 416 or owner != "root" or group != "ldap":
-                        origuid = statdata.st_uid
-                        origgid = statdata.st_gid
-                        if grp.getgrnam("ldap")[2]:
-                            gid = grp.getgrnam("ldap")[2]
-                            self.iditerator += 1
-                            myid = iterate(self.iditerator, self.rulenumber)
-                            event = {"eventtype": "perm",
-                                     "startstate": [origuid, origgid, mode],
-                                     "endstate": [0, gid, 416],
-                                     "filepath": slapd}
-                            self.statechglogger.recordchgevent(myid, event)
-                            os.chmod(slapd, 416)
-                            os.chown(slapd, 0, gid)
-                            resetsecon(slapd)
-                        else:
-                            success = False
-                            debug = "Unable to determine the id " + \
-                                "number of ldap group.  Will not change " + \
-                                "permissions on " + slapd + " file\n"
-                            self.logger.log(LogPriority.DEBUG, debug)
-                #apt-get systems
-                slapd = "/etc/ldap/ldap.conf"
-                if os.path.exists(slapd):
-                    statdata = os.stat(slapd)
-                    mode = stat.S_IMODE(statdata.st_mode)
-                    ownergrp = getUserGroupName(slapd)
-                    owner = ownergrp[0]
-                    group = ownergrp[1]
-                    if mode != 420 or owner != "root" or group != "root":
-                        origuid = statdata.st_uid
-                        origgid = statdata.st_gid
-                        if grp.getgrnam("root")[2] != "":
-                            gid = grp.getgrnam("root")[2]
-                            self.iditerator += 1
-                            myid = iterate(self.iditerator, self.rulenumber)
-                            event = {"eventtype": "perm",
-                                     "startstate": [origuid, origgid, mode],
-                                     "endstate": [0, gid, 420],
-                                     "filepath": slapd}
-                            self.statechglogger.recordchgevent(myid, event)
-                            os.chmod(slapd, 420)
-                            os.chown(slapd, 0, gid)
-                            resetsecon(slapd)
-                        else:
-                            success = False
-                            debug = "Unable to determine the id " + \
-                                "number of root group.  Will not change " + \
-                                "permissions on " + slapd + " file\n"
-                            self.logger.log(LogPriority.DEBUG, debug)
-                slapdd = "/etc/openldap/slapd.d/"
-                if os.path.exists(slapdd):
-                    dirs = glob.glob(slapdd + "*")
-                    for loc in dirs:
-                        if not os.path.isdir(loc):
-                            statdata = os.stat(loc)
-                            mode = stat.S_IMODE(statdata.st_mode)
-                            ownergrp = getUserGroupName(loc)
-                            owner = ownergrp[0]
-                            group = ownergrp[1]
-                            if mode != 416 or owner != "ldap" or group \
-                                    != "ldap":
-                                origuid = statdata.st_uid
-                                origgid = statdata.st_gid
-                                if grp.getgrnam("ldap")[2] != "":
-                                    if pwd.getpwnam("ldap")[2] != "":
-                                        gid = grp.getgrnam("ldap")[2]
-                                        uid = pwd.getpwnam("ldap")[2]
-                                        self.iditerator += 1
-                                        myid = iterate(self.iditerator,
-                                                       self.rulenumber)
-                                        event = {"eventtype": "perm",
-                                                 "startstate": [origuid,
-                                                                origgid, mode],
-                                                 "endstate": [uid, gid, 416],
-                                                 "filepath": loc}
-                                        self.statechglogger.recordchgevent(myid, event)
-                                        os.chmod(loc, 416)
-                                        os.chown(loc, uid, gid)
-                                        resetsecon(loc)
-                                    else:
-                                        debug = "Unable to determine the " + \
-                                            "id number of ldap user.  " + \
-                                            "Will not change permissions " + \
-                                            "on " + loc + " file\n"
-                                        self.logger.log(LogPriority.DEBUG, debug)
-                                        success = False
-                                else:
-                                    success = False
-                                    debug = "Unable to determine the id " + \
-                                        "number of ldap group.  Will not " + \
-                                        "change permissions on " + loc + \
-                                        " file\n"
-                                    self.logger.log(LogPriority.DEBUG, debug)
-                #apt-get systems
-                slapdd = "/etc/ldap/slapd.d/"
-                if os.path.exists(slapdd):
-                    dirs = glob.glob(slapdd + "*")
-                    for loc in dirs:
-                        if not os.path.isdir(loc):
-                            statdata = os.stat(loc)
-                            mode = stat.S_IMODE(statdata.st_mode)
-                            ownergrp = getUserGroupName(loc)
-                            owner = ownergrp[0]
-                            group = ownergrp[1]
-                            if mode != 384 or owner != "openldap" or group \
-                                    != "openldap":
-                                origuid = statdata.st_uid
-                                origgid = statdata.st_gid
-                                if grp.getgrnam("openldap")[2] != "":
-                                    if pwd.getpwnam("openldap")[2] != "":
-                                        gid = grp.getgrnam("openldap")[2]
-                                        uid = pwd.getpwnam("openldap")[2]
-                                        self.iditerator += 1
-                                        myid = iterate(self.iditerator,
-                                                       self.rulenumber)
-                                        event = {"eventtype": "perm",
-                                                 "startstate": [origuid,
-                                                                origgid, mode],
-                                                 "endstate": [uid, gid, 384],
-                                                 "filepath": loc}
-                                        self.statechglogger.recordchgevent(myid, event)
-                                        os.chmod(loc, 384)
-                                        os.chown(loc, uid, gid)
-                                        resetsecon(loc)
-                                    else:
-                                        debug = "Unable to determine the " + \
-                                            "id number of ldap user.  " + \
-                                            "Will not change permissions " + \
-                                            "on " + loc + " file\n"
-                                        self.logger.log(LogPriority.DEBUG, debug)
-                                        success = False
-                                else:
-                                    success = False
-                                    debug = "Unable to determine the id " + \
-                                        "number of ldap group.  Will not " + \
-                                        "change permissions on " + loc + \
-                                        " file\n"
-                                    self.logger.log(LogPriority.DEBUG, debug)
-                cnconfig = "/etc/openldap/slapd.d/cn=config/"
-                if os.path.exists(cnconfig):
-                    dirs = glob.glob(cnconfig + "*")
-                    for loc in dirs:
-                        if not os.path.isdir(loc):
-                            statdata = os.stat(loc)
-                            mode = stat.S_IMODE(statdata.st_mode)
-                            ownergrp = getUserGroupName(loc)
-                            owner = ownergrp[0]
-                            group = ownergrp[1]
-                            if mode != 416 or owner != "ldap" or group != "ldap":
-                                origuid = statdata.st_uid
-                                origgid = statdata.st_gid
-                                if grp.getgrnam("ldap")[2] != "":
-                                    if pwd.getpwnam("ldap")[2] != "":
-                                        gid = grp.getgrnam("ldap")[2]
-                                        uid = pwd.getpwnam("ldap")[2]
-                                        self.iditerator += 1
-                                        myid = iterate(self.iditerator,
-                                                       self.rulenumber)
-                                        event = {"eventtype": "perm",
-                                                 "startstate": [origuid,
-                                                                origgid, mode],
-                                                 "endstate": [uid, gid, 416],
-                                                 "filepath": loc}
-                                        self.statechglogger.recordchgevent(myid, event)
-                                        os.chmod(loc, 416)
-                                        os.chown(loc, uid, gid)
-                                        resetsecon(loc)
-                                    else:
-                                        debug = "Unable to determine the " + \
-                                            "id number of ldap user.  " + \
-                                            "Will not change permissions " + \
-                                            "on " + loc + " file\n"
-                                        self.logger.log(LogPriority.DEBUG, debug)
-                                        success = False
-                                else:
-                                    success = False
-                                    debug = "Unable to determine the id " + \
-                                        "number of ldap group.  Will not " + \
-                                        "change permissions on " + loc + \
-                                        " file\n"
-                                    self.logger.log(LogPriority.DEBUG, debug)
-                #apt-get systems
-                cnconfig = "/etc/ldap/slapd.d/cn=config/"
-                if os.path.exists(cnconfig):
-                    dirs = glob.glob(cnconfig + "*")
-                    for loc in dirs:
-                        if not os.path.isdir(loc):
-                            statdata = os.stat(loc)
-                            mode = stat.S_IMODE(statdata.st_mode)
-                            ownergrp = getUserGroupName(loc)
-                            owner = ownergrp[0]
-                            group = ownergrp[1]
-                            if mode != 384 or owner != "openldap" or group != "openldap":
-                                origuid = statdata.st_uid
-                                origgid = statdata.st_gid
-                                if grp.getgrnam("openldap")[2] != "":
-                                    if pwd.getpwnam("openldap")[2] != "":
-                                        gid = grp.getgrnam("openldap")[2]
-                                        uid = pwd.getpwnam("openldap")[2]
-                                        self.iditerator += 1
-                                        myid = iterate(self.iditerator,
-                                                       self.rulenumber)
-                                        event = {"eventtype": "perm",
-                                                 "startstate": [origuid,
-                                                                origgid, mode],
-                                                 "endstate": [uid, gid, 384],
-                                                 "filepath": loc}
-                                        self.statechglogger.recordchgevent(myid, event)
-                                        os.chmod(loc, 384)
-                                        os.chown(loc, uid, gid)
-                                        resetsecon(loc)
-                                    else:
-                                        debug = "Unable to determine the " + \
-                                            "id number of ldap user.  " + \
-                                            "Will not change permissions " + \
-                                            "on " + loc + " file\n"
-                                        self.logger.log(LogPriority.DEBUG, debug)
-                                        success = False
-                                else:
-                                    success = False
-                                    debug = "Unable to determine the id " + \
-                                        "number of ldap group.  Will not " + \
-                                        "change permissions on " + loc + \
-                                        " file\n"
-                                    self.logger.log(LogPriority.DEBUG, debug)
-                pki = "/etc/pki/tls/ldap/"
-                if os.path.exists(pki):
-                    dirs = glob.glob(pki + "*")
-                    for loc in dirs:
-                        if not os.path.isdir():
-                            statdata = os.stat(loc)
-                            mode = stat.S_IMODE(statdata.st_mode)
-                            ownergrp = getUserGroupName(loc)
-                            owner = ownergrp[0]
-                            group = ownergrp[1]
-                            if mode != 416 or owner != "root" or group != "ldap":
-                                origuid = statdata.st_uid
-                                origgid = statdata.st_gid
-                                if grp.getgrnam("ldap")[2] != "":
-                                    gid = grp.getgrnam("ldap")[2]
-                                    self.iditerator += 1
-                                    myid = iterate(self.iditerator, self.rulenumber)
-                                    event = {"eventtype": "perm",
-                                             "startstate": [origuid, origgid, mode],
-                                             "endstate": [0, gid, 416],
-                                             "filepath": loc}
-                                    self.statechglogger.recordchgevent(myid, event)
-                                    os.chmod(slapd, 416)
-                                    os.chown(slapd, 0, gid)
-                                    resetsecon(slapd)
-                                else:
-                                    success = False
-                                    debug = "Unable to determine the id " + \
-                                        "number of ldap group.  Will not change " + \
-                                        "permissions on " + loc + " file\n"
-                                    self.logger.log(LogPriority.DEBUG, debug)
-                if os.path.exists("/etc/pki/tls/CA/"):
-                    dirs = glob.glob("/etc/pki/tls/CA/*")
-                    for loc in dirs:
-                        if not os.path.isdir():
-                            if not checkPerms(loc, [0, 0, 420], self.logger):
-                                self.iditerator += 1
-                                myid = iterate(self.iditerator, self.rulenumber)
-                                if not setPerms(loc, [0, 0, 420], self.logger,
-                                                self.statechglogger, myid):
-                                    debug = "Unable to set permissions on " + \
-                                        loc + " file\n"
-                                    self.logger.log(LogPriority.DEBUG, debug)
-                                    success = False
-                                else:
-                                    resetsecon(loc)
-            self.rulesuccess = success
+        :return: self.rulesuccess
+        :rtype: bool
+        """
+
+        self.detailedresults = ""
+        self.rulesuccess = True
+        self.iditerator = 0
+
+        self.logger.log(LogPriority.DEBUG, "Clearing old event list before proceeding to fix")
+
+        eventlist = self.statechglogger.findrulechanges(self.rulenumber)
+        for event in eventlist:
+            self.statechglogger.deleteentry(event)
+
+        try:
+
+            # if CI is not enabled, do not continue
+            if not self.ci.getcurrvalue():
+                self.logger.log(LogPriority.DEBUG, "CI was not enabled. Fix was not performed.")
+                return self.rulesuccess
+
+            self.logger.log(LogPriority.DEBUG, "Making permissions and ownership corrections on list of ldap conf files")
+
+            # correct permissions and ownership on all ldap conf files
+            for f in self.ldap_conf_files:
+                self.logger.log(LogPriority.DEBUG, "Fixing permissions/ownership for file: " + str(f))
+                try:
+
+                    # get original permission and ownership info
+                    orig_uid = pwd.getpwnam(self.incorrect_ownership_files[f][0])
+                    orig_gid = grp.getgrnam(self.incorrect_ownership_files[f][1])
+                    orig_mode = self.incorrect_perms_files[f][0]
+
+                    # get new permission and ownership info (stored from report())
+                    uid = pwd.getpwnam(self.ldap_conf_files[f][0])
+                    gid = grp.getgrnam(self.ldap_conf_files[f][1])
+                    mode = self.ldap_conf_files[f][2]
+
+                    # undo event stuff
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+
+                    event = {"eventtype": "perm",
+                             "startstate": [orig_uid, orig_gid, orig_mode],
+                             "endstate": [uid, gid, mode],
+                             "filepath": f}
+                    self.statechglogger.recordchgevent(myid, event)
+
+                    # make the permissions and ownership corrections
+                    os.chown(f, uid, gid)
+                    os.chmod(f, mode)
+                    resetsecon(f)
+
+                except (IndexError, KeyError):
+                    pass
+
         except (KeyboardInterrupt, SystemExit):
-            # User initiated exit
             raise
         except Exception:
             self.rulesuccess = False
             self.detailedresults += "\n" + traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("fix", self.rulesuccess,
-                                   self.detailedresults)
+        self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+
         return self.rulesuccess

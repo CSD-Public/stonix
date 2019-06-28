@@ -272,7 +272,7 @@ class KVEditor(object):
                 elif isinstance(retval, list):
                     self.removeables[k] = retval
                     validate = False
-                elif retval is True:
+                elif not retval:
                     validate = False
                     self.removeables[k] = v
         if validate == "invalid":
@@ -299,6 +299,8 @@ class KVEditor(object):
                     "KVEditor.update()\n"
                 self.logger.log(LogPriority.DEBUG, debug)
                 return False
+        else:
+            return True
 
     def checkConf(self):
         if isinstance(self.data, dict):
