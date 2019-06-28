@@ -15,7 +15,7 @@
 #                                                                             #
 ###############################################################################
 
-'''
+"""
 Created on Nov 4, 2013
 
 This rule will verify the permissions on the boot loader config file to be 
@@ -29,7 +29,7 @@ root:root and 600
 @change: 2014/10/17 ekkehard OS X Yosemite 10.10 Update
 @change: 2015/10/07 eball Help text cleanup
 @change: 2017/05/04 Breen Malmberg added logging and detailedresults output
-'''
+"""
 
 from __future__ import absolute_import
 
@@ -42,20 +42,20 @@ import stat
 
 
 class BootloaderPerms(Rule):
-    '''This rule will verify the permissions on the boot loader config file to be
+    """This rule will verify the permissions on the boot loader config file to be
     root:root and 600
-    
-    @author: Breen Malmberg
-    @change: 04/18/2014 dkennel - Moved to new style CI. Fixed bug in fix
-    method where CI was not referenced before executing fix actions.
 
-
-    '''
+    """
 
     def __init__(self, config, environ, logger, statechglogger):
-        '''
-        Constructor
-        '''
+        """
+
+        :param config: configuration object instance
+        :param environ: environment object instance
+        :param logger: logdispatcher object instance
+        :param statechglogger: statechglogger object instance
+        """
+
         Rule.__init__(self, config, environ, logger, statechglogger)
         self.config = config
         self.environ = environ
@@ -85,16 +85,10 @@ class BootloaderPerms(Rule):
                                    '/boot/grub2/grub.cfg']
 
     def isapplicable(self):
-        '''Determine if this rule is applicable to the current system
+        """Determine if this rule is applicable to the current system
 
-
-        :returns: applicable
-
-        :rtype: bool
-@author: Breen Malmberg
-@change: 02/12/2014 ekkehard update to exclude old OS X version
-
-        '''
+        :return: applicable - boolean; True if rule is applicable to current system, False if not
+        """
 
         # defaults
         applicable = False
@@ -106,18 +100,15 @@ class BootloaderPerms(Rule):
         return applicable
 
     def report(self):
-        '''Verify the ownership and permissions of the boot loader config file to
+        """Verify the ownership and permissions of the boot loader config file to
         be root:root and 600 - respectively
         Return True if they are both set to these respective values
         Return False if one or more are not set to the respective owner and permissions values
 
 
-        :returns: self.compliant
+        :return: self.compliant - boolean; True if system is compliant, False if not
 
-        :rtype: bool
-@author: Breen Malmberg
-
-        '''
+        """
 
         # defaults
         self.compliant = True
@@ -160,18 +151,15 @@ class BootloaderPerms(Rule):
         return self.compliant
 
     def fix(self):
-        '''Set the owner and group of the boot loader config file to root:root
+        """Set the owner and group of the boot loader config file to root:root
         Set the permissions on the boot loader config file to 600
         Return True if no problems were encountered while setting these values
         Return False if any errors or problems were encountered while setting these values
 
 
-        :returns: self.rulesuccess
+        :return: self.rulesuccess - boolean; True if fix operations succeeded, False if not
 
-        :rtype: bool
-@author: Breen Malmberg
-
-        '''
+        """
 
         # defaults
         self.detailedresults = ""

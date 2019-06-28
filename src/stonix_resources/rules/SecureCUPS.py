@@ -28,10 +28,14 @@ With this rule, you can:
         Setup default set of policy blocks for CUPS
 
 @author: Breen Malmberg
-@change: Breen Malmberg - 2/8/2017 - set the default value of the self.DisableGenericPort CI to False;
-        fixed a typo with the data2 dict var name for cupsdconf; KVcupsdrem will now only be processed if
-        the value of the self.DisableGenericPort CI is True; added some inline comments
+@change: Breen Malmberg - 2/8/2017 - set the default value of the
+        self.DisableGenericPort CI to False; fixed a typo with the data2 dict
+        var name for cupsdconf; KVcupsdrem will now only be processed if the
+        value of the self.DisableGenericPort CI is True; added some inline
+        comments
 @change: 2017/10/23 rsn - change to new service helper interface
+@change: Brandon R. Gonzales - 6/19/2019 - Set up cupsd configurations to be
+        handled by a single kveditor object rather than two
 '''
 
 from __future__ import absolute_import
@@ -58,8 +62,6 @@ class SecureCUPS(Rule):
         Disable Print Server Capabilities
         Set the Default Auth Type
         Setup default set of policy blocks for CUPS
-
-
     '''
 
 
@@ -274,16 +276,6 @@ class SecureCUPS(Rule):
                     configType2 = "space"
                     self.KVcupsd = KVEditorStonix(self.statechglogger, self.logger, kvtype2, path2, tmpPath2,
                                                   data2, intent2, configType2)
-    
-                    if self.cupsdconfremopts:
-                        kvtype3 = "conf"
-                        path3 = self.cupsdconf
-                        tmpPath3 = path3 + ".stonixtmp"
-                        data3 = self.cupsdconfremopts
-                        intent3 = "notpresent"
-                        configType3 = "space"
-                        self.KVcupsdrem = KVEditorStonix(self.statechglogger, self.logger, kvtype3, path3, tmpPath3,
-                                                      data3, intent3, configType3)
 
             # policy blocks
             self.serveraccess = """# Restrict access to the server...
@@ -434,15 +426,6 @@ class SecureCUPS(Rule):
                 configType2 = "space"
                 self.KVcupsd = KVEditorStonix(self.statechglogger, self.logger, kvtype2, path2, tmpPath2,
                                               data2, intent2, configType2)
-                if self.cupsdconfremopts:
-                    kvtype3 = "conf"
-                    path3 = self.cupsdconf
-                    tmpPath3 = path3 + ".stonixtmp"
-                    data3 = self.cupsdconfremopts
-                    intent3 = "notpresent"
-                    configType3 = "space"
-                    self.KVcupsdrem = KVEditorStonix(self.statechglogger, self.logger, kvtype3, path3, tmpPath3,
-                                                  data3, intent3, configType3)
             else:
                 self.logger.log(LogPriority.DEBUG, "Location of required configuration file cupsd.conf could not be determined")
 
@@ -635,15 +618,20 @@ class SecureCUPS(Rule):
             if self.SecureCUPS.getcurrvalue():
 
                 if os.path.exists(self.cupsdconf):
+                    # Report on cupsd.conf change/add options
+                    self.KVcupsd.setData(self.cupsdconfopts)
+                    self.KVcupsd.setIntent("present")
                     self.KVcupsd.report()
+
+                    # Report on cupsd.conf remove options
+                    self.KVcupsd.setData(self.cupsdconfremopts)
+                    self.KVcupsd.setIntent("notpresent")
+                    self.KVcupsd.report()
+
                     if self.KVcupsd.fixables:
                         retval = False
                         self.detailedresults += "\nThe following configuration options, in " + str(self.cupsdconf) + ", are incorrect:\n" + "\n".join(self.KVcupsd.fixables)
-                    if self.cupsdconfremopts:
-                        self.KVcupsdrem.report()
-                        if self.KVcupsdrem.removeables:
-                            retval = False
-                        self.detailedresults += "\nThe following configuration options, in " + str(self.cupsdconf) + ", are incorrect:\n" + "\n".join(self.KVcupsdrem.removeables)
+
                     if not self.checkPolicyBlocks():
                         retval = False
                 else:
@@ -775,8 +763,7 @@ class SecureCUPS(Rule):
         try:
 
             if os.path.exists(self.cupsdconf):
-
-# cupsdconf add/change options
+                # Fix cupsd.conf add/change/remove options
                 self.iditerator += 1
                 myid = iterate(self.iditerator, self.rulenumber)
                 self.KVcupsd.setEventID(myid)
@@ -786,18 +773,7 @@ class SecureCUPS(Rule):
                         self.logger.log(LogPriority.DEBUG, "Commit failed for KVcupsd")
                         retval = False
 
-# cupsdconf remove options
-                if self.cupsdconfremopts:
-                    self.iditerator += 1
-                    myid = iterate(self.iditerator, self.rulenumber)
-                    self.KVcupsdrem.setEventID(myid)
-                    if self.KVcupsdrem.fix():
-                        if not self.KVcupsdrem.commit():
-                            self.detailedresults += "\nCommit failed for cupsd.conf"
-                            self.logger.log(LogPriority.DEBUG, "Commit failed for KVcupsdrem")
-                            retval = False
-
-# cups-files conf add/change options
+            # cups-files conf add/change options
             if os.path.exists(self.cupsfilesconf):
                 self.iditerator += 1
                 myid = iterate(self.iditerator, self.rulenumber)

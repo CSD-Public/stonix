@@ -31,6 +31,7 @@ import sys
 import re
 import os
 import traceback
+import time
 
 sys.path.append("../../../..")
 from glob import glob
@@ -110,7 +111,10 @@ class zzzTestRuleConfigureScreenLocking(RuleTest):
                     success = self.ch.executeCommand(command)
         else:
             success1 = self.setkde()
-            success2 = self.setgnome()
+            if self.effectiveUserID == 0:
+                success2 = self.setgnome()
+            else:
+                success2 = True
             if success1 and success2:
                 success = True
             else:
@@ -246,19 +250,19 @@ directory, invalid form of /etc/passwd"
         gsettings = "/usr/bin/gsettings"
         dconfsettingslock = "/etc/dconf/db/local.d/locks/stonix-settings.conf"
         dconflockdata = ["/org/gnome/desktop/session/idle-delay",
-                           "/org/gnome/desktop/session/idle-activation-enabled",
+                           "/org/gnome/desktop/screensaver/idle-activation-enabled",
                            "/org/gnome/desktop/screensaver/lock-enabled",
                            "/org/gnome/desktop/screensaver/lock-delay",
                            "/org/gnome/desktop/screensaver/picture-uri"]
         dconfsettings = "/etc/dconf/db/local.d/local.key"
         dconfdata = {"org/gnome/desktop/screensaver": {
-                                                    "idle-activation-enabled": "true",
-                                                    "lock-enabled": "true",
-                                                    "lock-delay": "0",
-                                                    "picture-opacity": "100",
-                                                    "picture-uri": "\'\'"},
-                                      "org/gnome/desktop/session": {
-                                                    "idle-delay": "uint32 900"}}
+                        "idle-activation-enabled": "true",
+                        "lock-enabled": "true",
+                        "lock-delay": "0",
+                        "picture-opacity": "100",
+                        "picture-uri": "\'\'"},
+                    "org/gnome/desktop/session": {
+                        "idle-delay": "uint32 900"}}
         dconfuserprofile = "/etc/dconf/profile/user"
         userprofilecontent = "user-db:user\n" + \
                                           "system-db:local"
@@ -276,6 +280,11 @@ directory, invalid form of /etc/passwd"
                 success = False
                 debug += "Issues setting " + cmd2 + "\n"
         if os.path.exists(gsettings):
+            # delete lock file so that
+            if os.path.exists(dconfsettingslock):
+                os.remove(dconfsettingslock)
+                cmd = "/usr/bin/dconf update"
+                self.ch.executeCommand(cmd)
             setcmds = [" set org.gnome.desktop.screensaver " +
                        "idle-activation-enabled false",
                        " set org.gnome.desktop.screensaver lock-enabled false",
@@ -287,26 +296,6 @@ directory, invalid form of /etc/passwd"
                 if not self.ch.executeCommand(cmd2):
                     success = False
                     debug += "Issues setting " + cmd2 + "\n"
-        if self.environ.geteuid() == 0:
-            #write correct contents to dconf lock file
-            if os.path.exists(dconfsettingslock):
-                tempstring = ""
-                tmpfile = dconfsettingslock + ".tmp"
-                contents = readFile(dconfsettingslock, self.logger)
-                for line in contents:
-                    if line.strip() in dconflockdata:
-                        continue
-                    else:
-                        tempstring += line
-                if not writeFile(tmpfile, tempstring, self.logger):
-                    success = False
-                    debug += "Unable to write contents to " + \
-                        "stonix-settings file\n"
-                else:
-                    os.rename(tmpfile, dconfsettingslock)
-                    os.chown(dconfsettingslock, 0, 0)
-                    os.chmod(dconfsettingslock, 493)
-                    resetsecon(dconfsettingslock)
             #write correct contents to dconf lock file
             if os.path.exists(dconfsettings):
                 self.kveditor = KVEditorStonix(self.statechglogger,
@@ -317,40 +306,17 @@ directory, invalid form of /etc/passwd"
                                                dconfdata, "notpresent",
                                                "closedeq")
                 if not self.kveditor.report():
-                    success = False
-                    debug += "Unable to set incorrect contents " + \
-                        "for " + dconfsettings + "\n"
-                elif not self.kveditor.fix():
-                    success = False
-                    debug += "Unable to set incorrect contents " + \
-                        "for " + dconfsettings + "\n"
-                elif not self.kveditor.commit():
-                    success = False
-                    debug += "Unable to set incorrect contents " + \
-                        "for " + dconfsettings + "\n"
-            
-            if os.path.exists(dconfuserprofile):
-                fixing = False
-                contents = readFile(dconfuserprofile, self.logger)
-                contentstring = ""
-                for line in contents:
-                    contentstring += line
-                    if re.search(userprofilecontent, contentstring):
-                       fixing = True
-                if fixing:
-                    contentstring = ""
-                    tempfile = dconfuserprofile + ".tmp"
-                    if not writeFile(tempfile, contentstring, self.logger):
+                    if not self.kveditor.fix():
                         success = False
                         debug += "Unable to set incorrect contents " + \
-                        "for " + dconfuserprofile + "\n"
-                    else:
-                        os.rename(tempfile, dconfuserprofile)
-                        os.chown(dconfuserprofile, 0, 0)
-                        os.chmod(dconfuserprofile, 493)
-                        resetsecon(dconfuserprofile)
-        self.logger.log(LogPriority.ERROR, debug)
+                            "for " + dconfsettings + "\n"
+                    elif not self.kveditor.commit():
+                        success = False
+                        debug += "Unable to set incorrect contents " + \
+                            "for " + dconfsettings + "\n"
+        # self.logger.log(LogPriority.ERROR, debug)
         return success
+
     def wreckFile(self, filehandle):
         '''Method to ensure correct contents are NOT in file for testing
         @author: dwalker

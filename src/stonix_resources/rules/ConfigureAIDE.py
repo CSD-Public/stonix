@@ -15,25 +15,26 @@
 #                                                                             #
 ###############################################################################
 
-'''
+"""
 Created on Mar 19, 2013
 
 Install and configure Advanced Intrusion Detection Environment (AIDE).
 This rule is optional and will install and configure AIDE when it is run.
 
-@author: bemalmbe
-@change: 02/12/2014 ekkehard Implemented self.detailedresults flow
-@change: 02/12/2014 ekkehard Implemented isapplicable
-@change: 04/18/2014 dkennel Updated for new style CI. Fixed bug where the bool
-@change: 06/26/2014 dwalker tasked with figuring out installation bug, will
-    be modifying rule as well
-CI was not referenced in the fix and report method.
-@change: 2015/04/14 dkennel updated to use new is applicable
-@change: 2015/10/07 eball PEP8 cleanup
-@change: 2017/08/28 ekkehard - Added self.sethelptext()
-'''
+@author: Breen Malmberg
+@change: 02/12/2014 Ekkehard Implemented self.detailedresults flow
+@change: 02/12/2014 Ekkehard Implemented isapplicable
+@change: 04/18/2014 Dave Kennel Updated for new style CI. Fixed bug where the bool
+@change: 06/26/2014 Derek Walker tasked with figuring out installation bug, will
+        be modifying rule as well
+        CI was not referenced in the fix and report method.
+@change: 2015/04/14 Dave Kennel updated to use new is applicable
+@change: 2015/10/07 Eric Ball PEP8 cleanup
+@change: 2017/08/28 Ekkehard - Added self.sethelptext()
+"""
 
 from __future__ import absolute_import
+
 import os
 import re
 import traceback
@@ -46,12 +47,19 @@ from ..CommandHelper import CommandHelper
 
 
 class ConfigureAIDE(Rule):
-    '''classdocs'''
+    """Install and configure Advanced Intrusion Detection Environment (AIDE).
+This rule is optional and will install and configure AIDE when it is run."""
 
     def __init__(self, config, environ, logger, statechglogger):
-        '''
-        Constructor
-        '''
+        """
+        private method to initialize the module
+
+        :param config: configuration object instance
+        :param environ: environment object instance
+        :param logger: logdispatcher object instance
+        :param statechglogger: statechglogger object instance
+        """
+
         Rule.__init__(self, config, environ, logger, statechglogger)
         self.logger = logger
         self.rulenumber = 110
@@ -73,28 +81,27 @@ class ConfigureAIDE(Rule):
 
         datatype2 = 'string'
         key2 = 'AIDEJOBTIME'
-        instructions2 = '''This string contains the time when the cron job for
+        instructions2 = """This string contains the time when the cron job for
         /usr/sbin/aide --check will run in /etc/crontab. The default value is
-        05 04 * * * (which means 4:05am daily)'''
+        05 04 * * * (which means 4:05am daily)"""
         default2 = "05 04 * * *"
         self.aidetime = self.initCi(datatype2, key2, instructions2, default2)
         pattern = "^[0-5][0-9]\s*([0-2][0-3]|[0-1][0-9])\s*(\*|(0[1-9]|[12][0-9]|3[01]))\s*(\*|[0-1][0-2])\s*(\*|0[0-6])\s*$"
         self.aidetime.setregexpattern(pattern)
 
     def report(self):
-        '''Check if AIDE is installed and properly configured.
+        """Check if AIDE is installed and properly configured.
         If the config is correct then the self.compliant, self.detailed results
         and self.currstate properties are updated to reflect the system status.
         self.rulesuccess will be updated if the rule does not succeed.
 
+        :return: self.compliant - True if compliant; False if not
+        :rtype: bool
 
-        :returns: bool
-        @author bemalmbe
-        @change: dwalker - various bug fixes
-
-        '''
+        """
 
         try:
+
             self.ph = Pkghelper(self.logger, self.environ)
             self.ch = CommandHelper(self.logger)
             self.compliant = True
@@ -146,29 +153,25 @@ class ConfigureAIDE(Rule):
                 self.detailedresults += "Aide is not installed\n"
                 self.compliant = False
             self.logger.log(LogPriority.DEBUG, self.detailedresults)
+
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception:
             self.detailedresults += "\n" + traceback.format_exc()
             self.logger.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("report", self.compliant,
-                                   self.detailedresults)
+        self.formatDetailedResults("report", self.compliant, self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+
         return self.compliant
 
-###############################################################################
-
     def fix(self):
-        '''Attempt to install and configure AIDE.
+        """Attempt to install and configure AIDE.
         self.rulesuccess will be updated if the rule does not succeed.
-        
-        @author bemalmbe
 
+        :return: self.rulesuccess - True if fix succeeded; False if not
+        :rtype: bool
 
-        :returns: bool
-        @change: dwalker - various bug fixes, added event deletions in fix
-
-        '''
+        """
 
         self.detailedresults = ""
         self.rulesuccess = True
@@ -271,13 +274,14 @@ executable, rule cannot continue\n"
                     os.chmod(cronpath, 384)
                     os.chown(cronpath, 0, 0)
                     resetsecon(cronpath)
+
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception:
             self.rulesuccess = False
             self.detailedresults += "\n" + traceback.format_exc()
             self.logger.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("fix", self.rulesuccess,
-                                   self.detailedresults)
+        self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+
         return self.rulesuccess

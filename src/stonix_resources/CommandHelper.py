@@ -16,7 +16,7 @@
 ###############################################################################
 
 
-'''
+"""
 @author: ekkehard
 @author: rsn
 @author: dwalker
@@ -32,7 +32,7 @@
 @change: 2018/03/29 Breen Malmberg fixed an instance where a variable (commandaborted)
         was not properly getting set to True when a command would abort due to timeout;
         
-'''
+"""
 
 import inspect
 import re
@@ -45,7 +45,7 @@ from logdispatcher import LogPriority
 
 
 class CommandHelper(object):
-    '''CommandHelper is class that helps with execution of subprocess Popen based
+    """CommandHelper is class that helps with execution of subprocess Popen based
     commands and then finding or parsing strerror and/or strout
     their output.
     @author: rsn
@@ -53,15 +53,15 @@ class CommandHelper(object):
     @author: ekkehard
 
 
-    '''
+    """
 
 ###############################################################################
 
     def __init__(self, logdispatcher):
-        '''
+        """
         Initialize all object attributes
         @author: ekkehard j. koch
-        '''
+        """
         self.logdispatcher = logdispatcher
         self.command = []
         self.commandblank = True
@@ -103,44 +103,44 @@ class CommandHelper(object):
 ###############################################################################
 
     def getCommand(self):
-        '''Get the current command.
+        """Get the current command.
 
         :param self: essential if you override this definition
         :returns: string or list of command
         @author: ekkehard j. koch
 
-        '''
+        """
         return self.command
 
 ###############################################################################
 
     def getError(self):
-        '''Get standard error stream for last executed command
+        """Get standard error stream for last executed command
 
         :param self: essential if you override this definition
         :returns: list of standard error stream
         @author: ekkehard j. koch
 
-        '''
+        """
         return self.stderr
 
 ###############################################################################
 
     def getErrorOutput(self):
-        '''Get standard out stream and standard error for last executed command
+        """Get standard out stream and standard error for last executed command
 
         :param self: essential if you override this definition
         :returns: list of output
         @author: ekkehard j. koch
 
-        '''
+        """
 
         return self.output
 
 ###############################################################################
 
     def getOutput(self):
-        '''Get standard out stream for last executed command
+        """Get standard out stream for last executed command
 
         :param self: essential if you override this definition
         :returns: self.stdout
@@ -148,14 +148,14 @@ class CommandHelper(object):
 @author: ekkehard j. koch
 @change: Breen Malmberg - 12/3/2015
 
-        '''
+        """
 
         return self.stdout
 
 ###############################################################################
 
     def getOutputGroup(self, expression, groupnumber, searchgroup="output"):
-        '''getOutputGroup (expression,groupnumber) finds an expression in the
+        """getOutputGroup (expression,groupnumber) finds an expression in the
         returns the specified group after using regular expression on output
 
         :param self: essential if you override this definition
@@ -167,7 +167,7 @@ class CommandHelper(object):
 @author: rsn
 @change: Breen Malmberg - 12/3/2015
 
-        '''
+        """
 
         returnlist = []
 
@@ -200,7 +200,7 @@ class CommandHelper(object):
 ###############################################################################
 
     def getFirstOutputGroup(self, expression, groupnumber, searchgroup="output"):
-        '''getOutputGroup (expression, groupnumber) finds an expression in the
+        """getOutputGroup (expression, groupnumber) finds an expression in the
         returns the first instance (string) of the group specified in the
         regular expression that is found in the output.
 
@@ -214,7 +214,7 @@ class CommandHelper(object):
 @author: rsn
 @change: Breen Malmberg - 12/3/2015
 
-        '''
+        """
 
         returnstring = ""
 
@@ -249,7 +249,7 @@ class CommandHelper(object):
 ###############################################################################
 
     def getOutputString(self):
-        '''Get standard out in string format
+        """Get standard out in string format
 
         :param self: essential if you override this definition
         :returns: stdstring
@@ -257,7 +257,7 @@ class CommandHelper(object):
 @author: ekkehard j. koch
 @change: Breen Malmberg - 12/3/2015
 
-        '''
+        """
 
         stdstring = ""
 
@@ -284,7 +284,7 @@ class CommandHelper(object):
 ###############################################################################
 
     def getErrorString(self):
-        '''Get standard error in string format
+        """Get standard error in string format
 
         :param self: essential if you override this definition
         :returns: self.stderr
@@ -292,7 +292,7 @@ class CommandHelper(object):
 @author: dwalker
 @change: Breen Malmberg - 12/3/2015
 
-        '''
+        """
 
         errstring = ""
 
@@ -320,14 +320,14 @@ class CommandHelper(object):
 ###############################################################################
 
     def getAllString(self):
-        '''Get both the stdout and stderr together as one string
+        """Get both the stdout and stderr together as one string
 
         :param self: essential if you override this definition
         :returns: allstring
         :rtype: string
 @author: Breen Malmberg
 
-        '''
+        """
 
         allstring = ""
 
@@ -368,14 +368,14 @@ class CommandHelper(object):
 ###############################################################################
 
     def getAllList(self):
-        '''Get both the stdout and stderr together as one list
+        """Get both the stdout and stderr together as one list
 
         :param self: essential if you override this definition
         :returns: alllist
         :rtype: list
 @author: Breen Malmberg
 
-        '''
+        """
 
         alllist = []
 
@@ -408,7 +408,7 @@ class CommandHelper(object):
 ###############################################################################
 
     def getReturnCode(self):
-        '''Get return code for last executed command
+        """Get return code for last executed command
 
 
         :returns: self.returncode
@@ -416,14 +416,14 @@ class CommandHelper(object):
         :rtype: bool
 @author: ekkehard j. koch
 
-        '''
+        """
 
         return self.returncode
 
 ###############################################################################
 
     def setCommand(self, command):
-        '''setCommand (command) set the command for the CommandHelper
+        """setCommand (command) set the command for the CommandHelper
 
         :param command: string: command to set the command property to
         :returns: success
@@ -447,7 +447,7 @@ class CommandHelper(object):
         redundant instances of setting it to True when there were also already instances of
         it being set to False (one or the other; both are not needed explicitly)
 
-        '''
+        """
 
         success = True
         self.stdout = []
@@ -514,14 +514,14 @@ class CommandHelper(object):
 ###############################################################################
 
     def setLogPriority(self, logpriority=None):
-        '''Setting log priority use LogPriority.DEBUG, LogPrority.ERROR, etc.
+        """Setting log priority use LogPriority.DEBUG, LogPrority.ERROR, etc.
 
         :param logpriority: of type LogPriority.xxx (Default value = None)
         :returns: success
         :rtype: bool
 @author: ekkehard j. koch
 
-        '''
+        """
 
         success = True
 
@@ -542,27 +542,27 @@ class CommandHelper(object):
 ###############################################################################
 
     def setRegexFlag(self, flag):
-        '''Set the Regular Expression Flag.
+        """Set the Regular Expression Flag.
 
         :param self: essential if you override this definition
         :param flag: used in regular expression
         @author: rsn
 
-        '''
+        """
         if flag in self.flags:
             self.flag = flag
 
 ###############################################################################
 
     def executeCommand(self, command=None):
-        '''executeCommand (command) excecute the command for the CommandHelper
+        """executeCommand (command) excecute the command for the CommandHelper
 
         :param self: essential if you override this definition
         :param command: string or list: command to set the command property to (Default value = None)
         :returns: bool indicating success or failure
         @author: ekkehard j. koch
 
-        '''
+        """
 
         commandaborted = False
         commandobj = None
@@ -570,7 +570,7 @@ class CommandHelper(object):
 
         try:
 
-            if (type(command) is not None):
+            if type(command) is not None:
                 success = self.setCommand(command)
             else:
                 if self.command:
@@ -578,13 +578,12 @@ class CommandHelper(object):
                                            "Unable to set command " +
                                            str(self.command))
 
-            if (success):
-                if (self.commandblank == True):
+            if success:
+                if self.commandblank:
                     success = False
-                    raise ValueError("Cannot Execute a blank command (" +
-                                     "".join(self.command) + ")")
+                    self.logdispatcher.log(LogPriority.WARNING, "Attempted to execute a blank command!")
 
-            if (success):
+            if success:
                 time_start = time.time()
                 commandobj = subprocess.Popen(self.command,
                                               stdout=subprocess.PIPE,
@@ -656,7 +655,7 @@ class CommandHelper(object):
 ###############################################################################
 
     def findInOutput(self, expression, searchgroup="output", dtype="list"):
-        '''findInOutput (expression) finds an expression in the combined stderr
+        """findInOutput (expression) finds an expression in the combined stderr
         and stdout
 
         :param self: essential if you override this definition
@@ -667,7 +666,7 @@ class CommandHelper(object):
         @author: ekkehard j. koch
         @author: dwalker
 
-        '''
+        """
 
         try:
             searchstring = ""

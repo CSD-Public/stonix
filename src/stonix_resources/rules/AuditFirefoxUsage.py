@@ -15,14 +15,17 @@
 #                                                                             #
 ###############################################################################
 
-'''
+"""
 Created on 2016/05/04
 
 Checks the root user's Firefox history for non-local browsing. The root user
 should only use the browser for administration tasks.
+
 @author: Eric Ball
-@change: 2017/08/28 ekkehard - Added self.sethelptext()
-'''
+@change: 2017/08/28 Ekkehard - Added self.sethelptext()
+@changee 2019/06/13 Breen Malmberg - updated documentation to reST format;
+        filled in missing documentation
+"""
 
 from __future__ import absolute_import
 from ..CommandHelper import CommandHelper
@@ -42,8 +45,23 @@ except ImportError:
 
 
 class AuditFirefoxUsage(Rule):
+    """
+    This module will audit firefox browser usage to determine
+    if any site not listed in the APPROVEDDOMAINS CI has been visited
+    while running in root mode
+
+    """
 
     def __init__(self, config, environ, logger, statechglogger):
+        """
+        private method to initialize the module
+
+        :param config: configuration object instance
+        :param environ: environment object instance
+        :param logger: logdispatcher object instance
+        :param statechglogger: statechglogger object instance
+        """
+
         Rule.__init__(self, config, environ, logger, statechglogger)
         self.logger = logger
         self.rulenumber = 84
@@ -79,12 +97,12 @@ DISABLEPROXY to True."""
         self.auditonly = True
 
     def report(self):
-        '''@author: Eric Ball
+        """
+        report the status of the rule's compliance with root-enabled firefox browsing
 
-        :param self: essential if you override this definition
-        :returns: bool - True if system is compliant, False if it isn't
+        :returns: self.compliant - True if compliant, False if not
 
-        '''
+        """
 
         # UPDATE THIS SECTION IF YOU CHANGE THE CONSTANTS BEING USED IN THE RULE
         constlist = [LOCALDOMAINS]
@@ -167,17 +185,12 @@ DISABLEPROXY to True."""
         return self.compliant
 
     def getFirefoxDirs(self):
-        '''Discover the randomly-generated Firefox profile directory(ies) for the
+        """Discover the randomly-generated Firefox profile directory(ies) for the
         root user.
-        
-        @author: Eric Ball
 
+        :returns: ffDirs - List of Firefox profile directories on the system
 
-        :returns: List of Firefox profile directories on the system
-
-        :rtype: list
-
-        '''
+        """
         # It's possible to have several FF profiles for each user account. This
         # method will therefore return a list.
         ffDirs = []

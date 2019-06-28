@@ -15,38 +15,40 @@
 #                                                                             #
 ###############################################################################
 
-'''
+"""
 Created on May 3, 2011
+
 This class checks the local accounts database for duplicate IDs. All accounts
 on a system must have unique UIDs.
-@author: dkennel
-@change: 02/12/2014 ekkehard Implemented self.detailedresults flow
-@change: 02/12/2014 ekkehard Implemented isapplicable
-@change: 08/05/2014 ekkehard added duplicate uid & gid check for OS X
-@change: 2015/04/14 dkennel updated to use new style isApplicable
-@change: 2015/10/07 eball Help text cleanup
-@change: 2015/10/28 ekkehard fix name and file name
-@change: 2016/04/26 rsn add group checks per RHEL 7 STIG
-@change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
-@change: 2017/08/28 ekkehard - Added self.sethelptext()
-@change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
-@change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
-@change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
-'''
+
+@author: Dave Kennel
+@change: 02/12/2014 Ekkehard Implemented self.detailedresults flow
+@change: 02/12/2014 Ekkehard Implemented isapplicable
+@change: 08/05/2014 Ekkehard added duplicate uid & gid check for OS X
+@change: 2015/04/14 Dave Kennel updated to use new style isApplicable
+@change: 2015/10/07 Eric Ball Help text cleanup
+@change: 2015/10/28 Ekkehard fix name and file name
+@change: 2016/04/26 Roy Nielsen add group checks per RHEL 7 STIG
+@change: 2017/07/07 Ekkehard - make eligible for macOS High Sierra 10.13
+@change: 2017/08/28 Ekkehard - Added self.sethelptext()
+@change: 2017/11/13 Ekkehard - make eligible for OS X El Capitan 10.11+
+@change: 2018/06/08 Ekkehard - make eligible for macOS Mojave 10.14
+@change: 2019/03/12 Ekkehard - make eligible for macOS Sierra 10.12+
+"""
+
 from __future__ import absolute_import
+
 import os
 import re
 import traceback
 
-# The period was making python complain. Adding the correct paths to PyDev
-# made this the working scenario.
 from ..rule import Rule
 from ..logdispatcher import LogPriority
 from ..CommandHelper import CommandHelper
 
 
 class CheckDupIDs(Rule):
-    '''This class checks the local accounts database for duplicate IDs. All
+    """This class checks the local accounts database for duplicate IDs. All
     accounts on a system must have unique UIDs. This class inherits the base
     Rule class, which in turn inherits observable.
     
@@ -64,13 +66,18 @@ class CheckDupIDs(Rule):
        For Mac, also check that all the user's primary group ID's are in the
        local directory.
 
-
-    '''
+    """
 
     def __init__(self, config, environ, logger, statechglogger):
-        '''
-        Constructor
-        '''
+        """
+        private method to initialize the module
+
+        :param config:
+        :param environ:
+        :param logger:
+        :param statechglogger:
+        """
+
         Rule.__init__(self, config, environ, logger, statechglogger)
         self.config = config
         self.environ = environ
@@ -91,13 +98,12 @@ class CheckDupIDs(Rule):
         self.auditonly = True
 
     def report(self):
-        '''CheckDuplicateIds.report(): produce a report on whether or not local
+        """CheckDuplicateIds.report(): produce a report on whether or not local
         accounts databases have duplicate UIDs present.
 
-        :Authors:
-            Dave Kennel
+        :return: self.compliant - boolean; True if compliant, False if not
+        """
 
-        '''
         try:
             self.detailedresults = ""
             self.issuelist = []
@@ -114,24 +120,23 @@ class CheckDupIDs(Rule):
                     "all accounts are required to have unique UID values. " + \
                     str(self.issuelist)
         except (KeyboardInterrupt, SystemExit):
-            # User initiated exit
             raise
-        except Exception, err:
-            self.rulesuccess = False
-            self.detailedresults = self.detailedresults + " " + str(err) + \
-                " - " + str(traceback.format_exc())
+        except Exception:
+            self.compliant = False
+            self.detailedresults += "\n" + traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("report", self.compliant,
-                                   self.detailedresults)
+        self.formatDetailedResults("report", self.compliant, self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+
         return self.compliant
 
     def osxcheck(self):
-        '''This version of the check should work for all OS X systems.
-        @author: ekkehard
+        """This version of the check should work for all OS X systems.
+        @author: Ekkehard
 
+        :return: result - boolean; True if no duplicates found; False if duplicates found
+        """
 
-        '''
         try:
             result = False
             nixcheckresult = self.nixcheck()
@@ -188,25 +193,16 @@ class CheckDupIDs(Rule):
                 result = False
             return result
 
-        except (KeyboardInterrupt, SystemExit):
-# User initiated exit
+        except:
             raise
-        except Exception, err:
-            self.detailedresults = 'CheckDuplicateIds.osxcheck: '
-            self.detailedresults = self.detailedresults + traceback.format_exc()
-            self.rulesuccess = False
-            self.logger.log(LogPriority.ERROR,
-                            ['CheckDuplicateIds.osxcheck',
-                             self.detailedresults])
 
     def nixcheck(self):
-        '''This version of the check should work for all u systems. This
+        """This version of the check should work for all u systems. This
         is borrowed from the STOR code so the check methodology is well tested.
-        
-        @author: D. Kennel
 
+        :return: retval - boolean; True if no duplicates; False if duplicates found
+        """
 
-        '''
         try:
             retval = True
             filelist = ['/etc/passwd', '/etc/group']
@@ -252,29 +248,22 @@ class CheckDupIDs(Rule):
                     fdata.close()
             return retval
 
-        except (KeyboardInterrupt, SystemExit):
-            # User initiated exit
+        except:
             raise
-        except Exception:
-            self.detailedresults = self.detailedresults + \
-                traceback.format_exc()
-            self.rulesuccess = False
-            self.logger.log(LogPriority.ERROR, self.detailedresults)
-            return False
 
     def getcolumn(self, file_to_read="", column=0, separator=":"):
-        '''Get the data out of <file_to_read> column <column> using <separator>
+        """Get the data out of <file_to_read> column <column> using <separator>
         
         Intended for use with the /etc/group and /etc/password files for getting
         and comparing group information.
-        
-        @author: Roy Nielsen
 
         :param file_to_read:  (Default value = "")
         :param column:  (Default value = 0)
         :param separator:  (Default value = ":")
 
-        '''
+        :return: column_data - dictionary; columnized data set of specified file
+        """
+
         if file_to_read and isinstance(column, int) and separator:
             reading = open(file_to_read, "r")
 
@@ -286,7 +275,7 @@ class CheckDupIDs(Rule):
             return column_data
 
     def checkgrouprefs(self):
-        '''Per RedHat STIG - CCE-RHEL7-CCE-TBD 2.4.1.2.3, check group references.
+        """Per RedHat STIG - CCE-RHEL7-CCE-TBD 2.4.1.2.3, check group references.
         
         All GIDs referenced in /etc/passwd must be defined in /etc/group
         
@@ -296,11 +285,9 @@ class CheckDupIDs(Rule):
         
         Watch for LDAP issues (e.g. user default group changed to a group
         coming from LDAP).
-        
-        @author: Roy Nielsen
 
+        """
 
-        '''
         group_groups = self.getcolumn("/etc/group", 2)
         pwd_groups = self.getcolumn("/etc/passwd", 3)
 
@@ -311,7 +298,7 @@ class CheckDupIDs(Rule):
                 self.issuelist.append(message)
 
     def checkmacgrouprefs(self):
-        '''Per RedHat STIG - CCE-RHEL7-CCE-TBD 2.4.1.2.3, check group references.
+        """Per RedHat STIG - CCE-RHEL7-CCE-TBD 2.4.1.2.3, check group references.
         
            All GIDs referenced in /etc/passwd must be defined in /etc/group
         
@@ -324,11 +311,9 @@ class CheckDupIDs(Rule):
         
         For Mac, check that al the user's primary group ID's are in the local
         directory.
-        
-        @author: Roy Nielsen
 
+        """
 
-        '''
         self.dscl = "/usr/bin/dscl"
         user_groups = []
         dscl_users = [self.dscl, ".", "list", "/users"]
@@ -349,7 +334,7 @@ class CheckDupIDs(Rule):
             try:
                 mygroup = output[0].split()[1]
                 user_groups.append(mygroup)
-            except KeyError, IndexError:
+            except (KeyError, IndexError):
                 pass
 
         dscl_groups = [self.dscl, ".", "list", "/Groups"]
