@@ -124,6 +124,7 @@ class GUI (View, QtWidgets.QMainWindow, main_window.Ui_MainWindow):
         # Connect UI events to actions
         self.rule_list_widget.setSortingEnabled(True)
         self.rule_list_widget.itemSelectionChanged.connect(self.rulelistselchange)
+        self.rule_list_widget.itemDoubleClicked.connect(self.reportrule)
         self.actionQuit.triggered.connect(self.guiexit)
         self.actionRun_All.triggered.connect(self.runall)
         self.actionReport_All.triggered.connect(self.reportall)
