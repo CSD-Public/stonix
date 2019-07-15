@@ -187,6 +187,9 @@ class GUI (View, QMainWindow, main_window.Ui_MainWindow):
         # Build rule list
         self.rule_data = self.controller.getallrulesdata()
         rnamelist = []
+        # empty rule set safety
+        if len(self.rule_data) == 0:
+            self.guiexit("********************\n\nSTONIX: No applicable rules for this system\n\n********************")
         for rnum in self.rule_data:
             
             icon = QIcon()
@@ -414,7 +417,7 @@ class GUI (View, QMainWindow, main_window.Ui_MainWindow):
             self.fix_button.setEnabled(False)
             self.report_button.setEnabled(False)
 
-    def guiexit(self):
+    def guiexit(self, msg=None):
         '''Program quit from GUI called. Clean up lock files and post reports.
         
         @author: David Kennel
@@ -423,7 +426,7 @@ class GUI (View, QMainWindow, main_window.Ui_MainWindow):
         '''
         self.controller.releaselock()
         self.logger.postreport()
-        sys.exit()
+        sys.exit(msg)
 
     def set_listview_item_bgcolor(self, item_text, qcolor_rgb):
         '''Changes the background color of a list view item based on it's

@@ -318,6 +318,11 @@ class Controller(Observable):
         self.logger.log(LogPriority.DEBUG,
                         'Rules Processed in ' + str(etime))
         self.installedrules = self.findapplicable(allrules)
+
+        # if no applicable rules are found, exit STONIX with message
+        if len(self.installedrules) == 0:
+            sys.exit("********************\n\nSTONIX: No applicable rules for this system\n\n********************")
+
         etime = time.time() - starttime
         self.logger.log(LogPriority.DEBUG,
                         'Rules Applicable in ' + str(etime))
