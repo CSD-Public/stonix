@@ -548,7 +548,7 @@ class zzzTestFrameworkMacPkgr(unittest.TestCase):
             testPath = "/tmp/testStonixMacPkgr-0.0.3"
             if os.path.exists(testPath):
                 shutil.rmtree(testPath)
-        except Exception, err:
+        except Exception as err:
             self.logger.log(LogPriority.INFO, "Test set already missing?")
             raise err
         else:

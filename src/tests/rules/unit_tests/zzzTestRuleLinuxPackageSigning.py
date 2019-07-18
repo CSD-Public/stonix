@@ -29,7 +29,7 @@ This is a Unit Test for Rule LinuxPackageSigning
         of a single "path")
 '''
 
-from __future__ import absolute_import
+
 
 import sys
 import unittest

@@ -300,20 +300,20 @@ forgot to override the default instructions for this key. Please file a bug.
         try:
             if coercing:
                 if self.datatype == 'bool' and type(newvalue) is not \
-                types.BooleanType:
+                bool:
                     newvalue = newvalue.lower()
                     if newvalue in ['yes', 'true']:
                         newvalue = True
                     elif newvalue in ['no', 'false']:
                         newvalue = False
                 elif self.datatype == 'int' and type(newvalue) is not \
-                types.IntType:
+                int:
                     newvalue = int(newvalue)
                 elif self.datatype == 'float' and type(newvalue) is not \
-                types.FloatType:
+                float:
                     newvalue = float(newvalue)
                 elif self.datatype == 'list' and type(newvalue) is not \
-                types.ListType:
+                list:
                     if not newvalue:
                         newvalue = []
                     else:
@@ -505,7 +505,7 @@ forgot to override the default instructions for this key. Please file a bug.
         @author: D. Kennel
         """
         try:
-            if type(testvar) is types.BooleanType:
+            if type(testvar) is bool:
                 return True
             else:
                 return False
@@ -522,7 +522,7 @@ forgot to override the default instructions for this key. Please file a bug.
         @author: D. Kennel
         """
         try:
-            if type(testvar) is types.StringType:
+            if type(testvar) is bytes:
                 return True
             else:
                 return False
@@ -539,7 +539,7 @@ forgot to override the default instructions for this key. Please file a bug.
         @author: D. Kennel
         """
         try:
-            if type(testvar) is types.ListType:
+            if type(testvar) is list:
                 return True
             else:
                 return False
@@ -556,7 +556,7 @@ forgot to override the default instructions for this key. Please file a bug.
         @author: D. Kennel
         """
         try:
-            if type(testvar) is types.IntType:
+            if type(testvar) is int:
                 return True
             else:
                 return False
@@ -573,7 +573,7 @@ forgot to override the default instructions for this key. Please file a bug.
         @author: D. Kennel
         """
         try:
-            if type(testvar) is types.FloatType:
+            if type(testvar) is float:
                 return True
             else:
                 return False
@@ -590,7 +590,7 @@ forgot to override the default instructions for this key. Please file a bug.
         @author: D. Kennel
         """
         try:
-            if type(testvar) is types.DictType:
+            if type(testvar) is dict:
                 return True
             else:
                 return False

@@ -29,7 +29,7 @@ This rule will configure the diagnostic reporting in macOS (OS X).
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
 '''
 
-from __future__ import absolute_import
+
 from ..ruleKVEditor import RuleKVEditor
 
 

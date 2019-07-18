@@ -49,12 +49,12 @@ import os
 import sys
 import traceback
 import webbrowser
-from view import View
+from .view import View
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
-import main_window
-from stonix_log_viewer import Ui_log_viewer_window
-from logdispatcher import LogPriority
+from . import main_window
+from .stonix_log_viewer import Ui_log_viewer_window
+from .logdispatcher import LogPriority
 
 
 class GUI (View, QMainWindow, main_window.Ui_MainWindow):
@@ -875,7 +875,7 @@ class CiFrame(QFrame):
         came.
         @author: David Kennel
         @change: Breen Malmberg - 09/04/2018 - cannot str() typecast certain
-                unicode characters (for ex: 'ascii' codec can't encode character u'\u0301')
+                unicode characters (for ex: 'ascii' codec can't encode character u'\\u0301')
                 so str() was replaced with encode() method to handle
                 unreadable unicode characters
 

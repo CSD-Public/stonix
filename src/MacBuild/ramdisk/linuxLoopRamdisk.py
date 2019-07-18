@@ -12,11 +12,11 @@ import unittest
 from tempfile import mkdtemp
 
 #--- non-native python libraries in this source tree
-from lib.run_commands import RunWith
-from lib.loggers import CyLogger
-from lib.loggers import LogPriority as lp
-from commonRamdiskTemplate import RamDiskTemplate
-from commonRamdiskTemplate import RamDiskTemplate
+from .lib.run_commands import RunWith
+from .lib.loggers import CyLogger
+from .lib.loggers import LogPriority as lp
+from .commonRamdiskTemplate import RamDiskTemplate
+from .commonRamdiskTemplate import RamDiskTemplate
 
 ###############################################################################
 
@@ -30,9 +30,9 @@ class RamDisk(RamDiskTemplate):
         if not sys.platform.startswith("linux"):
             raise self.NotValidForThisOS("This ramdisk is only viable for a Linux.")
         raise self.NotValidForThisOS("Not yet implemented......")
-        print "#=====================================#"
-        print "# Not yet implemented...              #"
-        print "#=====================================#"
+        print("#=====================================#")
+        print("# Not yet implemented...              #")
+        print("#=====================================#")
 
     ###########################################################################
 

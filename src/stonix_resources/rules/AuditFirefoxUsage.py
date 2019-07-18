@@ -27,7 +27,7 @@ should only use the browser for administration tasks.
         filled in missing documentation
 """
 
-from __future__ import absolute_import
+
 from ..CommandHelper import CommandHelper
 from ..localize import LOCALDOMAINS
 from ..logdispatcher import LogPriority

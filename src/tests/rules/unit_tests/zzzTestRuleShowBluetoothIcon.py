@@ -23,7 +23,7 @@ This is a Unit Test for Rule ConfigureAppleSoftwareUpdate
 @author: Brandon R. Gonzales
 @change: 2018/12/12 - Original implementation
 '''
-from __future__ import absolute_import
+
 import sys
 import unittest
 import os

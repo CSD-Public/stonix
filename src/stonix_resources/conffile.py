@@ -24,7 +24,7 @@ Created on Dec 13, 2011
 
 import os
 import re
-from logdispatcher import LogPriority
+from .logdispatcher import LogPriority
 
 
 class ConfFile(object):

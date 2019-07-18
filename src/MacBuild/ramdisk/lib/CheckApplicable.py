@@ -67,7 +67,7 @@ class CheckApplicable(object):
             keysSuccess = []
             valueSuccess = []
             validKeys = ['type', 'os', 'family', 'noroot', 'fisma']
-            for key, value in applicable.items():
+            for key, value in list(applicable.items()):
                 if key in validKeys:
                     keysSuccess.append(True)
                 else:
@@ -219,7 +219,7 @@ class CheckApplicable(object):
 
         # Process the OS list
         if 'os' in applicable:
-            for ostype, osverlist in applicable['os'].iteritems():
+            for ostype, osverlist in applicable['os'].items():
                 if re.search(ostype, self.myostype):
                     inRange = self.isInRange(osverlist)
                     if inRange:

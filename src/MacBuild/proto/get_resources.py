@@ -15,5 +15,5 @@ for root, dirs, files in os.walk("stonix_resources"):
 os.chdir(origdir)
 
 for hiddenimport in hiddenimports:
-    print hiddenimport
+    print(hiddenimport)
 

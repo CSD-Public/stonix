@@ -100,10 +100,10 @@ class zzzTestUtilsisServerVersionHigher(unittest.TestCase) :
         :param comment: 
 
         '''
-        self.assertEquals(expected_result, isServerVersionHigher(version, server_version))
+        self.assertEqual(expected_result, isServerVersionHigher(version, server_version))
 
 
-for behavior, test_cases in version_test_case_data.iteritems():
+for behavior, test_cases in version_test_case_data.items():
     for case in test_cases:
         (expected_result, version, server_version, comment) = case
         test_name = "test_{0}_{1}_{2}_{3}".format(behavior, version, server_version, comment)

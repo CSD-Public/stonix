@@ -34,7 +34,7 @@ access to this set of users.
 @change: 2015/10/08 eball Help text/PEP8 cleanup
 '''
 
-from __future__ import absolute_import
+
 import os
 import re
 import traceback

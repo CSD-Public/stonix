@@ -28,7 +28,7 @@ This is a (dummy) Unit Test for Rule InstalledSoftwareVerification
     nearly 100%. This rule is audit-only and uses a system facility. It does
     not require unit testing.
 '''
-from __future__ import absolute_import
+
 import unittest
 import sys
 

@@ -27,7 +27,7 @@ Created on 2015/07/01
 @change: 2017/10/23 rsn - change to new service helper interface
 @change: 2017/11/14 bgonz12 - Fix removeX dependency issue for deb systems
 '''
-from __future__ import absolute_import
+
 
 import os
 import re

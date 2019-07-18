@@ -25,7 +25,7 @@ Created on Nov 12, 2013
 @change: 2015/10/07 eball Help text/PEP8 cleanup
 @change 2017/08/28 rsn Fixing to use new help text methods
 '''
-from __future__ import absolute_import
+
 from ..stonixutilityfunctions import readFile, writeFile, checkPerms
 from ..stonixutilityfunctions import resetsecon
 from ..rule import Rule
@@ -118,7 +118,7 @@ class DisableScreenSavers(Rule):
                     if search(saver, config):
                         compliant = False
             for saver in self.badsavers:
-                for k, v in self.paths.iteritems():
+                for k, v in self.paths.items():
                     if os.path.exists(k + saver) or \
                        os.path.exists(k + saver + v):
                         compliant = False
@@ -189,7 +189,7 @@ class DisableScreenSavers(Rule):
                 else:
                     self.rulesuccess = False
             for saver in self.badsavers:
-                for k, v in self.paths.iteritems():
+                for k, v in self.paths.items():
                     try:
                         if os.path.exists(k + saver):
                             os.remove(k + saver)

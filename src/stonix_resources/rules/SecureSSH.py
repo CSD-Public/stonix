@@ -42,7 +42,7 @@ Created on Feb 19, 2013
     methods for linux and mac.
 """
 
-from __future__ import absolute_import
+
 
 import os
 import traceback

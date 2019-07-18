@@ -4,7 +4,7 @@ Test for the RamdiskFactory
 
 @author: Roy Nielsen
 """
-from __future__ import absolute_import
+
 #--- Native python libraries
 import re
 import os

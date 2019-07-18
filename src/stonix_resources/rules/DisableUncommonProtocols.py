@@ -22,7 +22,7 @@ This rule disables support for several uncommon network protocols.
 @change: 2015/09/10 eball - Original implementation
 @change 2017/08/28 rsn Fixing to use new help text methods
 '''
-from __future__ import absolute_import
+
 import os
 import re
 import traceback

@@ -23,7 +23,7 @@ This is a Unit Test for Rule ConfigureDiagnosticReporting
 @author: Eric Ball
 @change: 2016/07/07 Original Implementation
 '''
-from __future__ import absolute_import
+
 import sys
 import unittest
 

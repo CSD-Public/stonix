@@ -21,7 +21,7 @@ except:
         QDialog, QVBoxLayout, QHBoxLayout, QTextBrowser, QTextEdit, \
         QLabel, QPushButton, QLayout
     from PyQt4.QtCore import QString, QVariant
-from environment import Environment
+from .environment import Environment
 
 try:
     _fromUtf8 = QString.fromUtf8

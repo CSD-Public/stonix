@@ -32,10 +32,10 @@ This object is designed to automate rules using the KV Editor paradigm
 '''
 import traceback
 import types
-from rule import Rule
-from KVEditorStonix import KVEditorStonix
-from logdispatcher import LogPriority
-from configurationitem import ConfigurationItem
+from .rule import Rule
+from .KVEditorStonix import KVEditorStonix
+from .logdispatcher import LogPriority
+from .configurationitem import ConfigurationItem
 
 
 class RuleKVEditor (Rule):
@@ -109,14 +109,14 @@ LANL-stonix."""
     def setkvdata(self, value):
         success = True
         datatype = type(value)
-        if datatype == types.DictionaryType:
+        if datatype == dict:
             self.kvdata = value
         else:
             success = False
             self.kvdata = {}
             raise TypeError("kvata with value" + str(value) + \
                             "is of type " + str(datatype) + " not of " + \
-                            "type " + str(types.DictionaryType) + \
+                            "type " + str(dict) + \
                             " as expected!")
         return success
 
@@ -125,14 +125,14 @@ LANL-stonix."""
     def setkvdatafixalternate(self, value):
         success = True
         datatype = type(value)
-        if datatype == types.DictionaryType:
+        if datatype == dict:
             self.kvdatafixalternate = value
         else:
             success = False
             self.kvdatafixalternate = {}
             raise TypeError("kvdatafixalternate with value" + str(value) + \
                             "is of type " + str(datatype) + " not of " + \
-                            "type " + str(types.DictionaryType) + \
+                            "type " + str(dict) + \
                             " as expected!")
         return success
 
@@ -141,14 +141,14 @@ LANL-stonix."""
     def setkvintent(self, value):
         success = True
         datatype = type(value)
-        if datatype == types.StringType:
+        if datatype == bytes:
             self.kvintent = value
         else:
             success = False
             self.kvintent = ""
             raise TypeError("kvintent with value" + str(value) + \
                             "is of type " + str(datatype) + " not of " + \
-                            "type " + str(types.StringType) + " as expected!")
+                            "type " + str(bytes) + " as expected!")
         return success
 
 ###############################################################################
@@ -156,14 +156,14 @@ LANL-stonix."""
     def setkvpath(self, value):
         success = True
         datatype = type(value)
-        if datatype == types.StringType:
+        if datatype == bytes:
             self.kvpath = value
         else:
             success = False
             self.kvpath = ""
             raise TypeError("kvpath with value" + str(value) + \
                             "is of type " + str(datatype) + " not of " + \
-                            "type " + str(types.StringType) + " as expected!")
+                            "type " + str(bytes) + " as expected!")
         return success
 
 ###############################################################################
@@ -171,14 +171,14 @@ LANL-stonix."""
     def setkvreportonly(self, value):
         success = True
         datatype = type(value)
-        if datatype == types.BooleanType:
+        if datatype == bool:
             self.kvreportonly = value
         else:
             success = False
             self.kvreportonly = False
             raise TypeError("kvreportonly with value" + str(value) + \
                             "is of type " + str(datatype) + " not of " + \
-                            "type " + str(types.BooleanType) + " as expected!")
+                            "type " + str(bool) + " as expected!")
         return success
 
 ###############################################################################
@@ -186,14 +186,14 @@ LANL-stonix."""
     def setkvtemppath(self, value):
         success = True
         datatype = type(value)
-        if datatype == types.StringType:
+        if datatype == bytes:
             self.kvtemppath = value
         else:
             success = False
             self.kvtemppath = ""
             raise TypeError("kvtemppath with value" + str(value) + \
                             "is of type " + str(datatype) + " not of " + \
-                            "type " + str(types.StringType) + " as expected!")
+                            "type " + str(bytes) + " as expected!")
         return success
 
 ###############################################################################
@@ -201,14 +201,14 @@ LANL-stonix."""
     def setkvtype(self, value):
         success = True
         datatype = type(value)
-        if datatype == types.StringType:
+        if datatype == bytes:
             self.kvtype = value
         else:
             success = False
             self.kvtype = ""
             raise TypeError("kvtype with value" + str(value) + \
                             "is of type " + str(datatype) + " not of " + \
-                            "type " + str(types.StringType) + " as expected!")
+                            "type " + str(bytes) + " as expected!")
         return success
 
 ###############################################################################
@@ -216,14 +216,14 @@ LANL-stonix."""
     def setkvdefaultscurrenthost(self, value=False):
         success = True
         datatype = type(value)
-        if datatype == types.BooleanType:
+        if datatype == bool:
             self.kvdefaultscurrenthost = value
         else:
             success = False
             self.kvdefaultscurrenthost = False
             raise TypeError("kvdefaultscurrenthost with value" + \
                             str(value) + " is of type " + str(datatype) + \
-                            " not of type " + str(types.BooleanType) + \
+                            " not of type " + str(bool) + \
                             " as expected!")
         return success
 
@@ -341,7 +341,7 @@ LANL-stonix."""
         except (KeyboardInterrupt, SystemExit):
             fixsuccessful = False
             raise
-        except Exception, err:
+        except Exception as err:
             fixsuccessful = False
             self.detailedresults = self.detailedresults + \
             str(traceback.format_exc())
@@ -440,7 +440,7 @@ LANL-stonix."""
                                   str(allcompliant)])
         except (KeyboardInterrupt, SystemExit):
             raise
-        except Exception, err:
+        except Exception as err:
             allcompliant = False
             self.detailedresults = self.detailedresults + \
             str(traceback.format_exc())
@@ -576,7 +576,7 @@ LANL-stonix."""
             self.kveditor = None
             self.kvreportsuccessful = False
             datatype = type(pKVEditorName)
-            if datatype == types.StringType:
+            if datatype == bytes:
                 self.kveditorName = pKVEditorName
             else:
                 success = False
@@ -585,7 +585,7 @@ LANL-stonix."""
                 raise TypeError("pKVEditorName with value" + \
                                 str(pKVEditorName) + "is of type " + \
                                 str(datatype) + " not of " + "type " + \
-                                str(types.StringType) + " as expected!")
+                                str(bytes) + " as expected!")
             self.kveventid = str(self.rulenumber).zfill(4) + \
             str(self.kveditorName)
             self.kvindex = self.kvindex + 1
@@ -744,14 +744,14 @@ LANL-stonix."""
 
         '''
         datatype = type(pMessage)
-        if datatype == types.StringType:
+        if datatype == bytes:
             if not (pMessage == ""):
                 messagestring = pMessage
                 if (self.detailedresults == ""):
                     self.detailedresults = messagestring + "\n"
                 else:
                     self.detailedresults += messagestring + "\n"
-        elif datatype == types.ListType:
+        elif datatype == list:
             if not (pMessage == []):
                 for item in pMessage:
                     messagestring = item
@@ -762,8 +762,8 @@ LANL-stonix."""
         else:
             raise TypeError("pMessage with value" + str(pMessage) + \
                             "is of type " + str(datatype) + " not of " + \
-                            "type " + str(types.StringType) + \
-                            " or type " + str(types.ListType) + \
+                            "type " + str(bytes) + \
+                            " or type " + str(list) + \
                             " as expected!")
 
 ###############################################################################
@@ -789,13 +789,13 @@ LANL-stonix."""
     def getConfigurationByName(self, pCIName=""):
         configurationItemObject = None
         datatype = type(pCIName)
-        if datatype == types.StringType:
+        if datatype == bytes:
             ciName = pCIName
         else:
             ciName = ""
             raise TypeError("pCIName with value" + str(pCIName) + \
                             "is of type " + str(datatype) + " not of " + \
-                            "type " + str(types.StringType) + \
+                            "type " + str(bytes) + \
                             " as expected!")
         for ci in self.confitems:
             if ci.getkey() == ciName:

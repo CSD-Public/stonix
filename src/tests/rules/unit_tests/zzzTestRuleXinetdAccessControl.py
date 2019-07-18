@@ -26,7 +26,7 @@ This is a Unit Test for Rule XinetdAccessControl
 @change: 2016/02/10 roy Added sys.path.append for being able to unit test this
                         file as well as with the test harness.
 '''
-from __future__ import absolute_import
+
 import unittest
 import sys
 

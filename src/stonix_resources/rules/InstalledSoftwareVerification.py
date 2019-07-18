@@ -26,7 +26,7 @@ Verify package integrity, correct permissions
 @change: 2018/07/30 Breen Malmberg - re-wrote the report and fix methods entirely
 '''
 
-from __future__ import absolute_import
+
 
 import re
 import traceback

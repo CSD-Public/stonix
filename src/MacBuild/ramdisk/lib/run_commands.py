@@ -5,7 +5,7 @@ Inspiration for some of the below found on the internet.
 
 @author: Roy Nielsen
 """
-from __future__ import absolute_import
+
 import os
 import re
 import pty
@@ -113,7 +113,7 @@ class RunWith(object):
                 raise SetCommandTypeError("Can only be passed a command " +
                                           "string or a list only containing " +
                                           "string elements for a command.")
-        elif command and isinstance(command, basestring):
+        elif command and isinstance(command, str):
             self.command = command
             self.printcmd = command
             if myshell is None or not isinstance(myshell, bool):
@@ -207,9 +207,9 @@ class RunWith(object):
 
 
         '''
-        print "Output: " + str(self.stdout)
-        print "Error: " + str(self.stderr)
-        print "Return code: " + str(self.retcode)
+        print("Output: " + str(self.stdout))
+        print("Error: " + str(self.stderr))
+        print("Return code: " + str(self.retcode))
         return self.stdout, self.stderr, self.retcode
 
     ###########################################################################
@@ -230,7 +230,7 @@ class RunWith(object):
                 self.stdout, self.stderr = proc.communicate()
                 self.retcode = proc.returncode
                 self.libc.sync()
-            except Exception, err:
+            except Exception as err:
                 if not silent:
                     self.logger.log(lp.WARNING, "command: " + str(self.printcmd))
                     self.logger.log(lp.DEBUG, "stdout: " + str(self.stdout))
@@ -297,7 +297,7 @@ class RunWith(object):
                 proc.wait()
                 self.retcode = proc.returncode
                 self.libc.sync()
-            except Exception, err:
+            except Exception as err:
                 if not silent:
                     self.logger.log(lp.WARNING, "command: " + str(self.printcmd))
                 self.logger.log(lp.WARNING, "stderr: " + str(self.stderr))
@@ -447,7 +447,7 @@ class RunWith(object):
                 self.retcode = proc.returncode
                 self.libc.sync()
 
-            except Exception, err:
+            except Exception as err:
                 if not silent:
                     self.logger.log(lp.WARNING, "command: " + str(self.printcmd))
                 self.logger.log(lp.WARNING, "stderr: " + str(self.stderr))
@@ -515,7 +515,7 @@ class RunWith(object):
                 self.stdout, self.stderr = proc.communicate()
                 timer.cancel()
                 self.retcode = proc.returncode
-            except Exception, err:
+            except Exception as err:
                 if not silent:
                     self.logger.log(lp.WARNING, "command: " + str(self.printcmd))
                 self.logger.log(lp.WARNING, "stderr: " + str(self.stderr))
@@ -585,7 +585,7 @@ class RunWith(object):
                 if not silent:
                     self.logger.log(lp.DEBUG, "Trying to execute: \"" +
                                     " ".join(internal_command) + "\"")
-            elif isinstance(self.command, basestring):
+            elif isinstance(self.command, str):
                 internal_command += self.command
                 if not silent:
                     self.logger.log(lp.DEBUG, "Trying to execute: \"" +
@@ -680,7 +680,7 @@ class RunWith(object):
             self.logger.log("This can only run if running in privileged mode.")
             return 256
 
-        if isinstance(target_dir, basestring) and target_dir:
+        if isinstance(target_dir, str) and target_dir:
             return_dir = os.getcwd()
             if os.path.exists(target_dir):
                 os.chdir(target_dir)
@@ -704,7 +704,7 @@ class RunWith(object):
                         cmd.append(str(self.command[i]))
 
                 internal_command.append(str(" ".join(cmd)))
-            elif isinstance(self.command, basestring):
+            elif isinstance(self.command, str):
                 internal_command.append(self.command)
 
         self.setCommand(internal_command)
@@ -814,7 +814,7 @@ class RunWith(object):
 
                 internal_command.append(str("/usr/bin/sudo -S -s '" +
                                             " ".join(cmd) + "'"))
-            elif isinstance(self.command, basestring):
+            elif isinstance(self.command, str):
                 try:
                     internal_command.append(str("/usr/bin/sudo -E -S -s " +
                                                 "'" +
@@ -827,7 +827,7 @@ class RunWith(object):
 
             try:
                 (master, slave) = pty.openpty()
-            except Exception, err:
+            except Exception as err:
                 self.logger.log(lp.WARNING, "Error trying to open pty: " +
                                 str(err))
                 self.logger.log(lp.WARNING, traceback.format_exc())
@@ -838,7 +838,7 @@ class RunWith(object):
                     proc = Popen(internal_command,
                                  stdin=slave, stdout=slave, stderr=slave,
                                  close_fds=True)
-                except Exception, err:
+                except Exception as err:
                     self.logger.log(lp.WARNING,
                                     "Error opening process to pty: " +
                                     str(err))
@@ -939,12 +939,12 @@ class RunWith(object):
             if isinstance(self.command, list):
                 cmd = cmd + [" ".join(self.command)]
 
-            elif isinstance(self.command, basestring):
+            elif isinstance(self.command, str):
                 cmd = cmd + [self.command]
 
             try:
                 (master, slave) = pty.openpty()
-            except Exception, err:
+            except Exception as err:
                 self.logger.log(lp.WARNING, "Error trying to open pty: " +
                                 str(err))
                 self.logger.log(lp.WARNING, traceback.format_exc())
@@ -954,7 +954,7 @@ class RunWith(object):
                 try:
                     proc = Popen(cmd, stdin=slave, stdout=slave, stderr=slave,
                                  close_fds=True)
-                except Exception, err:
+                except Exception as err:
                     self.logger.log(lp.WARNING,
                                     "Error opening process to pty: " +
                                     str(err))
@@ -1039,10 +1039,10 @@ class RunThread(threading.Thread):
         self.shell = myshell
         threading.Thread.__init__(self)
 
-        if isinstance(self.command, types.ListType):
+        if isinstance(self.command, list):
             self.shell = True
             self.printcmd = " ".join(self.command)
-        if isinstance(self.command, types.StringTypes):
+        if isinstance(self.command, str):
             self.shell = False
             self.printcmd = self.command
 
@@ -1065,7 +1065,7 @@ class RunThread(threading.Thread):
                 self.retout, self.reterr = p.communicate()
                 self.logger.log(lp.WARNING, "Finished \"run\" of: " +
                                 str(self.command))
-            except Exception, err:
+            except Exception as err:
                 self.logger.log(lp.WARNING, "Exception trying to open: " +
                                 str(self.command))
                 self.logger.log(lp.WARNING, traceback.format_exc())
@@ -1074,7 +1074,7 @@ class RunThread(threading.Thread):
             else:
                 try:
                     self.retout, self.reterr = p.communicate()
-                except Exception, err:
+                except Exception as err:
                     self.logger.log(lp.WARNING, "Exception trying to open: " +
                                     str(self.printcmd))
                     self.logger.log(lp.WARNING, "Associated exception: " +
@@ -1125,8 +1125,8 @@ def runMyThreadCommand(cmd, logger, myshell=False):
     if not isinstance(logger, CyLogger):
         raise NotACyLoggerError("Passed in value for logger is "
                                 "invalid, try again.")
-    print str(cmd)
-    print str(logger)
+    print(str(cmd))
+    print(str(logger))
     if cmd and logger:
         run_thread = RunThread(cmd, logger, myshell)
         run_thread.start()

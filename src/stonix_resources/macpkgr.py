@@ -23,17 +23,17 @@ Created on Nov 24, 2015
 import os
 import re
 import hashlib
-import urllib2
+import urllib.request, urllib.error, urllib.parse
 import shutil
 import plistlib
 import tempfile
 import traceback
 import ctypes as C
 
-from localize import MACREPOROOT
-from logdispatcher import LogPriority
-from CommandHelper import CommandHelper
-from Connectivity import Connectivity
+from .localize import MACREPOROOT
+from .logdispatcher import LogPriority
+from .CommandHelper import CommandHelper
+from .Connectivity import Connectivity
 from ssl import SSLError
 
 
@@ -215,8 +215,8 @@ class MacPkgr(object):
 
         except (KeyboardInterrupt, SystemExit):
             raise
-        except Exception, err:
-            print err
+        except Exception as err:
+            print(err)
             self.detailedresults = traceback.format_exc()
             self.logger.log(LogPriority.DEBUG, self.detailedresults)
             raise err
@@ -290,7 +290,7 @@ class MacPkgr(object):
                 count = 0
                 self.ch.executeCommand(cmd_one)
                 files2remove = self.ch.getOutputString().split("\n")
-                print "Files to remove: " + str(files2remove)
+                print("Files to remove: " + str(files2remove))
                 self.logger.log(LogPriority.DEBUG, files2remove)
                 if str(self.ch.getReturnCode()) == str(0):
                     for file in files2remove:
@@ -302,7 +302,7 @@ class MacPkgr(object):
                                 # file path
                                 os.remove(install_root + file)
                                 count = count + 1
-                            except OSError, err:
+                            except OSError as err:
                                 self.logger.log(LogPriority.DEBUG,
                                                 "Error trying to remove: " +
                                                 str(file))
@@ -355,7 +355,7 @@ class MacPkgr(object):
                                     # why we use os.rmdir rather than shutil.rmtree
                                     # and we don't report on the success or failure
                                     # of removing directories.
-                                except OSError, err:
+                                except OSError as err:
                                     self.logger.log(LogPriority.DEBUG,
                                                     "Error trying to remove: "
                                                     + str(dir))
@@ -379,8 +379,8 @@ class MacPkgr(object):
 
         except(KeyboardInterrupt, SystemExit):
             raise
-        except Exception, err:
-            print err
+        except Exception as err:
+            print(err)
             self.detailedresults = traceback.format_exc()
             self.logger.log(LogPriority.DEBUG, self.detailedresults)
         if success:
@@ -388,7 +388,7 @@ class MacPkgr(object):
                 self.libc.sync()
             except:
                 pass
-        print "Remove Package success: " + str(success)
+        print("Remove Package success: " + str(success))
         return success
 
     ###########################################################################
@@ -421,8 +421,8 @@ class MacPkgr(object):
 
         except(KeyboardInterrupt, SystemExit):
             raise
-        except Exception, err:
-            print err
+        except Exception as err:
+            print(err)
             self.detailedresults = traceback.format_exc()
             self.logger.log(LogPriority.DEBUG, self.detailedresults)
 
@@ -473,8 +473,8 @@ class MacPkgr(object):
                     success = True
         except(KeyboardInterrupt, SystemExit):
             raise
-        except Exception, err:
-            print err
+        except Exception as err:
+            print(err)
             self.detailedresults = traceback.format_exc()
             self.logger.log(LogPriority.DEBUG, self.detailedresults)
 
@@ -554,7 +554,7 @@ class MacPkgr(object):
                     if os.path.isfile(afile_path):
                         try:
                             plist = plistlib.readPlist(afile_path)
-                        except Exception, err:
+                        except Exception as err:
                             self.logger.log(LogPriority.DEBUG, "Exception " +
                                                                "trying to use" +
                                                                " plistlib: " +
@@ -575,11 +575,11 @@ class MacPkgr(object):
                 #####
                 # Log the domain...
                 self.logger.log(LogPriority.DEBUG, "Domain: " + str(domain))
-            print "findDomain: " + str(domain)
+            print("findDomain: " + str(domain))
         except(KeyboardInterrupt, SystemExit):
             raise
-        except Exception, err:
-            print err
+        except Exception as err:
+            print(err)
             self.detailedresults = traceback.format_exc()
             self.logger.log(LogPriority.DEBUG, self.detailedresults)
 
@@ -609,7 +609,7 @@ class MacPkgr(object):
                     self.tmpDir = tempfile.mkdtemp()
                     self.logger.log(LogPriority.DEBUG, "tmpDir: " +
                                                        str(self.tmpDir))
-                except Exception, err:
+                except Exception as err:
                     message = "Problem creating temporary directory: " + \
                               str(err)
                     self.logger.log(LogPriority.WARNING, message)
@@ -618,7 +618,7 @@ class MacPkgr(object):
                     #####
                     # First try to open the URL
                     if self.connection.isPageAvailable(self.pkgUrl):
-                        urlfile = urllib2.urlopen(self.pkgUrl, timeout=10)
+                        urlfile = urllib.request.urlopen(self.pkgUrl, timeout=10)
                         #####
                         # Get just the package name out of the "package" url
                         urlList = self.pkgUrl.split("/")
@@ -629,11 +629,11 @@ class MacPkgr(object):
                             #####
                             # Next try to open a file for writing the local file
                             f = open(str(self.tmpLocalPkg).strip(), "w")
-                        except IOError, err:
+                        except IOError as err:
                             message = "Error opening file - err: " + str(err)
                             self.logger.log(LogPriority.INFO, message)
                             raise err
-                        except Exception, err:
+                        except Exception as err:
                             message = "Generic exception opening file - err: " + \
                                       str(err)
                             self.logger.log(LogPriority.INFO, message)
@@ -663,7 +663,7 @@ class MacPkgr(object):
                                                         message)
                                     else:
                                         raise IOError("What file???")
-                                except (OSError or IOError), err:
+                                except (OSError or IOError) as err:
                                     #####
                                     # Catch in case we run out of space on the
                                     # local system during the download process
@@ -684,7 +684,7 @@ class MacPkgr(object):
                                                     "Connection timed out. " +
                                                     "Creating new urlfile " +
                                                     "object.")
-                                    urlfile = urllib2.urlopen(self.pkgUrl,
+                                    urlfile = urllib.request.urlopen(self.pkgUrl,
                                                               timeout=10)
                                 else:
                                     success = True
@@ -698,8 +698,8 @@ class MacPkgr(object):
                 self.logger.log(LogPriority.DEBUG, message)
         except(KeyboardInterrupt, SystemExit):
             raise
-        except Exception, err:
-            print err
+        except Exception as err:
+            print(err)
             self.detailedresults = traceback.format_exc()
             self.logger.log(LogPriority.INFO, self.detailedresults)
         return success
@@ -752,8 +752,8 @@ class MacPkgr(object):
                 self.logger.log(LogPriority, message)
         except(KeyboardInterrupt, SystemExit):
             raise
-        except Exception, err:
-            print err
+        except Exception as err:
+            print(err)
             self.detailedresults = traceback.format_exc()
             self.logger.log(LogPriority.INFO, self.detailedresults)
 
@@ -780,7 +780,7 @@ class MacPkgr(object):
                     fh = open(self.tmpLocalPkg, 'r')
                 else:
                     raise Exception("Cannot open a non-existing file...")
-            except Exception, err:
+            except Exception as err:
                 message = "Cannot open file: " + self.tmpLocalPkg + \
                     " for reading."
                 self.logger.log(LogPriority.WARNING, message)
@@ -799,8 +799,8 @@ class MacPkgr(object):
 
         except(KeyboardInterrupt, SystemExit):
             raise
-        except Exception, err:
-            print err
+        except Exception as err:
+            print(err)
             self.detailedresults = traceback.format_exc()
             self.logger.log(LogPriority.INFO, self.detailedresults)
         else:
@@ -855,11 +855,11 @@ class MacPkgr(object):
                         #####
                         # Extract the tarball at the "destination" location
                         tar.extractall(destination)
-                    except (OSError | IOError), err:
+                    except (OSError | IOError) as err:
                         message = "Error extracting archive: " + str(err)
                         self.logger.log(LogPriority.WARNING, message)
                         raise err
-                except Exception, err:
+                except Exception as err:
                     message = "Error opening archive: " + str(err)
                     self.logger.log(LogPriority.DEBUG, message)
                     raise err
@@ -887,7 +887,7 @@ class MacPkgr(object):
                     # list the files inside the zipfile
                     # for internal_filename in uzfile.namelist():
                     for ifilename in uzfile.filelist:
-                        perm = ((ifilename.external_attr >> 16L) & 0777)
+                        perm = ((ifilename.external_attr >> 16) & 0o777)
                         internal_filename = ifilename.filename
                         message = "extracting file: " + str(internal_filename)
                         self.logger.log(LogPriority.DEBUG, message)
@@ -901,7 +901,7 @@ class MacPkgr(object):
                                 os.makedirs(os.path.join(destination,
                                                          internal_filename.strip("/")),
                                             perm)
-                            except OSError, err:
+                            except OSError as err:
                                 message = "Error making directory: " + str(err)
                                 self.logger.log(LogPriority.DEBUG, message)
                                 raise err
@@ -911,7 +911,7 @@ class MacPkgr(object):
                         # Now process if it is not a directoy
                         try:
                             contents = uzfile.read(internal_filename)
-                        except RuntimeError, err:
+                        except RuntimeError as err:
                             #####
                             # Calling read() on a closed ZipFile will raise a
                             # RuntimeError
@@ -941,7 +941,7 @@ class MacPkgr(object):
                                     os.write(target, contents)
                                 finally:
                                     os.close(target)
-                            except OSError, err:
+                            except OSError as err:
                                 message = "Error opening file for writing: " + \
                                           str(err)
                                 self.logger.log(LogPriority.WARNING, message)
@@ -978,8 +978,8 @@ class MacPkgr(object):
 
         except(KeyboardInterrupt, SystemExit):
             raise
-        except Exception, err:
-            print err
+        except Exception as err:
+            print(err)
             self.detailedresults = traceback.format_exc()
             self.logger.log(LogPriority.INFO, self.detailedresults)
 
@@ -987,7 +987,7 @@ class MacPkgr(object):
 
     ###########################################################################
 
-    def copyInstall(self, dest="/Applications", isdir=True, mode=0775,
+    def copyInstall(self, dest="/Applications", isdir=True, mode=0o775,
                     owner="root", group="admin"):
         '''Copies a directory tree, or contents of a directory to "dest"
         destination.
@@ -1010,7 +1010,7 @@ class MacPkgr(object):
             if isdir:
                 try:
                     shutil.copytree(src_path, dest)
-                except Exception, err:
+                except Exception as err:
                     message = "Unable to recursively copy dir: " + src_path + \
                               " error: " + str(err)
                     self.logger.log(LogPriority.ERROR, message)
@@ -1021,7 +1021,7 @@ class MacPkgr(object):
                     # try to chmod the directory (not recursively)
                     try:
                         os.chmod(dest, mode)
-                    except OSError, err:
+                    except OSError as err:
                         success = False
                         message = "Unable to change mode: " + str(err)
                         self.logger.log(LogPriority.ERROR, message)
@@ -1032,14 +1032,14 @@ class MacPkgr(object):
                     gid = 80
                     try:
                         uid = pwd.getpwnam(owner)[2]
-                    except KeyError, err:
+                    except KeyError as err:
                         success = False
                         message = "Error: " + str(err)
                         self.logger.log(LogPriority.DEBUG, message)
                         raise Exception(message)
                     try:
                         gid = grp.getgrnam(group)[2]
-                    except KeyError, err:
+                    except KeyError as err:
                         success = False
                         message = "Error: " + str(err)
                         self.logger.log(LogPriority.DEBUG, message)
@@ -1050,7 +1050,7 @@ class MacPkgr(object):
                         (type(gid) == type(int()))):
                         try:
                             os.chown(dest, uid, gid)
-                        except OSError, err:
+                        except OSError as err:
                             success = False
                             message = "Error: " + str(err)
                             self.logger.log(LogPriority.DEBUG, message)
@@ -1058,7 +1058,7 @@ class MacPkgr(object):
             else:
                 try:
                     dir_list = os.listdir(src_path)
-                except OSError, err:
+                except OSError as err:
                     message = "Error listing files from: " + src_path + \
                               " error: " + str(err)
                     self.logger.log(LogPriority.ERROR, message)
@@ -1067,7 +1067,7 @@ class MacPkgr(object):
                     for myfile in dir_list:
                         try:
                             shutil.copy2(myfile, dest)
-                        except Exception, err:
+                        except Exception as err:
                             message = "Error copying file: " + myfile + \
                                       " error: " + str(err)
                             self.logger.log(LogPriority.DEBUG, message)
@@ -1076,8 +1076,8 @@ class MacPkgr(object):
                             success = True
         except(KeyboardInterrupt, SystemExit):
             raise
-        except Exception, err:
-            print err
+        except Exception as err:
+            print(err)
             self.detailedresults = traceback.format_exc()
             self.logger.log(LogPriority.INFO, self.detailedresults)
 
@@ -1130,7 +1130,7 @@ class MacPkgr(object):
                     # downloaded and unarchived.
                     try:
                         shutil.rmtree(self.tmpDir)
-                    except Exception, err:
+                    except Exception as err:
                         self.logger.log(LogPriority.ERROR,
                                         "Exception: " + str(err))
                         raise err
@@ -1142,8 +1142,8 @@ class MacPkgr(object):
                                 " " + self.tmpLocalPkg)
         except(KeyboardInterrupt, SystemExit):
             raise
-        except Exception, err:
-            print err
+        except Exception as err:
+            print(err)
             self.detailedresults = traceback.format_exc()
             self.logger.log(LogPriority.INFO, self.detailedresults)
 

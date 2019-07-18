@@ -5,7 +5,7 @@ Inspiration for some of the below found on the internet.
 
 @author: Roy Nielsen
 """
-from __future__ import absolute_import
+
 import os
 import re
 import pty
@@ -81,7 +81,7 @@ class RunWith(object):
         if isinstance(command, list):
             self.printcmd = " ".join(command)
             self.command = command
-        if isinstance(command, basestring) :
+        if isinstance(command, str) :
             self.command = command
             self.printcommand = command
         self.myshell = myshell
@@ -158,9 +158,9 @@ class RunWith(object):
 
 
         '''
-        print "Output: " + str(self.output)
-        print "Error: " + str(self.error)
-        print "Return code: " + str(self.returncode)
+        print("Output: " + str(self.output))
+        print("Error: " + str(self.error))
+        print("Return code: " + str(self.returncode))
         return self.output, self.error, self.returncode
 
     ############################################################################
@@ -179,7 +179,7 @@ class RunWith(object):
                 self.libc.sync()
                 self.output, self.error = proc.communicate()
                 self.libc.sync()
-            except Exception, err :
+            except Exception as err :
                 self.logger.log(lp.WARNING, "- Unexpected Exception: "  + \
                            str(err)  + " command: " + self.printcmd)
                 self.logger.log(lp.WARNING, "stderr: " + str(self.error))
@@ -217,7 +217,7 @@ class RunWith(object):
                     self.output = self.output + line
                 for line in proc.stderr.readline():
                     self.error = self.error + line
-            except Exception, err:
+            except Exception as err:
                 self.logger.log(lp.WARNING, "system_call_retval - Unexpected Exception: "  + \
                            str(err)  + " command: " + str(self.printcmd))
                 raise err
@@ -277,7 +277,7 @@ class RunWith(object):
                 self.output, self.error = proc.communicate()
                 timer.cancel()
                 self.returncode = proc.returncode
-            except Exception, err:
+            except Exception as err:
                 self.logger.log(lp.WARNING, "system_call_retval - Unexpected " + \
                             "Exception: "  + str(err)  + \
                             " command: " + self.printcmd)
@@ -327,7 +327,7 @@ class RunWith(object):
                 #log_message("Trying to execute: \"" + \
                 #            " ".join(internal_command) + "\"", \
                 #            "verbose", message_level)
-            elif isinstance(self.command, basestring) :
+            elif isinstance(self.command, str) :
                 internal_command.append(self.command)
                 #log_message("Trying to execute: \"" + \
                 #            str(internal_command) + "\"", \
@@ -419,7 +419,7 @@ class RunWith(object):
 
                 internal_command.append(str(" ".join(cmd)))
                 #self.logger.log(lp.ERROR, "cmd: " + str(internal_command))
-            elif isinstance(self.command, basestring) :
+            elif isinstance(self.command, str) :
                 internal_command.append(self.command)
                 #self.logger.log(lp.ERROR, "cmd: " + str(internal_command))
 
@@ -530,7 +530,7 @@ class RunWith(object):
 
                 internal_command.append(str("/usr/bin/sudo -S -s '" + \
                                             " ".join(cmd) + "'"))
-            elif isinstance(self.command, basestring):
+            elif isinstance(self.command, str):
                 try:
                     internal_command.append(str("/usr/bin/sudo -S -s " + \
                                                 "'" + \
@@ -556,7 +556,7 @@ class RunWith(object):
             '''
             try:
                 (master, slave) = pty.openpty()
-            except Exception, err:
+            except Exception as err:
                 self.logger.log(lp.WARNING, "Error trying to open pty: " + str(err))
                 raise err
             else:
@@ -565,7 +565,7 @@ class RunWith(object):
                                  stdin=slave, stdout=slave, stderr=slave,
                                  shell=self.myshell,
                                  close_fds=self.close_fds)
-                except Exception, err:
+                except Exception as err:
                     self.logger.log(lp.WARNING, "Error opening process to pty: " + \
                                 str(err))
                     raise err
@@ -661,19 +661,19 @@ class RunWith(object):
             if isinstance(self.command, list) :
                 cmd = cmd + [" ".join(self.command)]
 
-            elif isinstance(self.command, basestring) :
+            elif isinstance(self.command, str) :
                 cmd = cmd + [self.command]
 
             try:
                 (master, slave) = pty.openpty()
-            except Exception, err:
+            except Exception as err:
                 self.logger.log(lp.WARNING, "Error trying to open pty: " + str(err))
                 raise err
             else:
                 try:
                     proc = Popen(cmd, stdin=slave, stdout=slave, stderr=slave,
                                  close_fds=True)
-                except Exception, err:
+                except Exception as err:
                     self.logger.log(lp.WARNING, "Error opening process to pty: " + \
                                 str(err))
                     raise err
@@ -752,10 +752,10 @@ class RunThread(threading.Thread) :
         self.reterr = None
         threading.Thread.__init__(self)
 
-        if isinstance(self.command, types.ListType) :
+        if isinstance(self.command, list) :
             self.shell = True
             self.printcmd = " ".join(self.command)
-        if isinstance(self.command, types.StringTypes) :
+        if isinstance(self.command, str) :
             self.shell = False
             self.printcmd = self.command
 
@@ -774,7 +774,7 @@ class RunThread(threading.Thread) :
                 p = Popen(self.command, stdout=PIPE,
                                         stderr=PIPE,
                                         shell=self.shell)
-            except Exception, err :
+            except Exception as err :
                 self.logger.log(lp.WARNING, "Exception trying to open: " + \
                             str(self.printcmd))
                 self.logger.log(lp.WARNING, "Associated exception: " + str(err))
@@ -782,7 +782,7 @@ class RunThread(threading.Thread) :
             else :
                 try:
                     self.retout, self.reterr = p.communicate()
-                except Exception, err :
+                except Exception as err :
                     self.logger.log(lp.WARNING, "Exception trying to open: " + \
                                str(self.printcmd))
                     self.logger.log(lp.WARNING, "Associated exception: " + str(err))
@@ -833,8 +833,8 @@ def runMyThreadCommand(cmd=[], logger=False) :
     '''
     retval = None
     reterr = None
-    print str(cmd)
-    print str(logger)
+    print(str(cmd))
+    print(str(logger))
     if cmd and logger :
         run_thread = RunThread(cmd, logger)
         run_thread.start()

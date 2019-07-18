@@ -29,7 +29,7 @@ have been followed. The class is audit only.
 @change: 2017/08/28 Ekkehard - Added self.sethelptext()
 """
 
-from __future__ import absolute_import
+
 
 import re
 import traceback

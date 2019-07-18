@@ -26,7 +26,7 @@ This is a Unit Test for Rule DisableTouchID
                         file as well as with the test harness.
 '''
 
-from __future__ import absolute_import
+
 
 import unittest
 import sys

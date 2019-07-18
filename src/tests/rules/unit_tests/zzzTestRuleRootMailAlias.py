@@ -25,7 +25,7 @@ This is a Unit Test for Rule RootMailAlias
 @change: 2016/02/10 roy Added sys.path.append for being able to unit test this
                         file as well as with the test harness.
 '''
-from __future__ import absolute_import
+
 import unittest
 import os
 import re
@@ -87,7 +87,7 @@ class zzzTestRuleRootMailAlias(RuleTest):
             os.rename(tmpfile, aliasfile)
             # set incorrect permissions
             os.chown(aliasfile, 8, 8)
-            os.chmod(aliasfile, 0500)
+            os.chmod(aliasfile, 0o500)
         return success
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):

@@ -32,7 +32,7 @@ have the correct (secure) permissions.
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
 '''
 
-from __future__ import absolute_import
+
 import os
 import traceback
 
@@ -137,7 +137,7 @@ class VerifyAccPerms(Rule):
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
-        except Exception, err:
+        except Exception as err:
             self.rulesuccess = False
             self.detailedresults = self.detailedresults + "\n" + str(err) + \
                 " - " + str(traceback.format_exc())
@@ -163,11 +163,11 @@ class VerifyAccPerms(Rule):
 
                     for item in self.file644:
                         if os.path.exists(item):
-                            os.chmod(item, 0644)
+                            os.chmod(item, 0o644)
 
                     for item in self.file400:
                         if os.path.exists(item):
-                            os.chmod(item, 0400)
+                            os.chmod(item, 0o400)
 
                     for item in self.fileall:
                         if os.path.exists(item):
@@ -183,7 +183,7 @@ class VerifyAccPerms(Rule):
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
-        except Exception, err:
+        except Exception as err:
             self.rulesuccess = False
             self.detailedresults = self.detailedresults + "\n" + str(err) + \
             " - " + str(traceback.format_exc())

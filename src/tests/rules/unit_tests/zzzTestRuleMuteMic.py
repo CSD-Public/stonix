@@ -22,7 +22,7 @@ This is the unit test for the MuteMic rule.
 @change: 2016/02/10 roy Added sys.path.append for being able to unit test this
                         file as well as with the test harness.
 '''
-from __future__ import absolute_import
+
 import unittest
 import subprocess
 import sys

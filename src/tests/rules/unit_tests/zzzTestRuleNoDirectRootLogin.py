@@ -24,7 +24,7 @@ This is a Unit Test for Rule NoDirectRootLogin
 @author: Brandon R. Gonzales
 
 '''
-from __future__ import absolute_import
+
 import unittest
 import sys
 import os

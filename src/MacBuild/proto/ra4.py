@@ -5,10 +5,10 @@ import sys
 import getpass
 from subprocess import Popen, PIPE
 
-username = raw_input("Username: ")
+username = input("Username: ")
 passwd = getpass.getpass("Password: ")
-print username
-print passwd
+print(username)
+print(passwd)
 
 cmdOne = ["/usr/bin/su", username.strip(), '-c', '/usr/bin/id']
 oneout = open('oneout', 'wb')
@@ -21,7 +21,7 @@ onePipe = Popen(cmdOne, stdout=oneout, stderr=oneerr, stdin=PIPE, shell=True, bu
 line = oneout.read()
 onePipe.stdin.write(passwd)
 
-print line
+print(line)
 
 #onePipe.stdout.readline()
 

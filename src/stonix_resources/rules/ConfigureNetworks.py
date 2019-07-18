@@ -32,7 +32,7 @@ dictionary
 @change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
 '''
-from __future__ import absolute_import
+
 import traceback
 import re
 
@@ -174,7 +174,7 @@ class ConfigureNetworks(RuleKVEditor):
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
-        except Exception, err:
+        except Exception as err:
             self.rulesuccess = False
             messagestring = str(err) + " - " + str(traceback.format_exc())
             self.resultAppend(messagestring)
@@ -248,7 +248,7 @@ class ConfigureNetworks(RuleKVEditor):
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
-        except Exception, err:
+        except Exception as err:
             self.rulesuccess = False
             fixed = False
             messagestring = str(err) + " - " + str(traceback.format_exc())

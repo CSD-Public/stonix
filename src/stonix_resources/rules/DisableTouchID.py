@@ -23,7 +23,7 @@ Created on May 15, 2017
 @change: 2017/08/28 Breen Malmberg - Fixing to use new help text methods
 '''
 
-from __future__ import absolute_import
+
 
 import os
 import traceback

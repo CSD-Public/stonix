@@ -24,9 +24,9 @@ Created on May 13, 2015
 @change: 2015-05-13 ekkehard - original implementation
 '''
 import unittest
-import environment
-import logdispatcher
-import networksetup
+from . import environment
+from . import logdispatcher
+from . import networksetup
 
 
 class zzzTestFrameworknetworksetup(unittest.TestCase):
@@ -42,7 +42,7 @@ class zzzTestFrameworknetworksetup(unittest.TestCase):
 
     def testGetLocation(self):
         location = self.ns.getLocation()
-        self.failUnless( location == "" )
+        self.assertTrue( location == "" )
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

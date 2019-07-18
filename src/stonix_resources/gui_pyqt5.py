@@ -50,10 +50,10 @@ import sys
 import traceback
 import webbrowser
 
-from view import View
-from logdispatcher import LogPriority
+from .view import View
+from .logdispatcher import LogPriority
 
-import main_window_pyqt5 as main_window
+from . import main_window_pyqt5 as main_window
 #####
 # PyQt specific imports - Needs importing:
 # QThread (QtCore)
@@ -68,7 +68,7 @@ from PyQt5 import QtWidgets
 from PyQt5 import QtCore
 from PyQt5 import QtGui
 from PyQt5.QtCore import Qt
-from stonix_log_viewer import Ui_log_viewer_window
+from .stonix_log_viewer import Ui_log_viewer_window
 
 
 class GUI (View, QtWidgets.QMainWindow, main_window.Ui_MainWindow):
@@ -931,7 +931,7 @@ class CiFrame(QtWidgets.QFrame):
         
         @author: David Kennel
         @change: Breen Malmberg - 09/04/2018 - cannot str() typecast certain
-                unicode characters (for ex: 'ascii' codec can't encode character u'\u0301')
+                unicode characters (for ex: 'ascii' codec can't encode character u'\\u0301')
                 so str() was replaced with encode() method to handle
                 unreadable unicode characters
 

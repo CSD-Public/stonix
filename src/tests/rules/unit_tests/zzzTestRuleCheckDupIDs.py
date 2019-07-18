@@ -29,7 +29,7 @@ This is a Unit Test for Rule CheckDupIDs
 @change: 2016/04/27 rsn Added use of precursor to manage_user class
 @change: 2016/08/29 eball Added conditional to SkipTest for Python < v2.7
 '''
-from __future__ import absolute_import
+
 import sys
 import unittest
 

@@ -23,7 +23,7 @@ Created on Aug 4, 2015
 @change: 2019/06/12 Breen Malmberg - refactored rule
 """
 
-from __future__ import absolute_import
+
 
 import traceback
 import os

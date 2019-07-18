@@ -24,7 +24,7 @@ Created on Mar 19, 2015
 @change: 2016/10/24 breen Changed the command for setConditionsForRule to be
 compatible with 10.11 and 10.12
 '''
-from __future__ import absolute_import
+
 
 import unittest
 import sys

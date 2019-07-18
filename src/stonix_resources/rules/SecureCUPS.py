@@ -38,7 +38,7 @@ With this rule, you can:
         handled by a single kveditor object rather than two
 '''
 
-from __future__ import absolute_import
+
 
 import os
 import traceback
@@ -695,7 +695,7 @@ class SecureCUPS(Rule):
                     fn = open(f, 'w')
                     fn.writelines(contentlines)
                     fn.close()
-                    os.chmod(f, 0644)
+                    os.chmod(f, 0o644)
             if foundbadopts:
                 # do not continue with rest of fix because that would save state for this fix run
                 self.logger.log(LogPriority.DEBUG, "Reloading cups service to read configuration changes...")
@@ -844,9 +844,9 @@ class SecureCUPS(Rule):
                     self.logger.log(LogPriority.DEBUG, "\n\nsetting permissions and ownership for " + str(self.cupsdconf) + " file...\n\n")
                     os.chown(self.cupsdconf, 0, 0)
                     if self.linux:
-                        os.chmod(self.cupsdconf, 0640)
+                        os.chmod(self.cupsdconf, 0o640)
                     elif self.darwin:
-                        os.chmod(self.cupsdconf, 0644)
+                        os.chmod(self.cupsdconf, 0o644)
 
             if not self.reloadCUPS():
                 retval = False

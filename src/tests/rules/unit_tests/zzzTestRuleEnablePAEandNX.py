@@ -23,7 +23,7 @@ This is a Unit Test for Rule EnablePAEandNX
 @author: Breen Malmberg
 @change: 5/9/2016 Original Implementation
 '''
-from __future__ import absolute_import
+
 
 import sys
 import unittest

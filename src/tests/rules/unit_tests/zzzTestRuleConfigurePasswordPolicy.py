@@ -26,7 +26,7 @@ Created on Jun 9, 2015
 @change: 2016/04/06 eball Updated name to ConfigureProfileManagement
 @change: 2016/11/02 eball Updated name to ConfigurePasswordPolicy
 '''
-from __future__ import absolute_import
+
 import unittest
 import sys, os
 
@@ -97,7 +97,7 @@ class zzzTestRuleConfigurePasswordPolicy(RuleTest):
         if self.ch.executeCommand(cmd):
             output = self.ch.getOutput()
             if output:
-                for item, values in goodprofiles.iteritems():
+                for item, values in goodprofiles.items():
                     self.editor = KVEditorStonix(self.statechglogger,
                                                   self.logdispatch, "profiles", "",
                                                   "", values, "", "", output)

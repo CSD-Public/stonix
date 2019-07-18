@@ -37,8 +37,8 @@ Created on Aug 24, 2010
 @author: dkennel
 '''
 
-from view import View
-from logdispatcher import LogPriority
+from .view import View
+from .logdispatcher import LogPriority
 
 class Cli (View):
     
@@ -75,7 +75,7 @@ class Cli (View):
         :param message: 
 
         '''
-        print message
+        print(message)
 
     def displayhelp(self):
         '''
@@ -114,7 +114,7 @@ class Cli (View):
         @author: D. Kennel
 
         '''
-        print messagetext
+        print(messagetext)
 
     def displayrulename(self, rulename):
         '''

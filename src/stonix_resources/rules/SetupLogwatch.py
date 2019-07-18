@@ -26,7 +26,7 @@ Created on Oct 15, 2013
 @change: 2015/10/08 eball Help text/PEP8 cleanup
 '''
 
-from __future__ import absolute_import
+
 import traceback
 
 from ..rule import Rule
@@ -71,7 +71,7 @@ class SetupLogwatch(Rule):
                 self.compliant = True
         except (KeyboardInterrupt, SystemExit):
             raise
-        except Exception, err:
+        except Exception as err:
             self.rulesuccess = False
             self.detailedresults = str(err) + " - " + \
                 str(traceback.format_exc())
@@ -104,7 +104,7 @@ class SetupLogwatch(Rule):
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
-        except Exception, err:
+        except Exception as err:
             self.rulesuccess = False
             self.detailedresults = str(err) + " - " + \
                 str(traceback.format_exc())

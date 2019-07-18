@@ -26,7 +26,7 @@ This is a Unit Test for Rule SecureDHCPServer
 @change: 2016/02/10 roy Added sys.path.append for being able to unit test this
                         file as well as with the test harness.
 '''
-from __future__ import absolute_import
+
 import unittest
 import sys
 
@@ -76,7 +76,7 @@ option time-offset -18000;
 '''
             open(self.rule.path, "a").write(badoptionstring)
             # Rule wants 644 perms, set to 770
-            success = setPerms(self.rule.path, [0, 0, 0770], self.logdispatch)
+            success = setPerms(self.rule.path, [0, 0, 0o770], self.logdispatch)
         return success
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):

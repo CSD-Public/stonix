@@ -26,7 +26,7 @@ This is a Unit Test for Rule ConfigureAppleSoftwareUpdate
                         file as well as with the test harness.
 @change: 2016/11/01 ekkehard add disable automatic macOS (OS X) updates
 '''
-from __future__ import absolute_import
+
 import sys
 import unittest
 

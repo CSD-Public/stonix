@@ -22,7 +22,7 @@ Created on Nov 13, 2012
 @change: 04/21/2014 dkennel Updated CI invocation.
 @change: 2015/04/16 dkennel updated for new isApplicable
 '''
-from __future__ import absolute_import
+
 from ..stonixutilityfunctions import readFile
 from ..rule import Rule
 from ..logdispatcher import LogPriority

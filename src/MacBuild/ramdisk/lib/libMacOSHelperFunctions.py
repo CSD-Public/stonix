@@ -3,7 +3,7 @@ Helper functions using MacOS specific methods.
 
 @author: Roy Nielsen
 """
-from __future__ import absolute_import
+
 #--- Native python libraries
 import os
 import re
@@ -106,7 +106,7 @@ def get_darwin_mac() :
         hw_addr = match_hw_addr.search(line)
         net_hw_addr = hw_addr.group(1)
         #  net_hw_addr
-    except Exception, err:
+    except Exception as err:
         logger.log(lp.VERBOSE, "Error attempting to acquire MAC address...")
         logger.log(lp.VERBOSE, "Exception: " + str(err))
         raise err

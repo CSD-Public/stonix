@@ -81,10 +81,10 @@ class LogDispatcher (Observable):
             except (KeyboardInterrupt, SystemExit):
                 # User initiated exit
                 raise
-            except Exception, err:
-                print 'logdispatcher: '
-                print traceback.format_exc()
-                print err
+            except Exception as err:
+                print('logdispatcher: ')
+                print(traceback.format_exc())
+                print(err)
         self.xmlreport = xmlReport(self.xmllog, self.debug)
         self.metadataopen = False
         self.__initializelogs()
@@ -356,14 +356,14 @@ Subject: STONIX Error Report: ''' + prefix + '''
         # overwriting any old one if it exists.
         if not os.path.isdir(self.logpath):
             try:
-                os.makedirs(self.logpath, 0750)
+                os.makedirs(self.logpath, 0o750)
             except (KeyboardInterrupt, SystemExit):
                 # User initiated exit
                 raise
-            except Exception, err:
-                print 'logdispatcher: '
-                print traceback.format_exc()
-                print err
+            except Exception as err:
+                print('logdispatcher: ')
+                print(traceback.format_exc())
+                print(err)
                 return False
         if os.path.isfile(self.reportlog):
             try:
@@ -373,10 +373,10 @@ Subject: STONIX Error Report: ''' + prefix + '''
             except (KeyboardInterrupt, SystemExit):
                 # User initiated exit
                 raise
-            except Exception, err:
-                print 'logdispatcher: '
-                print traceback.format_exc()
-                print err
+            except Exception as err:
+                print('logdispatcher: ')
+                print(traceback.format_exc())
+                print(err)
                 return False
 
         # It's important that this happens after the attempt to move
@@ -536,8 +536,8 @@ class xmlReport:
         '''
         ET.SubElement(self.meta, entry.Tag, val=entry.Detail)
         if self.debug:
-            print 'xmlReport.writeMetadata: Added entry ' + entry.Tag + \
-            ' ' + entry.Detail
+            print('xmlReport.writeMetadata: Added entry ' + entry.Tag + \
+            ' ' + entry.Detail)
 
     def writeFinding(self, entry):
         '''xmlReport.writeFindings(entry): The xmlReport method to add a findings
@@ -550,8 +550,8 @@ class xmlReport:
         '''
         ET.SubElement(self.findings, entry.Tag, val=entry.Detail)
         if self.debug:
-            print 'xmlReport.writeFinding: Added entry ' + entry.Tag + \
-            ' ' + entry.Detail
+            print('xmlReport.writeFinding: Added entry ' + entry.Tag + \
+            ' ' + entry.Detail)
 
     def closeReport(self):
         '''xmlReport.closeReport(): This method will write the xmlReport to disk.
@@ -567,9 +567,9 @@ class xmlReport:
             #if self.debug:
             #    print 'xmlReport.closeReport: dumping the ElementTree: '
             #    ET.dump(self.root)
-        except Exception, err:
+        except Exception as err:
             if self.debug:
-                print 'logdispatcher.xmlReport.closeReport: Error encountered processing xml'
-                print err
+                print('logdispatcher.xmlReport.closeReport: Error encountered processing xml')
+                print(err)
                 trace = traceback.format_exc()
-                print trace
+                print(trace)

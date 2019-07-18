@@ -24,7 +24,7 @@ This InstallVLock object installs the vlock package to enable screen locking
 @change: 2015/04/15 dkennel updated for new isApplicable
 """
 
-from __future__ import absolute_import
+
 
 import traceback
 

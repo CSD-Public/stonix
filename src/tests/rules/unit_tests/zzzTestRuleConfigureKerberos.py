@@ -29,7 +29,7 @@ This is a Unit Test for Rule ConfigureKerberos
         file as well as with the test harness.
 """
 
-from __future__ import absolute_import
+
 import os
 import sys
 import unittest

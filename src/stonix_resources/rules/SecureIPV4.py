@@ -43,7 +43,7 @@ variable.
     handle sysctl by writing to /etc/sysctl.conf and also using command
 @change: 2019/06/26 Brandon R. Gonzales - Fix MacOS CI logic in fix()
 '''
-from __future__ import absolute_import
+
 from ..stonixutilityfunctions import resetsecon, iterate, readFile, writeFile
 from ..stonixutilityfunctions import checkPerms, setPerms, createFile
 from ..stonixutilityfunctions import getOctalPerms

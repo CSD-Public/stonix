@@ -23,7 +23,7 @@ This is a Unit Test for Rule ForceIdleLogout
 @author: Eric Ball
 @change: 2016/08/25 Original Implementation
 '''
-from __future__ import absolute_import
+
 import unittest
 import sys
 import os

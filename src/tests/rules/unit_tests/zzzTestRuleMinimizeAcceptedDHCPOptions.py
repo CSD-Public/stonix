@@ -25,7 +25,7 @@ This is a Unit Test for Rule MinimizeAcceptedDHCPOptions
 to account for existance of any/none/all required files
 '''
 
-from __future__ import absolute_import
+
 import os
 import unittest
 import sys

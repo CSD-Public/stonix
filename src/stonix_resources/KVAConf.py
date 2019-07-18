@@ -21,8 +21,8 @@ Created on May 6, 2013
 @author: Derek Walker
 '''
 
-from logdispatcher import LogPriority
-from stonixutilityfunctions import writeFile
+from .logdispatcher import LogPriority
+from .stonixutilityfunctions import writeFile
 import os
 import traceback
 import re
@@ -475,7 +475,7 @@ class KVAConf():
         # we have items that need to be removed from file
         if removeables:
             poplist = []
-            for key, val in removeables.iteritems():
+            for key, val in removeables.items():
                 # we have a list where the key can repeat itself
                 if isinstance(val, list):
                     for item in val:
@@ -517,7 +517,7 @@ class KVAConf():
             # may appear more than once and have wrong values, so anywhere
             # the key exists that's not repeatable, we remove it from the file
             # to ensure no conflicting key value pairs.
-            for key, val in fixables.iteritems():
+            for key, val in fixables.items():
                 # since these keys can be repeatable we won't take the same
                 # precaution as unique keys.
                 if not isinstance(val, list):
@@ -533,7 +533,7 @@ class KVAConf():
                         contents.remove(item)
                     except Exception:
                         continue
-            for key, val in fixables.iteritems():
+            for key, val in fixables.items():
                 if isinstance(val, list):
                     for item in val:
                         contents.append(key + " " + item + "\n")

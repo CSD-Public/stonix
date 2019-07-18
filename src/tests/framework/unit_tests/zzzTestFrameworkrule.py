@@ -54,41 +54,41 @@ class zzzTestFramework(unittest.TestCase):
 
     def testgetrulenum(self):
         '''GetRuleNum, Test that a valid rule number is returned'''
-        self.failUnless(re.search('[0-9]', str(self.to.getrulenum())))
+        self.assertTrue(re.search('[0-9]', str(self.to.getrulenum())))
 
     def testgetrulename(self):
         '''GetRuleName, Test that a valid rule name was returned'''
-        self.failUnless(re.search('[A-Za-z]', self.to.getrulename()))
+        self.assertTrue(re.search('[A-Za-z]', self.to.getrulename()))
 
     def testgetmandatory(self):
         '''GetMandatory, Test that a bool is returned'''
-        self.failIf(self.to.getmandatory() not in [True, False])
+        self.assertFalse(self.to.getmandatory() not in [True, False])
 
     def testiscompliant(self):
         '''iscompliant, test that a valid bool is returned'''
-        self.failIf(self.to.iscompliant() not in [True, False])
+        self.assertFalse(self.to.iscompliant() not in [True, False])
 
     def testgetisrootrequired(self):
         '''getisrootrequired, Test that a valid bool is returned'''
-        self.failIf(self.to.getisrootrequired() not in [True, False])
+        self.assertFalse(self.to.getisrootrequired() not in [True, False])
 
     def testgethelptext(self):
         '''gethelptext, test to see that the prototype help string is'''
-        self.failUnless(re.search('This is the default help text',
+        self.assertTrue(re.search('This is the default help text',
                                   self.to.gethelptext()))
 
     def testgetdetailedresults(self):
         '''getdetailedresults, should return the prototype text.'''
-        self.failUnless(re.search('This is the default detailed results text',
+        self.assertTrue(re.search('This is the default detailed results text',
                                   self.to.getdetailedresults()))
 
     def testgetrulesuccess(self):
         '''getrulesuccess, in concrete rules this returns a bool.'''
-        self.failIf(self.to.getrulesuccess() not in [True, False])
+        self.assertFalse(self.to.getrulesuccess() not in [True, False])
 
     def testcheckconfigopts(self):
         '''checkconfigopts, in the base class this always returns true'''
-        self.failUnlessEqual(self.to.checkconfigopts(), True)
+        self.assertEqual(self.to.checkconfigopts(), True)
 
     def testisdatabaserule(self):
         '''isdatabaserule, should return a bool indicating whether or not
@@ -96,7 +96,7 @@ class zzzTestFramework(unittest.TestCase):
 
 
         '''
-        self.failUnlessEqual(self.to.isdatabaserule(), False)
+        self.assertEqual(self.to.isdatabaserule(), False)
 
     def testisapplicable(self):
         '''isapplicable, in concrete rules should return a bool indicating
@@ -105,7 +105,7 @@ class zzzTestFramework(unittest.TestCase):
 
 
         '''
-        self.failUnlessEqual(self.to.isapplicable(), True)
+        self.assertEqual(self.to.isapplicable(), True)
         environ = environment.Environment()
         myfamily = environ.getosfamily()
         if environ.geteuid() == 0:
@@ -116,9 +116,9 @@ class zzzTestFramework(unittest.TestCase):
         myver = environ.getosver()
         if re.search('Red Hat Enterprise Linux', myostype):
             self.to.applicable = {'type': 'black', 'family': 'linux'}
-            self.failUnlessEqual(self.to.isapplicable(), False)
+            self.assertEqual(self.to.isapplicable(), False)
             self.to.applicable = {'type': 'white', 'family': 'linux'}
-            self.failUnlessEqual(self.to.isapplicable(), True)
+            self.assertEqual(self.to.isapplicable(), True)
             # FIXME Assertion error testing commented out. Unittest fails
             # to recognize the raised error correctly. This may be due to
             # differing import paths.
@@ -126,38 +126,38 @@ class zzzTestFramework(unittest.TestCase):
             #self.assertRaises(AssertionError, self.to.isapplicable())
             self.to.applicable = {'type': 'white',
                                   'os': {'Red Hat Enterprise Linux': ['6.0', '+']}}
-            self.failUnlessEqual(self.to.isapplicable(), True)
+            self.assertEqual(self.to.isapplicable(), True)
             self.to.applicable = {'type': 'black',
                                   'os': {'Red Hat Enterprise Linux': ['6.0', '+']}}
-            self.failUnlessEqual(self.to.isapplicable(), False)
+            self.assertEqual(self.to.isapplicable(), False)
             if not root:
                 self.to.applicable = {'type': 'white',
                                       'os': {'Red Hat Enterprise Linux': ['6.0', '+']},
                                       'noroot': True}
-                self.failUnlessEqual(self.to.isapplicable(), True)
+                self.assertEqual(self.to.isapplicable(), True)
             else:
                 self.to.applicable = {'type': 'white',
                                       'os': {'Red Hat Enterprise Linux': ['6.0', '+']},
                                       'noroot': True}
-                self.failUnlessEqual(self.to.isapplicable(), False)
+                self.assertEqual(self.to.isapplicable(), False)
 #             self.to.applicable = {'type': 'white',
 #                                   'os' :{'Red Hat Enterprise Linux': ['6.0', '+', '7.0']}}
 #             self.assertRaises(AssertionError, self.to.isapplicable())
             self.to.applicable = {'type': 'white',
                                   'os': {'Red Hat Enterprise Linux': ['7.9', '-']}}
-            self.failUnlessEqual(self.to.isapplicable(), True)
+            self.assertEqual(self.to.isapplicable(), True)
             self.to.applicable = {'type': 'black',
                                   'os': {'Red Hat Enterprise Linux': ['7.9', '-']}}
-            self.failUnlessEqual(self.to.isapplicable(), False)
+            self.assertEqual(self.to.isapplicable(), False)
 #             self.to.applicable = {'type': 'white',
 #                                   'os' :{'Red Hat Enterprise Linux': ['7.0', '-', '6.0']}}
 #             self.assertRaises(AssertionError, self.to.isapplicable())
             self.to.applicable = {'type': 'white',
                                   'os': {'Red Hat Enterprise Linux': ['7.9', 'r', '5.0']}}
-            self.failUnlessEqual(self.to.isapplicable(), True)
+            self.assertEqual(self.to.isapplicable(), True)
             self.to.applicable = {'type': 'black',
                                   'os': {'Red Hat Enterprise Linux': ['7.9', 'r', '5.0']}}
-            self.failUnlessEqual(self.to.isapplicable(), False)
+            self.assertEqual(self.to.isapplicable(), False)
 
 #             self.to.applicable = {'type': 'white',
 #                                   'os' :{'Red Hat Enterprise Linux': ['7.0', 'r']}}
@@ -165,122 +165,122 @@ class zzzTestFramework(unittest.TestCase):
             if myver == '7.1':
                 self.to.applicable = {'type': 'white',
                                       'os': {'Red Hat Enterprise Linux': ['7.1']}}
-                self.failUnlessEqual(self.to.isapplicable(), True)
+                self.assertEqual(self.to.isapplicable(), True)
                 self.to.applicable = {'type': 'black',
                                       'os': {'Red Hat Enterprise Linux': ['7.1']}}
-                self.failUnlessEqual(self.to.isapplicable(), False)
+                self.assertEqual(self.to.isapplicable(), False)
                 self.to.applicable = {'type': 'white',
                                       'os': {'Red Hat Enterprise Linux': ['7.1', '6.0']}}
-                self.failUnlessEqual(self.to.isapplicable(), True)
+                self.assertEqual(self.to.isapplicable(), True)
                 self.to.applicable = {'type': 'black',
                                       'os': {'Red Hat Enterprise Linux': ['7.1', '6.0']}}
-                self.failUnlessEqual(self.to.isapplicable(), False)
+                self.assertEqual(self.to.isapplicable(), False)
                 self.to.applicable = {'type': 'white',
                                       'os': {'Red Hat Enterprise Linux': ['6.0']}}
-                self.failUnlessEqual(self.to.isapplicable(), False)
+                self.assertEqual(self.to.isapplicable(), False)
                 self.to.applicable = {'type': 'black',
                                       'os': {'Red Hat Enterprise Linux': ['6.0']}}
-                self.failUnlessEqual(self.to.isapplicable(), True)
+                self.assertEqual(self.to.isapplicable(), True)
             if myver == '6.0':
                 self.to.applicable = {'type': 'white',
                                       'os': {'Red Hat Enterprise Linux': ['6.0']}}
-                self.failUnlessEqual(self.to.isapplicable(), True)
+                self.assertEqual(self.to.isapplicable(), True)
                 self.to.applicable = {'type': 'black',
                                       'os' :{'Red Hat Enterprise Linux': ['6.0']}}
-                self.failUnlessEqual(self.to.isapplicable(), False)
+                self.assertEqual(self.to.isapplicable(), False)
                 self.to.applicable = {'type': 'white',
                                       'os' :{'Red Hat Enterprise Linux': ['7.0', '6.0']}}
-                self.failUnlessEqual(self.to.isapplicable(), True)
+                self.assertEqual(self.to.isapplicable(), True)
                 self.to.applicable = {'type': 'black',
                                       'os' :{'Red Hat Enterprise Linux': ['7.0', '6.0']}}
-                self.failUnlessEqual(self.to.isapplicable(), False)
+                self.assertEqual(self.to.isapplicable(), False)
                 self.to.applicable = {'type': 'white',
                                       'os' :{'Red Hat Enterprise Linux': ['7.0']}}
-                self.failUnlessEqual(self.to.isapplicable(), False)
+                self.assertEqual(self.to.isapplicable(), False)
                 self.to.applicable = {'type': 'black',
                                       'os' :{'Red Hat Enterprise Linux': ['7.0']}}
-                self.failUnlessEqual(self.to.isapplicable(), True)
+                self.assertEqual(self.to.isapplicable(), True)
 
         if re.search('Mac OS X', myostype):
             self.to.applicable = {'type': 'black', 'family': 'darwin'}
-            self.failUnlessEqual(self.to.isapplicable(), False)
+            self.assertEqual(self.to.isapplicable(), False)
             self.to.applicable = {'type': 'white', 'family': 'darwin'}
-            self.failUnlessEqual(self.to.isapplicable(), True)
+            self.assertEqual(self.to.isapplicable(), True)
             if root:
                 self.to.applicable = {'type': 'black', 'family': 'darwin',
                                       'noroot': True}
-                self.failUnlessEqual(self.to.isapplicable(), False)
+                self.assertEqual(self.to.isapplicable(), False)
             else:
                 self.to.applicable = {'type': 'white', 'family': 'darwin',
                                       'noroot': True}
-                self.failUnlessEqual(self.to.isapplicable(), True)
+                self.assertEqual(self.to.isapplicable(), True)
             #self.to.applicable = {'type': 'brown', 'family': 'linux'}
             #self.assertRaises(AssertionError, self.to.isapplicable())
             self.to.applicable = {'type': 'white',
                                   'os' :{'Mac OS X': ['10.11', '+']}}
-            self.failUnlessEqual(self.to.isapplicable(), True)
+            self.assertEqual(self.to.isapplicable(), True)
             self.to.applicable = {'type': 'black',
                                   'os' :{'Mac OS X': ['10.11', '+']}}
-            self.failUnlessEqual(self.to.isapplicable(), False)
+            self.assertEqual(self.to.isapplicable(), False)
 #             self.to.applicable = {'type': 'white',
 #                                   'os' :{'Mac OS X': ['10.9', '+', '7.0']}}
 #             self.assertRaises(AssertionError, self.to.isapplicable())
             self.to.applicable = {'type': 'white',
                                   'os' :{'Mac OS X': ['10.11.10', '-']}}
-            self.failUnlessEqual(self.to.isapplicable(), True)
+            self.assertEqual(self.to.isapplicable(), True)
             self.to.applicable = {'type': 'black',
                                   'os' :{'Mac OS X': ['10.11.10', '-']}}
-            self.failUnlessEqual(self.to.isapplicable(), False)
+            self.assertEqual(self.to.isapplicable(), False)
 #             self.to.applicable = {'type': 'white',
 #                                   'os' :{'Mac OS X': ['7.0', '-', '10.9']}}
 #             self.assertRaises(AssertionError, self.to.isapplicable())
             self.to.applicable = {'type': 'white',
                                   'os' :{'Mac OS X': ['10.10.10', 'r', '10.8']}}
-            self.failUnlessEqual(self.to.isapplicable(), True)
+            self.assertEqual(self.to.isapplicable(), True)
             self.to.applicable = {'type': 'black',
                                   'os' :{'Mac OS X': ['10.10.10', 'r', '10.8']}}
-            self.failUnlessEqual(self.to.isapplicable(), False)
+            self.assertEqual(self.to.isapplicable(), False)
 #             self.to.applicable = {'type': 'white',
 #                                   'os' :{'Mac OS X': ['7.0', 'r']}}
 #             self.assertRaises(AssertionError, self.to.isapplicable())
             if myver == '10.10.3':
                 self.to.applicable = {'type': 'white',
                                       'os' :{'Mac OS X': ['10.10.3']}}
-                self.failUnlessEqual(self.to.isapplicable(), True)
+                self.assertEqual(self.to.isapplicable(), True)
                 self.to.applicable = {'type': 'black',
                                       'os' :{'Mac OS X': ['10.10.3']}}
-                self.failUnlessEqual(self.to.isapplicable(), False)
+                self.assertEqual(self.to.isapplicable(), False)
                 self.to.applicable = {'type': 'white',
                                       'os' :{'Mac OS X': ['10.10.3', '10.9']}}
-                self.failUnlessEqual(self.to.isapplicable(), True)
+                self.assertEqual(self.to.isapplicable(), True)
                 self.to.applicable = {'type': 'black',
                                       'os' :{'Mac OS X': ['10.10.3', '10.9']}}
-                self.failUnlessEqual(self.to.isapplicable(), False)
+                self.assertEqual(self.to.isapplicable(), False)
                 self.to.applicable = {'type': 'white',
                                       'os' :{'Mac OS X': ['10.9']}}
-                self.failUnlessEqual(self.to.isapplicable(), False)
+                self.assertEqual(self.to.isapplicable(), False)
                 self.to.applicable = {'type': 'black',
                                       'os' :{'Mac OS X': ['10.9']}}
-                self.failUnlessEqual(self.to.isapplicable(), True)
+                self.assertEqual(self.to.isapplicable(), True)
             if myver == '10.9.5':
                 self.to.applicable = {'type': 'white',
                                       'os' :{'Mac OS X': ['10.9.5']}}
-                self.failUnlessEqual(self.to.isapplicable(), True)
+                self.assertEqual(self.to.isapplicable(), True)
                 self.to.applicable = {'type': 'black',
                                       'os' :{'Mac OS X': ['10.9.5']}}
-                self.failUnlessEqual(self.to.isapplicable(), False)
+                self.assertEqual(self.to.isapplicable(), False)
                 self.to.applicable = {'type': 'white',
                                       'os' :{'Mac OS X': ['10.10.3', '10.9.5']}}
-                self.failUnlessEqual(self.to.isapplicable(), True)
+                self.assertEqual(self.to.isapplicable(), True)
                 self.to.applicable = {'type': 'black',
                                       'os' :{'Mac OS X': ['10.10.3', '10.9.5']}}
-                self.failUnlessEqual(self.to.isapplicable(), False)
+                self.assertEqual(self.to.isapplicable(), False)
                 self.to.applicable = {'type': 'white',
                                       'os' :{'Mac OS X': ['10.10.3']}}
-                self.failUnlessEqual(self.to.isapplicable(), False)
+                self.assertEqual(self.to.isapplicable(), False)
                 self.to.applicable = {'type': 'black',
                                       'os' :{'Mac OS X': ['10.10.3']}}
-                self.failUnlessEqual(self.to.isapplicable(), True)
+                self.assertEqual(self.to.isapplicable(), True)
 
     def testgetcurrstate(self):
         '''getcurrstate in concrete rules is not valid until report() has been
@@ -288,7 +288,7 @@ class zzzTestFramework(unittest.TestCase):
 
 
         '''
-        self.failUnlessEqual(self.to.getcurrstate(), 'notconfigured')
+        self.assertEqual(self.to.getcurrstate(), 'notconfigured')
 
     def testgettargetstate(self):
         '''gettargetstate should return "configured" unless it has been set
@@ -296,7 +296,7 @@ class zzzTestFramework(unittest.TestCase):
 
 
         '''
-        self.failUnlessEqual(self.to.gettargetstate(), 'configured')
+        self.assertEqual(self.to.gettargetstate(), 'configured')
 
     def testsettargetstate(self):
         '''To test the set target state function we call the setter and then
@@ -305,7 +305,7 @@ class zzzTestFramework(unittest.TestCase):
 
         '''
         self.to.settargetstate('notconfigured')
-        self.failUnlessEqual(self.to.gettargetstate(), 'notconfigured')
+        self.assertEqual(self.to.gettargetstate(), 'notconfigured')
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

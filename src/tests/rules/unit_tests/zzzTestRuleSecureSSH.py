@@ -27,7 +27,7 @@ This is a Unit Test for Rule SecureSSH
 @change: 2019/06/11 dwalker - updated unit test to set preconditions
     system fuzzing
 '''
-from __future__ import absolute_import
+
 import unittest
 import sys
 import os

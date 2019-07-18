@@ -37,7 +37,7 @@ Created on Aug 9, 2012
         systemd whitelist
 """
 
-from __future__ import absolute_import
+
 
 import traceback
 import re

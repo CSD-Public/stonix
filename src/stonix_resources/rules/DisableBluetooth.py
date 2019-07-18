@@ -35,7 +35,7 @@ Check to see if all of the above operations have been done or not - report()
 @change: 2017/10/23 rsn - change to new service helper interface
 '''
 
-from __future__ import absolute_import
+
 import os
 import traceback
 from ..rule import Rule

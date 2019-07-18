@@ -38,17 +38,17 @@ installed.
 import os
 import re
 
-import SHchkconfig
-import SHrcupdate
-import SHupdaterc
-import SHsystemctl
-import SHsvcadm
-import SHrcconf
-import SHlaunchd
-import SHlaunchdTwo
+from . import SHchkconfig
+from . import SHrcupdate
+from . import SHupdaterc
+from . import SHsystemctl
+from . import SHsvcadm
+from . import SHrcconf
+from . import SHlaunchd
+from . import SHlaunchdTwo
 
-from logdispatcher import LogPriority
-from get_libc import getLibc
+from .logdispatcher import LogPriority
+from .get_libc import getLibc
 
 
 class ServiceHelper(object):
@@ -286,7 +286,7 @@ class ServiceHelper(object):
             # Generic factory input validation, only for "service", the
             # rest of the parameters need to be validated by the concrete
             # service helper instance.
-            if not isinstance(service, basestring):
+            if not isinstance(service, str):
                 raise TypeError("Service: " + str(service) +
                                 " is not a string as expected.")
 

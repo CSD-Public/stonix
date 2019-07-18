@@ -44,7 +44,7 @@ dictionary
             ConfigureCatalogueURL as it can only be fixed by root
 """
 
-from __future__ import absolute_import
+
 
 import re
 import types
@@ -484,11 +484,11 @@ class ConfigureAppleSoftwareUpdate(RuleKVEditor):
 
         outputvalue = pValue
         datatype = type(outputvalue)
-        if datatype == types.StringType:
+        if datatype == bytes:
             if not (outputvalue == ""):
                 outputvalue = re.sub("\\\\n|\(|\)|\,|\'", "", outputvalue)
                 outputvalue = re.sub("\s+", " ", outputvalue)
-        elif datatype == types.ListType:
+        elif datatype == list:
             for i, item in enumerate(outputvalue):
                 item = re.sub("\\\\n|\(|\)|\,|\'", "", item)
                 item = re.sub("\s+", " ", item)

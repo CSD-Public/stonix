@@ -1,10 +1,10 @@
 import sys
-import httplib
-import urllib2
+import http.client
+import urllib.request, urllib.error, urllib.parse
 import ssl
 import socket
 
-class SSLSecConnection(httplib.HTTPSConnection):
+class SSLSecConnection(http.client.HTTPSConnection):
     '''
 
     '''
@@ -16,7 +16,7 @@ class SSLSecConnection(httplib.HTTPSConnection):
         :param kwargs:
         '''
 
-        httplib.HTTPSConnection.__init__(self, *args, **kwargs)
+        http.client.HTTPSConnection.__init__(self, *args, **kwargs)
 
     def connect(self):
         '''Interesting reference: http://nullege.com/codes/show/src%40p%40y%40pydle-HEAD%40pydle%40connection.py/144/ssl.VERIFY_CRL_CHECK_CHAIN/python
@@ -71,9 +71,9 @@ class SSLSecConnection(httplib.HTTPSConnection):
 
         # self.sock = ssl.wrap_socket(sock, self.key_file, self.cert_file)
 
-class SSLSecHandler(urllib2.HTTPSHandler):
+class SSLSecHandler(urllib.request.HTTPSHandler):
     def https_open(self, req):
         return self.do_open(SSLSecConnection(), req)
 
 if sys.hexversion >= 0x02070900:
-    urllib2.install_opener(urllib2.build_opener(SSLSecHandler()))
+    urllib.request.install_opener(urllib.request.build_opener(SSLSecHandler()))

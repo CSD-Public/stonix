@@ -31,7 +31,7 @@ Created on Jun 17, 2013
 @change: 2016/06/20 eball 35 days for account expire, removed chk/fixPam
 @change: 2016/12/7 dwalker changed min number of days value from 7 to 1
 '''
-from __future__ import absolute_import
+
 from ..stonixutilityfunctions import iterate, writeFile, readFile, resetsecon
 from ..stonixutilityfunctions import checkPerms, setPerms, createFile
 from ..stonixutilityfunctions import getUserGroupName, getOctalPerms

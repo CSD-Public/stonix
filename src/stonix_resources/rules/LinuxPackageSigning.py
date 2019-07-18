@@ -28,7 +28,7 @@ this can be checked by ensuring that all repos have gpgcheck=1 set.
 @change: 2016/09/13 eball Added undo event to KVEditor, and clearing old events
 '''
 
-from __future__ import absolute_import
+
 
 import re
 import os

@@ -56,7 +56,7 @@ Created on Jul 11, 2013
     beginning of fix() to the beginning of the fix linux path
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
 '''
-from __future__ import absolute_import
+
 from ..stonixutilityfunctions import createFile
 from ..stonixutilityfunctions import readFile, resetsecon, writeFile
 from ..ruleKVEditor import RuleKVEditor
@@ -901,7 +901,7 @@ class ConfigureScreenLocking(RuleKVEditor):
         gid = getpwnam(user)[3]
 
         if uid != "" and gid != "":
-            os.chmod(kfile, 0600)
+            os.chmod(kfile, 0o600)
             os.chown(kfile, uid, gid)
             resetsecon(kfile)
         else:

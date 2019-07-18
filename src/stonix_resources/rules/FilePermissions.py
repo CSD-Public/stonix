@@ -40,7 +40,7 @@ rule class
 @change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
 '''
-from __future__ import absolute_import
+
 import os
 import traceback
 import subprocess
@@ -1312,7 +1312,7 @@ has been called a second time. The previous results are displayed. '''
                     wwfile = wwfile.strip()
                     if os.path.isdir(wwfile):
                         try:
-                            os.chmod(wwfile, 01777)
+                            os.chmod(wwfile, 0o1777)
                         except (OSError):
                             # catch OSError because we may be NFS or RO
                             self.logger.log(LogPriority.DEBUG,
@@ -1384,7 +1384,7 @@ has been called a second time. The previous results are displayed. '''
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
-        except Exception, err:
+        except Exception as err:
             self.rulesuccess = False
             self.detailedresults = self.detailedresults + "\n" + str(err) + \
                 " - " + str(traceback.format_exc())

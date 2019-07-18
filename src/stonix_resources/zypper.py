@@ -25,10 +25,10 @@ import re
 import os
 import time
 
-from stonixutilityfunctions import psRunning
-from logdispatcher import LogPriority
-from CommandHelper import CommandHelper
-from StonixExceptions import repoError
+from .stonixutilityfunctions import psRunning
+from .logdispatcher import LogPriority
+from .CommandHelper import CommandHelper
+from .StonixExceptions import repoError
 
 
 class Zypper(object):

@@ -9,9 +9,9 @@ Some methods might be useful in older Mac OS X operating systems.
 '''
 import re
 
-from logdispatcher import LogPriority as lp
-from CommandHelper import CommandHelper
-from stonixutilityfunctions import reportStack
+from .logdispatcher import LogPriority as lp
+from .CommandHelper import CommandHelper
+from .stonixutilityfunctions import reportStack
 
 class LaunchCtl(object):
     '''Service manager that provides an interface to the Mac OS launchctl command.
@@ -109,7 +109,7 @@ class LaunchCtl(object):
 
         '''
         sane = False
-        if isinstance(filepath, basestring):
+        if isinstance(filepath, str):
             if re.match("^[A-Za-z/\.][A-Za-z0-9/\._-]*", filepath):
                 sane = True
             else:
@@ -135,7 +135,7 @@ class LaunchCtl(object):
             self.logger.log(lp.ERROR, "Command must be a dictionary...")
         else:
             commands = 0
-            for subCommand, args in command.iteritems():
+            for subCommand, args in command.items():
                 commands += 1
                 #####
                 # Check to make sure only one command is in the dictionary
@@ -161,7 +161,7 @@ class LaunchCtl(object):
                 #####
                 # Check to make sure the key or subCommand is a string, and
                 # the value is alist and args are
-                if not isinstance(subCommand, basestring) or \
+                if not isinstance(subCommand, str) or \
                    not isinstance(args, list):
                     self.logger.log(lp.ERROR, "subcommand needs to be a " +
                                     "string, and args needs to be a list " +
@@ -171,7 +171,7 @@ class LaunchCtl(object):
                     #####
                     # Check the arguments to make sure they are all strings
                     for arg in args:
-                        if not isinstance(arg, basestring):
+                        if not isinstance(arg, str):
                             self.logger.log(lp.ERROR, "Arg '" + str(arg) +
                                             "'needs to be a string...")
                             success = False
@@ -235,7 +235,7 @@ class LaunchCtl(object):
                 success = False
 
         else:
-            raise(ValueError("Invalid subcommand: " + str(commandDict)))
+            raise ValueError
 
         return success, str(output), str(error), str(returncode)
 
@@ -320,7 +320,7 @@ class LaunchCtl(object):
             args = []
 
             if re.match("[-wF]+", str(options)) and \
-               isinstance(options, basestring):
+               isinstance(options, str):
                 args.append(options)
             else:
                 self.logger.log(lp.INFO, "Need a the options to be a single" +
@@ -333,7 +333,7 @@ class LaunchCtl(object):
                 self.logger.log(lp.INFO, "Need a the sessionType in: " +
                                 str(sessionTypes))
 
-            if isinstance(domain, basestring):
+            if isinstance(domain, str):
                 args += ['-D', domain]
             else:
                 self.logger.log(lp.INFO, "Need a the domain in: " +
@@ -428,7 +428,7 @@ class LaunchCtl(object):
             args = []
 
             if re.match("[-wF]+", str(options)) and \
-               isinstance(options, basestring):
+               isinstance(options, str):
                 args.append(options)
             else:
                 self.logger.log(lp.INFO, "Need a the options to be a single" +
@@ -441,7 +441,7 @@ class LaunchCtl(object):
                 self.logger.log(lp.INFO, "Need a the sessionType in: " +
                                 str(sessionTypes))
 
-            if isinstance(domain, basestring):
+            if isinstance(domain, str):
                 args += ['-D', domain]
             else:
                 self.logger.log(lp.INFO, "Need a the domain in: " +
@@ -473,7 +473,7 @@ class LaunchCtl(object):
         success = False
         #####
         # Input validation.
-        if not label or not isinstance(label, basestring):
+        if not label or not isinstance(label, str):
             return success
 
         cmd = {"start": label}
@@ -498,7 +498,7 @@ class LaunchCtl(object):
         success = False
         #####
         # Input validation.
-        if not label or not isinstance(label, basestring):
+        if not label or not isinstance(label, str):
             return success
 
         cmd = {"stop": label}
@@ -530,7 +530,7 @@ class LaunchCtl(object):
         success = False
         #####
         # Input validation.
-        if label and isinstance(label, basestring):
+        if label and isinstance(label, str):
             cmd = [self.launchctl, 'list', label]
         elif not label:
             cmd = [self.launchctl, 'list']
@@ -582,7 +582,7 @@ class LaunchCtl(object):
         #####
         # Input validation.
         if not isinstance(pid, int) or \
-           not isinstance(command, basestring) or \
+           not isinstance(command, str) or \
            not isinstance(args, list):
             return success
 
@@ -615,7 +615,7 @@ class LaunchCtl(object):
         #####
         # Input validation.
         if not isinstance(uid, int) or \
-           not isinstance(command, basestring) or \
+           not isinstance(command, str) or \
            not isinstance(args, list):
             return success
 
@@ -660,8 +660,8 @@ class LaunchCtl(object):
         cmd = ''
         #####
         # Input validation.
-        if not isinstance(domainTarget, basestring) or \
-           not isinstance(servicePath, basestring):
+        if not isinstance(domainTarget, str) or \
+           not isinstance(servicePath, str):
             return success
 
         if servicePath and domainTarget:
@@ -709,8 +709,8 @@ class LaunchCtl(object):
         success = False
         #####
         # Input validation.
-        if not isinstance(domainTarget, basestring) or \
-           not isinstance(servicePath, basestring):
+        if not isinstance(domainTarget, str) or \
+           not isinstance(servicePath, str):
             return success
 
         if servicePath and domainTarget:
@@ -759,10 +759,10 @@ class LaunchCtl(object):
         success = False
         #####
         # Input validation.
-        if not isinstance(serviceTarget, basestring):
+        if not isinstance(serviceTarget, str):
             return success
 
-        if servicePath and isinstance(servicePath, basestring):
+        if servicePath and isinstance(servicePath, str):
             cmd = {"enable": [serviceTarget, servicePath]}
         else:
             cmd = {"enable": [serviceTarget]}
@@ -802,7 +802,7 @@ class LaunchCtl(object):
         success = False
         #####
         # Input validation.
-        if not isinstance(serviceTarget, basestring):
+        if not isinstance(serviceTarget, str):
             return success
 
         cmd = {"disable": [serviceTarget]}
@@ -835,7 +835,7 @@ class LaunchCtl(object):
         success = False
         #####
         # Input validation.
-        if not isinstance(serviceName, basestring):
+        if not isinstance(serviceName, str):
             return success
 
         cmd = {"uncache": [serviceName]}
@@ -888,7 +888,7 @@ class LaunchCtl(object):
         # Input validation.
         args = []
         if re.match("[-kp]+", str(options)) and \
-           isinstance(options, basestring):
+           isinstance(options, str):
             args.append(options)
         else:
             self.logger.log(lp.INFO, "Need a the options to be a single " +
@@ -937,7 +937,7 @@ class LaunchCtl(object):
                    'SIGTTIN', 'SIGTTOU', 'SIGIO', 'SIGXCPU', 'SIGXFSZ',
                    'SIGVTALRM', 'SIGPROF', 'SIGWINCH', 'SIGINFO', 'SIGUSR1',
                    'SIGUSR2']
-        if isinstance(signal, basestring) and signal in signals:
+        if isinstance(signal, str) and signal in signals:
             args.append(signal)
         elif isinstance(signal, int) and signal < 32:
             args.append(signal)
@@ -946,7 +946,7 @@ class LaunchCtl(object):
 
         #####
         # Service target, just check for string...
-        if isinstance(serviceTarget, basestring):
+        if isinstance(serviceTarget, str):
             args.append(serviceTarget)
         else:
             return success
@@ -979,7 +979,7 @@ class LaunchCtl(object):
         success = False
         #####
         # Input validation.
-        if not isinstance(serviceTarget, basestring):
+        if not isinstance(serviceTarget, str):
             return success
 
         cmd = {"blame": [serviceTarget]}
@@ -1012,7 +1012,7 @@ class LaunchCtl(object):
         success = False
         #####
         # Input validation.
-        if not isinstance(target, basestring):
+        if not isinstance(target, str):
             return success
 
         # prepended system/ to service-target in order to hot fix multiple
@@ -1066,7 +1066,7 @@ class LaunchCtl(object):
         '''
         success = False
         stdout = ''
-        if target and isinstance(target, basestring):
+        if target and isinstance(target, str):
             cmd = {"print-disabled": [target]}
             success, stdout, _, _ = self.runSubCommand(cmd)
 
@@ -1136,7 +1136,7 @@ class LaunchCtl(object):
         success = False
         #####
         # Input validation.
-        if not isinstance(ownerPid, int) or not isinstance(portName, basestring):
+        if not isinstance(ownerPid, int) or not isinstance(portName, str):
             return success
 
         cmd = {"rsolveport": [ownerPid, portName]}
@@ -1209,10 +1209,10 @@ class LaunchCtl(object):
         success = False
         validContexts = ['System', 'users', 'halt', 'logout', 'apps', 'reroot']
 
-        if not isinstance(context, basestring) or \
+        if not isinstance(context, str) or \
            not context in validContexts:
             return success
-        if mountPoint and isinstance(mountPoint, basestring):
+        if mountPoint and isinstance(mountPoint, str):
             cmd = {"reboot": [context, mountPoint]}
         elif not mountPoint:
             cmd = {"reboot": [context]}

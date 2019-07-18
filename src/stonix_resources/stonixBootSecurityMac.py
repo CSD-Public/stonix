@@ -10,7 +10,7 @@ This is most likely called from a job scheduled by the stonix program.
 
 import subprocess
 import os
-import networksetup
+from . import networksetup
 
 
 class logmock:

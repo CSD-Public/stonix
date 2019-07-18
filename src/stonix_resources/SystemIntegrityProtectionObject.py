@@ -212,7 +212,7 @@ class SystemIntegrityProtectionObject():
 
         '''
         datatype = type(pMessage)
-        if datatype == types.StringType:
+        if datatype == bytes:
             if not (pMessage == ""):
                 msg = pMessage
                 if (self.msg == ""):
@@ -220,7 +220,7 @@ class SystemIntegrityProtectionObject():
                 else:
                     self.msg = self.msg + "\n" + \
                     msg
-        elif datatype == types.ListType:
+        elif datatype == list:
             if not (pMessage == []):
                 for item in pMessage:
                     msg = item
@@ -232,8 +232,8 @@ class SystemIntegrityProtectionObject():
         else:
             raise TypeError("pMessage with value" + str(pMessage) + \
                             "is of type " + str(datatype) + " not of " + \
-                            "type " + str(types.StringType) + \
-                            " or type " + str(types.ListType) + \
+                            "type " + str(bytes) + \
+                            " or type " + str(list) + \
                             " as expected!")
         return self.msg
 

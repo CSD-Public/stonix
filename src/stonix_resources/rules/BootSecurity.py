@@ -35,7 +35,7 @@ bluetooth, microphones, and cameras.
 @change: 2019/03/12 Ekkehard - make eligible for macOS Sierra 10.12+
 """
 
-from __future__ import absolute_import
+
 
 import traceback
 import os

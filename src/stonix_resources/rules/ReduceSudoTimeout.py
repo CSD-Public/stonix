@@ -37,7 +37,7 @@ authorization after a successful sudo authorization is made.
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
 '''
 
-from __future__ import absolute_import
+
 
 import re
 import os
@@ -179,7 +179,7 @@ class ReduceSudoTimeout(Rule):
                     self.statechglogger.recordfilechange(self.sudofile, tempfile, myid)
                     os.rename(tempfile, self.sudofile)
                     os.chown(self.sudofile, 0, 0)
-                    os.chmod(self.sudofile, 0440)
+                    os.chmod(self.sudofile, 0o440)
                     resetsecon(self.sudofile)
                     self.logger.log(LogPriority.DEBUG, "Added the configuration setting to " + str(self.sudofile))
 

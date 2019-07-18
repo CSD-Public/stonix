@@ -21,7 +21,7 @@ Created on Apr 20, 2017
 @author: dwalker
 @change 2017/08/28 rsn Fixing to use new help text methods
 '''
-from __future__ import absolute_import
+
 import traceback
 import os
 from ..rule import Rule

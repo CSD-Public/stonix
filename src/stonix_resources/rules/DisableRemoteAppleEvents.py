@@ -34,7 +34,7 @@ possible.
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
 '''
 
-from __future__ import absolute_import
+
 
 import os
 import re
@@ -100,13 +100,13 @@ class DisableRemoteAppleEvents(Rule):
 
         try:
 
-            print "Value of disableremoteevents CI = " + str(self.disableremoteevents.getcurrvalue())
+            print("Value of disableremoteevents CI = " + str(self.disableremoteevents.getcurrvalue()))
 
             if self.disableremoteevents.getcurrvalue():
                 if not self.reportDisabled():
                     self.compliant = False
 
-            print "Value of secureremoteevents CI = " + str(self.secureremoteevents.getcurrvalue())
+            print("Value of secureremoteevents CI = " + str(self.secureremoteevents.getcurrvalue()))
 
             if self.secureremoteevents.getcurrvalue() != []:
                 if not self.reportSecured():

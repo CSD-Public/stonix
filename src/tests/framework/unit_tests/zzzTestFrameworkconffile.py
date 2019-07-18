@@ -70,22 +70,22 @@ class zzzTestFrameworkconffile(unittest.TestCase):
         os.remove('test3.conf')
 
     def testOpenEqIsPresent(self):
-        self.failUnless( self.to_openeq.ispresent() )
+        self.assertTrue( self.to_openeq.ispresent() )
         
     def testClosedEqIsPresent(self):
-        self.failUnless( self.to_closedeq.ispresent() )
+        self.assertTrue( self.to_closedeq.ispresent() )
         
     def testSpaceIsPresent(self):
-        self.failUnless( self.to_space.ispresent() )
+        self.assertTrue( self.to_space.ispresent() )
         
     def testOpenEqAudit(self):
-        self.failUnless( self.to_openeq.audit() )
+        self.assertTrue( self.to_openeq.audit() )
         
     def testClosedEqAudit(self):
-        self.failUnless( self.to_openeq.audit() )
+        self.assertTrue( self.to_openeq.audit() )
         
     def testSpaceAudit(self):
-        self.failUnless( self.to_space.audit() )
+        self.assertTrue( self.to_space.audit() )
 
 
 if __name__ == "__main__":

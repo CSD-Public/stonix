@@ -28,7 +28,7 @@ Created on Apr 22, 2015
         logging; improved code readability
 """
 
-from __future__ import absolute_import
+
 
 import os
 import re
@@ -264,7 +264,7 @@ class DisableThumbnailers(Rule):
             f = open(self.lockfile, "w")
             f.write(self.locksetting)
             f.close()
-            os.chmod(self.lockfile, 0644)
+            os.chmod(self.lockfile, 0o644)
             os.chown(self.lockfile, 0, 0)
 
         except Exception:

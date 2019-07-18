@@ -44,7 +44,7 @@ mac os x functionality; refactored code for readability; fixed pep8 violations
 @change: 2019/03/12 Ekkehard - make eligible for macOS Sierra 10.12+
 """
 
-from __future__ import absolute_import
+
 
 import os
 import re

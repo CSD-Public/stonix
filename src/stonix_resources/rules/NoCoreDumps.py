@@ -43,7 +43,7 @@ which conflicted with DisableIPV6 and NoCoreDumps which expected 644.
     handle sysctl by writing to /etc/sysctl.conf and also using command
 """
 
-from __future__ import absolute_import
+
 
 import os
 import traceback

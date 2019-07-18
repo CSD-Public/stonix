@@ -22,7 +22,7 @@ Created on Apr 11, 2016
 @change: 2016/07/06 eball Shortened software test list, added backup for
     removed software
 '''
-from __future__ import absolute_import
+
 import sys
 
 sys.path.append("../../../..")

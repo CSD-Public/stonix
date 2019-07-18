@@ -81,8 +81,8 @@ def checkspec(srcpath, ver):
             specver = line.split()[1].strip()
             break
 
-    print("Version number in localize: " + str(ver))
-    print("Version number in stonix.spec file: " + str(specver))
+    print(("Version number in localize: " + str(ver)))
+    print(("Version number in stonix.spec file: " + str(specver)))
     if str(specver) != str(ver):
         print("Program versions specified in localize and stonix.spec files do not match")
         print("Please correct this and re-run the script")
@@ -115,7 +115,7 @@ def main():
     srcpath = None
 
     if len(args) == 0 or len(args) > 1:
-        print 'Wrong number of arguments passed'
+        print('Wrong number of arguments passed')
         sys.exit(1)
     else:
         srcpath = args[0]

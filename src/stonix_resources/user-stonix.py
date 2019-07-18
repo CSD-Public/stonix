@@ -68,11 +68,11 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
             
         except IOError:
             exitcode = IOError.errno
-            print IOError.message
+            print(IOError.message)
             scriptsuccess = False
         except OSError:
             exitcode = OSError.errno
-            print OSError.message
+            print(OSError.message)
             scriptsuccess = False
         
         if scriptsuccess:
@@ -92,5 +92,5 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
         
         else:
             
-            print "user-stonix.py script failed to run properly"
+            print("user-stonix.py script failed to run properly")
             exit(exitcode)

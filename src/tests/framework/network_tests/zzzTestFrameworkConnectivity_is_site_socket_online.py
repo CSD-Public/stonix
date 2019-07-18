@@ -33,7 +33,7 @@ from src.stonix_resources.Connectivity import Connectivity
 from src.tests.lib.logdispatcher_lite import LogDispatcher
 from src.stonix_resources.environment import Environment
 
-from connectivity_test_data import test_case_data_site_socket_online
+from .connectivity_test_data import test_case_data_site_socket_online
 
 def name_test_template_one(*args):
     '''decorator for monkeypatching
@@ -60,7 +60,7 @@ class test_Connectivity_is_site_socket_online(unittest.TestCase):
             self.assertFalse(self.conn.is_site_socket_online(host))
 
 
-for behavior, test_cases in test_case_data_site_socket_online.items():
+for behavior, test_cases in list(test_case_data_site_socket_online.items()):
     for test_case_data in test_cases:
         test_iteration, pass_or_not, host = test_case_data
         my_test_name = "test_{0}_{1}".format(test_iteration, str(pass_or_not))

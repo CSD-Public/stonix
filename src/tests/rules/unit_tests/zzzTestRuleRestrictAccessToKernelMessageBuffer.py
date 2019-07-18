@@ -24,7 +24,7 @@ This is a Unit Test for Rule RestrictAccessToKernelMessageBuffer
 @change: 05/17/2016 original implementation
 '''
 
-from __future__ import absolute_import
+
 import sys
 import unittest
 

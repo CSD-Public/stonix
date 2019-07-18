@@ -36,7 +36,7 @@ reference the CI before executing FIX.
 @change: 2015/10/07 eball Help text cleanup
 '''
 
-from __future__ import absolute_import
+
 import os
 import re
 import traceback

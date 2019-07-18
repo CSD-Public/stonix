@@ -45,7 +45,7 @@ reference localize.py MAILRELAYSERVER instead of static local value.
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
 '''
 
-from __future__ import absolute_import
+
 from ..rule import Rule
 from ..stonixutilityfunctions import resetsecon, readFile, iterate, setPerms
 from ..stonixutilityfunctions import checkPerms, writeFile
@@ -516,7 +516,7 @@ agent, set the value of SECUREMTA to False.'''
                 return success
 
             elif not os.path.exists('/etc/mail'):
-                os.makedirs('/etc/mail', 0755)
+                os.makedirs('/etc/mail', 0o755)
 
             if self.sndmailed and os.path.exists(path):
 

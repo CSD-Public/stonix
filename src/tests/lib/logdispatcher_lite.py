@@ -425,7 +425,7 @@ class LogDispatcher ():
                 self.reportlog = filename
                 
         elif re.match("^\s+$", filename) or re.match("^$", filename):
-            print " ... no filename given ..."
+            print(" ... no filename given ...")
         else:
             self.reportlog = filename
 

@@ -31,7 +31,7 @@ def getLibc(logger=False):
         except:
             raise Exception("DAMN IT JIM!!!")
         else:
-            print "Loading Mac dylib......................................"
+            print("Loading Mac dylib......................................")
     elif osFamily and  osFamily.startswith("linux"):
         #####
         # For Linux

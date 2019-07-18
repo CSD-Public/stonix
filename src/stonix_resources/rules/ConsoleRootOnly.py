@@ -30,7 +30,7 @@ This class will restrict access to the root log on to console only
 @change: 2017/08/28 ekkehard - Added self.sethelptext()
 '''
 
-from __future__ import absolute_import
+
 
 from ..rule import Rule
 from ..logdispatcher import LogPriority

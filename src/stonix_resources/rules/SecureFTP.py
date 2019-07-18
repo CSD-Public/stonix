@@ -41,7 +41,7 @@ the Fix method.
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
 '''
 
-from __future__ import absolute_import
+
 
 import os
 import re
@@ -572,7 +572,7 @@ class SecureFTP(Rule):
 
             self.statechglogger.recordchgevent(myid, event)
 
-            os.chmod(macftpdconffile, 0644)
+            os.chmod(macftpdconffile, 0o644)
             os.chown(macftpdconffile, 0, 0)
 
             undocmd = ''
@@ -695,7 +695,7 @@ class SecureFTP(Rule):
             self.statechglogger.recordfilechange(tmpfile, self.conffile, myid)
 
             os.rename(tmpfile, self.conffile)
-            os.chmod(self.conffile, 0600)
+            os.chmod(self.conffile, 0o600)
             os.chown(self.conffile, 0, 0)
 
         except Exception:
@@ -756,7 +756,7 @@ class SecureFTP(Rule):
         self.statechglogger.recordfilechange(tmpusersfile, self.usersfile, myid)
 
         os.rename(tmpusersfile, self.usersfile)
-        os.chmod(self.usersfile, 0600)
+        os.chmod(self.usersfile, 0o600)
         os.chown(self.usersfile, 0, 0)
 
 ###############################################################################

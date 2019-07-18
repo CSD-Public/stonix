@@ -37,7 +37,7 @@ referenced in fix.
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
 '''
 
-from __future__ import absolute_import
+
 import os
 import re
 import traceback
@@ -155,39 +155,39 @@ set the value of SetDaemonUmask to False.'
             # fix rhel
             if os.path.exists(rfile):
 
-                replacedline = self.replaceLine('^umask ', 'umask ' + umaskvalue + '\n', rfile, [0, 0], 0644)
+                replacedline = self.replaceLine('^umask ', 'umask ' + umaskvalue + '\n', rfile, [0, 0], 0o644)
                 if not replacedline:
-                    self.appendLine('\numask ' + umaskvalue + '\n', rfile, [0, 0], 0644)
+                    self.appendLine('\numask ' + umaskvalue + '\n', rfile, [0, 0], 0o644)
 
             # fix solaris
             elif os.path.exists(solfile):
 
-                replacedline = self.replaceLine('^CMASK ', 'CMASK ' + umaskvalue + '\n', solfile, [0, 0], 0644)
+                replacedline = self.replaceLine('^CMASK ', 'CMASK ' + umaskvalue + '\n', solfile, [0, 0], 0o644)
                 if not replacedline:
-                    self.appendLine('\nCMASK ' + umaskvalue + '\n', solfile, [0, 0], 0644)
+                    self.appendLine('\nCMASK ' + umaskvalue + '\n', solfile, [0, 0], 0o644)
 
             # fix debian
             elif os.path.exists(debianfile2):
 
-                replacedline = self.replaceLine('^#session optional\s*pam_umask.so', 'session optional pam_umask.so\n', debianfile2, [0, 0], 0644)
+                replacedline = self.replaceLine('^#session optional\s*pam_umask.so', 'session optional pam_umask.so\n', debianfile2, [0, 0], 0o644)
                 if not replacedline:
-                    self.appendLine('\nsession optional pam_umask.so\n', debianfile2, [0, 0], 0644)
+                    self.appendLine('\nsession optional pam_umask.so\n', debianfile2, [0, 0], 0o644)
 
                 if os.path.exists(debianfile):
 
-                    replacedline = self.replaceLine('^UMASK', 'UMASK ' + umaskvalue + '\n', debianfile, [0, 0], 0644)
+                    replacedline = self.replaceLine('^UMASK', 'UMASK ' + umaskvalue + '\n', debianfile, [0, 0], 0o644)
                     if not replacedline:
-                        self.appendLine('\nUMASK ' + umaskvalue + '\n', debianfile, [0, 0], 0644)
+                        self.appendLine('\nUMASK ' + umaskvalue + '\n', debianfile, [0, 0], 0o644)
 
             # if all else fails, and mostly for fedora 27 ~
             else:
                 if not os.path.exists("/etc/sysconfig"):
-                    os.makedirs("/etc/sysconfig", 0755)
+                    os.makedirs("/etc/sysconfig", 0o755)
                 f = open("/etc/sysconfig/init", "w")
                 f.write("umask " + umaskvalue + "\n")
                 f.close()
 
-                os.chmod("/etc/sysconfig/init", 0644)
+                os.chmod("/etc/sysconfig/init", 0o644)
                 os.chown("/etc/sysconfig/init", 0, 0)
 
             self.rulesuccess = True
@@ -213,16 +213,16 @@ set the value of SetDaemonUmask to False.'
 
             if os.path.exists(macfile):
 
-                replacedline = self.replaceLine('^umask', 'umask ' + umaskvalue + '\n', macfile, [0, 0], 0644)
+                replacedline = self.replaceLine('^umask', 'umask ' + umaskvalue + '\n', macfile, [0, 0], 0o644)
                 if not replacedline:
-                    self.appendLine('\numask ' + umaskvalue + '\n', macfile, [0, 0], 0644)
+                    self.appendLine('\numask ' + umaskvalue + '\n', macfile, [0, 0], 0o644)
             else:
 
                 f = open(macfile, 'w')
                 f.write('umask 022\n')
                 f.close()
 
-                os.chmod(macfile, 0644)
+                os.chmod(macfile, 0o644)
                 os.chown(macfile, 0, 0)
 
             self.rulesuccess = True

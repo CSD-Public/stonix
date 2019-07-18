@@ -34,7 +34,7 @@ built to make use of the libwrap library.
 @change: 2016/06/14 Eric Ball Rewrote most code
 """
 
-from __future__ import absolute_import
+
 
 import os
 import re
@@ -353,7 +353,7 @@ class TCPWrappers(Rule):
             self.statechglogger.recordfilechange(allowfile, allowtmp, myid)
 
             os.rename(allowtmp, allowfile)
-            os.chmod(allowfile, 0644)
+            os.chmod(allowfile, 0o644)
             os.chown(allowfile, 0, 0)
 
         except Exception:
@@ -391,7 +391,7 @@ class TCPWrappers(Rule):
             self.statechglogger.recordfilechange(denyfile, denytmp, myid)
 
             os.rename(denytmp, denyfile)
-            os.chmod(denyfile, 0644)
+            os.chmod(denyfile, 0o644)
             os.chown(denyfile, 0, 0)
 
         except Exception:

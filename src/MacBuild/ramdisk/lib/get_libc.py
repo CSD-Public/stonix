@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+
 
 #--- Native python libraries
 import os
@@ -38,7 +38,7 @@ def getLibc(logger=False):
         except:
             raise Exception("DAMN IT JIM!!!")
         else:
-            print "Loading Mac dylib......................................"
+            print("Loading Mac dylib......................................")
     elif osFamily and  osFamily.startswith("linux"):
         #####
         # For Linux

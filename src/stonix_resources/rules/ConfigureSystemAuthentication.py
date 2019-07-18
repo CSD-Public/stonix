@@ -30,7 +30,7 @@ Created on Sep 11, 2013
 @change: 2016/11/14 eball Updated for PAM configurations in localize.py
 @change: 2017/08/28 ekkehard - Added self.sethelptext()
 '''
-from __future__ import absolute_import
+
 
 import os
 import re

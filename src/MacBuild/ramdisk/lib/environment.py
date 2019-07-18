@@ -36,7 +36,7 @@ Created on Aug 24, 2010
 @author: dkennel
 @change: 2014/05/29 - ekkehard j. koch - pep8 and comment updates
 '''
-from __future__ import absolute_import
+
 #--- Native python libraries
 import os
 import re
@@ -90,7 +90,7 @@ class Environment:
 
         '''
         try:
-            if type(installmode) is types.BooleanType:
+            if type(installmode) is bool:
                 self.installmode = installmode
         except (NameError):
             # installmode was undefined
@@ -118,7 +118,7 @@ class Environment:
 
         '''
         try:
-            if type(verbosemode) is types.BooleanType:
+            if type(verbosemode) is bool:
                 self.verbosemode = verbosemode
         except (NameError):
             # verbosemode was undefined
@@ -146,7 +146,7 @@ class Environment:
 
         '''
         try:
-            if type(debugmode) is types.BooleanType:
+            if type(debugmode) is bool:
                 self.debugmode = debugmode
         except (NameError):
             # debugmode was undefined
@@ -714,10 +714,10 @@ class Environment:
                                     stdout=subprocess.PIPE, close_fds=True)
             netdata = proc.stdout.readlines()
             for line in netdata:
-                print "processing: " + line
+                print("processing: " + line)
                 match = re.search(littlesnitch, line)
                 if match is not None:
-                    print 'LittleSnitch Is Running'
+                    print('LittleSnitch Is Running')
                     issnitchactive = True
                     break
         return issnitchactive
@@ -765,7 +765,7 @@ class Environment:
                     self.test_mode = True
                     self.script_path = os.path.dirname(os.path.realpath(sys.argv[1]))
                 else:
-                    print "ERROR: Cannot run using this method"
+                    print("ERROR: Cannot run using this method")
             else:
                 #print "DEBUG: Cannot find appropriate path, building paths for current directory"
                 self.script_path = os.getcwd()
@@ -820,11 +820,11 @@ class Environment:
         elif os.path.exists(os.path.join(self.script_path, "etc", "stonix.conf")):
             self.conf_path = os.path.join(self.script_path, "etc", "stonix.conf")
         elif re.search('pydev', script_path_zero) and re.search('stonix_resources', script_path_one):
-            print "INFO: Called by unit test"
+            print("INFO: Called by unit test")
             srcpath = script_path_one.split('/')[:-2]
             srcpath = '/'.join(srcpath)
             self.conf_path = os.path.join(srcpath, 'etc', 'stonix.conf')
-            print self.conf_path
+            print(self.conf_path)
         else:
             self.conf_path = "/etc/stonix.conf"
 

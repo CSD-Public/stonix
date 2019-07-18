@@ -32,7 +32,7 @@ password, will be disabled.
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
 '''
 
-from __future__ import absolute_import
+
 
 import re
 import traceback
@@ -234,7 +234,7 @@ class DisableInactiveAccounts(Rule):
                                 "parameter user was None, or blank!")
                 return inactivedays
 
-            if not isinstance(user, basestring):
+            if not isinstance(user, str):
                 self.logger.log(LogPriority.DEBUG,
                                 "The given value for parameter user was not " +
                                 "of the correct type (int)!")
