@@ -21,6 +21,7 @@ Created on May 15, 2017
 @author: Breen Malmberg
 @change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
 @change: 2017/08/28 Breen Malmberg - Fixing to use new help text methods
+@change: 2019/07/18 Brandon R. Gonzales - Make applicable to MacOS 10.13-10.14
 '''
 
 from __future__ import absolute_import
@@ -51,7 +52,7 @@ class DisableTouchID(Rule):
         self.environ = environ
         self.sethelptext()
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.12.3', '+']}}
+                           'os': {'Mac OS X': ['10.12.3', 'r', '10.14.10']}}
         datatype = 'bool'
         key = 'DISABLETOUCHID'
         instructions = "To prevent this rule from running, set the value of DisableTouchID to False."
