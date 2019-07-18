@@ -32,7 +32,7 @@ The SetNTP class configures ntp for each client.
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
 '''
 
-from __future__ import absolute_import
+
 import os
 import re
 import traceback
@@ -562,7 +562,7 @@ class SetNTP(Rule):
                                                      myid)
 
                 os.rename(tmpntpfile, self.ntpfile)
-                os.chmod(self.ntpfile, 0644)
+                os.chmod(self.ntpfile, 0o644)
                 os.chown(self.ntpfile, 0, 0)
 
             # if the ntp file does not exist, create it and write the new
@@ -583,7 +583,7 @@ class SetNTP(Rule):
                 myid = iterate(self.iditerator, self.rulenumber)
                 self.statechglogger.recordchgevent(myid, event)
 
-                os.chmod(self.ntpfile, 0644)
+                os.chmod(self.ntpfile, 0o644)
                 os.chown(self.ntpfile, 0, 0)
 
             cmd3 = ["/usr/sbin/ntpd"]
@@ -695,7 +695,7 @@ class SetNTP(Rule):
                 self.statechglogger.recordfilechange(tmpfile, conffile, myid)
 
                 os.rename(tmpfile, conffile)
-                os.chmod(conffile, 0644)
+                os.chmod(conffile, 0o644)
                 os.chown(conffile, 0, 0)
 
             else:

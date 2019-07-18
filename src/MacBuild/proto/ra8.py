@@ -16,5 +16,5 @@ pipe.stdout.read()
 output = pipe.stdout.readlines()
 f.close()
 
-print output
+print(output)
 

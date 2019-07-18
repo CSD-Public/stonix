@@ -31,7 +31,7 @@ This is a Unit Test for Rule NoCoreDumps
         to reflect changes to the rule itself.
 """
 
-from __future__ import absolute_import
+
 
 import unittest
 import sys

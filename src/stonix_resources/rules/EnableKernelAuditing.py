@@ -32,7 +32,7 @@ account modifications, and authentication events.
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
 '''
 
-from __future__ import absolute_import
+
 
 from ..logdispatcher import LogPriority
 from ..rule import Rule
@@ -218,7 +218,7 @@ this system, set the value of EnableKernelAuditing to False"""
 
             self.flushfrequency = str(self.freqci.getcurrvalue())
             allowable_flush_types = ['data', 'incremental', 'sync', 'incremental_async']
-            allowable_freq_range = range(1,100)
+            allowable_freq_range = list(range(1,100))
             if self.flushtypeci.getcurrvalue() not in allowable_flush_types:
                 self.flushtypeci.updatecurrvalue('incremental_async')
                 self.logger.log(LogPriority.DEBUG, "User entered value for flush type was not one of the acceptable types. Changed to default incremental.")
@@ -953,7 +953,7 @@ this system, set the value of EnableKernelAuditing to False"""
 
         retval = True
         owner = [0, 0]
-        perms = 0640
+        perms = 0o640
 
         try:
 
@@ -990,7 +990,7 @@ this system, set the value of EnableKernelAuditing to False"""
 
             # append all missing audit rules options
             for item in self.auditrulesoptions:
-                if item not in map(str.strip, contentlines):
+                if item not in list(map(str.strip, contentlines)):
                     contentlines.append(item + '\n')
 
             # fix arch= flags
@@ -1167,7 +1167,7 @@ this system, set the value of EnableKernelAuditing to False"""
         # all files in rules.d/ have these
         # as well as audit.rules in /etc/audit/
         owner = [0, 0]
-        perms = 0640
+        perms = 0o640
 
         try:
 
@@ -1245,7 +1245,7 @@ this system, set the value of EnableKernelAuditing to False"""
             self.logger.log(LogPriority.DEBUG, "The base directory for the specified filepath does not exist!")
             return success
 
-        if not isinstance(filepath, basestring):
+        if not isinstance(filepath, str):
             success = False
             self.logger.log(LogPriority.DEBUG, "Parameter: filepath must be type: string. Got: " + str(type(filepath)))
             return success
@@ -1336,7 +1336,7 @@ this system, set the value of EnableKernelAuditing to False"""
                 if not self.searchFileContents(accontentlines, aco):
                     accontentlines.append(aco + "\n")
 
-            if not self.writeFileContents(accontentlines, self.auditcontrolfile, [0, 0], 0400):
+            if not self.writeFileContents(accontentlines, self.auditcontrolfile, [0, 0], 0o400):
                     retval = False
 
             # audit_user section
@@ -1349,7 +1349,7 @@ this system, set the value of EnableKernelAuditing to False"""
                 if not self.searchFileContents(aucontentlines, auo):
                     aucontentlines.append(auo + '\n')
 
-            if not self.writeFileContents(aucontentlines, self.audituserfile, [0, 0], 0400):
+            if not self.writeFileContents(aucontentlines, self.audituserfile, [0, 0], 0o400):
                 retval = False
 
             # restart audit service
@@ -1405,7 +1405,7 @@ this system, set the value of EnableKernelAuditing to False"""
                         replaced = True
 
             if replaced:
-                if not self.writeFileContents(contentlines, self.grubconffile, [0, 0], 0644):
+                if not self.writeFileContents(contentlines, self.grubconffile, [0, 0], 0o644):
                     retval = False
 
         except Exception:
@@ -1465,7 +1465,7 @@ this system, set the value of EnableKernelAuditing to False"""
 
                 self.logger.log(LogPriority.DEBUG, "The grub conf file contents have been edited. Saving those changes to the file now...")
 
-                if not self.writeFileContents(contentlines, self.grubconffile, [0, 0], 0644):
+                if not self.writeFileContents(contentlines, self.grubconffile, [0, 0], 0o644):
                     retval = False
 
                 if not self.grubupdatecmd:

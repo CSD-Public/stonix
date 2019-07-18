@@ -33,7 +33,7 @@ This is a Unit Test for Rule DisableGUILogon
 @change: 2016/07/22 eball Added destructive testing
 @change: 2017/10/23 rsn - change to new service helper interface
 '''
-from __future__ import absolute_import
+
 import unittest
 import os
 import re

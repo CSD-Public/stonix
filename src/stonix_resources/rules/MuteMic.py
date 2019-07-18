@@ -40,7 +40,7 @@ that occurs when system sound card(s) is missing firmware
     written methods for reading file, writing to file, and creating file.
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
 '''
-from __future__ import absolute_import
+
 import traceback
 import os
 import re
@@ -794,7 +794,7 @@ added more debugging output
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
-        except Exception, err:
+        except Exception as err:
             self.rulesuccess = False
             self.detailedresults += "\n" + str(err) + \
                 " - " + str(traceback.format_exc())
@@ -892,7 +892,7 @@ param value, retval; made sure method always returns something
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
-        except Exception, err:
+        except Exception as err:
             self.rulesuccess = False
             retval = False
             self.detailedresults += "\n" + str(err) + \
@@ -1105,7 +1105,7 @@ param value, retval; made sure method always returns something
                 # make sure the base directory exists
                 # before we attempt to write a file to it
                 if not os.path.exists(self.systemdbase):
-                    os.makedirs(self.systemdbase, 0755)
+                    os.makedirs(self.systemdbase, 0o755)
                 #if file doesn't exist, create it and record creation event
                 if not os.path.exists(self.systemdscriptname):
                     if not createFile(self.systemdscriptname, self.logger):

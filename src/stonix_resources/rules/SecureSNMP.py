@@ -36,7 +36,7 @@ possible. Configure SNMP if necessary.
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
 '''
 
-from __future__ import absolute_import
+
 import os
 import re
 import traceback
@@ -424,7 +424,7 @@ class SecureSNMP(Rule):
 
             for location in self.snmpdconflocations:
                 if os.path.exists(location):
-                    os.chmod(location, 0640)
+                    os.chmod(location, 0o640)
                     os.chown(location, 0, 0)
 
         except (KeyError, OSError):

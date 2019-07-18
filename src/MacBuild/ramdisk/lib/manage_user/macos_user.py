@@ -6,7 +6,7 @@ unionfs functionality.
 
 @author: Roy Nielsen
 """
-from __future__ import absolute_import
+
 
 import re
 import os
@@ -208,7 +208,7 @@ class MacOSUser(ManageUserTemplate):
             output = self.getDscl(".", "read", "/Users/" + str(userName), "RecordName")
             try:
                 userInfo = output.split()[1]
-            except (KeyError, IndexError), err:
+            except (KeyError, IndexError) as err:
                 self.logger.log(lp.INFO, "Error attempting to find user" + \
                                          str(userName) + " in the " + \
                                          "directory service.")
@@ -287,7 +287,7 @@ class MacOSUser(ManageUserTemplate):
             output = self.getDscl(".", "read", "/Users/" + str(userName), "UserShell")
             try:
                 userShell = output.split()[1]
-            except (KeyError, IndexError), err:
+            except (KeyError, IndexError) as err:
                 self.logger.log(lp.INFO, "Error attempting to find user" + \
                                          str(userName) + " in the " + \
                                          "directory service.")
@@ -312,7 +312,7 @@ class MacOSUser(ManageUserTemplate):
             output = self.getDscl(".", "read", "/Users/" + str(userName), "RealName")
             try:
                 userComment = output[1]
-            except (KeyError, IndexError), err:
+            except (KeyError, IndexError) as err:
                 self.logger.log(lp.INFO, "Error attempting to find user" + \
                                          str(userName) + " in the " + \
                                          "directory service.")
@@ -336,7 +336,7 @@ class MacOSUser(ManageUserTemplate):
             # Process to get out the right information....
             try:
                 userUid = output.split()[1]
-            except (KeyError, IndexError), err:
+            except (KeyError, IndexError) as err:
                 self.logger.log(lp.INFO, "Error attempting to find user" + \
                                          str(userName) + " in the " + \
                                          "directory service.")
@@ -360,7 +360,7 @@ class MacOSUser(ManageUserTemplate):
             # Process to get out the right information....
             try:
                 userPriGid = output.split()[1]
-            except (KeyError, IndexError), err:
+            except (KeyError, IndexError) as err:
                 self.logger.log(lp.INFO, "Error attempting to find user" + \
                                          str(userName) + " in the " + \
                                          "directory service.")
@@ -384,7 +384,7 @@ class MacOSUser(ManageUserTemplate):
             # Process to get out the right information....
             try:
                 userHomeDir = output.split()[1]
-            except (KeyError, IndexError), err:
+            except (KeyError, IndexError) as err:
                 self.logger.log(lp.INFO, "Error attempting to find user" + \
                                          str(userName) + " in the " + \
                                          "directory service.")
@@ -453,7 +453,7 @@ class MacOSUser(ManageUserTemplate):
                                   "accountPolicyData", "creationTime")
             try:
                 userInfo = output.split()[1]
-            except (KeyError, IndexError), err:
+            except (KeyError, IndexError) as err:
                 self.logger.log(lp.INFO, "Error attempting to find user" + \
                                          str(userName) + " in the " + \
                                          "directory service.")
@@ -480,7 +480,7 @@ class MacOSUser(ManageUserTemplate):
                                   "accountPolicyData", "failedLoginCount")
             try:
                 userInfo = output.split()[1]
-            except (KeyError, IndexError), err:
+            except (KeyError, IndexError) as err:
                 self.logger.log(lp.INFO, "Error attempting to find user" + \
                                          str(userName) + " in the " + \
                                          "directory service.")
@@ -503,7 +503,7 @@ class MacOSUser(ManageUserTemplate):
                                   "accountPolicyData", "failedLoginTimestamp")
             try:
                 userInfo = output.split()[1]
-            except (KeyError, IndexError), err:
+            except (KeyError, IndexError) as err:
                 self.logger.log(lp.INFO, "Error attempting to find user" + \
                                          str(userName) + " in the " + \
                                          "directory service.")
@@ -531,7 +531,7 @@ class MacOSUser(ManageUserTemplate):
                                   "accountPolicyData", "passwordLastSetTime")
             try:
                 userInfo = output.split()[1]
-            except (KeyError, IndexError), err:
+            except (KeyError, IndexError) as err:
                 self.logger.log(lp.INFO, "Error attempting to find user" + \
                                          str(userName) + " in the " + \
                                          "directory service.")
@@ -714,7 +714,7 @@ class MacOSUser(ManageUserTemplate):
         '''
         success = False
         reterr = ""
-        if isinstance(userName, basestring)\
+        if isinstance(userName, str)\
            and re.match("^[A-Za-z][A-Za-z0-9]*$", userName):
             cmd = [self.dscl, ".", "-create", "/Users/" + str(userName)]
             self.runner.setCommand(cmd)
@@ -947,7 +947,7 @@ class MacOSUser(ManageUserTemplate):
                 userUid = self.getUserUid(userName)
                 userPriGid = self.getUserPriGid(userName)
                 userHomeDir = self.getUserHomeDir(userName)
-            except BadUserInfoError, err:
+            except BadUserInfoError as err:
                 self.logger.log(lp.INFO, "Exception trying to find: \"" + \
                                          str(userName) + "\" user information")
                 self.logger.log(lp.INFO, "err: " + str(err))
@@ -1023,7 +1023,7 @@ class MacOSUser(ManageUserTemplate):
             #
             try:
                 shutil.rmtree("/Users/" + str(user))
-            except IOError or OSError, err:
+            except IOError or OSError as err:
                 self.logger.log(lp.INFO, "Exception trying to remove user home...")
                 self.logger.log(lp.WARNING, traceback.format_exc())
                 self.logger.log(lp.WARNING, str(err))
@@ -1073,7 +1073,7 @@ class MacOSUser(ManageUserTemplate):
         else:
             #self.logger.log(lp.DEBUG, "cmd: " + str(command))
             commands = 0
-            for subCommand, args in command.iteritems():
+            for subCommand, args in command.items():
                 commands += 1
                 #####
                 # Check to make sure only one command is in the dictionary
@@ -1101,7 +1101,7 @@ class MacOSUser(ManageUserTemplate):
                 #####
                 # Check to make sure the key or subCommand is a string, and the value is
                 # alist and args are
-                if not isinstance(subCommand, basestring) or not isinstance(args, list):
+                if not isinstance(subCommand, str) or not isinstance(args, list):
                     self.logger.log(lp.ERROR, "subcommand needs to be a string, and args needs to be a list of strings")
                     success = False
                 else:
@@ -1109,7 +1109,7 @@ class MacOSUser(ManageUserTemplate):
                     # Check the arguments to make sure they are all strings
                     success = True
                     for arg in args:
-                        if not isinstance(arg, basestring):
+                        if not isinstance(arg, str):
                             self.logger.log(lp.ERROR, "Arg '" + str(arg) + "'needs to be a string...")
                             success = False
                             break
@@ -1260,19 +1260,19 @@ class MacOSUser(ManageUserTemplate):
 
         #####
         # FIRST VALIDATE INPUT!!
-        if isinstance(directory, basestring) and re.match("^[/\.][A-Za-z0-9/]*", directory):
+        if isinstance(directory, str) and re.match("^[/\.][A-Za-z0-9/]*", directory):
             success = True
         else:
             success = False
-        if isinstance(action, basestring) and re.match("^[-]*[a-z]+", action) and success:
+        if isinstance(action, str) and re.match("^[-]*[a-z]+", action) and success:
             success = True
         else:
             success = False
-        if isinstance(dirobj, basestring) and re.match("^[A-Za-z0=9/]+", dirobj) and success:
+        if isinstance(dirobj, str) and re.match("^[A-Za-z0=9/]+", dirobj) and success:
             success = True
         else:
             success = False
-        if isinstance(dirprop, basestring) and re.match("^[A-Za-z0-9]+", dirprop) and success:
+        if isinstance(dirprop, str) and re.match("^[A-Za-z0-9]+", dirprop) and success:
             success = True
         else:
             success = False

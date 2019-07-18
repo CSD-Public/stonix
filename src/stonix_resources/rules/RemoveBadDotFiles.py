@@ -28,7 +28,7 @@ Created on Jul 13, 2012
 @change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
 '''
-from __future__ import absolute_import
+
 import pwd
 from ..rule import Rule
 from ..stonixutilityfunctions import *
@@ -120,7 +120,7 @@ class RemoveBadDotFiles(Rule):
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
-        except Exception, err:
+        except Exception as err:
             self.rulesuccess = False
             self.detailedresults = self.detailedresults + "\n" + str(err) + \
             " - " + str(traceback.format_exc())
@@ -163,7 +163,7 @@ class RemoveBadDotFiles(Rule):
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
-        except Exception, err:
+        except Exception as err:
             self.rulesuccess = False
             self.detailedresults = self.detailedresults + "\n" + str(err) + \
             " - " + str(traceback.format_exc())

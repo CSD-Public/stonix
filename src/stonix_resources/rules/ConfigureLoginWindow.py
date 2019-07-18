@@ -31,7 +31,7 @@ This is a rule for Verifying and/or setting the state of the LoginWindow.
 @change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
 '''
-from __future__ import absolute_import
+
 
 # The period was making python complain. Adding the correct paths to PyDev
 # made this the working scenario.

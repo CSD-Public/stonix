@@ -26,7 +26,7 @@ This is a Unit Test for Rule AuditFirefoxUsage
 @change: 2016/09/15 eball Moved profiles.ini var to profilePath, made mozPath
     the parent directory again
 '''
-from __future__ import absolute_import
+
 import os
 import shutil
 import unittest

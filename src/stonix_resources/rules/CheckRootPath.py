@@ -38,7 +38,7 @@ world-writable files or directories in any of the path directories.
 @change: 2019/03/12 Ekkehard - make eligible for macOS Sierra 10.12+
 """
 
-from __future__ import absolute_import
+
 
 import os
 import re
@@ -156,7 +156,7 @@ world-writable files or directories in any of the path directories.
             self.logger.log(LogPriority.DEBUG, self.detailedresults)
         except (KeyboardInterrupt, SystemExit):
             raise
-        except Exception, err:
+        except Exception as err:
             self.rulesuccess = False
             self.detailedresults = self.detailedresults + "\n" + str(err) + \
                 " - " + str(traceback.format_exc())

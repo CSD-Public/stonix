@@ -25,7 +25,7 @@ Created on Jun 25, 2015
 @change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
 '''
-from __future__ import absolute_import
+
 import traceback
 from ..rule import Rule
 from ..CommandHelper import CommandHelper
@@ -88,7 +88,7 @@ class NoCachedFDEKeys(Rule):
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
-        except Exception, err:
+        except Exception as err:
             self.rulesuccess = False
             self.detailedresults = self.detailedresults + "\n" + str(err) + \
                 " - " + str(traceback.format_exc())
@@ -123,7 +123,7 @@ class NoCachedFDEKeys(Rule):
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
-        except Exception, err:
+        except Exception as err:
             self.rulesuccess = False
             self.detailedresults = self.detailedresults + "\n" + str(err) + \
                 " - " + str(traceback.format_exc())

@@ -54,23 +54,21 @@ def logMessage(message="", level="normal", priority="debug", syslog_level=None) 
     
     if levels.index(level) <= levels.index(priority) :
 
-        print message
+        print(message)
         cmd_string = "/usr/bin/logger " + syslog_level + "\"" + message +"\""
         retcode = ""
         try :
             retcode = call(cmd_string, shell=True)
             if retcode < 0 :
-                print >> sys.stderr, \
-                         "logger Child was terminated by signal", \
-                        -retcode
+                print("logger Child was terminated by signal", \
+                        -retcode, file=sys.stderr)
             else :
                 pass
 
-        except OSError, err :
-            print >> sys.stderr, \
-                     "Execution of " + \
+        except OSError as err :
+            print("Execution of " + \
                      str(cmd_string) + \
                      " failed: ", \
-                     err        
+                     err, file=sys.stderr)        
 
 

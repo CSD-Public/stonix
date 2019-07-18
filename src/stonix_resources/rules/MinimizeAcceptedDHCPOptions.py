@@ -27,7 +27,7 @@ configuration file locations
     Macs
 '''
 
-from __future__ import absolute_import
+
 import os
 import re
 import traceback
@@ -124,7 +124,7 @@ class MinimizeAcceptedDHCPOptions(Rule):
 
         try:
 
-            if not isinstance(filepath, basestring):
+            if not isinstance(filepath, str):
                 self.logger.log(LogPriority.DEBUG,
                                 "Specified filepath argument needs to be of type: string!")
                 return contents
@@ -290,8 +290,8 @@ class MinimizeAcceptedDHCPOptions(Rule):
         contents = []
         self.iditerator = 0
         self.rulesuccess = True
-        self.subdirperms = 0755
-        self.fileperms = 0644
+        self.subdirperms = 0o755
+        self.fileperms = 0o644
         self.fileowner = 0
         self.filegroup = 0
 

@@ -26,7 +26,7 @@ after 15 minutes.
 @change: 2016/04/26 eball - Fixed detailedresults flow; this will overwrite
     Ekkehard's change of the same nature (due to merge conflicts)
 '''
-from __future__ import absolute_import
+
 from ..stonixutilityfunctions import iterate, setPerms, checkPerms
 from ..stonixutilityfunctions import resetsecon, createFile, writeFile
 from ..rule import Rule
@@ -73,8 +73,8 @@ class ShellTimeout(Rule):
             if os.path.exists(self.path1):
                 # Shell scripts in profile.d do not require +x, so they can
                 # be either 0755 (0755) or 0644 (0644)
-                if not checkPerms(self.path1, [0, 0, 0755], self.logger) and \
-                   not checkPerms(self.path1, [0, 0, 0644], self.logger):
+                if not checkPerms(self.path1, [0, 0, 0o755], self.logger) and \
+                   not checkPerms(self.path1, [0, 0, 0o644], self.logger):
                     compliant = False
                     self.detailedresults += self.path1 + \
                         " permissions incorrect\n"
@@ -98,8 +98,8 @@ class ShellTimeout(Rule):
                 self.detailedresults += self.path1 + " does not exist\n"
 
             if os.path.exists(self.path2):
-                if not checkPerms(self.path2, [0, 0, 0755], self.logger) and \
-                   not checkPerms(self.path2, [0, 0, 0644], self.logger):
+                if not checkPerms(self.path2, [0, 0, 0o755], self.logger) and \
+                   not checkPerms(self.path2, [0, 0, 0o644], self.logger):
                     compliant = False
                     self.detailedresults += self.path2 + \
                         " permissions incorrect\n"
@@ -199,11 +199,11 @@ class ShellTimeout(Rule):
                         success = False
                         self.detailedresults += self.path1 + \
                             " properties could not be set\n"
-                if not checkPerms(self.path1, [0, 0, 0755], self.logger) and \
-                   not checkPerms(self.path1, [0, 0, 0644], self.logger):
+                if not checkPerms(self.path1, [0, 0, 0o755], self.logger) and \
+                   not checkPerms(self.path1, [0, 0, 0o644], self.logger):
                     self.iditerator += 1
                     myid = iterate(self.iditerator, self.rulenumber)
-                    if not setPerms(self.path1, [0, 0, 0644], self.logger,
+                    if not setPerms(self.path1, [0, 0, 0o644], self.logger,
                                     self.statechglogger, myid):
                         success = False
                         self.detailedresults += "Could not set permissions " + \
@@ -218,11 +218,11 @@ class ShellTimeout(Rule):
                              "filepath": self.path2}
                     self.statechglogger.recordchgevent(myid, event)
                 writeFile(self.path2, self.cshData, self.logger)
-                if not checkPerms(self.path2, [0, 0, 0755], self.logger) and \
-                   not checkPerms(self.path2, [0, 0, 0644], self.logger):
+                if not checkPerms(self.path2, [0, 0, 0o755], self.logger) and \
+                   not checkPerms(self.path2, [0, 0, 0o644], self.logger):
                     self.iditerator += 1
                     myid = iterate(self.iditerator, self.rulenumber)
-                    if not setPerms(self.path2, [0, 0, 0644],
+                    if not setPerms(self.path2, [0, 0, 0o644],
                                     self.logger, self.statechglogger, myid):
                         success = False
                         self.detailedresults += "Could not set permissions " + \

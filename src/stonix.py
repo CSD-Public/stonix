@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 ###############################################################################
 #                                                                             #
 # Copyright 2019. Triad National Security, LLC. All rights reserved.          #
@@ -135,7 +135,7 @@ from pkgutil import extend_path
 
 # Local imports
 __path__ = extend_path(os.path.dirname(os.path.abspath(__file__)), 'stonix_resources')
-import stonix_resources
+#from . import stonix_resources
 
 from stonix_resources.observable import Observable
 from stonix_resources.configuration import Configuration
@@ -194,7 +194,7 @@ class Controller(Observable):
         # running stonix with a umask of 077 would break several bits of functionality
         # (namely installbanners, in some cases)
         if self.environ.geteuid() == 0:
-            os.umask(022)
+            os.umask(0o22)
 
         self.lockfile = '/var/run/stonix.pid'
         if(self.environ.get_test_mode()):
@@ -411,7 +411,7 @@ class Controller(Observable):
         if hasattr(sys, 'frozen'):
             #####
             # Search through the already imported libraries for stonix rules
-            for item in sys.modules.keys():
+            for item in list(sys.modules.keys()):
                 if re.match("stonix_resources\.rules\.[A-Z]\w+$", item):
                     self.logger.log(LogPriority.DEBUG,
                                     'Key Match: ' + str(item))
@@ -1145,14 +1145,14 @@ class Controller(Observable):
         total = float(self.numrulesrunning)
         curr = float(self.numrulescomplete)
         if self.environ.getdebugmode():
-            print "Controller:getcompletionpercentage: Total: " + str(total)
-            print "Controller:getcompletionpercentage: Current: " + str(curr)
+            print("Controller:getcompletionpercentage: Total: " + str(total))
+            print("Controller:getcompletionpercentage: Current: " + str(curr))
         if curr == 0:
             percent = 0
         else:
             percent = int((curr / total) * 100)
         if self.environ.getdebugmode():
-            print "Controller:getcompletionpercentage: Percent: " + str(percent)
+            print("Controller:getcompletionpercentage: Percent: " + str(percent))
         return percent
 
     def set_rule_detailedresults(self, ruleid, mode, result, msg):
@@ -1423,9 +1423,9 @@ ABORTING EXECUTION!"""
             rulestring = rulename + ' (' + str(rulenum) + ')'
             rulelist.append(rulestring)
         rulelist.sort(key=str.lower)
-        print "STONIX rules for this platform:"
+        print("STONIX rules for this platform:")
         for rule in rulelist:
-            print rule
+            print(rule)
         try:
             self.logger.closereports()
         except:

@@ -70,14 +70,14 @@ import subprocess
 import traceback
 import socket
 import stat
-import urllib2
+import urllib.request, urllib.error, urllib.parse
 
 from grp import getgrgid
 from pwd import getpwuid
 from types import *
 from distutils.version import LooseVersion
 from subprocess import call, Popen, PIPE, STDOUT
-from logdispatcher import LogPriority
+from .logdispatcher import LogPriority
 
 
 def resetsecon(filename):
@@ -295,9 +295,9 @@ def set_no_proxy():
 
     try:
 
-        proxy_handler = urllib2.ProxyHandler({})
-        opener = urllib2.build_opener(proxy_handler)
-        urllib2.install_opener(opener)
+        proxy_handler = urllib.request.ProxyHandler({})
+        opener = urllib.request.build_opener(proxy_handler)
+        urllib.request.install_opener(opener)
 
     except Exception:
         raise
@@ -700,7 +700,7 @@ def writeFile(tmpfile, contents, logger):
     try:
 
         w = open(tmpfile, 'w')
-        if isinstance(contents, basestring):
+        if isinstance(contents, str):
             w.write(contents)
         elif isinstance(contents, list):
             w.writelines(contents)
@@ -814,7 +814,7 @@ def checkPerms(path, perm, logger):
 
     try:
 
-        if not isinstance(path, basestring):
+        if not isinstance(path, str):
             logger.log(LogPriority.DEBUG, "Specified parameter: path must be of type: string. Got: " + str(type(path)) + "\n")
         if not isinstance(perm, list):
             logger.log(LogPriority.DEBUG, "Specified parameter: perm must be of type: list. Got: " + str(type(perm)) + "\n")
@@ -869,7 +869,7 @@ def setPerms(path, perm, logger, stchlogger="", myid=""):
 
     try:
 
-        if not isinstance(path, basestring):
+        if not isinstance(path, str):
             logger.log(LogPriority.DEBUG, "Specified parameter: path must be of type: string. Got: " + str(type(path)) + "\n")
         if not isinstance(perm, list):
             logger.log(LogPriority.DEBUG, "Specified parameter: perm must be of type: list. Got: " + str(type(perm)) + "\n")
@@ -970,7 +970,7 @@ def createFile(path, logger):
         pathdir, _ = os.path.split(path)
         if not os.path.exists(pathdir):
             logger.log(LogPriority.DEBUG, "Parent directory of file does not exist. Creating parent directory(ies)...")
-            os.makedirs(pathdir, 0755)
+            os.makedirs(pathdir, 0o755)
         if os.path.exists(path):
             logger.log(LogPriority.DEBUG, "Path already exists. Will not overwrite it.")
             retval = False
@@ -1056,7 +1056,7 @@ def isServerVersionHigher(client_version="0.0.0", server_version="0.0.0", logger
                 logger.log(LogPriority.DEBUG, "isServerVersion: " + x)
         else:
             def logprint(x):
-                print str(x)
+                print(str(x))
 
         if re.match("^$", client_version) or re.match("^$", server_version):
             needToUpdate = False
@@ -1194,8 +1194,8 @@ def fixInflation(filepath, logger, perms, owner):
 
         # validate all parameters; log and return if not valid
         if not logger:
-            print "\nDEBUG:stonixutilityfunctions.fixInflation(): No logging parameter was passed. Cannot log.\n"
-            print "DEBUG:stonixutilityfunctions.fixInflation(): Exiting method fixInflation()... Nothing was done.\n"
+            print("\nDEBUG:stonixutilityfunctions.fixInflation(): No logging parameter was passed. Cannot log.\n")
+            print("DEBUG:stonixutilityfunctions.fixInflation(): Exiting method fixInflation()... Nothing was done.\n")
             retval = False
             return retval
 
@@ -1235,7 +1235,7 @@ def fixInflation(filepath, logger, perms, owner):
             retval = False
             return retval
 
-        if not isinstance(filepath, basestring):
+        if not isinstance(filepath, str):
             paramtype = type(filepath)
             logger.log(LogPriority.DEBUG, "Specified filepath parameter was of type: " + str(paramtype))
             logger.log(LogPriority.DEBUG, "filepath parameter must be a string! Cannot proceed.")
@@ -1311,7 +1311,7 @@ def validateParam(logger, param, ptype, pname):
     try:
 
         if not logger:
-            print "No logging object was passed to method validateParam. Printing to console instead..."
+            print("No logging object was passed to method validateParam. Printing to console instead...")
             log = False
 
         if not pname:
@@ -1319,7 +1319,7 @@ def validateParam(logger, param, ptype, pname):
             if log:
                 logger.log(LogPriority.DEBUG, "Parameter pname was blank or None!")
             else:
-                print "Parameter pname was blank or None!"
+                print("Parameter pname was blank or None!")
             return valid
         if not param:
             log = False
@@ -1331,13 +1331,13 @@ def validateParam(logger, param, ptype, pname):
             if log:
                 logger.log(LogPriority.DEBUG, "Parameter: " + str(pname) + " needs to be of type " + str(ptype) + ". Got: " + str(type(param)))
             else:
-                print "One or more passed parameters was not specified or was an invalid type!"
+                print("One or more passed parameters was not specified or was an invalid type!")
 
-    except Exception, errmsg:
+    except Exception as errmsg:
         if log:
             logger.log(LogPriority.ERROR, str(errmsg))
         else:
-            print str(errmsg)
+            print(str(errmsg))
     return valid
 
 def reportStack(level=1):
@@ -1373,7 +1373,7 @@ def psRunning(ps):
     elif os.path.exists("/usr/sbin/lsof"):
         cmd = "/usr/sbin/lsof"
     else:
-        print("Could not determine status of process: " + str(ps))
+        print(("Could not determine status of process: " + str(ps)))
         return isrunning
 
     output, errmsg = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=False).communicate()

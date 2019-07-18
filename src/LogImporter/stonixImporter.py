@@ -75,7 +75,7 @@ class ReportParser(object):
             if os.path.exists(path):
                 self.tree = ET.parse(path)
 
-        except ET.ParseError, err:
+        except ET.ParseError as err:
             row, column = err.position
             log_error("Catastrophic failure")
             log_error("error on row", row, "column", column, ":", v)
@@ -274,12 +274,12 @@ def log_error(trace_msg):
         f.write(log_time + " - " + trace_msg + "\n\n")
         f.close()
 
-        print trace_msg
+        print(trace_msg)
 
     except Exception:
         message = traceback.format_exc()
-        print "UNABLE TO LOG ERROR. LOG METHOD FAILURE"
-        print message
+        print("UNABLE TO LOG ERROR. LOG METHOD FAILURE")
+        print(message)
         sys.exit(1)
 
 def main():

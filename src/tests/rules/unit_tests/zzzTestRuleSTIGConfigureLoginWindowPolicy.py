@@ -23,7 +23,7 @@ Created on Jun 6, 2017
 
 @author: dwalker
 '''
-from __future__ import absolute_import
+
 import unittest
 import sys
 sys.path.append("../../../..")

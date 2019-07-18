@@ -40,7 +40,7 @@ parts of the code as well
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
 '''
 
-from __future__ import absolute_import
+
 import os
 import re
 import traceback
@@ -220,12 +220,12 @@ CRON utilities, set the value of SECUREATCRON to False.'''
                                         self.cronlog: '0644',
                                         self.cronallow: '0400',
                                         self.atallow: '0400'}
-        self.fixcronchmodfiledict = {self.crontab: 0644,
-                                     self.anacrontab: 0600,
-                                     self.spoolcron: 0700,
-                                     self.cronlog: 0644,
-                                     self.cronallow: 0400,
-                                     self.atallow: 0400}
+        self.fixcronchmodfiledict = {self.crontab: 0o644,
+                                     self.anacrontab: 0o600,
+                                     self.spoolcron: 0o700,
+                                     self.cronlog: 0o644,
+                                     self.cronallow: 0o400,
+                                     self.atallow: 0o400}
         self.cronchownfilelist = [self.cronhourly, self.crondaily,
                                   self.cronweekly, self.cronmonthly,
                                   self.cronddir, self.crontab,

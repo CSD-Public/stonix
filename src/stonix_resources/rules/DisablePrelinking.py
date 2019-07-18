@@ -22,7 +22,7 @@ This rule disables the prelinking of executable binaries.
 @change: 2016/02/09 eball Original implementation
 @change 2017/08/28 rsn Fixing to use new help text methods
 '''
-from __future__ import absolute_import
+
 import os
 import re
 import traceback

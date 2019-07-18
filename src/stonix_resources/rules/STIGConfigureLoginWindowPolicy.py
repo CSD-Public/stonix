@@ -23,7 +23,7 @@ Created on Aug 25, 2016
 @change: 2017/07/17 ekkehard - make eligible for macOS High Sierra 10.13
 @change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
 '''
-from __future__ import absolute_import
+
 import traceback
 import os
 from re import search

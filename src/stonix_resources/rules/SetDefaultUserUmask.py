@@ -38,7 +38,7 @@ user input of alternate 027 umask.
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
 '''
 
-from __future__ import absolute_import
+
 
 import os
 import re
@@ -388,7 +388,7 @@ class SetDefaultUserUmask(Rule):
                 self.removeStonixUMASKCodeFromFile(userfiles)
     
                 # append the umask config line to the mac config file
-                self.configFile('umask ' + str(self.userUmask.getcurrvalue()), self.macfile, 0644, [0, 0])
+                self.configFile('umask ' + str(self.userUmask.getcurrvalue()), self.macfile, 0o644, [0, 0])
     
                 # if mac config file does not exist, create it and write the
                 # umask config line to it
@@ -398,7 +398,7 @@ class SetDefaultUserUmask(Rule):
                     f.close()
     
                     # set correct permissions on newly created config file
-                    os.chmod(self.macfile, 0644)
+                    os.chmod(self.macfile, 0o644)
                     os.chown(self.macfile, 0, 0)
 
         except Exception:
@@ -425,7 +425,7 @@ class SetDefaultUserUmask(Rule):
         umask_conf_file = "/private/var/db/com.apple.xpc.launchd/config"
 
         if not os.path.exists(umask_conf_file):
-            os.makedirs(umask_conf_file, 0755)
+            os.makedirs(umask_conf_file, 0o755)
 
         self.ch.executeCommand(user_command)
         if self.ch.getReturnCode() != 0:
@@ -458,12 +458,12 @@ class SetDefaultUserUmask(Rule):
             # append the umask config line to each file
             for item in self.userfiledict:
                 if not self.userfiledict[item]:
-                    self.configFile('umask    ' + str(self.userUmask.getcurrvalue()) + "\n", item, 0644, [0, 0], True)
+                    self.configFile('umask    ' + str(self.userUmask.getcurrvalue()) + "\n", item, 0o644, [0, 0], True)
 
             # do any of the root umask conf files exist?
             for item in self.rootfiledict:
                 if not self.rootfiledict[item]:
-                    self.configFile('umask    ' + str(self.rootUmask.getcurrvalue()) + "\n", item, 0644, [0, 0], True)
+                    self.configFile('umask    ' + str(self.rootUmask.getcurrvalue()) + "\n", item, 0o644, [0, 0], True)
 
         except Exception:
             success = False

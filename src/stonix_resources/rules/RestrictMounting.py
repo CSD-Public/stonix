@@ -32,7 +32,7 @@ This rule restricts mounting rights and options.
 @TODO difficult to create good unit tests for this rule as written
 """
 
-from __future__ import absolute_import
+
 
 import os
 import re

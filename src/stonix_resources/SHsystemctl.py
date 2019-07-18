@@ -29,9 +29,9 @@ Created on Sep 19, 2012
 
 import os
 
-from CommandHelper import CommandHelper
-from logdispatcher import LogPriority
-from ServiceHelperTemplate import ServiceHelperTemplate
+from .CommandHelper import CommandHelper
+from .logdispatcher import LogPriority
+from .ServiceHelperTemplate import ServiceHelperTemplate
 
 
 class SHsystemctl(ServiceHelperTemplate):
@@ -339,7 +339,7 @@ class SHsystemctl(ServiceHelperTemplate):
 
         if status not in known_statuses:
             status = "unknown"
-        elif not isinstance(status, basestring):
+        elif not isinstance(status, str):
             status = "unknown"
 
         if status in self.handsoff:

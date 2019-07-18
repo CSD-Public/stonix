@@ -24,7 +24,7 @@ This is a Unit Test for Rule SystemIntegrityProtection(6)
 @change: 2016/03/04 Original Implementation
 '''
 
-from __future__ import absolute_import
+
 import unittest
 import sys
 

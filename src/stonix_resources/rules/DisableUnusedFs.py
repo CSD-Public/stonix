@@ -28,7 +28,7 @@ file system support from the kernel.
 @change: 2016/10/20 eball Results Formatting
 @change: 2017/08/28 rsn Fixing to use new help text methods
 '''
-from __future__ import absolute_import
+
 import os
 import re
 import traceback

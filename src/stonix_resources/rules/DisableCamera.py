@@ -35,7 +35,7 @@ Created on Dec 10, 2013
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
 '''
 
-from __future__ import absolute_import
+
 from ..rule import Rule
 from ..logdispatcher import LogPriority
 from ..KVEditorStonix import KVEditorStonix

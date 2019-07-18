@@ -24,7 +24,7 @@ This rule will enable process accounting, using the acct/psacct service.
 @change: 2017/10/23 rsn - change to new service helper interface
 """
 
-from __future__ import absolute_import
+
 
 import traceback
 

@@ -3,7 +3,7 @@ Implementation class for the individual ManageKeychain for MacOS
 
 @author: Roy Nielsen
 """
-from __future__ import absolute_import
+
 
 import os
 import re
@@ -66,7 +66,7 @@ class MacOSKeychain(MacOSUser, ManageKeychainTemplate):
         else:
             # self.logger.log(lp.DEBUG, "cmd: " + str(command))
             commands = 0
-            for subCommand, args in command.iteritems():
+            for subCommand, args in command.items():
                 commands += 1
                 #####
                 # Check to make sure only one command is in the dictionary
@@ -97,7 +97,7 @@ class MacOSKeychain(MacOSUser, ManageKeychainTemplate):
                 #####
                 # Check to make sure the key or subCommand is a string, and
                 # the value is alist and args are
-                if not isinstance(subCommand, basestring) or \
+                if not isinstance(subCommand, str) or \
                    not isinstance(args, list):
                     self.logger.log(lp.ERROR, "subcommand needs to be a " +
                                     "string, and args needs to be a list " +
@@ -108,7 +108,7 @@ class MacOSKeychain(MacOSUser, ManageKeychainTemplate):
                     # Check the arguments to make sure they are all strings
                     success = True
                     for arg in args:
-                        if not isinstance(arg, basestring):
+                        if not isinstance(arg, str):
                             self.logger.log(lp.ERROR, "Arg '" + str(arg) +
                                             "'needs to be a string...")
                             success = False
@@ -341,7 +341,7 @@ class MacOSKeychain(MacOSUser, ManageKeychainTemplate):
         keychain = keychain.strip()
         #####
         # Input validation for the file keychain.
-        if self.isSaneFilePath(keychain) and isinstance(passwd, basestring):
+        if self.isSaneFilePath(keychain) and isinstance(passwd, str):
             #####
             # Command setup - note that the keychain deliberately has quotes
             # around it - there could be spaces in the path to the keychain,
@@ -436,7 +436,7 @@ class MacOSKeychain(MacOSUser, ManageKeychainTemplate):
         output = ""
         #####
         # Input validation for the file keychain.
-        if self.isSaneFilePath(keychain) and isinstance(passwd, basestring):
+        if self.isSaneFilePath(keychain) and isinstance(passwd, str):
             #####
             # Command setup - note that the keychain deliberately has quotes
             # around it - there could be spaces in the path to the keychain,
@@ -477,19 +477,19 @@ class MacOSKeychain(MacOSUser, ManageKeychainTemplate):
         success = False
         stdout = ""
         user = user.strip()
-        if oldPass and isinstance(oldPass, basestring):
+        if oldPass and isinstance(oldPass, str):
             oldPass = oldPass.strip()
-        if newPass and isinstance(newPass, basestring):
+        if newPass and isinstance(newPass, str):
             newPass = newPass.strip()
-        if keychain and isinstance(keychain, basestring):
+        if keychain and isinstance(keychain, str):
             keychain = keychain.strip()
 
         #####
         # Input validation for the username, and check the passwords to make
         # sure they are valid strings.  Check for the existence of the keychain
         if self.isSaneUserName(user) and \
-           isinstance(oldPass, basestring) and \
-           isinstance(newPass, basestring) and \
+           isinstance(oldPass, str) and \
+           isinstance(newPass, str) and \
            self.isSaneFilePath(keychain):
             userHome = pwd.getpwnam(user).pw_dir
             if os.path.isdir(userHome) and not keychain:
@@ -583,7 +583,7 @@ class MacOSKeychain(MacOSUser, ManageKeychainTemplate):
         name = name.strip()
         keychain = keychain.strip()
 
-        if not name or not isinstance(name, basestring):
+        if not name or not isinstance(name, str):
             return success, stdout
         else:
             #####
@@ -630,7 +630,7 @@ class MacOSKeychain(MacOSUser, ManageKeychainTemplate):
             # Only add the policy option if it in the valid set
             options += ['-p', policy]
 
-        if sstring and isinstance(sstring, basestring):
+        if sstring and isinstance(sstring, str):
             #####
             # sstring stands for search string.
             # Do not allow user input here, only known safe programmer input.
@@ -679,7 +679,7 @@ class MacOSKeychain(MacOSUser, ManageKeychainTemplate):
         options = options.strip()
         right = right.strip()
 
-        if not options or not isinstance(options, basestring):
+        if not options or not isinstance(options, str):
             return success, stdout
         else:
             #####
@@ -688,7 +688,7 @@ class MacOSKeychain(MacOSUser, ManageKeychainTemplate):
             # so the quotes are required to fully resolve the file path.
             # Note: this is done in the build of the command, rather than
             # the build of the variable.
-            if right and isinstance(right, basestring):
+            if right and isinstance(right, str):
                 cmd = {"authorize": [options, right]}
             self.logger.log(lp.DEBUG, "cmd: " + str(cmd))
             success, stdout, _, _ = self.runSecurityCommand(cmd)
@@ -710,7 +710,7 @@ class MacOSKeychain(MacOSUser, ManageKeychainTemplate):
         stdout = False
         ecode = ecode.strip()
 
-        if not ecode or not isinstance(ecode, basestring):
+        if not ecode or not isinstance(ecode, str):
             return success, stdout
         else:
             #####
@@ -781,7 +781,7 @@ class MacOSKeychain(MacOSUser, ManageKeychainTemplate):
         if not options:
             options = []
 
-        if not keyPass or not isinstance(keyPass, basestring):
+        if not keyPass or not isinstance(keyPass, str):
             return success, stdout
 
         #####
@@ -818,22 +818,22 @@ class MacOSKeychain(MacOSUser, ManageKeychainTemplate):
 
         #####
         #  -c  Match "creator" (four-character code)
-        if isinstance(creator, basestring) and len(creator) == 4:
+        if isinstance(creator, str) and len(creator) == 4:
             options = options + ['-c', creator]
 
         #####
         #  -D  Match "description" string
-        if isinstance(description, basestring):
+        if isinstance(description, str):
             options = options + ['-D', description]
 
         #####
         # -j  Match "comment" string
-        if isinstance(comment, basestring):
+        if isinstance(comment, str):
             options = options + ['-j', comment]
 
         #####
         # -l  Match "label" string
-        if isinstance(label, basestring):
+        if isinstance(label, str):
             options = options + ['-l', label]
 
         #####
@@ -843,7 +843,7 @@ class MacOSKeychain(MacOSUser, ManageKeychainTemplate):
 
         #####
         # -S  Comma-separated list of allowed partition IDs
-        if partIDs and isinstance(partIDs, basestring):
+        if partIDs and isinstance(partIDs, str):
             options = options + ['-S', partIDs]
 
         #####

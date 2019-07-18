@@ -21,7 +21,7 @@ Created on Oct 26, 2016
 @author: dwalker
 @change: 2017/03/30 dkennel Marked as FISMA high
 '''
-from __future__ import absolute_import
+
 import traceback
 import os
 from re import search

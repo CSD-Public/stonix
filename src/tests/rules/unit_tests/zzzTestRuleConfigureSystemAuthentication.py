@@ -24,7 +24,7 @@ This is a Unit Test for Rule ConfigureSystemAuthentication
 @author: Breen Malmberg
 '''
 
-from __future__ import absolute_import
+
 
 import unittest
 import sys

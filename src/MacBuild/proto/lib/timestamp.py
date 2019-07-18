@@ -6,7 +6,7 @@ To maintain module versions.
 
 @author: Roy Nielsen
 """
-from __future__ import absolute_import
+
 
 import os
 import re

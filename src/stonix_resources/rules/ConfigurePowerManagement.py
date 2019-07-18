@@ -33,7 +33,7 @@ dictionary
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
 '''
 
-from __future__ import absolute_import
+
 
 import traceback
 import types
@@ -154,7 +154,7 @@ class ConfigurePowerManagement(Rule):
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
-        except Exception, err:
+        except Exception as err:
             self.rulesuccess = False
             self.detailedresults = self.detailedresults + "\n" + str(err) + \
             " - " + str(traceback.format_exc())
@@ -204,7 +204,7 @@ class ConfigurePowerManagement(Rule):
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
-        except Exception, err:
+        except Exception as err:
             self.rulesuccess = False
             self.detailedresults = self.detailedresults + "\n" + str(err) + \
             " - " + str(traceback.format_exc())
@@ -339,7 +339,7 @@ class ConfigurePowerManagement(Rule):
 
         '''
         datatype = type(pMessage)
-        if datatype == types.StringType:
+        if datatype == bytes:
             if not (pMessage == ""):
                 messagestring = pMessage
                 if (self.detailedresults == ""):
@@ -347,7 +347,7 @@ class ConfigurePowerManagement(Rule):
                 else:
                     self.detailedresults = self.detailedresults + "\n" + \
                     messagestring
-        elif datatype == types.ListType:
+        elif datatype == list:
             if not (pMessage == []):
                 for item in pMessage:
                     messagestring = item
@@ -359,6 +359,6 @@ class ConfigurePowerManagement(Rule):
         else:
             raise TypeError("pMessage with value" + str(pMessage) + \
                             "is of type " + str(datatype) + " not of " + \
-                            "type " + str(types.StringType) + \
-                            " or type " + str(types.ListType) + \
+                            "type " + str(bytes) + \
+                            " or type " + str(list) + \
                             " as expected!")

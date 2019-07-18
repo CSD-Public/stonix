@@ -26,8 +26,8 @@ log message
 '''
 
 import re
-import CommandHelper
-from logdispatcher import LogPriority
+from . import CommandHelper
+from .logdispatcher import LogPriority
 from subprocess import call
 
 
@@ -549,7 +549,7 @@ dictionary not containing a write value.  Unable to run write command\n"
                     "contain at least two placeholders.  List: " + str(data)
                 raise ValueError(msg)
         elif isinstance(data, dict):
-            for k, v in data.iteritems():
+            for k, v in data.items():
                 if isinstance(v, dict):
                     retval = self.getInnerList(v)
                     return retval

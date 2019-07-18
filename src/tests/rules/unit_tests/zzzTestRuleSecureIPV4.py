@@ -28,7 +28,7 @@ This is a Unit Test for Rule SecureIPV4
 @change: 2016/07/08 ekkehard complete renaming to SecureIPV4
 @change: 2016/07/28 eball Complete renaming to SecureIPV4 (again)
 '''
-from __future__ import absolute_import
+
 import unittest
 import sys
 

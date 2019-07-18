@@ -27,8 +27,8 @@ Created on Mar 9, 2016
         "*:" to ".*:"
 '''
 import re
-from logdispatcher import LogPriority
-from CommandHelper import CommandHelper
+from .logdispatcher import LogPriority
+from .CommandHelper import CommandHelper
 
 
 class KVAProfiles():
@@ -158,7 +158,7 @@ class KVAProfiles():
                 i += 1
             '''k is the key inside val variable (e.g. allowsimple)
             and v is the value, in this example, a list (e.g. ["1", "bool"])'''
-            for k, v, in val.iteritems():
+            for k, v, in val.items():
                 if isinstance(v, list):
                     retval = self.checkSimple(k, v, payloadblock)
                 elif isinstance(v, tuple):
@@ -383,7 +383,7 @@ class KVAProfiles():
                     break
             else:
                 iterator += 1
-        for k2, v2 in v.iteritems():
+        for k2, v2 in v.items():
             if isinstance(v2, list):
                 retval = self.checkSimple(k2, v2, temp)
             elif isinstance(v2, tuple):

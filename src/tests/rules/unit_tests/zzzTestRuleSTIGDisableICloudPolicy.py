@@ -24,7 +24,7 @@ Created on Jun 6, 2017
 @author: dwalker
 @change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
 '''
-from __future__ import absolute_import
+
 import unittest
 import sys
 

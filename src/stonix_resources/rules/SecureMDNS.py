@@ -50,11 +50,11 @@ configuration changes to the avahi service
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
 '''
 
-from __future__ import absolute_import
+
 import os
 import re
 import traceback
-import ConfigParser
+import configparser
 from ..logdispatcher import LogPriority
 from ..ServiceHelper import ServiceHelper
 from ..rule import Rule
@@ -174,7 +174,7 @@ class SecureMDNS(Rule):
             self.DisableAvahi = self.initCi(datatype, avahikey,
                                             avahiinstructions, avahidefault)
 
-            self.configparser = ConfigParser.SafeConfigParser()
+            self.configparser = configparser.SafeConfigParser()
 
             self.confavahidict = {'use-ipv6':
                                   {'section': 'server', 'val': 'no'},
@@ -525,7 +525,7 @@ class SecureMDNS(Rule):
 
                         self.iditerator += 1
                         myid = iterate(self.iditerator, self.rulenumber)
-                        setPerms(avahiconf, [0, 0, 0644], self.logger,
+                        setPerms(avahiconf, [0, 0, 0o644], self.logger,
                                  self.statechglogger, myid)
                         resetsecon(avahiconf)
 

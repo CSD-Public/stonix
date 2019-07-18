@@ -36,7 +36,7 @@ dictionary
 @change: 2019/03/12 Ekkehard - make eligible for macOS Sierra 10.12+
 """
 
-from __future__ import absolute_import
+
 
 import os
 import traceback
@@ -81,7 +81,7 @@ class ConfigureKerberos(Rule):
                           {"path": "/etc/krb5.conf",
                            "remove": False,
                            "content": MACKRB5,
-                           "permissions": 0644,
+                           "permissions": 0o644,
                            "owner": os.getuid(),
                            "group": "wheel",
                            "eventid": str(self.rulenumber).zfill(4) + "krb5"},
@@ -126,7 +126,7 @@ class ConfigureKerberos(Rule):
                           {"path": "/etc/krb5.conf",
                            "remove": False,
                            "content": LINUXKRB5,
-                           "permissions": 0644,
+                           "permissions": 0o644,
                            "owner": "root",
                            "group": "root",
                            "eventid": str(self.rulenumber).zfill(4) + "krb5"}}

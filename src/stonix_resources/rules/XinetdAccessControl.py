@@ -30,7 +30,7 @@ present.
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
 '''
 
-from __future__ import absolute_import
+
 
 from ..rule import Rule
 from ..logdispatcher import LogPriority
@@ -161,7 +161,7 @@ class XinetdAccessControl(Rule):
         self.logger.log(LogPriority.DEBUG, "returning found=" + str(found))
         return found
 
-    def replaceopt(self, path, partialopt, fullopt, perms=[0600, 0, 0]):
+    def replaceopt(self, path, partialopt, fullopt, perms=[0o600, 0, 0]):
         '''search the specified file for the option partialopt and replace it with
         the option fullopt, if found.
 
@@ -255,7 +255,7 @@ class XinetdAccessControl(Rule):
                         "method; returning replaced=" + str(replaced))
         return replaced
 
-    def writeFile(self, path, opt, perms=[0600, 0, 0]):
+    def writeFile(self, path, opt, perms=[0o600, 0, 0]):
         '''append the option opt to the contents of the file specified by path,
         and write them out to the file path
 
@@ -457,7 +457,7 @@ class XinetdAccessControl(Rule):
                                     "found; writing it to " +
                                     str(self.confpath))
                     if not self.writeFile(self.confpath, self.fixopt,
-                                          [0600, 0, 0]):
+                                          [0o600, 0, 0]):
                         self.rulesuccess = False
                         self.detailedresults += 'failed to write ' + \
                             'configuration to ' + str(self.confpath) + '\n'

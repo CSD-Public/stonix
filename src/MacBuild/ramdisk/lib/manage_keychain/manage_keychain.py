@@ -9,7 +9,7 @@ Factory object for acquiring the right keychain manager
 
 @author: Roy Nielsen
 """
-from __future__ import absolute_import
+
 import sys
 import inspect
 import traceback
@@ -78,7 +78,7 @@ class ManageKeychain(object):
             filename = inspect.stack()[2][1]
             functionName = str(inspect.stack()[2][3])
             lineNumber = str(inspect.stack()[2][2])
-        except Exception, err:
+        except Exception as err:
             self.logger.log(lp.WARNING, traceback.format_exc())
             self.logger.log(lp.WARNING, str(err))
             raise err

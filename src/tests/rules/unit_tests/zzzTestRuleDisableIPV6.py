@@ -27,7 +27,7 @@ This is a Unit Test for Rule ConfigureAppleSoftwareUpdate
 @change: 2019/06/05 dwalker - Add set conditions portion to fuzz up rule for
     testing
 '''
-from __future__ import absolute_import
+
 import unittest
 import sys
 import os

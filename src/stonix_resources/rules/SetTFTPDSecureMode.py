@@ -24,7 +24,7 @@ Created on Apr 20, 2016
 @change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
 '''
 
-from __future__ import absolute_import
+
 from ..stonixutilityfunctions import iterate, checkPerms, setPerms, resetsecon
 from ..stonixutilityfunctions import readFile, writeFile, getUserGroupName
 from ..rule import Rule

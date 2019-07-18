@@ -40,7 +40,7 @@ messaging to indicate to the user whether the method will run or not, based on c
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
 '''
 
-from __future__ import absolute_import
+
 
 import traceback
 import os
@@ -444,7 +444,7 @@ class SystemAccounting(Rule):
                             "to file: " + sysstat + "\n"
             else:
                 if not os.path.exists(self.accbasedir):
-                    os.makedirs(self.accbasedir, 0755)
+                    os.makedirs(self.accbasedir, 0o755)
                 if not os.path.exists(self.accpath):
                     createFile(self.accpath, self.logger)
                     self.iditerator += 1
@@ -511,7 +511,7 @@ class SystemAccounting(Rule):
 
         try:
             if not os.path.exists(self.accbasedir):
-                os.makedirs(self.accbasedir, 0755)
+                os.makedirs(self.accbasedir, 0o755)
             if not os.path.exists(self.accpath):
                 createFile(self.accpath, self.logger)
                 self.iditerator += 1

@@ -25,7 +25,7 @@
 import sys
 import os
 import re
-import urllib2
+import urllib.request, urllib.error, urllib.parse
 import unittest
 import ssl
 
@@ -47,13 +47,13 @@ class zzzTestFrameworkHelpLinks(unittest.TestCase):
         # build proxy (if needed), handlers and opener for urllib2.urlopen connections
         context = ssl._create_unverified_context()
         if PROXY:
-            proxy = urllib2.ProxyHandler({"http": PROXY,
+            proxy = urllib.request.ProxyHandler({"http": PROXY,
                                           "https": PROXY})
-            opener = urllib2.build_opener(urllib2.HTTPHandler(), urllib2.HTTPSHandler(context=context), proxy)
+            opener = urllib.request.build_opener(urllib.request.HTTPHandler(), urllib.request.HTTPSHandler(context=context), proxy)
         else:
-            opener = urllib2.build_opener(urllib2.HTTPHandler(), urllib2.HTTPSHandler(context=context))
+            opener = urllib.request.build_opener(urllib.request.HTTPHandler(), urllib.request.HTTPSHandler(context=context))
 
-        urllib2.install_opener(opener)
+        urllib.request.install_opener(opener)
 
     def get_links(self):
         '''return a (unique) list of all web links in all html help files in
@@ -132,15 +132,15 @@ class zzzTestFrameworkHelpLinks(unittest.TestCase):
         try:
 
             for link in help_links:
-                connection = urllib2.urlopen(link)
-                print("\nTESTING CONNECTION TO: " + link + "\n")
+                connection = urllib.request.urlopen(link)
+                print(("\nTESTING CONNECTION TO: " + link + "\n"))
                 if not self.assertIsNotNone(connection):
                     print("connection established\n")
                 print("\nTESTING GETURL() OF CONNECTION\n")
                 url = connection.geturl()
                 self.assertNotEqual(url, "")
                 self.assertIsNotNone(url)
-                print("url = " + url + "\n")
+                print(("url = " + url + "\n"))
                 # close each connection after use
                 if connection:
                     connection.close()

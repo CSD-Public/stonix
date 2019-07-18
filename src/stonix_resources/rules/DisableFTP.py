@@ -27,7 +27,7 @@ Created on Mar 4, 2015
 @change: 10/09/2018 - Breen Malmberg - made applicable to mojave 10.14
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
 '''
-from __future__ import absolute_import
+
 from ..rule import Rule
 from ..CommandHelper import CommandHelper
 from ..logdispatcher import LogPriority

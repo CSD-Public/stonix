@@ -25,9 +25,9 @@ Created on Dec 14, 2017
 import os, re
 
 import unittest
-import environment
-import logdispatcher
-from logdispatcher import LogPriority
+from . import environment
+from . import logdispatcher
+from .logdispatcher import LogPriority
 
 
 class zzzTestRuleProperties(unittest.TestCase):

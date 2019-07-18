@@ -31,11 +31,11 @@ import os.path
 import re
 import sys
 import tempfile
-import urllib2
+import urllib.request, urllib.error, urllib.parse
 from subprocess import Popen, PIPE
 
-from logdispatcher import LogPriority
-from stonixutilityfunctions import set_no_proxy
+from .logdispatcher import LogPriority
+from .stonixutilityfunctions import set_no_proxy
 
 class InstallingHelper(object) :
     '''Generic class using python native calls to download, check md5sums
@@ -89,12 +89,12 @@ class InstallingHelper(object) :
                                     ["InstallingHelper.un_archive",
                                     "file: " + filename + ", dest: " + destination])
                     tar.extractall(destination)
-                except (OSError|IOError), err :
+                except (OSError|IOError) as err :
                     self.logger.log(LogPriority.WARNING, 
                                     ["InstallingHelper.un_archive",
                                     "Error extracting archive: " + str(err)])
                     retval = -2
-            except Exception, err :
+            except Exception as err :
                 self.logger.log(LogPriority.DEBUG, 
                                     ["InstallingHelper.un_archive",
                                 "Error opening archive: " + str(err)])
@@ -117,7 +117,7 @@ class InstallingHelper(object) :
                 #list the files inside the zipfile
                 #for internal_filename in uzfile.namelist():
                 for ifilename in uzfile.filelist :
-                    perm = ((ifilename.external_attr >> 16L) & 0777)
+                    perm = ((ifilename.external_attr >> 16) & 0o777)
                     internal_filename = ifilename.filename
                     self.logger.log(LogPriority.DEBUG, 
                                     ["InstallingHelper.un_archive",
@@ -126,7 +126,7 @@ class InstallingHelper(object) :
                         # if a directory is found, create it (zipfile doesn't)
                         try :
                             os.makedirs(os.path.join(destination, internal_filename.strip("/")), perm)
-                        except OSError, err :
+                        except OSError as err :
                             self.logger.log(LogPriority.DEBUG, 
                                             ["InstallingHelper.un_archive",
                                             "Error making directory: " + str(err)])
@@ -136,7 +136,7 @@ class InstallingHelper(object) :
                             continue
                     try :
                         contents = uzfile.read(internal_filename)
-                    except RuntimeError, err :
+                    except RuntimeError as err :
                         # Calling read() on a closed ZipFile will raise a 
                         # RuntimeError
                         self.logger.log(LogPriority.DEBUG, 
@@ -159,7 +159,7 @@ class InstallingHelper(object) :
                                 os.write(target, contents)
                             finally :
                                 os.close(target)
-                        except OSError, err :
+                        except OSError as err :
                             self.logger.log(LogPriority.WARNING, 
                                             ["InstallingHelper.un_archive",
                                             "Error opening file for writing: " + str(err)])
@@ -193,8 +193,8 @@ class InstallingHelper(object) :
 
             # first try to open the URL
             try :
-                urlfile = urllib2.urlopen(self.url)
-            except Exception , err:
+                urlfile = urllib.request.urlopen(self.url)
+            except Exception as err:
                 self.logger.log(LogPriority.DEBUG, 
                                 ["InstallingHelper.download_and_save_file",
                                  "Error: " + str(err)])
@@ -202,11 +202,11 @@ class InstallingHelper(object) :
                 try :
                     # Next try to open the file for writing
                     f = open(fpath, "w")
-                except IOError, err :
+                except IOError as err :
                     self.logger.log(LogPriority.INFO, 
                                     ["InstallingHelper.download_and_save_file",
                                     "Error opening file - err: " + str(err)])
-                except Exception, err :
+                except Exception as err :
                     self.logger.log(LogPriority.INFO, 
                                     ["InstallingHelper.download_and_save_file",
                                     "Generic exception opening file - err: " + str(err)])
@@ -228,7 +228,7 @@ class InstallingHelper(object) :
                     f.close()
                 urlfile.close()
         else :
-            print "Need both a URL and full path filename... try again."    
+            print("Need both a URL and full path filename... try again.")    
     
     
     def download_and_prepare(self):
@@ -254,7 +254,7 @@ class InstallingHelper(object) :
     
             try :
                 tmp_dir = tempfile.mkdtemp(prefix=self.package_name, dir="/tmp")
-            except Exception, err :
+            except Exception as err :
                 self.logger.log(LogPriority.WARNING, 
                                 ["InstallingHelper.download_and_prepare",
                                 "mkdtemp exception: " + str(err)])
@@ -333,8 +333,8 @@ class InstallingHelper(object) :
             set_no_proxy()
 
             try:
-                f = urllib2.urlopen(url)
-            except IOError, err:
+                f = urllib.request.urlopen(url)
+            except IOError as err:
                 self.logger.log(LogPriority.INFO,
                                 ["InstallingHelper.get_string_from_url",
                                  "IOError, " + url + " : " + str(err)])
@@ -361,7 +361,7 @@ class InstallingHelper(object) :
 
         try :
             fh = open(filename, 'r')
-        except Exception, err :
+        except Exception as err :
             self.logger.log(LogPriority.WARNING, 
                             ["InstallingHelper.get_file_md5sum",
                             "Cannot open file: " + filename + " for reading."])
@@ -403,7 +403,7 @@ class InstallingHelper(object) :
         
         try :
             myretval = Popen(cmd, stdout=PIPE, stderr=PIPE).communicate()[0]
-        except Exception, err :
+        except Exception as err :
             self.logger.log(LogPriority.WARNING,
                             ["InstallingHelper.get_file_old_md5sum",
                              "Error executing command: " + str(cmd)])
@@ -498,7 +498,7 @@ class InstallingHelper(object) :
                 if package_name:
                     self.package_name = package_name.group(1).strip()
 
-            except AttributeError, err:
+            except AttributeError as err:
                 self.package_name = ""
                 self.logger.log(LogPriority.WARNING,
                                 ["InstallingHelper.find_package_name",

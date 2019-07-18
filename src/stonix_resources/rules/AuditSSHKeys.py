@@ -29,7 +29,7 @@ This class audits for passwordless ssh keys on the system.
         added missing documentation
 """
 
-from __future__ import absolute_import
+
 
 import traceback
 import os
@@ -276,7 +276,7 @@ class AuditSSHKeys(Rule):
 
             for key in keylist:
                 self.logger.log(LogPriority.DEBUG, "Setting permissions on file: " + str(key) + " to 600...")
-                os.chmod(key, 0600)
+                os.chmod(key, 0o600)
                 fixedkeys.append(key)
 
             if fixedkeys:

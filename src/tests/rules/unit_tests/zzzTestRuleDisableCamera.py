@@ -25,7 +25,7 @@ This is a Unit Test for Rule DisableCamera
 @change: 2016/02/10 roy Added sys.path.append for being able to unit test this
                         file as well as with the test harness.
 '''
-from __future__ import absolute_import
+
 from re import search, escape
 import unittest
 import sys

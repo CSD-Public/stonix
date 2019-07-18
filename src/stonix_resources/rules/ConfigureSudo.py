@@ -36,7 +36,7 @@ Created on Mar 7, 2013
 @change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
 '''
-from __future__ import absolute_import
+
 
 from ..stonixutilityfunctions import setPerms, checkPerms, iterate
 from ..rule import Rule

@@ -26,7 +26,7 @@ This is a Unit Test for Rule DisableRemoveableStorage
 @change: 1/17/2019 Derek Walker - update to set pre conditions
     for linux portion
 '''
-from __future__ import absolute_import
+
 import unittest
 import sys
 import os

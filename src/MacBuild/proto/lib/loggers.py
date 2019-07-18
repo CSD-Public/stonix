@@ -12,7 +12,7 @@ https://docs.python.org/2/library/multiprocessing.html?highlight=logging#logging
 
 @author: Roy Nielsen
 """
-from __future__ import absolute_import
+
 import os
 import re
 import sys
@@ -76,8 +76,7 @@ class SingletonCyLogger(type):
 ###############################################################################
 # Main class
 
-class CyLogger(object):
-    __metaclass__ = SingletonCyLogger
+class CyLogger(object, metaclass=SingletonCyLogger):
     """
     Class to set up logging, with easy string referencing loggers and their
     handlers.
@@ -90,7 +89,7 @@ class CyLogger(object):
     def __init__(self, environ=False, debug_mode=False, verbose_mode=False, level=30, *args, **kwargs):
         """
         """
-        print ".............Level: " + str(level)
+        print(".............Level: " + str(level))
         self.lvl = int(level)
         if environ:
             self.environment = environ
@@ -167,7 +166,7 @@ class CyLogger(object):
         if self.rotate:
             try:
                 self.logr.handlers.RotatingFileHandler.doRollover()
-            except Exception, err:
+            except Exception as err:
                 self.logr.log(LogPriority.WARNING, "Exception: " + str(err))
 
     #############################################

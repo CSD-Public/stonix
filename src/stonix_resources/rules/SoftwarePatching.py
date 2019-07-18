@@ -32,7 +32,7 @@ updating automatically from a scheduled job where feasible.
         be fixed for it
 '''
 
-from __future__ import absolute_import
+
 import os
 import re
 import subprocess
@@ -409,7 +409,7 @@ class SoftwarePatching(Rule):
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
-        except Exception, err:
+        except Exception as err:
             self.rulesuccess = False
             self.detailedresults = self.detailedresults + "\n" + str(err) + \
             " - " + str(traceback.format_exc())

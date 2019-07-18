@@ -168,12 +168,12 @@ key4 = True
                 found = found + 1
         self.assertFalse(len(myreturn) < 2, 'Expected number of results not found')
         self.assertTrue(found == 2, 'Expected results not found')
-        self.failIf(myid2 in myreturn, 'Search limit error')
+        self.assertFalse(myid2 in myreturn, 'Search limit error')
 
         expected = '0888001'
         myruleid = 888
         myreturn2 = self.testobj.findrulechanges(myruleid)
-        self.failUnlessEqual(expected, myreturn2[0],
+        self.assertEqual(expected, myreturn2[0],
                              'Expected event id not returned')
 
 if __name__ == "__main__":

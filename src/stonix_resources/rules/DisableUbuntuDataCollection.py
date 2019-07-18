@@ -24,7 +24,7 @@ Disable user and system statistics reporting on Ubuntu
 @author: Breen Malmberg
 '''
 
-from __future__ import absolute_import
+
 
 import traceback
 

@@ -24,7 +24,7 @@ This rule removes all detected games.
 @change: 2018/08/20 Brandon R. Gonzales Added protections for functions using
                     '/usr/games' in case the directory doesn't exist
 '''
-from __future__ import absolute_import
+
 import os
 import traceback
 from ..stonixutilityfunctions import iterate

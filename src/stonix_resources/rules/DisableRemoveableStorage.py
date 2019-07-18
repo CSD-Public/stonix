@@ -45,7 +45,7 @@ OS X Mavericks not Mountain Lion, Lion, etc.
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
 '''
 
-from __future__ import absolute_import
+
 
 import os
 import re

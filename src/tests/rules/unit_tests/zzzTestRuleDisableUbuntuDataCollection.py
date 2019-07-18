@@ -26,7 +26,7 @@ This is a Unit Test for Rule DisableUbuntuDataCollection
 @author: ekkehard j. koch, Breen Malmberg
 '''
 
-from __future__ import absolute_import
+
 
 import sys
 import unittest

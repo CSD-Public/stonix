@@ -21,8 +21,8 @@ import re
 import sys
 import optparse
 import traceback
-from loggers import CyLogger
-from loggers import LogPriority as lp
+from .loggers import CyLogger
+from .loggers import LogPriority as lp
 
 def getRulesList(pathToRules=''):
     '''Get a directory listing of the path passed in - the stonix/rules path.
@@ -71,7 +71,7 @@ def writeInit(pathToRules, logger):
         for rule in getRulesList(pathToRules):
             fp.write("import " + rule + "\n")
         fp.write("\n")
-    except Exception, err:
+    except Exception as err:
         trace = traceback.format_exc() 
         logger.log(lp.DEBUG, "Traceback: " + trace)
         raise err
@@ -88,7 +88,7 @@ def writeInit(pathToRules, logger):
     logger.log(lp.DEBUG, "\t\t.")
     logger.log(lp.DEBUG, "\t\t.")
     logger.log(lp.DEBUG, "\t\t.")
-    print "Attempted init creation....."
+    print("Attempted init creation.....")
     logger.log(lp.DEBUG, "\t\t.")
     logger.log(lp.DEBUG, "\t\t.")
     logger.log(lp.DEBUG, "\t\t.")

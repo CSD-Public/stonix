@@ -24,7 +24,7 @@ This is a Unit Test for Rule ConfigureLinuxFirewall
 @author: D. Kennel
 
 '''
-from __future__ import absolute_import
+
 import unittest
 import sys
 import os
@@ -130,7 +130,7 @@ class zzzTestRuleConfigureLinuxFirewall(RuleTest):
                                     success = False
         elif os.path.exists('/usr/bin/system-config-firewall') or \
             os.path.exists('/usr/bin/system-config-firewall-tui'):
-            print "system-config-firewall commands exist\n"
+            print("system-config-firewall commands exist\n")
             fwpath = '/etc/sysconfig/system-config-firewall'
             iptpath = '/etc/sysconfig/iptables'
             ip6tpath = '/etc/sysconfig/ip6tables'
@@ -141,12 +141,12 @@ class zzzTestRuleConfigureLinuxFirewall(RuleTest):
             if os.path.exists(ip6tpath):
                 os.remove(ip6tpath)
             if not self.servicehelper.disableService('iptables'):
-                print "unable to disable iptables\n"
+                print("unable to disable iptables\n")
                 success = False
                 debug = "Could not disable iptables in unit test\n"
                 self.logger.log(LogPriority.DEBUG, debug)
             if not self.servicehelper.disableService('ip6tables'):
-                print "unable to disable ip6tables\n"
+                print("unable to disable ip6tables\n")
                 success = False
                 debug = "Could not disable ip6tables in unit test\n"
                 self.logger.log(LogPriority.DEBUG, debug)
@@ -154,13 +154,13 @@ class zzzTestRuleConfigureLinuxFirewall(RuleTest):
             if not self.ch.executeCommand(cmd):
                 success = False
                 debug = "Unable to stop iptables in unit test\n"
-                print "unable to stop iptables in unit test\n"
+                print("unable to stop iptables in unit test\n")
                 self.logger.log(LogPriority.DEBUG, debug)
             cmd = "/sbin/service ip6tables stop"
             if not self.ch.executeCommand(cmd):
                 success = False
                 debug = "Unable to stop ip6tables in unit test\n"
-                print "unable to stop iop6tables in unit test\n"
+                print("unable to stop iop6tables in unit test\n")
                 self.logger.log(LogPriority.DEBUG, debug)
         elif os.path.exists(self.iprestore) and \
                 os.path.exists(self.ip6restore):

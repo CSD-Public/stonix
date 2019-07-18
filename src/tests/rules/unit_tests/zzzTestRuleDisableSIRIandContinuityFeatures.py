@@ -23,7 +23,7 @@ This is a Unit Test for Rule DisableSIRIandContinuityFeatures
 @author: bgonz12
 @change: 2018/2/21 Created
 '''
-from __future__ import absolute_import
+
 import unittest
 import sys
 

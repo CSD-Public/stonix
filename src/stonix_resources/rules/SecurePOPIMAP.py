@@ -22,7 +22,7 @@ Created on Nov 9, 2015
 @change: 2017/10/23 rsn - change to new service helper interface
 '''
 
-from __future__ import absolute_import
+
 
 from ..rule import Rule
 from ..logdispatcher import LogPriority
@@ -237,7 +237,7 @@ class SecurePOPIMAP(Rule):
 
         try:
 
-            if not isinstance(filepath, basestring):
+            if not isinstance(filepath, str):
                 self.logger.log(LogPriority.DEBUG, "Parameter filepath must be of type: basestring")
             if not filepath:
                 self.logger.log(LogPriority.DEBUG, "Parameter filepath must not be blank")
@@ -268,7 +268,7 @@ class SecurePOPIMAP(Rule):
 
         try:
 
-            if not isinstance(regex, basestring):
+            if not isinstance(regex, str):
                 self.logger.log(LogPriority.DEBUG, "Parameter regex must be of type: basestring")
                 retval = False
                 return retval
@@ -309,7 +309,7 @@ class SecurePOPIMAP(Rule):
             self.logger.log(LogPriority.DEBUG, "Parameter fixdict must be of type: dict")
             retval = False
             return retval
-        if not isinstance(filepath, basestring):
+        if not isinstance(filepath, str):
             self.logger.log(LogPriority.DEBUG, "Parameter filepath must be of type: basestring")
             retval = False
             return retval

@@ -27,7 +27,7 @@ This is a Unit Test for Rule ConfigureAppleSoftwareUpdate
 @change: 2016/09/19 Breen Added individual configuration tests.
 '''
 
-from __future__ import absolute_import
+
 import unittest
 import sys
 import os

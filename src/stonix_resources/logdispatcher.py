@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python3
 ###############################################################################
 #                                                                             #
 # Copyright 2019. Triad National Security, LLC. All rights reserved.          #
@@ -37,11 +37,11 @@ Created on Aug 24, 2010
     reporterr method, and added debug output for both exceptions.
 '''
 
-from observable import Observable
+from .observable import Observable
 
 import re
 import logging
-import localize
+from . import localize
 import logging.handlers
 import os.path
 import os
@@ -89,7 +89,7 @@ class LogDispatcher (Observable):
         self.reportlog = os.path.join(self.logpath, reportfile)
         self.xmllog = os.path.join(self.logpath, xmlfile)
         if self.debug:
-            print 'LOGDISPATCHER: xml log path: ' + self.xmllog
+            print('LOGDISPATCHER: xml log path: ' + self.xmllog)
         if os.path.isfile(self.xmllog):
             try:
                 if os.path.exists(self.xmllog + '.old'):
@@ -98,10 +98,10 @@ class LogDispatcher (Observable):
             except (KeyboardInterrupt, SystemExit):
                 # User initiated exit
                 raise
-            except Exception, err:
-                print 'logdispatcher: '
-                print traceback.format_exc()
-                print err
+            except Exception as err:
+                print('logdispatcher: ')
+                print(traceback.format_exc())
+                print(err)
         self.xmlreport = xmlReport(self.xmllog, self.debug)
         self.metadataopen = False
         self.__initializelogs()
@@ -138,7 +138,7 @@ class LogDispatcher (Observable):
                 constsmissing = True
 
         if constsmissing:
-            print "\nUNABLE TO LOG DUE TO ONE OR MORE OF THE FOLLOWING CONSTANTS NOT BEING SET, OR BEING SET TO None, in localize.py: STONIXERR, STONIXDEVS, MAILRELAYSERVER, REPORTSERVER\n"
+            print("\nUNABLE TO LOG DUE TO ONE OR MORE OF THE FOLLOWING CONSTANTS NOT BEING SET, OR BEING SET TO None, in localize.py: STONIXERR, STONIXDEVS, MAILRELAYSERVER, REPORTSERVER\n")
             return False
 
         if self.environment.geteuid() != 0:
@@ -324,7 +324,7 @@ class LogDispatcher (Observable):
                 constsmissing = True
 
         if constsmissing:
-            print "\nUNABLE TO LOG DUE TO ONE OR MORE OF THE FOLLOWING CONSTANTS NOT BEING SET, OR BEING SET TO None, in localize.py: STONIXERR, STONIXDEVS, MAILRELAYSERVER, REPORTSERVER\n"
+            print("\nUNABLE TO LOG DUE TO ONE OR MORE OF THE FOLLOWING CONSTANTS NOT BEING SET, OR BEING SET TO None, in localize.py: STONIXERR, STONIXDEVS, MAILRELAYSERVER, REPORTSERVER\n")
             return
 
         # Function wrapped in try/except to allow the program to keep running
@@ -431,10 +431,10 @@ Subject: STONIX Error Report: ''' + prefix + '''
             except (KeyboardInterrupt, SystemExit):
                 # User initiated exit
                 raise
-            except Exception, err:
-                print 'logdispatcher: '
-                print traceback.format_exc()
-                print err
+            except Exception as err:
+                print('logdispatcher: ')
+                print(traceback.format_exc())
+                print(err)
                 return False
 
     def logRuleCount(self):
@@ -465,14 +465,14 @@ Subject: STONIX Error Report: ''' + prefix + '''
         # overwriting any old one if it exists.
         if not os.path.isdir(self.logpath):
             try:
-                os.makedirs(self.logpath, 0750)
+                os.makedirs(self.logpath, 0o750)
             except (KeyboardInterrupt, SystemExit):
                 # User initiated exit
                 raise
-            except Exception, err:
-                print 'logdispatcher: '
-                print traceback.format_exc()
-                print err
+            except Exception as err:
+                print('logdispatcher: ')
+                print(traceback.format_exc())
+                print(err)
                 return False
         if os.path.isfile(self.reportlog):
             try:
@@ -482,10 +482,10 @@ Subject: STONIX Error Report: ''' + prefix + '''
             except (KeyboardInterrupt, SystemExit):
                 # User initiated exit
                 raise
-            except Exception, err:
-                print 'logdispatcher: '
-                print traceback.format_exc()
-                print err
+            except Exception as err:
+                print('logdispatcher: ')
+                print(traceback.format_exc())
+                print(err)
                 return False
 
         # It's important that this happens after the attempt to move
@@ -642,8 +642,8 @@ class xmlReport:
         '''
         ET.SubElement(self.meta, entry.Tag, val=entry.Detail)
         if self.debug:
-            print 'xmlReport.writeMetadata: Added entry ' + entry.Tag + \
-            ' ' + entry.Detail
+            print('xmlReport.writeMetadata: Added entry ' + entry.Tag + \
+            ' ' + entry.Detail)
 
     def writeFinding(self, entry):
         '''xmlReport.writeFindings(entry): The xmlReport method to add a findings
@@ -671,11 +671,11 @@ class xmlReport:
                 ET.ElementTree(self.root).write(self.path)
                 self.closed = True
             if self.debug:
-                print 'xmlReport.closeReport: dumping the ElementTree: '
+                print('xmlReport.closeReport: dumping the ElementTree: ')
                 ET.dump(self.root)
-        except Exception, err:
+        except Exception as err:
             if self.debug:
-                print 'logdispatcher.xmlReport.closeReport: Error encountered processing xml'
-                print err
+                print('logdispatcher.xmlReport.closeReport: Error encountered processing xml')
+                print(err)
                 trace = traceback.format_exc()
-                print trace
+                print(trace)

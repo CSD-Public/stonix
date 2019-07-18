@@ -41,7 +41,7 @@ import traceback
 import types
 import time
 
-from logdispatcher import LogPriority
+from .logdispatcher import LogPriority
 
 
 class CommandHelper(object):
@@ -91,7 +91,7 @@ class CommandHelper(object):
             filename = inspect.stack()[3][1]
             functionName = str(inspect.stack()[3][3])
             lineNumber = str(inspect.stack()[3][2])
-        except Exception, err:
+        except Exception as err:
             raise err
         else:
             self.logdispatcher.log(LogPriority.DEBUG, "called by: " + \
@@ -336,14 +336,14 @@ class CommandHelper(object):
 
         try:
 
-            if not isinstance(stdoutstring, basestring):
+            if not isinstance(stdoutstring, str):
                 self.logdispatcher.log(LogPriority.DEBUG,
                                        "Content of parameter stdoutstring " +
                                        "is not in string format. Will not " +
                                        "include content in output!")
                 stdoutstring = ""
 
-            if not isinstance(stderrstring, basestring):
+            if not isinstance(stderrstring, str):
                 self.logdispatcher.log(LogPriority.DEBUG,
                                        "Content of parameter stderrstring " +
                                        "is not in string format. Will not " +
@@ -471,7 +471,7 @@ class CommandHelper(object):
 
             commandtype = type(command)
 
-            if (commandtype is types.StringType):
+            if (commandtype is bytes):
                 self.shell = True
                 if len(command.strip()) > 0:
                     self.commandblank = False
@@ -479,7 +479,7 @@ class CommandHelper(object):
                 msg = "Command Set To '" + self.command + "'"
                 self.logdispatcher.log(LogPriority.DEBUG, msg)
 
-            elif (commandtype is types.ListType):
+            elif (commandtype is list):
                 self.shell = False
                 self.command = []
                 self.commandblank = True
@@ -487,7 +487,7 @@ class CommandHelper(object):
                 for commandlistitem in command:
                     commandlitype = type(commandlistitem)
 
-                    if (commandlitype is types.StringType):
+                    if (commandlitype is bytes):
                         self.command.append(commandlistitem.strip())
                         if len(commandlistitem.strip()) > 0:
                             self.commandblank = False
@@ -528,7 +528,7 @@ class CommandHelper(object):
         logprioritytype = type(logpriority)
         if (logpriority is None):
             self.logpriority = LogPriority.DEBUG
-        elif (logprioritytype is types.StringType):
+        elif (logprioritytype is bytes):
             self.logpriority = logpriority
         else:
             self.logpriority = LogPriority.DEBUG
@@ -629,7 +629,7 @@ class CommandHelper(object):
 
         except (KeyboardInterrupt, SystemExit):
             raise
-        except Exception, err:
+        except Exception as err:
             success = False
             msg = str(err) + " - " + str(traceback.format_exc())
             self.logdispatcher.log(LogPriority.ERROR, msg)
@@ -746,7 +746,7 @@ class CommandHelper(object):
             self.logdispatcher.log(LogPriority.DEBUG, msg)
         except (KeyboardInterrupt, SystemExit):
             raise
-        except Exception, err:
+        except Exception as err:
             success = False
             msg = str(err) + " - " + str(traceback.format_exc())
             self.logdispatcher.log(LogPriority.DEBUG, msg)

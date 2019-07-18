@@ -25,7 +25,7 @@ Created on Feb 10, 2015
 @change: 2017/08/28 ekkehard - Added self.sethelptext()
 '''
 
-from __future__ import absolute_import
+
 import traceback
 import os
 

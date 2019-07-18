@@ -34,10 +34,10 @@ This object encapsulates the /bin/launchctl command for Service Helper
 """
 
 import re
-import CommandHelper
-from logdispatcher import LogPriority
-from ServiceHelperTemplate import ServiceHelperTemplate
-from stonixutilityfunctions import reportStack
+from . import CommandHelper
+from .logdispatcher import LogPriority
+from .ServiceHelperTemplate import ServiceHelperTemplate
+from .stonixutilityfunctions import reportStack
 
 
 class SHlaunchd(ServiceHelperTemplate):

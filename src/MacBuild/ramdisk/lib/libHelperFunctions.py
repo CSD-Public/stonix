@@ -3,7 +3,7 @@ Helper functions, OS agnostic
 
 @author: Roy Nielsen
 """
-from __future__ import absolute_import
+
 #--- Native python libraries
 import re
 import os
@@ -70,7 +70,7 @@ def get_console_user():
         space_stripped = str(retval).strip()
         quote_stripped = str(space_stripped).strip("'")
 
-    except Exception, err:
+    except Exception as err:
         logger.log(lp.VERBOSE, "Exception trying to get the console user...")
         logger.log(lp.VERBOSE, "Associated exception: " + str(err))
         logger.log(lp.WARNING, traceback.format_exc())
@@ -144,7 +144,7 @@ def get_darwin_mac() :
         hw_addr = match_hw_addr.search(line)
         net_hw_addr = hw_addr.group(1)
         #  net_hw_addr
-    except Exception, err:
+    except Exception as err:
         logger.log(lp.VERBOSE, "Error attempting to acquire MAC address...")
         logger.log(lp.VERBOSE, "Exception: " + str(err))
         raise err
@@ -198,7 +198,7 @@ def touch(filename=""):
         except:
             try :
                 open(filename, 'a').close()
-            except Exception, err :
+            except Exception as err :
                 logger.log(lp.INFO, "Cannot open to touch: " + str(filename))
 
 ###########################################################################
@@ -291,7 +291,7 @@ def touch(filename=""):
         except:
             try :
                 open(filename, 'a').close()
-            except Exception, err :
+            except Exception as err :
                 logger.log(lp.INFO, "Cannot open to touch: " + str(filename))
 
 ###########################################################################
@@ -355,7 +355,7 @@ def isSaneFilePath(filepath):
 
     '''
     sane = False
-    if filepath and isinstance(filepath, basestring):
+    if filepath and isinstance(filepath, str):
         if re.match("^[A-Za-z0-9_\-/\.]*", filepath):
             sane = True
     return sane

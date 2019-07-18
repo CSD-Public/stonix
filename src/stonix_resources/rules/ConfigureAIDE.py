@@ -33,7 +33,7 @@ This rule is optional and will install and configure AIDE when it is run.
 @change: 2017/08/28 Ekkehard - Added self.sethelptext()
 """
 
-from __future__ import absolute_import
+
 
 import os
 import re
@@ -238,7 +238,7 @@ executable, rule cannot continue\n"
                 return False
 
             os.rename(newaidedb, aidedb)
-            os.chmod(aidedb, 0600)
+            os.chmod(aidedb, 0o600)
             os.chown(aidedb, 0, 0)
 
             # add the aide check job to cron

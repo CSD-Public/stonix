@@ -43,7 +43,7 @@ Install and configure warning banners, to be displayed at startup.
     the first desktop manager found.
 """
 
-from __future__ import absolute_import
+
 import os
 import re
 import traceback
@@ -171,7 +171,7 @@ class InstallBanners(RuleKVEditor):
         self.lightdm = True
         path = '/etc/X11/default-display-manager'
         opt = '/usr/sbin/lightdm\n'
-        mode = 0644
+        mode = 0o644
         uid = 0
         gid = 0
 
@@ -459,7 +459,7 @@ class InstallBanners(RuleKVEditor):
             raise
         return filecontents
 
-    def setFileContents(self, filepath, contents, perms=[0, 0, 0644]):
+    def setFileContents(self, filepath, contents, perms=[0, 0, 0o644]):
         '''write (or append) specified contents to specified file
 
         :param filepath: string full path to file
@@ -507,7 +507,7 @@ class InstallBanners(RuleKVEditor):
                 basepath = ("/").join(filepath.split("/")[:-1])
                 # create parent directory if it doesn't exist
                 if not os.path.exists(basepath):
-                    os.makedirs(basepath, 0755)
+                    os.makedirs(basepath, 0o755)
                 # then create the file
                 f = open(filepath, "w")
                 if isinstance(contents, list):
@@ -609,7 +609,7 @@ class InstallBanners(RuleKVEditor):
                 self.detailedresults += "\nRequired configuration file " + filepath + " does not exist"
                 return retval
 
-            if isinstance(searchparams, basestring):
+            if isinstance(searchparams, str):
                 contents = self.getFileContents(filepath, "string")
                 findresult = contents.find(searchparams)
                 if findresult != -1:
@@ -1287,7 +1287,7 @@ class InstallBanners(RuleKVEditor):
                                "file-db:" + greeterdefaults + "\n"]
             if not os.path.exists(profilebasedir):
                 self.logger.log(LogPriority.DEBUG, "gdm profile base directory does not exist. Creating it...")
-                os.makedirs(profilebasedir, 0755)
+                os.makedirs(profilebasedir, 0o755)
             if not self.setFileContents(profilepath, profileconflist):
                 success = False
 
@@ -1302,7 +1302,7 @@ class InstallBanners(RuleKVEditor):
                                   "disable-user-list=true\n"]
             if not os.path.exists(gdmkeyfilebase):
                 self.logger.log(LogPriority.DEBUG, "gdm keyfile base directory does not exist. Creating it...")
-                os.makedirs(gdmkeyfilebase, 0755)
+                os.makedirs(gdmkeyfilebase, 0o755)
             if not self.setFileContents(gdmkeyfile, gdmkeyfileconflist):
                 success = False
 
@@ -1337,7 +1337,7 @@ class InstallBanners(RuleKVEditor):
         try:
 
             if not os.path.exists('/etc/lightdm/lightdm.conf.d'):
-                os.makedirs('/etc/lightdm/lightdm.conf.d/', 0755)
+                os.makedirs('/etc/lightdm/lightdm.conf.d/', 0o755)
             for f in self.lightdmdict:
                 contentlines = []
                 if isinstance(self.lightdmdict[f], list):

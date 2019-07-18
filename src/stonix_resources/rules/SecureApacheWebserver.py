@@ -52,7 +52,7 @@ This class is responsible for securing the Apache webserver configuration.
                 at beginning of fix if they are not already set
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
 '''
-from __future__ import absolute_import
+
 
 import os
 import re
@@ -709,7 +709,7 @@ development but some existing applications may use insecure side effects.'''
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
-        except Exception, err:
+        except Exception as err:
             self.rulesuccess = False
             self.detailedresults += "\n" + str(err) + " - " + \
                                     str(traceback.format_exc())

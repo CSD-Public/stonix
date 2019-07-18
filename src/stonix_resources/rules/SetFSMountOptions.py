@@ -40,7 +40,7 @@ order to help protect against malicious code being run on the system.
 @change: 2017/05/08 Breen Malmberg added btrfs to the list of localfstypes
 '''
 
-from __future__ import absolute_import
+
 
 from ..rule import Rule
 from ..stonixutilityfunctions import iterate
@@ -135,7 +135,7 @@ class SetFSMountOptions(Rule):
 
         try:
 
-            if not validateParam(self.logger, filename, basestring, "filename"):
+            if not validateParam(self.logger, filename, str, "filename"):
                 return contentlines
 
             self.logger.log(LogPriority.DEBUG, "Reading contents from file " + str(filename) + " ...")
@@ -334,16 +334,16 @@ class SetFSMountOptions(Rule):
 
         try:
 
-            if not validateParam(self.logger, eventtype, basestring, "eventtype"):
+            if not validateParam(self.logger, eventtype, str, "eventtype"):
                 success = False
                 return success
-            if not validateParam(self.logger, filename, basestring, "filename"):
+            if not validateParam(self.logger, filename, str, "filename"):
                 success = False
                 return success
-            if not validateParam(self.logger, tmpfilename, basestring, "tmpfilename"):
+            if not validateParam(self.logger, tmpfilename, str, "tmpfilename"):
                 success = False
                 return success
-            if not isinstance(contents, basestring) and not isinstance(contents, list):
+            if not isinstance(contents, str) and not isinstance(contents, list):
                 success = False
                 self.logger.log(LogPriority.DEBUG, "Parameter: contents needs to be of type string, or list. Got: " + str(type(contents)))
                 return success
@@ -412,11 +412,11 @@ class SetFSMountOptions(Rule):
 
         try:
 
-            if not validateParam(self.logger, filename, basestring, "filename"):
+            if not validateParam(self.logger, filename, str, "filename"):
                 success = False
                 return success
 
-            if isinstance(contents, basestring):
+            if isinstance(contents, str):
 
                 f = open(filename, 'w')
                 f.write(contents)
@@ -459,7 +459,7 @@ class SetFSMountOptions(Rule):
             if not validateParam(self.logger, group, int, "group"):
                 success = False
                 return success
-            if not validateParam(self.logger, filename, basestring, "filename"):
+            if not validateParam(self.logger, filename, str, "filename"):
                 success = False
                 return success
 
@@ -534,7 +534,7 @@ class SetFSMountOptions(Rule):
                 if not bindtmplinefound:
                     contentlines.append('\n' + self.fixbindmnttmp + '\n')
 
-                self.makeFileChanges("conf", self.filepath, tmpfile, contentlines, 0, 0, 0644)
+                self.makeFileChanges("conf", self.filepath, tmpfile, contentlines, 0, 0, 0o644)
 
             else:
 

@@ -36,7 +36,7 @@ control.
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
 '''
 
-from __future__ import absolute_import
+
 
 import os
 import traceback
@@ -157,7 +157,7 @@ class SymlinkDangerFiles(Rule):
                     tf.close()
 
                     os.rename(tempfile, f)
-                    os.chmod(f, 0644)
+                    os.chmod(f, 0o644)
 
         except Exception:
             raise

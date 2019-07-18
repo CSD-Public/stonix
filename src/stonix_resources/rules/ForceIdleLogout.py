@@ -33,7 +33,7 @@ Created on May 31, 2016
     and not override the undo method.
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
 '''
-from __future__ import absolute_import
+
 
 import os
 import traceback
@@ -839,7 +839,7 @@ FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
                     return False
         uid = getpwnam(user)[2]
         gid = getpwnam(user)[3]
-        os.chmod(kfile, 0600)
+        os.chmod(kfile, 0o600)
         os.chown(kfile, uid, gid)
         resetsecon(kfile)
         return success

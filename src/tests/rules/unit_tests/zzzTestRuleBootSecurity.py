@@ -23,7 +23,7 @@ This is a Unit Test for Rule BootSecurity
 @author: ekkehard j. koch
 @change: 2016/08/05 Original Implementation
 '''
-from __future__ import absolute_import
+
 import unittest
 import sys
 

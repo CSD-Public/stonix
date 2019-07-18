@@ -17,8 +17,8 @@
 
 
 
-from logdispatcher import LogPriority
-from CommandHelper import CommandHelper
+from .logdispatcher import LogPriority
+from .CommandHelper import CommandHelper
 
 
 class Freebsd(object):
@@ -62,7 +62,7 @@ class Freebsd(object):
             if not package:
                 self.logger.log(LogPriority.DEBUG, "Parameter: package was blank!")
                 return installed
-            if not isinstance(package, basestring):
+            if not isinstance(package, str):
                 self.logger.log(LogPriority.DEBUG, "Parameter: package needs to be of type string. Got: " + str(type(package)))
                 return installed
 
@@ -100,7 +100,7 @@ class Freebsd(object):
             if not package:
                 self.logger.log(LogPriority.DEBUG, "Parameter: package was blank!")
                 return removed
-            if not isinstance(package, basestring):
+            if not isinstance(package, str):
                 self.logger.log(LogPriority.DEBUG, "Parameter: package needs to be of type string. Got: " + str(type(package)))
                 return removed
 
@@ -140,7 +140,7 @@ class Freebsd(object):
             if not package:
                 self.logger.log(LogPriority.DEBUG, "Parameter: package was blank!")
                 return installed
-            if not isinstance(package, basestring):
+            if not isinstance(package, str):
                 self.logger.log(LogPriority.DEBUG, "Parameter: package needs to be of type string. Got: " + str(type(package)))
                 return installed
 
@@ -233,7 +233,7 @@ class Freebsd(object):
             if not filename:
                 self.logger.log(LogPriority.DEBUG, "Parameter: filename was blank!")
                 return packagename
-            if not isinstance(filename, basestring):
+            if not isinstance(filename, str):
                 self.logger.log(LogPriority.DEBUG, "Parameter: filename needs to be of type string. Got: " + str(type(filename)))
                 return packagename
 

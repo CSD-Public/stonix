@@ -33,7 +33,7 @@ Created on Jan 14, 2014
     consistent with other rules that handle sysctl and to properly
     handle sysctl by writing to /etc/sysctl.conf and also using command
 '''
-from __future__ import absolute_import
+
 from ..stonixutilityfunctions import iterate, setPerms, checkPerms, writeFile
 from ..stonixutilityfunctions import readFile, resetsecon, createFile
 from ..rule import Rule

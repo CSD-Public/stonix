@@ -36,7 +36,7 @@ return self.rulesuccess. self.rulesuccess will now return instead of success.
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
 '''
 
-from __future__ import absolute_import
+
 from ..stonixutilityfunctions import iterate, setPerms, checkPerms
 from ..stonixutilityfunctions import createFile
 from ..rule import Rule
@@ -296,7 +296,7 @@ class SecureNFS(Rule):
 
         if not filename:
             filename = "(file name not specified)"
-        if not isinstance(filename, basestring):
+        if not isinstance(filename, str):
             filename = "(file name not specified)"
 
         if not isinstance(contentlines, list):

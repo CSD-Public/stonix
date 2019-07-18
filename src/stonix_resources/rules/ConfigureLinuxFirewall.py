@@ -24,7 +24,7 @@ Created on May 27, 2016
 @change: 2018/08/29 Brandon R. Gonzales - increased the sleep time in fixes to
     give iptables more time to restart
 '''
-from __future__ import absolute_import
+
 
 import os
 import traceback
@@ -524,7 +524,7 @@ CONFIGURELINUXFIREWALL to False.'''
                                     self.detailedresults += "Unable to set permissions on " + fwpath + "\n"
                         contents = readFile(fwpath, self.logger)
                         if contents != systemconfigfirewall:
-                            print "contents don't equal systemconfigurefirewall contents\n"
+                            print("contents don't equal systemconfigurefirewall contents\n")
                             tempfile = fwpath + ".tmp"
                             if not writeFile(tempfile, systemconfigfirewall, self.logger):
                                 success = False

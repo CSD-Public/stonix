@@ -20,7 +20,7 @@ Created on Jul 23, 2013
 
 @author: dwalker
 '''
-from logdispatcher import LogPriority
+from .logdispatcher import LogPriority
 import traceback
 import re
 import os
@@ -302,7 +302,7 @@ class KVATaggedConf():
             if not self.contents:
                 for tag in fixables:
                     self.contents.append("[" + tag + "]\n")
-                    for k, v in fixables[tag].iteritems():
+                    for k, v in fixables[tag].items():
                         if self.configType == "openeq":
                             self.contents.append(k + " = " + v + "\n")
                         elif self.configType == "closedeq":
@@ -388,7 +388,7 @@ class KVATaggedConf():
                     else:
                         #never found the desired tag so just add tag and key,value pairs
                         self.contents.append("[" + tag + "]\n")
-                        for k, v in fixables[tag].iteritems():
+                        for k, v in fixables[tag].items():
                             if self.configType == "openeq":
                                 self.contents.append(k + " = " + v + "\n")
                             elif self.configType == "closedeq":
@@ -452,7 +452,7 @@ class KVATaggedConf():
             if not self.contents:
                 for tag in fixables:
                     self.contents.append("[" + tag + "]\n")
-                    for k, v in fixables[tag].iteritems():
+                    for k, v in fixables[tag].items():
                         self.contents.append(k + " " + v + "\n")
             else:
                 for tag in fixables:
@@ -588,7 +588,7 @@ class KVATaggedConf():
                 fh = open(tmpfile, 'w')
                 if isinstance(contents, list):
                     fh.writelines(contents)
-                elif isinstance(contents, basestring):
+                elif isinstance(contents, str):
                     fh.write(contents)
                 else:
                     self.detailedresults += "\nUnable to write to file: " + str(tmpfile)

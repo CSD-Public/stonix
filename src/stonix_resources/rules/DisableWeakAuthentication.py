@@ -26,7 +26,7 @@ Created on Aug 12, 2013
 @change: 2015/10/27 eball Added feedback to report()
 @change 2017/08/28 rsn Fixing to use new help text methods
 '''
-from __future__ import absolute_import
+
 from ..stonixutilityfunctions import readFile, writeFile, setPerms, checkPerms
 from ..stonixutilityfunctions import resetsecon
 from ..rule import Rule

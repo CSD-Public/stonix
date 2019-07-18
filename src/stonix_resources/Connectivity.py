@@ -21,13 +21,13 @@
 import re
 import ssl
 import socket
-import httplib
-import urllib
-import urllib2
+import http.client
+import urllib.request, urllib.parse, urllib.error
+import urllib.request, urllib.error, urllib.parse
 
 #--- non-native python libraries in this source tree
-from logdispatcher import LogPriority
-from localize import PROXY
+from .logdispatcher import LogPriority
+from .localize import PROXY
 
 
 class ConnectivityInvalidURL(Exception):
@@ -70,16 +70,16 @@ class Connectivity(object):
             socket.setdefaulttimeout(5)
             socket.gethostbyname(host)
             retval = True
-        except socket.gaierror, err:
+        except socket.gaierror as err:
             msg = "Can't connect to server, socket problem: " + str(err)
             self.logger.log(LogPriority.ERROR, msg)
-        except socket.herror, exerr:
+        except socket.herror as exerr:
             msg = "Can't connect to server, socket problem: " + str(err)
             self.logger.log(LogPriority.ERROR, msg)
-        except socket.timeout, err:
+        except socket.timeout as err:
             msg = "Can't connect to server, socket problem: " + str(err)
             self.logger.log(LogPriority.ERROR, msg)
-        except Exception, err:
+        except Exception as err:
             msg = "Can't connect to server, socket problem: " + str(err)
             self.logger.log(LogPriority.ERROR, msg)
         else:
@@ -118,9 +118,9 @@ class Connectivity(object):
                 self.set_proxy()
 
             page = site + path
-            req = urllib2.Request(page, headers={'User-Agent' : "Magic Browser"})
+            req = urllib.request.Request(page, headers={'User-Agent' : "Magic Browser"})
             req.add_header('User-agent', 'Firefox/31.5.0')
-            request = urllib2.urlopen(req, timeout=3)
+            request = urllib.request.urlopen(req, timeout=3)
             retcode = request.getcode()
 
             # get the first digit of the return code
@@ -175,9 +175,9 @@ class Connectivity(object):
                     # Create a different type of connection based on 
                     # http or https...
                     if re.match("^https://.+", url):
-                        conn = httplib.HTTPSConnection(host=host, port=port, timeout=timeout, cert_file="", key_file="")
+                        conn = http.client.HTTPSConnection(host=host, port=port, timeout=timeout, cert_file="", key_file="")
                     elif re.match("^http://.+", url):
-                        conn = httplib.HTTPConnection(host, port, timeout)
+                        conn = http.client.HTTPConnection(host, port, timeout)
                     #####
                     # Get the page, see if we get a return value of 200 
                     # (success)
@@ -265,7 +265,7 @@ class Connectivity(object):
         host = ""
         port = 0
         page = ""
-        if isinstance(url, basestring) and url:
+        if isinstance(url, str) and url:
             if re.match("^http://.+", url) or re.match("^https://.+", url):
                 urlsplit = url.split("/")
                 hostAndPort = urlsplit[2]
@@ -300,7 +300,7 @@ class Connectivity(object):
                 try:
                     tmpstring = urlsplit[3:]
                     page = "/" + "/".join(tmpstring)
-                except IndexError, err:
+                except IndexError as err:
                     self.logger.log(LogPriority.DEBUG, "No page...")
                 
         self.logger.log(LogPriority.DEBUG, "URL: " + str(url))
@@ -321,9 +321,9 @@ class Connectivity(object):
 
         '''
 
-        proxy_handler = urllib2.ProxyHandler({})
-        opener = urllib2.build_opener(proxy_handler)
-        urllib2.install_opener(opener)
+        proxy_handler = urllib.request.ProxyHandler({})
+        opener = urllib.request.build_opener(proxy_handler)
+        urllib.request.install_opener(opener)
 
     def set_proxy(self):
         '''This method configures the proxy for the outgoing connection based on the proxy
@@ -344,9 +344,9 @@ class Connectivity(object):
             psite = sproxy[1].strip('/')
             pport = sproxy[2]
 
-        proxy_handler = urllib2.ProxyHandler({ptype : psite + ':' + pport})
-        opener = urllib2.build_opener(proxy_handler)
-        urllib2.install_opener(opener)
+        proxy_handler = urllib.request.ProxyHandler({ptype : psite + ':' + pport})
+        opener = urllib.request.build_opener(proxy_handler)
+        urllib.request.install_opener(opener)
 
     ###########################################################################
     
@@ -382,7 +382,7 @@ class Connectivity(object):
             self.logger.log(LogPriority.DEBUG, "SSL not found.  Not able to " +\
                                                "a validating https opener.")
         else:
-            class VerifiedHTTPSConnection(httplib.HTTPSConnection):
+            class VerifiedHTTPSConnection(http.client.HTTPSConnection):
                 def connect(self):
                     # overrides the version in httplib so that we do
                     #    certificate verification
@@ -402,19 +402,19 @@ class Connectivity(object):
                                                 )
 
             # wraps https connections with ssl certificate verification
-            class VerifiedHTTPSHandler(urllib2.HTTPSHandler):
+            class VerifiedHTTPSHandler(urllib.request.HTTPSHandler):
                 def __init__(self, connection_class=VerifiedHTTPSConnection):
                     self.specialized_conn_class = connection_class
-                    urllib2.HTTPSHandler.__init__(self)
+                    urllib.request.HTTPSHandler.__init__(self)
 
                 def https_open(self, req):
                     return self.do_open(self.specialized_conn_class, req)
 
             https_handler = VerifiedHTTPSHandler()
             if proxy:
-                url_opener = urllib2.build_opener(https_handler, urllib2.ProxyHandler({'https' : proxy}))
+                url_opener = urllib.request.build_opener(https_handler, urllib.request.ProxyHandler({'https' : proxy}))
             else:
-                url_opener = urllib2.build_opener(https_handler, urllib2.ProxyHandler({}))
+                url_opener = urllib.request.build_opener(https_handler, urllib.request.ProxyHandler({}))
 
         return url_opener
     

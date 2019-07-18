@@ -30,7 +30,7 @@ dictionary
 @change: 2018/09/11 Brandon R. Gonzales - remove applicability for Mojave 10.14
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
 '''
-from __future__ import absolute_import
+
 import os
 import re
 from ..ruleKVEditor import RuleKVEditor

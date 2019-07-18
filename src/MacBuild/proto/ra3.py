@@ -14,11 +14,11 @@ def setNonBlocking(fd):
     flags = flags | os.O_NONBLOCK
     fcntl.fcntl(fd, fcntl.F_SETFL, flags)
 
-username = raw_input("Username: ")
+username = input("Username: ")
 passwd = getpass.getpass("Password: ")
 
 cmd = ["/usr/bin/su", "-", username, "-c", '"/bin/top -l 1"']
-print str(cmd)
+print(str(cmd))
 p = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE, bufsize=0, shell=True)
 
 setNonBlocking(p.stdout)
@@ -47,6 +47,6 @@ while True:
 
 p.wait()
 
-print p.stdout.readlines()
-print p.stderr.readlines()
+print(p.stdout.readlines())
+print(p.stderr.readlines())
 

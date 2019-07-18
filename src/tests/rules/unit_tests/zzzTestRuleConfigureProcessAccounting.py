@@ -27,7 +27,7 @@ This is a Unit Test for Rule ConfigureProcessAccounting
 @change: 2017/10/23 Roy Nielsen - change to new service helper interface
 """
 
-from __future__ import absolute_import
+
 
 import unittest
 import sys

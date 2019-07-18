@@ -32,7 +32,7 @@ platforms.
 @change: 2016/10/20 Eric Ball Improve feedback, PEP8 fixes
 """
 
-from __future__ import absolute_import
+
 
 import traceback
 import re

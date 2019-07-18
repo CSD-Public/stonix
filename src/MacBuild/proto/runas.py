@@ -7,10 +7,10 @@ import time
 import getpass
 from subprocess import Popen, PIPE, STDOUT
 
-username = raw_input("Username: ")
+username = input("Username: ")
 passwd = getpass.getpass('gPass: ')
 
-print passwd
+print(passwd)
 
 '''
 myenv = os.environ.copy()

@@ -25,7 +25,7 @@ from src.stonix_resources.localize import PROXY
 sys.path.append("../../../..")
 
 from src.stonix_resources.Connectivity import Connectivity
-from connectivity_test_data import test_case_data_is_page_available
+from .connectivity_test_data import test_case_data_is_page_available
 from src.tests.lib.logdispatcher_lite import LogDispatcher
 from src.stonix_resources.environment import Environment
 
@@ -66,7 +66,7 @@ class test_Connectivity_is_page_available(unittest.TestCase):
         else:
             self.assertFalse(self.conn.is_site_available(site, page), "Found page " + page + " at site " + site)
 
-for behavior, test_cases in test_case_data_is_page_available.items():
+for behavior, test_cases in list(test_case_data_is_page_available.items()):
     for test_case_data in test_cases:
         expected, test_iteration, site, page = test_case_data
         my_test_name = "test_{0}_{2}_{1}".format(test_iteration, str(expected),

@@ -22,7 +22,7 @@ Created on Apr 22, 2015
 @change: 2015/09/25 eball Added info to help text and removed failure for
     missing configuration file
 '''
-from __future__ import absolute_import
+
 from ..stonixutilityfunctions import iterate, setPerms, checkPerms
 from ..stonixutilityfunctions import resetsecon, createFile, readFile, writeFile
 from ..rule import Rule
@@ -83,7 +83,7 @@ SECUREDHCPSERVER to False.'''
             self.tmppath = self.path + ".tmp"
             compliant = True
             if os.path.exists(self.path):
-                if not checkPerms(self.path, [0, 0, 0644], self.logger):
+                if not checkPerms(self.path, [0, 0, 0o644], self.logger):
                     self.detailedresults += "The permissions on " + \
                         self.path + " are incorrect\n"
                     compliant = False
@@ -189,15 +189,15 @@ SECUREDHCPSERVER to False.'''
                     os.rename(tmpfile, self.path)
                     self.iditerator += 1
                     myid = iterate(self.iditerator, self.rulenumber)
-                    setPerms(self.path, [0, 0, 0644], self.logger,
+                    setPerms(self.path, [0, 0, 0o644], self.logger,
                              self.statechglogger, myid)
                     resetsecon(self.path)
             if self.editor.fixables:
                 if not self.created:
-                    if not checkPerms(self.path, [0, 0, 0644], self.logger):
+                    if not checkPerms(self.path, [0, 0, 0o644], self.logger):
                         self.iditerator += 1
                         myid = iterate(self.iditerator, self.rulenumber)
-                        if not setPerms(self.path, [0, 0, 0644],
+                        if not setPerms(self.path, [0, 0, 0o644],
                                         self.logger, self.statechglogger,
                                         myid):
                             success = False
@@ -210,7 +210,7 @@ SECUREDHCPSERVER to False.'''
                             "corrected\n"
                         self.logger.log(LogPriority.DEBUG, debug)
                         os.chown(self.path, 0, 0)
-                        os.chmod(self.path, 0644)
+                        os.chmod(self.path, 0o644)
                         resetsecon(self.path)
                     else:
                         debug = "kveditor commit not successful\n"

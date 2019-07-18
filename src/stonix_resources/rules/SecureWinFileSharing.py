@@ -30,7 +30,7 @@ check for CI enabled/disabled in fix() method; changed the return value
 in report() method to self.compliant
 '''
 
-from __future__ import absolute_import
+
 
 from ..ruleKVEditor import RuleKVEditor
 from ..logdispatcher import LogPriority

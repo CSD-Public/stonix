@@ -30,7 +30,7 @@ This is not a mandatory rule
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
 '''
 
-from __future__ import absolute_import
+
 
 import traceback
 import re
@@ -270,7 +270,7 @@ class LimitConcurrentLogins(Rule):
                 else:
                     self.logger.log(LogPriority.DEBUG, "Configure file: " + str(cf) + " was empty/blank")
 
-                if not checkPerms(cf, [0, 0, 0600], self.logger):
+                if not checkPerms(cf, [0, 0, 0o600], self.logger):
                     self.compliant = False
                     self.detailedresults += "\nIncorrect permissions on file: " + str(cf)
 

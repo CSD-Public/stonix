@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 ###############################################################################
 #                                                                             #
 # Copyright 2019. Triad National Security, LLC. All rights reserved.          #
@@ -44,11 +44,10 @@ import re
 import sys
 import socket
 import subprocess
-import types
 import platform
 import pwd
 import time
-from localize import CORPORATENETWORKSERVERS, STONIXVERSION, FISMACAT
+from .localize import CORPORATENETWORKSERVERS, STONIXVERSION, FISMACAT
 if os.geteuid() == 0:
     try:
         import dmidecode
@@ -130,6 +129,7 @@ class Environment:
                 cmdoutput = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, close_fds=True)
                 outputlines = cmdoutput.stdout.readlines()
                 for line in outputlines:
+                    line = line.decode('ascii')
                     for vt in validtypes:
                         if re.search(vt, line, re.IGNORECASE):
                             self.systemtype = vt
@@ -142,7 +142,7 @@ class Environment:
         if self.systemtype not in validtypes:
             print("This system is based on an unknown architecture")
         else:
-            print("Determined that this system is based on " + str(self.systemtype) + " architecture")
+            print(("Determined that this system is based on " + str(self.systemtype) + " architecture"))
 
     def getsystemtype(self):
         '''return the systemtype - either:
@@ -171,7 +171,7 @@ class Environment:
 
         '''
         try:
-            if type(installmode) is types.BooleanType:
+            if type(installmode) is bool:
                 self.installmode = installmode
         except (NameError):
             # installmode was undefined
@@ -199,7 +199,7 @@ class Environment:
 
         '''
         try:
-            if type(verbosemode) is types.BooleanType:
+            if type(verbosemode) is bool:
                 self.verbosemode = verbosemode
         except (NameError):
             # verbosemode was undefined
@@ -227,7 +227,7 @@ class Environment:
 
         '''
         try:
-            if type(debugmode) is types.BooleanType:
+            if type(debugmode) is bool:
                 self.debugmode = debugmode
         except (NameError):
             # debugmode was undefined
@@ -639,7 +639,7 @@ class Environment:
         ipaddress = ""
 
         if not netutil:
-            print "environment::getmacaddr():WARNING: Could not detect any net utility type/location"
+            print("environment::getmacaddr():WARNING: Could not detect any net utility type/location")
             return macaddr
         elif "nmcli" in netutil:
             if self.getosmajorver() == "6":
@@ -651,7 +651,7 @@ class Environment:
         elif "ip" in netutil:
             netcmd = netutil + " -o link"
         else:
-            print "environment::getmacaddr():WARNING: Could not identify unknown net utility type"
+            print("environment::getmacaddr():WARNING: Could not identify unknown net utility type")
             return macaddr
 
         try:
@@ -661,6 +661,7 @@ class Environment:
             macinfo = macinfocmd.stdout.readlines()
 
             for line in macinfo:
+                line = line.decode('ascii')
                 match = re.search(macre, line)
                 if match is not None:
                     macaddr = match.group()
@@ -1249,10 +1250,10 @@ class Environment:
                                     stdout=subprocess.PIPE, close_fds=True)
             netdata = proc.stdout.readlines()
             for line in netdata:
-                print "processing: " + line
+                print("processing: " + line)
                 match = re.search(littlesnitch, line)
                 if match is not None:
-                    print 'LittleSnitch Is Running'
+                    print('LittleSnitch Is Running')
                     issnitchactive = True
                     break
         return issnitchactive
@@ -1279,10 +1280,10 @@ class Environment:
         # return False if the constant CORPORATENETWORKSERVERS is
         # either set to 'None' or not defined, in localize.py
         if CORPORATENETWORKSERVERS == None:
-            print str(os.path.basename(__file__)) + " :: " + str(self.oncorporatenetwork.__name__) + " :: " + str("The constant CORPORATENETWORKSERVERS has not been properly defined in localize.py")
+            print(str(os.path.basename(__file__)) + " :: " + str(self.oncorporatenetwork.__name__) + " :: " + str("The constant CORPORATENETWORKSERVERS has not been properly defined in localize.py"))
             return amoncorporatenetwork
         elif not CORPORATENETWORKSERVERS:
-            print str(os.path.basename(__file__)) + " :: " + str(self.oncorporatenetwork.__name__) + " :: " + str("The constant CORPORATENETWORKSERVERS has not been properly defined in localize.py")
+            print(str(os.path.basename(__file__)) + " :: " + str(self.oncorporatenetwork.__name__) + " :: " + str("The constant CORPORATENETWORKSERVERS has not been properly defined in localize.py"))
             return amoncorporatenetwork
         else:
             listOfServers = CORPORATENETWORKSERVERS
@@ -1344,7 +1345,7 @@ class Environment:
                     self.test_mode = True
                     self.script_path = os.path.dirname(os.path.realpath(sys.argv[1]))
                 else:
-                    print "ERROR: Cannot run using this method"
+                    print("ERROR: Cannot run using this method")
             else:
                 #print "DEBUG: Cannot find appropriate path, building paths for current directory"
                 try:
