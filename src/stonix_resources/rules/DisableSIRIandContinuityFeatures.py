@@ -20,6 +20,7 @@ Created on Apr 20, 2017
 
 @author: dwalker
 @change 2017/08/28 rsn Fixing to use new help text methods
+@change: 2019/07/17 Brandon R. Gonzales - Make applicable to MacOS 10.13-10.14
 '''
 from __future__ import absolute_import
 import traceback
@@ -42,7 +43,7 @@ class DisableSIRIandContinuityFeatures(Rule):
         self.formatDetailedResults("initialize")
         self.rootrequired = True
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.12', '+']},
+                           'os': {'Mac OS X': ['10.10.0', 'r', '10.14.10']},
                            'fisma': 'low'}
         datatype = "bool"
         key = "SIRICONTINUITY"
