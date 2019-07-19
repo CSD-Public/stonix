@@ -528,7 +528,8 @@ class CommandHelper(object):
         logprioritytype = type(logpriority)
         if (logpriority is None):
             self.logpriority = LogPriority.DEBUG
-        elif (logprioritytype is bytes):
+        elif isinstance(logprioritytype, bytes):
+        # elif (logprioritytype is bytes):
             self.logpriority = logpriority
         else:
             self.logpriority = LogPriority.DEBUG
