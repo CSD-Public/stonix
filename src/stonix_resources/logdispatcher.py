@@ -668,7 +668,10 @@ class xmlReport:
         '''
         try:
             if not self.closed:
-                ET.ElementTree(self.root).write(self.path)
+                print(self.path, "\n")
+                f = open(self.path, 'w')
+                ET.ElementTree(self.root).write(f)
+                f.close()
                 self.closed = True
             if self.debug:
                 print('xmlReport.closeReport: dumping the ElementTree: ')
