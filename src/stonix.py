@@ -1269,6 +1269,7 @@ ABORTING EXECUTION!"""
                                          shell=True, close_fds=True)
                 psout = pscom.stdout.readlines()
                 for line in psout:
+                    line = str(line)
                     if re.search('stonix', line):
                         splits = line.split()
                         pspid = splits[1]
