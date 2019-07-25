@@ -522,11 +522,13 @@ forgot to override the default instructions for this key. Please file a bug.
         @author: D. Kennel
         """
         try:
-            if type(testvar) is bytes:
+            if isinstance(testvar, str):
+            #if type(testvar) is bytes:
                 return True
             else:
                 return False
         except (NameError):
+            print("Throwing an error when checking type\n")
             # testvar was undefined
             return False
 
