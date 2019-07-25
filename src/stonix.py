@@ -307,7 +307,6 @@ class Controller(Observable):
                                 'GUI Selected but PyQt4 not available. ' +
                                 'Please install PyQt4 and dependencies for ' +
                                 'GUI functionality.')
-        self.statechglogger = StateChgLogger(self.logger, self.environ)
         self.logger.log(LogPriority.DEBUG,
                         'State Logger Started')
         self.logger.log(LogPriority.DEBUG,
