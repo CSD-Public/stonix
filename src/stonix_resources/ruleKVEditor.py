@@ -114,10 +114,9 @@ LANL-stonix."""
         else:
             success = False
             self.kvdata = {}
-            raise TypeError("kvata with value" + str(value) + \
-                            "is of type " + str(datatype) + " not of " + \
-                            "type " + str(dict) + \
-                            " as expected!")
+            raise TypeError("kvata with value " + str(value) + \
+                            " is of type " + str(datatype) + " not of " + \
+                            "type " + str(dict) + " as expected!")
         return success
 
 ###############################################################################
@@ -130,10 +129,9 @@ LANL-stonix."""
         else:
             success = False
             self.kvdatafixalternate = {}
-            raise TypeError("kvdatafixalternate with value" + str(value) + \
-                            "is of type " + str(datatype) + " not of " + \
-                            "type " + str(dict) + \
-                            " as expected!")
+            raise TypeError("kvdatafixalternate with value " + str(value) + \
+                            " is of type " + str(datatype) + " not of " + \
+                            "type " + str(dict) + " as expected!")
         return success
 
 ###############################################################################
@@ -141,14 +139,14 @@ LANL-stonix."""
     def setkvintent(self, value):
         success = True
         datatype = type(value)
-        if datatype == bytes:
+        if datatype == str:
             self.kvintent = value
         else:
             success = False
             self.kvintent = ""
-            raise TypeError("kvintent with value" + str(value) + \
-                            "is of type " + str(datatype) + " not of " + \
-                            "type " + str(bytes) + " as expected!")
+            raise TypeError("kvintent with value " + str(value) + \
+                            " is of type " + str(datatype) + " not of " + \
+                            "type " + str(str) + " as expected!")
         return success
 
 ###############################################################################
@@ -156,14 +154,14 @@ LANL-stonix."""
     def setkvpath(self, value):
         success = True
         datatype = type(value)
-        if datatype == bytes:
+        if datatype == str:
             self.kvpath = value
         else:
             success = False
             self.kvpath = ""
-            raise TypeError("kvpath with value" + str(value) + \
-                            "is of type " + str(datatype) + " not of " + \
-                            "type " + str(bytes) + " as expected!")
+            raise TypeError("kvpath with value " + str(value) + \
+                            " is of type " + str(datatype) + " not of " + \
+                            "type " + str(str) + "as expected!")
         return success
 
 ###############################################################################
@@ -176,8 +174,8 @@ LANL-stonix."""
         else:
             success = False
             self.kvreportonly = False
-            raise TypeError("kvreportonly with value" + str(value) + \
-                            "is of type " + str(datatype) + " not of " + \
+            raise TypeError("kvreportonly with value " + str(value) + \
+                            " is of type " + str(datatype) + " not of " + \
                             "type " + str(bool) + " as expected!")
         return success
 
@@ -186,14 +184,14 @@ LANL-stonix."""
     def setkvtemppath(self, value):
         success = True
         datatype = type(value)
-        if datatype == bytes:
+        if datatype == str:
             self.kvtemppath = value
         else:
             success = False
             self.kvtemppath = ""
-            raise TypeError("kvtemppath with value" + str(value) + \
-                            "is of type " + str(datatype) + " not of " + \
-                            "type " + str(bytes) + " as expected!")
+            raise TypeError("kvtemppath with value " + str(value) + \
+                            " is of type " + str(datatype) + " not of " + \
+                            "type " + str(str) + " as expected!")
         return success
 
 ###############################################################################
@@ -201,14 +199,14 @@ LANL-stonix."""
     def setkvtype(self, value):
         success = True
         datatype = type(value)
-        if datatype == bytes:
+        if datatype == str:
             self.kvtype = value
         else:
             success = False
             self.kvtype = ""
-            raise TypeError("kvtype with value" + str(value) + \
-                            "is of type " + str(datatype) + " not of " + \
-                            "type " + str(bytes) + " as expected!")
+            raise TypeError("kvtype with value " + str(value) + \
+                            " is of type " + str(datatype) + " not of " + \
+                            "type " + str(str) + " as expected!")
         return success
 
 ###############################################################################
@@ -221,7 +219,7 @@ LANL-stonix."""
         else:
             success = False
             self.kvdefaultscurrenthost = False
-            raise TypeError("kvdefaultscurrenthost with value" + \
+            raise TypeError("kvdefaultscurrenthost with value " + \
                             str(value) + " is of type " + str(datatype) + \
                             " not of type " + str(bool) + \
                             " as expected!")

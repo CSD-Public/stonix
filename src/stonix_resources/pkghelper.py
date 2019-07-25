@@ -87,13 +87,15 @@ class Pkghelper(object):
         """
 
         packageMgr = None
-
+        print("inside determineMgr method\n")
         try:
 
             if self.enviro.getosfamily() == "linux":
                 currentIterator = 0
                 for key in self.osDictionary:
+                    print("Current key: ", key, "\n")
                     stringToMatch = "(.*)" + key + "(.*)"
+                    print("self.enviro.getostype().lower()", self.enviro.getostype().lower(), "\n")
                     if re.search(stringToMatch,
                                  self.enviro.getostype().lower()):
                         packageMgr = self.osDictionary[key]
