@@ -575,15 +575,15 @@ LANL-stonix."""
             self.kveditorinitialized = False
             self.kveditor = None
             self.kvreportsuccessful = False
-            datatype = type(pKVEditorName)
-            if datatype == bytes:
+            datatype = pKVEditorName
+            if isinstance(datatype, str):
                 self.kveditorName = pKVEditorName
             else:
                 success = False
                 self.kveditorName = ""
                 success = False
-                raise TypeError("pKVEditorName with value" + \
-                                str(pKVEditorName) + "is of type " + \
+                raise TypeError("pKVEditorName with value " + \
+                                str(pKVEditorName) + " is of type " + \
                                 str(datatype) + " not of " + "type " + \
                                 str(bytes) + " as expected!")
             self.kveventid = str(self.rulenumber).zfill(4) + \
