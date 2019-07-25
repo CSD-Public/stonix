@@ -17,9 +17,10 @@
 
 
 import re
-import yum, aptGet, portage, zypper, freebsd, solaris, dnf
+#import yum, aptGet, portage, zypper, freebsd, solaris, dnf
+from . import yum, aptGet, portage, zypper, freebsd, solaris, dnf
 import traceback
-from logdispatcher import LogPriority
+from .logdispatcher import LogPriority
 
 
 class Pkghelper(object):
