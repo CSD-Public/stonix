@@ -17,9 +17,9 @@
 
 
 import re
-from . import yum, aptGet, portage, zypper, freebsd, solaris, dnf
+import yum, aptGet, portage, zypper, freebsd, solaris, dnf
 import traceback
-from .logdispatcher import LogPriority
+from logdispatcher import LogPriority
 
 
 class Pkghelper(object):
@@ -87,15 +87,13 @@ class Pkghelper(object):
         """
 
         packageMgr = None
-        print("inside determineMgr method\n")
+
         try:
 
             if self.enviro.getosfamily() == "linux":
                 currentIterator = 0
                 for key in self.osDictionary:
-                    print("Current key: ", key, "\n")
                     stringToMatch = "(.*)" + key + "(.*)"
-                    print("self.enviro.getostype().lower()", self.enviro.getostype().lower(), "\n")
                     if re.search(stringToMatch,
                                  self.enviro.getostype().lower()):
                         packageMgr = self.osDictionary[key]
@@ -256,7 +254,7 @@ remove command"
 
             # parameter validation
             if package:
-                if not isinstance(package, str):
+                if not isinstance(package, basestring):
                     self.logger.log(LogPriority.DEBUG, "Parameter: package must be of type string. Got: " + str(type(package)))
                     return updatesavail
 
@@ -322,7 +320,7 @@ remove command"
         except Exception:
             self.detailedresults = traceback.format_exc()
             self.logger.log(LogPriority.ERROR, self.detailedresults)
-            raise self
+            raise(self.detailedresults)
 
     def getInstall(self):
         """return the commandline command for installing a package

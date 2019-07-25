@@ -609,7 +609,7 @@ class Environment:
 
         '''
         uname = sys.platform
-        if uname == 'linux2':
+        if uname in ('linux2', 'linux'):
             self.osfamily = 'linux'
         elif uname == 'darwin':
             self.osfamily = 'darwin'
