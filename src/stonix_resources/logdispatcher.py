@@ -668,9 +668,8 @@ class xmlReport:
         '''
         try:
             if not self.closed:
-                print(self.path, "\n")
                 f = open(self.path, 'w')
-                ET.ElementTree(self.root).write(f)
+                ET.ElementTree(self.root).write(f, encoding="unicode")
                 f.close()
                 self.closed = True
             if self.debug:
