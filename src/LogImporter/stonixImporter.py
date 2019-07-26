@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-'''
+"""
 Created on Dec 5, 2013
 
 This utility should be installed on the server that receives and processes the
@@ -8,13 +8,9 @@ STONIX reports. It processes the XML and inserts the results into a database.
 
 Script's Log File: /var/log/stoniximport.log
 
-@author: Dave Kennel
+:author: Dave Kennel
 
-@change: Breen Malmberg - 10/19/2018 - fixed a typo in the macaddress field name key
-@change: Breen Malmberg - 10/24/2018 - added try/except blocks around everything;
-            added logging method and log file and configuration on server; fixed
-            a string conversion error in loaddata method
-'''
+"""
 
 import xml.etree.ElementTree as ET
 import os
@@ -23,82 +19,108 @@ import sys
 import MySQLdb as mdb
 import traceback
 import time
-import shutil
+import re
 
 from datetime import datetime
 
 
 class ReportParser(object):
-    '''The ReportParser object is instantiated for each report file being
+    """
+    The ReportParser object is instantiated for each report file being
     parsed.
-    
-    @author: Dave Kennel
 
-
-    '''
+    """
 
     def __init__(self, path=None):
-        '''
+        """
         Constructor for the ReportParser. A path to the report to be parsed
         may be passed at the time of instantiation.
 
-        @param path: path to the file to be parsed
-        @author: Dave Kennel
-        '''
+        :param path: path to the file to be parsed
 
-        try:
+        """
 
-            self.path = path
-            self.tree = ''
-            if self.path is not None:
-		# sometimes a blank path is passed and that causes
-		# ET.parse to barf and subsequently the script to die
-		if self.path != '':
-                	self.tree = ET.parse(self.path)
+        if self.validate_path(path):
+            self.load_report_data(path)
 
-        except Exception:
-            message = traceback.format_exc()
-            log_error(message)
-            # sys.exit(1)
+    def validate_path(self, path):
+        """
+        validate a given path is ok to perform operations on -
+        namely that it:
+        1) is not blank/none
+        2) is indeed a file (as opposed to a directory)
+        3) is not empty
 
-    def openreport(self, path):
-        '''ReportParser.openReport will open a report file and load the data
-        for processing.
+        :param path: string full path to obj
+        :return: valid
+        :rtype: bool
+        """
+
+        valid = True
+
+        if not path:
+            valid = False
+            return valid
+
+        if not os.path.isfile(path):
+            valid = False
+            return valid
+
+        if not os.stat(path).st_size:
+            valid = False
+            os.remove(path)
+            return valid
+
+        return valid
+
+    def load_report_data(self, path):
+        """
+        load the data from the given path into an elementtree object,
+        for processing
 
         :param path: string; path to the report file
-        @author: Dave Kennel
+        """
 
-        '''
+        loaded = True
 
         try:
 
-            if os.path.exists(path):
+            if self.validate_path(path):
                 self.tree = ET.parse(path)
+                if self.tree:
+                    self.root = self.tree.getroot()
+            else:
+                log_error("Could not validate path: " + str(path))
+                loaded = False
 
-        except ET.ParseError, err:
-            row, column = err.position
-            log_error("Catastrophic failure")
-            log_error("error on row", row, "column", column, ":", v)
         except Exception:
             message = traceback.format_exc()
             log_error(message)
-            # sys.exit(1)
+
+        if not self.tree:
+            log_error("Failed to get tree from ET.parse(path)")
+            loaded = False
+
+        return loaded
 
     def parsereport(self):
-        '''ReportParser.parseReport() will parse the xml report and return a
+        """
+        ReportParser.parseReport() will parse the xml report and return a
         dictionary of key:value pairs for the contents of the report.
-        
-        @author: Dave Kennel
 
-
-        '''
+        """
 
         repdict = {}
         findings = {}
 
         try:
 
-            elem = self.tree.getroot()
+            elem = self.root
+
+            if not elem:
+                log_error("Could not get tree root")
+                return [repdict, findings]
+
             for child in elem:
                 if child.tag == 'metadata':
                     for grandchild in child:
@@ -112,29 +134,33 @@ class ReportParser(object):
             log_error(message)
             sys.exit(1)
 
+        if not repdict:
+            log_error("Failed to get metadata")
+
         return [repdict, findings]
 
 
 class DBhandler(object):
-    '''The dbhandler class handles the work of managing the db connection and
-    performing the insert
-    
-    @author: Dave Kennel
+    """
+    The DBhandler class handles the work of managing the database connection and
+    performing the sql insert
 
-
-    '''
+    """
 
     def __init__(self):
-        '''
-        dbhandler constructor
+        """
+        DBhandler class constructor
 
-        @author: Dave Kennel
-        '''
+        """
 
         self.con = None
+
         try:
-            self.con = mdb.Connect('localhost', 'stonixdb',
-                                   'He4vyKandi0ad', 'stonix')
+
+            self.con = mdb.Connect(host='localhost', user='stonixdb', passwd='He4vyKandi0ad', db='stonix')
+
+            if not self.con:
+                log_error("Failed to establish connection to stonix log database")
 
         except Exception:
             message = traceback.format_exc()
@@ -142,105 +168,82 @@ class DBhandler(object):
             sys.exit(1)
 
     def loaddata(self, metadata, findings):
-        '''This is the main worker of the dbhandler. It requires the metadata
+        """
+        This is the main worker of the dbhandler. It requires the metadata
         dictonary and the findings list of tuples.
 
         :param metadata: dict dictionary of metadata elements for the run
         :param findings: list of tuples containing findings for the run
-        @author: Dave Kennel
-        	    @change: Breen Malmberg - 10/19/2018 - Updated sql insert statement to
-        		reflect correct fieldname MACAddress as it appears in the database;
-        		previous incorrect entry was MacAddress
-        	    @change: Breen Malmberg - 10/24/2018 - Removed default '999999' value from
-        	    sql insert call if no rulecount present (as this was causing the
-        	    script to fail/traceback)
+        :return: success
+        :rtype: bool
 
-        '''
+        """
+
+        success = True
+
+        # we don't want to add just any xml field found in the report to the sql statement
+        valid_md_fields = ['RunTime', 'Hostname', 'UploadAddress', 'IPAddress', 'OS', 'PropertyNumber', 'SystemSerialNo', 'ChassisSerialNo', 'SystemManufacturer',
+                            'UUID', 'MACAddress', 'xmlFileName', 'STONIXversion', 'RuleCount', 'ChassisManufacturer']
+        cols = ""
+        vals = ""
+        cur = self.con.cursor()
+        vals_tuple = ()
 
         try:
 
-            if 'RuleCount' in metadata:
-                cur = self.con.cursor()
-                cur.execute("""INSERT INTO RunMetaData(RunTime, HostName,
-                UploadAddress, IPAddress, OS, PropertyNumber,
-                SystemSerialNo, ChassisSerialNo, SystemManufacturer,
-                ChassisManufacturer, UUID, MACAddress, xmlFileName, STONIXversion,
-                RuleCount)
-                VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
-                (metadata['RunTime'],
-                 metadata['Hostname'],
-                 metadata['UploadAddress'],
-                 metadata['IPAddress'],
-                 metadata['OS'],
-                 metadata['PropertyNumber'],
-                 metadata['SystemSerialNo'],
-                 metadata['ChassisSerialNo'],
-                 metadata['SystemManufacturer'],
-                 metadata['ChassisManufacturer'],
-                 metadata['UUID'],
-                 metadata['MACAddress'],
-                 metadata['xmlFileName'],
-                 metadata['STONIXversion'],
-                 metadata['RuleCount']))
-    
-                cur.execute("SELECT RowId from RunMetaData WHERE xmlFileName = %s",
-                            metadata['xmlFileName'])
-                row = cur.fetchone()
-                runid = row[0]
-    
-                for key in findings:
-                    cur.execute("""INSERT INTO RunData(MetaDataId, Rule, Finding)
-                    VALUES(%s, %s, %s)""",
-                    (runid,
-                     key,
-                     findings[key]))
-            else:
-                cur = self.con.cursor()
-                cur.execute("""INSERT INTO RunMetaData(RunTime, HostName,
-                UploadAddress, IPAddress, OS, PropertyNumber,
-                SystemSerialNo, ChassisSerialNo, SystemManufacturer,
-                ChassisManufacturer, UUID, MACAddress, xmlFileName, STONIXversion)
-                VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
-                (metadata['RunTime'],
-                 metadata['Hostname'],
-                 metadata['UploadAddress'],
-                 metadata['IPAddress'],
-                 metadata['OS'],
-                 metadata['PropertyNumber'],
-                 metadata['SystemSerialNo'],
-                 metadata['ChassisSerialNo'],
-                 metadata['SystemManufacturer'],
-                 metadata['ChassisManufacturer'],
-                 metadata['UUID'],
-                 metadata['MACAddress'],
-                 metadata['xmlFileName'],
-                 metadata['STONIXversion']))
-    
-                cur.execute("SELECT RowId from RunMetaData WHERE xmlFileName = %s",
-                            metadata['xmlFileName'])
-                row = cur.fetchone()
-                runid = row[0]
-    
-                for key in findings:
-                    # print key
-                    # print findings[key]
-                    cur.execute("""INSERT INTO RunData(MetaDataId, Rule, Finding)
-                    VALUES(%s, %s, %s)""",
-                    (runid,
-                     key,
-                     findings[key]))
+            # dynamic sql statement building, based on which values are available
+            # in report file data (from self.tree)
+            for item in metadata:
+                if item in valid_md_fields:
+                    cols += item + ", "
+                    vals_tuple += (metadata[item], )
+            if cols:
+                cols = cols[:-2]
+            for c in cols.split(','):
+                vals += "%s, "
+            if vals:
+                vals = vals[:-2]
 
-        except Exception:
-            raise
+        except:
+            log_error("Failed to dynamically build sql query")
+            log_error(traceback.format_exc())
+
+        try:
+
+            try:
+                if cols:
+                    cur.execute("""INSERT INTO RunMetaData(""" + cols + """) VALUES(""" + vals + """)""", vals_tuple)
+                else:
+                    log_error("No valid metadata columns detected")
+            except KeyError as ke:
+                log_error("Key: " + str(ke.args[0]) + " was not found in metadata")
+            except:
+                log_error(traceback.format_exc())
+
+            try:
+                if metadata['xmlFileName']:
+                    cur.execute("SELECT RowId from RunMetaData WHERE xmlFileName = %s", metadata['xmlFileName'])
+                    row = cur.fetchone()
+                    runid = row[0]
+
+                    for key in findings:
+                        cur.execute("""INSERT INTO RunData(MetaDataId, Rule, Finding) VALUES(%s, %s, %s)""", (runid, key, findings[key]))
+            except KeyError as ke:
+                log_error("Key: " + str(ke.args[0]) + " was not found in findings")
+
+        except:
+            message = traceback.format_exc()
+            log_error(message)
+            success = False
+
+        return success
 
     def close(self):
-        '''Instruct the DBhandler to close the database connection. Attempts
+        """
+        Instruct the DBhandler to close the database connection. Attempts
         to use the DBhandler object after this is called will fail.
-        
-        @author: Dave Kennel
 
-
-        '''
+        """
 
         try:
 
@@ -252,14 +255,13 @@ class DBhandler(object):
             log_error(message)
             sys.exit(1)
 
-def log_error(trace_msg):
-    '''
+def log_error(message):
+    """
+    log error messages related to this utility
 
-    :param trace_msg: string; the traceback output
-    
-    @author: Breen Malmberg
+    :param message: string; the traceback output
 
-    '''
+    """
 
     try:
 
@@ -267,29 +269,23 @@ def log_error(trace_msg):
 
         # if you alter this path, ensure that you make the
         # necessary logrotate configuration changes on the server
-        # as well
         log_path = "/var/log/stoniximport.log"
 
         f = open(log_path, 'a')
-        f.write(log_time + " - " + trace_msg + "\n\n")
+        f.write(log_time + " - " + message + "\n\n")
         f.close()
 
-        print trace_msg
-
     except Exception:
-        message = traceback.format_exc()
         print "UNABLE TO LOG ERROR. LOG METHOD FAILURE"
-        print message
+        print str(traceback.format_exc())
         sys.exit(1)
 
 def main():
-    '''Main program loop. Flow is as follows: Instantiate objects and variables.
+    """
+    Main program loop. Flow is as follows: Instantiate objects and variables.
     List report files uploaded.
-    
-    @author: Dave Kennel
 
-
-    '''
+    """
 
     try:
 
@@ -316,13 +312,34 @@ def main():
 
     for reportfile in reportfiles:
 
+        repfile = ""
+
         try:
 
+            # don't process htaccess
+            if re.search("^\.", reportfile, re.I):
+                continue
+
             repfile = os.path.join(reportdir, reportfile)
-            log_error("repfile: " + str(repfile))
-            parser.openreport(repfile)
+
+            parser.load_report_data(repfile)
+            #log_error("Could not validate file: " + str(repfile))
+            #os.remove(repfile)
+
             reportdata = parser.parsereport()
-            metadata = reportdata[0]
+
+            try:
+                metadata = reportdata[0]
+                if len(metadata) == 0:
+                    log_error("Could not retrieve metadata from file: " + str(repfile))
+                    os.remove(repfile)
+                    continue
+            except KeyError:
+                log_error(traceback.format_exc())
+                os.remove(repfile)
+                # no metadata retrievd from file. skip file and go to next one
+                continue
+
             findings = reportdata[1]
 
             uploadip = reportfile.split('-')
@@ -330,21 +347,29 @@ def main():
             metadata['UploadAddress'] = uploadip
             metadata['xmlFileName'] = reportfile
 
-            stonixdb.loaddata(metadata, findings)
+            try:
+                # failed to load data into db; try next file
+                if not stonixdb.loaddata(metadata, findings):
+                    log_error("Failed to upload metadata from file: " + str(repfile))
+                    os.remove(repfile)
+                    continue
+            except:
+                log_error(traceback.format_exc())
+                # error occurred; try next file
+                continue
 
-            if os.path.exists(repfile):
-                shutil.move(repfile, destdir)
+            if os.path.isfile(repfile):
+                if os.path.isfile(os.path.join(destdir, reportfile)):
+                    os.remove(repfile)
+                else:
+                    os.rename(repfile, os.path.join(destdir, reportfile))
+            else:
+                log_error("Given path: " + str(repfile) + " is not a file or does not exist")
 
-        except KeyError:
+        except:
             message = traceback.format_exc()
             log_error(message)
-            if os.path.exists(repfile):
-                shutil.move(repfile, destdir)
             continue
-        except Exception:
-            message = traceback.format_exc()
-            log_error(message)
-            # sys.exit(1)
 
     try:
 
