@@ -558,13 +558,19 @@ class SoftwareBuilder():
                 self.mbl.changeViewControllerTitle("stonix4mac " + str(self.APPVERSION))
 
                 #####
-                # Change the app icon to be used in the xcode build
-                pbxproj = self.tmphome + "/src/MacBuild/" + appName + "/stonix4mac.xcodeproj/project.pbxproj"
-
+                # Change the Application icon used in the xcode build
+                pbxproj = self.tmphome + "/src/MacBuild/stonix4mac/stonix4mac.xcodeproj/project.pbxproj"
                 self.mbl.regexReplace(pbxproj,
                                       r"ASSETCATALOG_COMPILER_APPICON_NAME =.*$",
                                       r"ASSETCATALOG_COMPILER_APPICON_NAME = stonix4macfisma" + self.FISMACAT + ";\n",
                                       backupname=pbxproj + ".bak")
+
+                # Change the stonix image used the privilege escalation window
+                sbpath = self.tmphome + "/src/MacBuild/stonix4mac/stonix4mac/Base.lproj/Main.storyboard"
+                self.mbl.regexReplace(sbpath,
+                                      r"stoniximage",
+                                      r"stoniximage" + self.FISMACAT,
+                                      backupname=sbpath + ".bak")
 
             os.chdir(returnDir)
         except:
