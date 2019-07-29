@@ -28,6 +28,8 @@ This class will secure samba file sharing
 fixed several doc blocks; fixed typo with license block; added
 check for CI enabled/disabled in fix() method; changed the return value
 in report() method to self.compliant
+@change: 2019/07/17 Brandon R. Gonzales - Make applicable to MacOS 10.13-10.14
+    and all Linux
 '''
 
 from __future__ import absolute_import
@@ -65,6 +67,9 @@ class SecureWinFileSharing(RuleKVEditor):
         self.sethelptext()
         self.rootrequired = True
         self.guidance = ['']
+        self.applicable = {'type': 'white',
+                           'os': {'Mac OS X': ['10.10.0', 'r', '10.14.10']},
+                           'family': ['linux']}
 
         # init CIs
         datatype = 'bool'
