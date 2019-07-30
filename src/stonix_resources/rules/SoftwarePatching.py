@@ -237,21 +237,22 @@ class SoftwarePatching(Rule):
                 crons = fhandle.readlines()
                 fhandle.close()
                 for line in crons:
-                    if re.search('^#', line):
+                    strline = line.decode('utf-8')
+                    if re.search('^#', strline):
                         continue
-                    elif re.search('yum', line) and re.search('-y update', line):
+                    elif re.search('yum', strline) and re.search('-y update', strline):
                         cronpresent = True
-                    elif re.search('emerge -[NuD]{2,3}', line) and \
-                    re.search('emerge --sync', line):
+                    elif re.search('emerge -[NuD]{2,3}', strline) and \
+                    re.search('emerge --sync', strline):
                         cronpresent = True
-                    elif re.search('zypper -n', line) and \
-                    re.search('patch|update|up|', line):
+                    elif re.search('zypper -n', strline) and \
+                    re.search('patch|update|up|', strline):
                         cronpresent = True
-                    elif re.search('apt-get update', line) and \
-                    re.search('apt-get -y upgrade', line):
+                    elif re.search('apt-get update', strline) and \
+                    re.search('apt-get -y upgrade', strline):
                         cronpresent = True
-                    elif re.search('freebsd-update fetch', line) and \
-                    re.search('freebsd-update install', line):
+                    elif re.search('freebsd-update fetch', strline) and \
+                    re.search('freebsd-update install', strline):
                         cronpresent = True
 
         except Exception:
@@ -316,7 +317,8 @@ class SoftwarePatching(Rule):
                 cmddata = cmd.stdout.readlines()
 
                 for line in cmddata:
-                    if re.search('security@redhat.com|security@suse|fedora@fedoraproject|security@centos', line) and re.search('gpg', line):
+                    strline = line.decode('utf-8')
+                    if re.search('security@redhat.com|security@suse|fedora@fedoraproject|security@centos', strline) and re.search('gpg', strline):
                         gpgok = True
 
             filelist = []
