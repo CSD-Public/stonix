@@ -183,7 +183,8 @@ class LogDispatcher (Observable):
                 if self.debug:
                     self.log(LogPriority.DEBUG,
                              ['LogDispatcher.postreport',
-                              'Upload status: ' + uploadstatus])
+                              'Upload status: ' + \
+                              uploadstatus.decode('utf-8')])
             if self.debug and not resolvable:
                 self.log(LogPriority.DEBUG,
                          ['LogDispatcher.postreport',
