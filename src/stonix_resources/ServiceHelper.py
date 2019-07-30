@@ -33,6 +33,8 @@ installed.
 @change: 2019/04/17 dwalker - added submethods getStartCommand, getStopCommand,
         getEnableCommand, getDisableCommand for use by rule when recording
         change events
+@change: 2019/07/30 Brandon R. Gonzales - Add conditional for chkconfig systems
+        to make sure that the 'service' command is available
 """
 
 import os
@@ -97,10 +99,14 @@ class ServiceHelper(object):
         systemctl_paths = ["/usr/bin/systemctl", "/bin/systemctl"]
 
         # Red Hat, CentOS, SUSE
-        if os.path.exists('/sbin/chkconfig'):
+        foundchkconfig = os.path.exists('/sbin/chkconfig')
+        foundservice = os.path.exists('/sbin/service') or \
+                       os.path.exists('/usr/sbin/service')
+        if foundchkconfig and foundservice:
             ischkconfig = True
         else:
             ischkconfig = False
+
         # Gentoo
         if os.path.exists('/sbin/rc-update'):
             isrcupdate = True
