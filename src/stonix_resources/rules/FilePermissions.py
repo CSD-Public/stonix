@@ -1191,7 +1191,7 @@ find / -xdev \( -nouser -o -nogroup \) -print
                         return 3
                 return 5
             for line in output:
-                if re.search('M', line):
+                if re.search('M', line.decode('utf-8')):
                     return 0
             return 1
         except (KeyboardInterrupt, SystemExit):
