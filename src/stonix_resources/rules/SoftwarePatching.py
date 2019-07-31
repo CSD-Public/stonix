@@ -32,7 +32,6 @@ updating automatically from a scheduled job where feasible.
         be fixed for it
 '''
 
-
 import os
 import re
 import subprocess
@@ -76,14 +75,14 @@ class SoftwarePatching(Rule):
         data = "bool"
         key = "SCHEDULEUPDATE"
         instructions = "To disable creation of a scheduled " + \
-                          "update job set the value of this " + \
-                          "setting to no or false. Doing so " + \
-                          "puts a larger burden for keeping " + \
-                          "this system up to date on the system " + \
-                          "administrators. This setting doesn't " + \
-                          "apply to some systems whose updates " + \
-                          "cannot be installed automatically " + \
-                          "for various reasons. "
+                       "update job set the value of this " + \
+                       "setting to no or false. Doing so " + \
+                       "puts a larger burden for keeping " + \
+                       "this system up to date on the system " + \
+                       "administrators. This setting doesn't " + \
+                       "apply to some systems whose updates " + \
+                       "cannot be installed automatically " + \
+                       "for various reasons. "
         default = True
 
         self.ci = self.initCi(data, key, instructions, default)
@@ -151,7 +150,7 @@ class SoftwarePatching(Rule):
             return self.compliant
 
         try:
-            
+
             self.logger.log(LogPriority.DEBUG, 'Checking patching')
             patchingcurrent = self.updated()
             self.logger.log(LogPriority.DEBUG, 'Checking cron jobs')
@@ -175,29 +174,29 @@ class SoftwarePatching(Rule):
                 updatesec = True
 
             if patchingcurrent and crons and localupdates and \
-               updatesec:
+                    updatesec:
                 self.compliant = True
                 self.currstate = 'configured'
                 self.detailedresults = 'System appears to be up to date ' + \
-                    'and all software patching settings look correct.\n'
+                                       'and all software patching settings look correct.\n'
 
             else:
                 self.detailedresults = 'The following problems were ' + \
-                    'detected with system software patching:\n'
+                                       'detected with system software patching:\n'
             if not patchingcurrent:
                 self.detailedresults = self.detailedresults + \
-                    'The system is not current on available updates.\n'
+                                       'The system is not current on available updates.\n'
             if not crons:
                 self.detailedresults = self.detailedresults + \
-                    'The system is not configured for automatic updates.\n'
+                                       'The system is not configured for automatic updates.\n'
             if not localupdates:
                 self.detailedresults = self.detailedresults + \
-                    'The system is not configured to use a local ' + \
-                    'update source.\n'
+                                       'The system is not configured to use a local ' + \
+                                       'update source.\n'
             if not updatesec:
                 self.detailedresults = self.detailedresults + \
-                    'The system is not configured to use signed updates. ' + \
-                    'Check yum.conf, all rpmrc files and all .repo files. '
+                                       'The system is not configured to use signed updates. ' + \
+                                       'Check yum.conf, all rpmrc files and all .repo files. '
 
             # Make variables available to fix()
             self.crons = crons
@@ -237,22 +236,21 @@ class SoftwarePatching(Rule):
                 crons = fhandle.readlines()
                 fhandle.close()
                 for line in crons:
-                    strline = line.decode('utf-8')
-                    if re.search('^#', strline):
+                    if re.search('^#', line):
                         continue
-                    elif re.search('yum', strline) and re.search('-y update', strline):
+                    elif re.search('yum', line) and re.search('-y update', line):
                         cronpresent = True
-                    elif re.search('emerge -[NuD]{2,3}', strline) and \
-                    re.search('emerge --sync', strline):
+                    elif re.search('emerge -[NuD]{2,3}', line) and \
+                            re.search('emerge --sync', line):
                         cronpresent = True
-                    elif re.search('zypper -n', strline) and \
-                    re.search('patch|update|up|', strline):
+                    elif re.search('zypper -n', line) and \
+                            re.search('patch|update|up|', line):
                         cronpresent = True
-                    elif re.search('apt-get update', strline) and \
-                    re.search('apt-get -y upgrade', strline):
+                    elif re.search('apt-get update', line) and \
+                            re.search('apt-get -y upgrade', line):
                         cronpresent = True
-                    elif re.search('freebsd-update fetch', strline) and \
-                    re.search('freebsd-update install', strline):
+                    elif re.search('freebsd-update fetch', line) and \
+                            re.search('freebsd-update install', line):
                         cronpresent = True
 
         except Exception:
@@ -289,7 +287,7 @@ class SoftwarePatching(Rule):
             # check plist value set local = True if correct.
         else:
             self.caveats = self.caveats + \
-                'A local update source may not be available for this platform. '
+                           'A local update source may not be available for this platform. '
         return local
 
     def updatesecurity(self):
@@ -313,12 +311,13 @@ class SoftwarePatching(Rule):
 
             if os.path.exists('/bin/rpm'):
                 rpmcmd = '/bin/rpm -q --queryformat "%{SUMMARY}\n" gpg-pubkey'
-                cmd = subprocess.Popen(rpmcmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, close_fds=True)
+                cmd = subprocess.Popen(rpmcmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True,
+                                       close_fds=True)
                 cmddata = cmd.stdout.readlines()
 
                 for line in cmddata:
-                    strline = line.decode('utf-8')
-                    if re.search('security@redhat.com|security@suse|fedora@fedoraproject|security@centos', strline) and re.search('gpg', strline):
+                    if re.search('security@redhat.com|security@suse|fedora@fedoraproject|security@centos',
+                                 line.decode('utf-8')) and re.search('gpg', line.decode('utf-8')):
                         gpgok = True
 
             filelist = []
@@ -403,18 +402,18 @@ class SoftwarePatching(Rule):
                 if not self.updatesec:
                     self.installkeys()
                 self.detailedresults = "Automated updates configured. " + \
-                "Local software update sources may need to be configured " + \
-                "manually. "
+                                       "Local software update sources may need to be configured " + \
+                                       "manually. "
             elif not self.ci.getcurrvalue():
                 self.detailedresults = str(self.ci.getkey()) + \
-                " was disabled. No action was taken. "
+                                       " was disabled. No action was taken. "
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
         except Exception as err:
             self.rulesuccess = False
             self.detailedresults = self.detailedresults + "\n" + str(err) + \
-            " - " + str(traceback.format_exc())
+                                   " - " + str(traceback.format_exc())
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("fix", self.rulesuccess,
                                    self.detailedresults)
@@ -423,7 +422,7 @@ class SoftwarePatching(Rule):
 
     def makecrons(self):
         '''This method creates cron entries for automating update installations.
-        
+
         @author: dkennel
 
 
@@ -434,26 +433,26 @@ class SoftwarePatching(Rule):
         minute = random.randrange(0, 59)
         crontime = str(minute) + " " + str(hour) + "  * * * "
         if os.path.exists('/usr/bin/yum') and \
-        os.path.exists('/usr/sbin/rhn_check'):
+                os.path.exists('/usr/sbin/rhn_check'):
             command = "/usr/sbin/rhn_check > /dev/null 2>&1 && /usr/bin/yum " \
-            + "--exclude=kernel* -y update > /dev/null 2>&1"
+                      + "--exclude=kernel* -y update > /dev/null 2>&1"
         elif os.path.exists('/usr/bin/yum'):
             command = "/usr/bin/yum --exclude=kernel* -y update > /dev/null 2>&1"
         elif os.path.exists('/usr/sbin/freebsd-update'):
             command = "/usr/sbin/freebsd-update fetch &> && " + \
-            "/usr/sbin/freebsd-update install &>"
+                      "/usr/sbin/freebsd-update install &>"
         elif os.path.exists('/usr/bin/apt-get'):
             command = '/usr/bin/apt-get update &> && ' + \
-            '/usr/bin/apt-get -y upgrade'
+                      '/usr/bin/apt-get -y upgrade'
         elif os.path.exists('/usr/bin/emerge'):
             command = '/usr/bin/emerge --sync &> && ' + \
-            '/usr/bin/emerge --NuD &> && /usr/bin/revdep-rebuild &>'
+                      '/usr/bin/emerge --NuD &> && /usr/bin/revdep-rebuild &>'
         elif os.path.exists('/usr/bin/zypper'):
             command = '/usr/bin/zypper -n up -l &>'
         cronentry = crontime + command
         self.logger.log(LogPriority.DEBUG,
                         ['SoftwarePatching.makecrons',
-                          "Cronentry: " + cronentry])
+                         "Cronentry: " + cronentry])
         try:
             crontab = open(rootcron, 'a')
             crontab.write(cronentry)
@@ -467,7 +466,7 @@ class SoftwarePatching(Rule):
     def installkeys(self):
         '''This method will install the gpg keys used by RPM based distros to
         authenticate updates.
-        
+
         @author: dkennel
 
 
@@ -498,8 +497,8 @@ class SoftwarePatching(Rule):
                 self.detailedresults = traceback.format_exc()
                 self.rulesuccess = False
                 self.logger.log(LogPriority.ERROR,
-                            ['SoftwarePatching.installkeys',
-                             self.detailedresults])
+                                ['SoftwarePatching.installkeys',
+                                 self.detailedresults])
 
     def undo(self):
         '''
@@ -512,27 +511,27 @@ class SoftwarePatching(Rule):
         try:
             event1 = self.statechglogger.getchgevent('0007001')
             if event1['startstate'] == 'notconfigured' and \
-            event1['endstate'] == 'configured':
+                    event1['endstate'] == 'configured':
                 rootcron = "/var/spool/cron/root"
                 fhandle = open(rootcron, 'r')
                 crondata = fhandle.readlines()
                 fhandle.close()
                 newcron = []
                 if os.path.exists('/usr/bin/yum') and \
-                os.path.exists('/usr/sbin/rhn_check'):
+                        os.path.exists('/usr/sbin/rhn_check'):
                     command = "/usr/sbin/rhn_check > /dev/null 2>&1 && /usr/bin/yum " \
-                    + "--exclude=kernel* -y update > /dev/null 2>&1"
+                              + "--exclude=kernel* -y update > /dev/null 2>&1"
                 elif os.path.exists('/usr/bin/yum'):
                     command = "/usr/bin/yum --exclude=kernel* -y update > /dev/null 2>&1"
                 elif os.path.exists('/usr/sbin/freebsd-update'):
                     command = "/usr/sbin/freebsd-update fetch &> && " + \
-                    "/usr/sbin/freebsd-update install &>"
+                              "/usr/sbin/freebsd-update install &>"
                 elif os.path.exists('/usr/bin/apt-get'):
                     command = '/usr/bin/apt-get update &> && ' + \
-                    '/usr/bin/apt-get -y upgrade'
+                              '/usr/bin/apt-get -y upgrade'
                 elif os.path.exists('/usr/bin/emerge'):
                     command = '/usr/bin/emerge --sync &> && ' + \
-                    '/usr/bin/emerge --NuD &> && /usr/bin/revdep-rebuild &>'
+                              '/usr/bin/emerge --NuD &> && /usr/bin/revdep-rebuild &>'
                 elif os.path.exists('/usr/bin/zypper'):
                     command = '/usr/bin/zypper -n up -l &>'
                 else:
@@ -558,8 +557,8 @@ class SoftwarePatching(Rule):
             self.detailedresults = traceback.format_exc()
             self.rulesuccess = False
             self.logger.log(LogPriority.ERROR,
-                        ['SoftwarePatching.undo',
-                         self.detailedresults])
+                            ['SoftwarePatching.undo',
+                             self.detailedresults])
         self.report()
         if self.currstate == self.targetstate:
             self.detailedresults = '''SoftwarePatching: Some changes successfully reverted'''
