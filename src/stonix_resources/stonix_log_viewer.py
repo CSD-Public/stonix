@@ -30,7 +30,7 @@ from .environment import Environment
 
 try:
     _fromUtf8 = QString.fromUtf8
-except AttributeError:
+except (AttributeError, NameError):
     def _fromUtf8(s):
         return s
 
