@@ -498,8 +498,8 @@ def getOctalPerms(filepath):
 
         if stat.S_ISREG(rawresult) or stat.S_ISDIR(rawresult):
             octperms = oct(stat.S_IMODE(rawresult))
-            while len(octperms) > 3:
-                    octperms = octperms[1:]
+            if len(octperms) > 2:
+                    octperms = octperms[2:]
 
     except Exception:
         raise

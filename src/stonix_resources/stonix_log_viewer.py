@@ -8,19 +8,24 @@
 
 import os
 
-# compatibility between pyqt4 and pyqt5
+# compatibility between pyqt4 and pyqt5 (python3 versions)
 try:
     from PyQt5 import QtCore, QtGui
     from PyQt5.QtWidgets import QWidget, QSizePolicy, QApplication,\
         QDialog, QVBoxLayout, QHBoxLayout, QTextBrowser, QTextEdit,\
         QLabel, QPushButton, QLayout
-    from PyQt5.QtCore.QMetaType import QString, QVariant
+    from PyQt5.QtCore import QVariant
 except:
     from PyQt4 import QtCore, QtGui
     from PyQt4.QtGui import QWidget, QSizePolicy, QApplication, \
         QDialog, QVBoxLayout, QHBoxLayout, QTextBrowser, QTextEdit, \
         QLabel, QPushButton, QLayout
-    from PyQt4.QtCore import QString, QVariant
+    try:
+        from PyQt4.QtCore import QString
+    except ImportError:
+        pass
+    from PyQt4.QtCore import QVariant
+
 from .environment import Environment
 
 try:
