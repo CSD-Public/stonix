@@ -254,9 +254,9 @@ class DisableThumbnailers(Rule):
 
         success = True
 
-        if not os.path.exists("/etc/dconf/db/local.d/locks"):
+        if not os.path.isdir("/etc/dconf/db/local.d/locks"):
             try:
-                os.makedirs("/etc/dconf/db/local.d/locks")
+                os.makedirs("/etc/dconf/db/local.d/locks", 0o755)
             except Exception:
                 pass
         try:
