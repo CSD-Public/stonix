@@ -967,19 +967,37 @@ def createFile(path, logger):
 
     try:
 
-        pathdir, _ = os.path.split(path)
-        if not os.path.exists(pathdir):
-            logger.log(LogPriority.DEBUG, "Parent directory of file does not exist. Creating parent directory(ies)...")
-            os.makedirs(pathdir, 0o755)
+        if not path:
+            logger.log(LogPriority.DEBUG, "Given path is blank. Nothing to create.")
+            retval = False
+            return retval
+
         if os.path.exists(path):
             logger.log(LogPriority.DEBUG, "Path already exists. Will not overwrite it.")
             retval = False
-        else:
+            return retval
+
+        parentdir, _ = os.path.split(path)
+
+        if not parentdir:
+            logger.log(LogPriority.DEBUG, "Got blank path for parent directory!")
+            retval = False
+            return retval
+        elif not os.path.isdir(parentdir):
+            logger.log(LogPriority.DEBUG, "Parent directory of file does not exist. Creating parent directory(ies)...")
+            os.makedirs(parentdir, 0o755)
+
+        try:
             open(path, 'a').close()
+        except Exception as err:
+            logger.log(LogPriority.DEBUG, str(err))
+            retval = False
 
     except IOError as errmsg:
-        logger.log(LogPriority.WARNING, errmsg)
+        logger.log(LogPriority.DEBUG, errmsg)
         retval = False
+    except:
+        raise
     return retval
 
 def findUserLoggedIn(logger):
