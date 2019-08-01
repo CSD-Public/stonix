@@ -36,6 +36,7 @@ from ..CommandHelper import CommandHelper
 from ..rule import Rule
 from ..logdispatcher import LogPriority
 from ..stonixutilityfunctions import iterate, writeFile, readFile, createFile, checkPerms, setPerms, resetsecon
+from ..localize import ALLOWNETS
 
 
 class ConfigureLinuxFirewall(Rule):
@@ -383,6 +384,16 @@ CONFIGURELINUXFIREWALL to False.'''
                                     event = {"eventtype": "commandstring",
                                              "command": undocmd}
                                     self.statechglogger.recordchgevent(myid, event)
+
+                    # add rule to allow ssh connections through from specified subnet
+                    ufw_ssh_allow_cmd = "/usr/sbin/ufw allow from ALLOWNET to any port 22"
+                    if ALLOWNETS:
+                        for an in ALLOWNETS:
+                            self.cmdhelper.executeCommand(ufw_ssh_allow_cmd.replace("ALLOWNET", an))
+                            retcode = self.cmdhelper.getReturnCode()
+                            if retcode != 0:
+                                errmsg = self.cmdhelper.getErrorString()
+                                self.logger.log(LogPriority.DEBUG, errmsg)
             else:
                 #following portion is mainly for debian and opensuse systems only
 

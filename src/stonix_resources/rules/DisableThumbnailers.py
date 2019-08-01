@@ -38,6 +38,7 @@ from ..rule import Rule
 from ..logdispatcher import LogPriority
 from ..CommandHelper import CommandHelper
 from ..pkghelper import Pkghelper
+from ..stonixutilityfunctions import iterate
 
 
 class DisableThumbnailers(Rule):
@@ -237,9 +238,31 @@ class DisableThumbnailers(Rule):
         :return: void
         """
 
-        if os.path.exists("/etc/dconf/db/local.d/locks"):
+        success = True
+
+        if not os.path.exists("/etc/dconf/db/local.d/locks"):
+            try:
+                os.makedirs("/etc/dconf/db/local.d/locks", 0755)
+            except Exception:
+                pass
+        try:
+
             f = open(self.lockfile, "w")
             f.write(self.locksetting)
             f.close()
-            os.chmod(self.lockfile, 0644)
+            os.chmod(self.lockfile, 0o644)
             os.chown(self.lockfile, 0, 0)
+
+        except Exception:
+            success = False
+
+        if success:
+            self.iditerator += 1
+            myid = iterate(self.iditerator, self.rulenumber)
+            event = {"eventtype": "creation",
+                     "filepath": self.lockfile}
+            self.statechglogger.recordchgevent(myid, event)
+        else:
+            self.logger.log(LogPriority.DEBUG, "Failed to create thumbnailers lock file")
+
+        return success
