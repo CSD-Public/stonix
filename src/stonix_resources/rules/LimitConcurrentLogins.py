@@ -241,7 +241,7 @@ class LimitConcurrentLogins(Rule):
             self.userloginsvalue = "10"
             self.logger.log(LogPriority.DEBUG, "An invalid value was entered for MAXLOGINS. Please enter a single, positive integer. Resetting to default value of 10...")
 
-        correctconfig = "^\s*\*\s+\hard\s+maxlogins\s+" + self.userloginsvalue
+        correctconfig = "^\s*\*\s+hard\s+maxlogins\s+" + self.userloginsvalue
 
         try:
 
