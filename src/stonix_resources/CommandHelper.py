@@ -446,6 +446,8 @@ class CommandHelper(object):
         initialization of the variable 'success' to True which removed the need for several
         redundant instances of setting it to True when there were also already instances of
         it being set to False (one or the other; both are not needed explicitly)
+@change: Brandon R. Gonzales - 05/08/2019 - Change commandtype conditional to
+        check if the command type is 'str' instead of 'bytes'
 
         """
 
@@ -471,7 +473,7 @@ class CommandHelper(object):
 
             commandtype = type(command)
 
-            if (commandtype is bytes):
+            if (commandtype is str):
                 self.shell = True
                 if len(command.strip()) > 0:
                     self.commandblank = False
