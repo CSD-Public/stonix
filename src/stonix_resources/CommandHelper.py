@@ -446,7 +446,7 @@ class CommandHelper(object):
         initialization of the variable 'success' to True which removed the need for several
         redundant instances of setting it to True when there were also already instances of
         it being set to False (one or the other; both are not needed explicitly)
-@change: Brandon R. Gonzales - 05/08/2019 - Change commandtype conditional to
+@change: Brandon R. Gonzales - 05/08/2019 - Change commandtype conditionals to
         check if the command type is 'str' instead of 'bytes'
 
         """
@@ -489,7 +489,7 @@ class CommandHelper(object):
                 for commandlistitem in command:
                     commandlitype = type(commandlistitem)
 
-                    if (commandlitype is bytes):
+                    if (commandlitype is str):
                         self.command.append(commandlistitem.strip())
                         if len(commandlistitem.strip()) > 0:
                             self.commandblank = False
@@ -532,7 +532,6 @@ class CommandHelper(object):
         if (logpriority is None):
             self.logpriority = LogPriority.DEBUG
         elif isinstance(logpriority, str):
-        # elif (logprioritytype is bytes):
             self.logpriority = logpriority
         else:
             self.logpriority = LogPriority.DEBUG
