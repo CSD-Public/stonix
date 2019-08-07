@@ -118,6 +118,24 @@ installed at /usr/local/stonix/stonixdb.sql
 %attr(0750,root,apache) /var/www/html/stonix/results.php
 
 %changelog
+* Thu Jun 27 2019 Derek Walker <dwalker@lanl.gov> - 0.9.32
+- Docstrings in multiple rules updated to python 3 REST format
+- New icons and splash screen for mac package
+- Fixed - with DisablIPV6 and NoCoreDumps where ipv6 directives weren't being recognized as legit keys after disabling it with sysctl command
+- Fixed - issue with kveditor class that handles config files returning None value and stonix not handling properly.
+- Fixed - issue with ConfigureAppleSoftwareUpdate.  Now properly configures for both user and root
+- Fixed - EnableKernelAuditing: Fedora29 changed the location/name of their configuration file for this functionality.
+- Updated - ScheduleStonix now has a report only in userspace option for the red network
+
+* Thu Jun 6 2019 Derek Walker <dwalker@lanl.gov> - 0.9.31
+- Preparation for code base change from python 2 to 3
+- Compatibility for the NSN (non secure network)
+- Fixed - Alias name parsing issue in our service helper class
+- Fixed - ConfigureProcessAccounting bug, non compliant after fix
+- Fixed - traceback in ConfigureLANLLDAP
+- Updated SSH to support smart card only authentication
+- Fixed - DisableThumbnailers to disallow users from changing values after setting them
+
 * Thu Jan 10 2019 Breen Malmberg <bemalmbe@lanl.gov> - 0.9.26
 - Fixed - Unit test for MuteMic was failing on all operating systems
 - Fixed - Unit test for SecureIPV6 was failing on RHEL 7
