@@ -37,6 +37,7 @@ With this rule, you can:
 @change: Brandon R. Gonzales - 6/19/2019 - Set up cupsd configurations to be
         handled by a single kveditor object rather than two
 @change: 2019/07/17 Brandon R. Gonzales - Make applicable to MacOS 10.13-10.14
+@change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
 '''
 
 
@@ -85,7 +86,7 @@ class SecureCUPS(Rule):
         self.rootrequired = True
         self.guidance = ['CCE 4420-6', 'CCE 4407-3']
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.10.0', 'r', '10.14.10']},
+                           'os': {'Mac OS X': ['10.15', 'r', '10.15.10']},
                            'family': ['linux']}
 
         # init CIs

@@ -32,6 +32,7 @@ well-managed web server is recommended.
 @change: 2018/02/16 bgonz12 - Fix function call to disableService
 @change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
+@change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
 '''
 
 
@@ -68,7 +69,7 @@ class DisableWebSharing(Rule):
         self.rootrequired = True
         self.guidance = ['CIS 1.4.14.6']
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.12', 'r', '10.14.10']}}
+                           'os': {'Mac OS X': ['10.15', 'r', '10.15.10']}}
         self.logger = logger
         # set up CIs
         datatype = 'bool'

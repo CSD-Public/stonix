@@ -28,6 +28,7 @@ This is not a mandatory rule
         checking of config file(s); changed mandatory flag to False
 @change: 10/09/2018 - Breen Malmberg - made applicable to mojave 10.14
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
+@change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
 '''
 
 
@@ -67,7 +68,7 @@ class LimitConcurrentLogins(Rule):
         self.mandatory = False
         self.applicable = {'type': 'white',
                            'family': ['linux'],
-                            'os': {'Mac OS X': ['10.12', 'r', '10.14.10']}}
+                            'os': {'Mac OS X': ['10.15', 'r', '10.15.10']}}
 
         self.conffilesdir = "/etc/security/limits.d"
         self.sethelptext()

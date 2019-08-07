@@ -24,6 +24,7 @@ Created on Feb 10, 2015
 @change: 2017/03/30 dkennel Setting this to FISMA high until Apple fixes bugs
 @change: 2017/08/28 ekkehard - Added self.sethelptext()
 @change: 2019/07/17 Brandon R. Gonzales - Make applicable to MacOS 10.13-10.14
+@change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
 '''
 
 
@@ -58,7 +59,7 @@ class ConfigurePasswordPolicy(Rule):
         self.sethelptext()
         self.rootrequired = True
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.10.0', 'r', '10.14.10']}}
+                           'os': {'Mac OS X': ['10.15.0', 'r', '10.15.10']}}
         self.fismacat = FISMACAT
         datatype = "bool"
         key = "PWPOLICY"

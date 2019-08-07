@@ -41,6 +41,7 @@ which conflicted with DisableIPV6 and NoCoreDumps which expected 644.
 @change: 2019/06/05 dwalker - refactored linux portion of rule to be
     consistent with other rules that handle sysctl and to properly
     handle sysctl by writing to /etc/sysctl.conf and also using command
+@change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
 """
 
 
@@ -77,7 +78,7 @@ class NoCoreDumps(Rule):
         self.guidance = ["NSA 2.2.4.2"]
         self.applicable = {'type': 'white',
                            'family': ['linux'],
-                           'os': {'Mac OS X': ['10.12', 'r', '10.14.10']}}
+                           'os': {'Mac OS X': ['10.15', 'r', '10.15.10']}}
 
         datatype = 'bool'
         key = 'NOCOREDUMPS'

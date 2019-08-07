@@ -40,6 +40,7 @@ Created on Feb 19, 2013
 @change: 2018/06/08 Ekkehard - make eligible for macOS Mojave 10.14
 @change: 2019/06/11 dwalker - updated rule to properly record events, created sub
     methods for linux and mac.
+@change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
 """
 
 
@@ -78,7 +79,7 @@ class SecureSSH(Rule):
         self.sethelptext()
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.11', 'r', '10.14.10']}}
+                           'os': {'Mac OS X': ['10.15', 'r', '10.15.10']}}
         datatype = 'bool'
         key = 'SECURESSH'
         instructions = "To disable this rule set the value " + \
