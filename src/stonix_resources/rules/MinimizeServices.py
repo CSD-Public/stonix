@@ -300,6 +300,7 @@ class MinimizeServices(Rule):
                                'debian-fixup.service',
                                'dbus.service', 'dbus',
                                'dbus-daemon.service',
+                               'dbus-broker.service',
                                'display-manager.service',
                                'dm-event.service',
                                'dmraid-activation.service',
