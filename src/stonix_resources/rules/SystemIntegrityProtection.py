@@ -51,7 +51,7 @@ class SystemIntegrityProtection(Rule):
         self.rootrequired = True
         self.guidance = []
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.15.0', 'r', '10.15.10']}}
+                           'os': {'Mac OS X': ['10.15', 'r', '10.15.10']}}
         self.sipobject = SystemIntegrityProtectionObject(self.logdispatch)
         self.auditonly = True
 

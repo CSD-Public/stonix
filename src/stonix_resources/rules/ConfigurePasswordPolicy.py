@@ -59,7 +59,7 @@ class ConfigurePasswordPolicy(Rule):
         self.sethelptext()
         self.rootrequired = True
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.15.0', 'r', '10.15.10']}}
+                           'os': {'Mac OS X': ['10.15', 'r', '10.15.10']}}
         self.fismacat = FISMACAT
         datatype = "bool"
         key = "PWPOLICY"
