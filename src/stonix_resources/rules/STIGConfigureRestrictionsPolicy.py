@@ -46,7 +46,7 @@ class STIGConfigureRestrictionsPolicy(Rule):
         self.formatDetailedResults("initialize")
         self.rootrequired = True
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.15.0', 'r', '10.15.10']},
+                           'os': {'Mac OS X': ['10.15', 'r', '10.15.10']},
                            'fisma': 'high'}
         datatype = "bool"
         key = "RESTRICTIONS"
