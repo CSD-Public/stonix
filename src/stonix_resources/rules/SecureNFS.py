@@ -34,6 +34,7 @@ return self.rulesuccess. self.rulesuccess will now return instead of success.
 @change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
 @change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
+@change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
 '''
 
 
@@ -62,7 +63,7 @@ class SecureNFS(Rule):
         self.sethelptext()
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.12', 'r', '10.14.10']}}
+                           'os': {'Mac OS X': ['10.15', 'r', '10.15.10']}}
         self.guidance = ["NSA(3.13.4)", "cce-4241-6", "cce-4465-1",
                          "cce-4559-1", "cce-4015-4", "cce-3667-3",
                          "cce-4310-9", "cce-4438-8", "cce-3579-0"]

@@ -22,6 +22,7 @@ Created on Aug 25, 2016
 @change: 2017/03/30 dkennel Marked as FISMA high
 @change: 2017/07/17 ekkehard - make eligible for macOS High Sierra 10.13
 @change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
+@change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
 '''
 
 import traceback
@@ -48,7 +49,7 @@ class STIGConfigureLoginWindowPolicy(Rule):
         self.sethelptext()
         self.rootrequired = True
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.10.0', 'r', '10.14.10']},
+                           'os': {'Mac OS X': ['10.15.0', 'r', '10.15.10']},
                            'fisma': 'high'}
         datatype = "bool"
         key = "STIGLOGINCONFIG"

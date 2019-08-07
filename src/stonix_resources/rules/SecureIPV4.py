@@ -42,6 +42,7 @@ variable.
     consistent with other rules that handle sysctl and to properly
     handle sysctl by writing to /etc/sysctl.conf and also using command
 @change: 2019/06/26 Brandon R. Gonzales - Fix MacOS CI logic in fix()
+@change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
 '''
 
 from ..stonixutilityfunctions import resetsecon, iterate, readFile, writeFile
@@ -77,7 +78,7 @@ class SecureIPV4(Rule):
         self.guidance = ["NSA 2.5.1.1", "NSA 2.5.1.2"]
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.12', 'r', '10.14.10']}}
+                           'os': {'Mac OS X': ['10.15', 'r', '10.15.10']}}
         self.iditerator = 0
         self.ch = CommandHelper(self.logger)
 

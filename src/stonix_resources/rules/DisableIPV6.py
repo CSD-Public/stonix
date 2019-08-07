@@ -37,6 +37,7 @@ Created on Apr 9, 2013
 @change: 2019/06/05 dwalker - refactored linux portion of rule to be
     consistent with other rules that handle sysctl and to properly
     handle sysctl by writing to /etc/sysctl.conf and also using command
+@change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
 '''
 
 from ..stonixutilityfunctions import iterate, setPerms, checkPerms, writeFile
@@ -64,7 +65,7 @@ class DisableIPV6(Rule):
         self.guidance = ["NSA 2.5.3.1"]
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.11', 'r', '10.14.10']}}
+                           'os': {'Mac OS X': ['10.15', 'r', '10.15.10']}}
 
         # configuration item instantiation
         datatype = 'bool'

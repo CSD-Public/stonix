@@ -55,6 +55,7 @@ Created on Jul 11, 2013
 @change: 2019/1/28 Brandon R. Gonzales - Move rule enabled ci check from the
     beginning of fix() to the beginning of the fix linux path
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
+@change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
 '''
 
 from ..stonixutilityfunctions import createFile
@@ -82,7 +83,7 @@ class ConfigureScreenLocking(RuleKVEditor):
         self.rootrequired = False
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.12', 'r', '10.14.10']}}
+                           'os': {'Mac OS X': ['10.15', 'r', '10.15.10']}}
         self.effectiveUserID = self.environ.geteuid()
         self.sethelptext()
         self.formatDetailedResults("initialize")

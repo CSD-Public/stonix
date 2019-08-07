@@ -35,6 +35,7 @@ per day
         within ServiceHelper and SHlaunchd)
 @change: 2017/10/23 Roy Nielsen - change to new service helper interface
 @change: 2017/11/27 Breen Malmberg removed print statements
+@change: 2019/08/07 ekkehard - make rule for darwin family
 """
 
 
@@ -88,8 +89,7 @@ class ScheduleStonix(Rule):
         self.rulesuccess = True
         self.guidance = ['']
         self.applicable = {'type': 'white',
-                           'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', '+']}}
+                           'family': ['darwin', 'linux', 'solaris', 'freebsd']}
 
         datatype = "int"
         keyfd = "FIXDAY"

@@ -40,6 +40,7 @@ parts of the code as well
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
 @change: 2019/08/07 Brandon R. Gonzales - Improve logging; Change expected
         permissions to be in octal format.
+@change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
 '''
 
 
@@ -85,7 +86,7 @@ class SecureATCRON(Rule):
                          'CCE-4230-9', 'CCE-4445-3']
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.12', 'r', '10.14.10']}}
+                           'os': {'Mac OS X': ['10.15', 'r', '10.15.10']}}
 
         # init CIs
         datatype = 'bool'

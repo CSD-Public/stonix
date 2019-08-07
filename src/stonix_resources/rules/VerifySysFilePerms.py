@@ -24,6 +24,7 @@ packages and their associated files as well as the file contents.
 @author: Breen Malmberg
 @change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
+@change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
 '''
 
 
@@ -70,7 +71,7 @@ class VerifySysFilePerms(Rule):
         # ability to check and fix disk permissions, via command line,
         # in os x 10.12 and later
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.12', 'r', '10.11.10']}}
+                           'os': {'Mac OS X': ['10.15', 'r', '10.15.10']}}
 
         self.findsysvol = '/usr/sbin/bless --info --getBoot'
         self.hasrun = False

@@ -48,6 +48,7 @@ configuration changes to the avahi service
 @change: 12/05/2017 Breen Malmberg - changed moniker to full name for author entries
 @change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
+@change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
 '''
 
 
@@ -97,7 +98,7 @@ class SecureMDNS(Rule):
                          'CCE 4341-4', 'CCE 4358-8', 'CCE-RHEL7-CCE-TBD 2.5.2']
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.12', 'r', '10.14.10']}}
+                           'os': {'Mac OS X': ['10.15', 'r', '10.15.10']}}
 
 # set up command helper object
         self.ch = CommandHelper(self.logger)
