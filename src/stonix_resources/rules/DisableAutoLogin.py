@@ -32,6 +32,7 @@ the system.  This rule is specific to Mac systems.
 @change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
 @change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
+@change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
 '''
 
 import re
@@ -57,7 +58,7 @@ class DisableAutoLogin(RuleKVEditor):
         self.rulename = 'DisableAutoLogin'
         self.formatDetailedResults("initialize")
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.12', 'r', '10.14.10']}}
+                           'os': {'Mac OS X': ['10.15', 'r', '10.15.10']}}
         self.mandatory = True
         self.rootrequired = True
         self.files = {"kcpassword": {"path": "/etc/kcpassword",

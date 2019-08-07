@@ -25,6 +25,7 @@ dictionary
 @change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
 @change: 2017/07/26 ekkehard - make it an audit only rule
 @change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
+@change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
 '''
 
 import traceback
@@ -50,7 +51,7 @@ class SystemIntegrityProtection(Rule):
         self.rootrequired = True
         self.guidance = []
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.11.0', 'r', '10.14.10']}}
+                           'os': {'Mac OS X': ['10.15.0', 'r', '10.15.10']}}
         self.sipobject = SystemIntegrityProtectionObject(self.logdispatch)
         self.auditonly = True
 

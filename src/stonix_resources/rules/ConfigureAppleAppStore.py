@@ -22,6 +22,7 @@ dictionary
 @author: Ekkehard J. Koch
 @change: 2018/08/08 Original Implementation
 @change: 2019/03/12 Updated
+@change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
 """
 
 
@@ -59,7 +60,7 @@ dictionary"""
         self.guidance = ['CCE 14813-0', 'CCE 14914-6', 'CCE 4218-4',
                          'CCE 14440-2']
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.14', 'r', '10.14.10']}}
+                           'os': {'Mac OS X': ['10.15', 'r', '10.15.10']}}
 
         if self.environ.getostype() == "Mac OS X":
             self.addKVEditor("EnableAutomaticAppUpdate",

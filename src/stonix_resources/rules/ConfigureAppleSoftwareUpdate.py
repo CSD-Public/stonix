@@ -42,6 +42,7 @@ dictionary
 @change: 2019/03/12 Ekkehard - make eligible for macOS Sierra 10.12+
 @change: 2019/06/26 Brandon R. Gonzales - Stop user from reporting on
             ConfigureCatalogueURL as it can only be fixed by root
+@change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
 """
 
 
@@ -115,7 +116,7 @@ class ConfigureAppleSoftwareUpdate(RuleKVEditor):
         self.guidance = ['CCE 14813-0', 'CCE 14914-6', 'CCE 4218-4',
                          'CCE 14440-2']
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.12', 'r', '10.14.10']}}
+                           'os': {'Mac OS X': ['10.15', 'r', '10.15.10']}}
 
         if self.environ.getostype() == "Mac OS X":
             if self.environ.geteuid() == 0:

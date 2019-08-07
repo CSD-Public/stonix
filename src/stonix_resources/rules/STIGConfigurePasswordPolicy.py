@@ -28,6 +28,7 @@ Created on Aug 23, 2016
             different identifier for security profile on 10.13. Added
             testing paths in setvars method which are commented out. DO
             NOT DELETE THIS SECTION OF COMMENTED CODE.
+@change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
 '''
 
 
@@ -58,7 +59,7 @@ class STIGConfigurePasswordPolicy(Rule):
         self.sethelptext()
         self.rootrequired = True
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.12.0', 'r', '10.14.10']},
+                           'os': {'Mac OS X': ['10.15.0', 'r', '10.15.10']},
                            'fisma': 'high'}
         datatype = "bool"
         key = "STIGPWPOLICY"
