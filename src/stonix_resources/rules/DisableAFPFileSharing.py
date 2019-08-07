@@ -79,7 +79,7 @@ class DisableAFPFileSharing(RuleKVEditor):
         self.guidance = ['CIS 1.4.14.3']
 
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.15.0', 'r', '10.15.10']}}
+                           'os': {'Mac OS X': ['10.15', 'r', '10.15.10']}}
 
         if self.environ.getostype() == "Mac OS X":
             self.addKVEditor("DisableAFPFileSharing",
