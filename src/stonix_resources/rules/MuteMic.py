@@ -39,6 +39,7 @@ that occurs when system sound card(s) is missing firmware
     state change events, removed overriding of undo method, implemented pre-
     written methods for reading file, writing to file, and creating file.
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
+@change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
 '''
 
 import traceback
@@ -81,7 +82,7 @@ class MuteMic(Rule):
         self.guidance = ['CIS']
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.12', 'r', '10.14.10']}}
+                           'os': {'Mac OS X': ['10.15', 'r', '10.15.10']}}
         self.root = True
         if self.environ.geteuid() != 0:
             self.root = False

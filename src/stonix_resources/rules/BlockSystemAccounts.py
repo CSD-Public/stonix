@@ -42,6 +42,7 @@ mac os x functionality; refactored code for readability; fixed pep8 violations
 @change: 2018/06/08 Ekkehard - make eligible for macOS Mojave 10.14
 @change: 2018/10/50 Breen Malmberg - refactor of rule
 @change: 2019/03/12 Ekkehard - make eligible for macOS Sierra 10.12+
+@change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
 """
 
 
@@ -87,7 +88,7 @@ shells set the value of this to False, or No."""
         default = True
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.12', 'r', '10.14.10']}}
+                           'os': {'Mac OS X': ['10.15', 'r', '10.15.10']}}
         self.ci = self.initCi(datatype, key, instructions,
                                                default)
         self.guidance = ['CIS', 'NSA(2.3.1.4)', 'cce-3987-5', '4525-2',

@@ -27,6 +27,7 @@ This class audits for passwordless ssh keys on the system.
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
 @change: 2019/06/13 Breen Malmberg - updated documentation to reST format;
         added missing documentation
+@change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
 """
 
 
@@ -70,7 +71,7 @@ class AuditSSHKeys(Rule):
         self.guidance = ['LANL CAP', 'OpenSSH Security Best Practices']
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.12', 'r', '10.14.10']}}
+                           'os': {'Mac OS X': ['10.15', 'r', '10.15.10']}}
         datatype = 'bool'
         key = 'AUDITSSHKEYS'
         instructions = "To prevent this rule from modifying permissions on ssh keys, set the value of AUDITSSHKEYS to False."

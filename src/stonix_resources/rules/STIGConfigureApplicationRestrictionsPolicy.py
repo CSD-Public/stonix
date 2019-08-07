@@ -20,6 +20,7 @@ Created on Oct 26, 2016
 
 @author: dwalker
 @change: 2017/03/30 dkennel Marked as FISMA high
+@change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
 '''
 
 import traceback
@@ -44,7 +45,7 @@ class STIGConfigureApplicationRestrictionsPolicy(Rule):
         self.sethelptext()
         self.rootrequired = True
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.11.0', 'r', '10.11.6']},
+                           'os': {'Mac OS X': ['10.15', 'r', '10.15.10']},
                            'fisma': 'high'}
         datatype = "bool"
         key = "APPRESTRICTIONS"

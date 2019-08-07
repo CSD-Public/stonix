@@ -41,6 +41,7 @@ Install and configure warning banners, to be displayed at startup.
 @change: 3/12/2019 dwalker - hotfix to fixlinux method to correct all available
     desktop managers if installed.  Previous implementation was only correcting
     the first desktop manager found.
+@change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
 """
 
 
@@ -87,7 +88,7 @@ class InstallBanners(RuleKVEditor):
         self.iditerator = 0
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.12', 'r', '10.14.10']}}
+                           'os': {'Mac OS X': ['10.15', 'r', '10.15.10']}}
         # init CIs
         datatype = 'bool'
         key = 'INSTALLBANNERS'

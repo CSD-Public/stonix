@@ -30,6 +30,7 @@ check for CI enabled/disabled in fix() method; changed the return value
 in report() method to self.compliant
 @change: 2019/07/17 Brandon R. Gonzales - Make applicable to MacOS 10.13-10.14
     and all Linux
+@change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
 '''
 
 
@@ -68,7 +69,7 @@ class SecureWinFileSharing(RuleKVEditor):
         self.rootrequired = True
         self.guidance = ['']
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.10.0', 'r', '10.14.10']},
+                           'os': {'Mac OS X': ['10.15.0', 'r', '10.15.10']},
                            'family': ['linux']}
 
         # init CIs

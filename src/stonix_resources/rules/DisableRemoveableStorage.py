@@ -43,6 +43,7 @@ OS X Mavericks not Mountain Lion, Lion, etc.
     disablement of removable storage.  Cleaned up code
 @change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
+@change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
 '''
 
 
@@ -86,7 +87,7 @@ class DisableRemoveableStorage(Rule):
         self.guidance = ['NSA 2.2.2.2, CIS, NSA(2.2.2.2), cce-4006-3,4173-1']
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.12', 'r', '10.14.10']},
+                           'os': {'Mac OS X': ['10.15', 'r', '10.15.10']},
                            'fisma': 'high'}
 
         # configuration item instantiation
