@@ -31,6 +31,9 @@
                         caller of command helper
 @change: 2018/03/29 Breen Malmberg fixed an instance where a variable (commandaborted)
         was not properly getting set to True when a command would abort due to timeout;
+@change: 2019/08/07 Brandon R. Gonzales - Command output and error output are
+        now being decoded to 'utf-8', and are being treated as 'str' types
+        instead of 'bytes' types
         
 """
 
@@ -616,8 +619,8 @@ class CommandHelper(object):
 
                     if commandobj is not None:
                         outs, errs = commandobj.communicate()
-                        outlines = str(outs).splitlines()
-                        errlines = str(errs).splitlines()
+                        outlines = str(outs.decode('utf-8')).splitlines()
+                        errlines = str(errs.decode('utf-8')).splitlines()
                         outstr = str(outs)
 
                 if commandobj is not None:

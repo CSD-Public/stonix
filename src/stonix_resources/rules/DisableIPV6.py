@@ -38,6 +38,8 @@ Created on Apr 9, 2013
     consistent with other rules that handle sysctl and to properly
     handle sysctl by writing to /etc/sysctl.conf and also using command
 @change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
+@change: 2019/08/07 Brandon R. Gonzales - Improve logging in linux report;
+        Remove/cleanup unused lines of code
 '''
 
 from ..stonixutilityfunctions import iterate, setPerms, checkPerms, writeFile
@@ -106,8 +108,6 @@ class DisableIPV6(Rule):
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
 
-###############################################################################
-
     def fix(self):
         try:
             if not self.ci.getcurrvalue():
@@ -137,8 +137,6 @@ class DisableIPV6(Rule):
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.rulesuccess
 
-###############################################################################
-
     def reportMac(self):
         self.ifaces = []
         compliant = True
@@ -167,8 +165,6 @@ class DisableIPV6(Rule):
                         compliant = False
         return compliant
 
-##############################################################################
-
     def fixMac(self):
         if self.ifaces:
             for item in self.ifaces:
@@ -183,8 +179,6 @@ class DisableIPV6(Rule):
                                          'setv6automatic', item]}
                     self.statechglogger.recordchgevent(myid, event)
         return self.rulesuccess
-
-##############################################################################
 
     def reportFree(self):
         compliant = True
@@ -250,8 +244,6 @@ class DisableIPV6(Rule):
                 if not re.search("(.)*IFDISABLED(.)*", line):
                     compliant = False
         return compliant
-
-##############################################################################
 
     def fixFree(self):
         # debug messages are used for developers, self.detailedresults
@@ -335,8 +327,6 @@ and/or wasn't able to be created\n"
             self.detaileresults += "Unable to restart network\n"
             success = False
         return success
-
-##############################################################################
 
     def reportLinux(self):
         self.ch = CommandHelper(self.logger)
@@ -433,13 +423,16 @@ and/or wasn't able to be created\n"
                     self.logger.log(LogPriority.DEBUG, errmsg)
                     compliant = False
             else:
-                if output.strip() != key + " = " + self.sysctls[key]:
+                actualoutput = output.strip()
+                expectedoutput = key + " = " + self.sysctls[key]
+                if actualoutput != expectedoutput:
                     compliant = False
-                    self.detailedresults += "sysctl output has incorrect value: " + \
-                        output + "\n"
+                    self.detailedresults += "\nsysctl output has " + \
+                                            "incorrect value: expected " + \
+                                            expectedoutput + ", found " + \
+                                            actualoutput + "\n"
         # check files inside modprobe.d directory for correct contents
         if os.path.exists("/etc/modprobe.d/"):
-            #goodfile = ""
             modprobefiles = glob.glob("/etc/modprobe.d/*")
             for modfile in modprobefiles:
                 tmpfile = ""
@@ -448,35 +441,7 @@ and/or wasn't able to be created\n"
                                                   "present", "space")
                 if modprobekveditor.report():
                     self.modprobeOK = True
-            #        goodfile = modfile
                     break
-            # future code to check other files for incorrect content
-            # currently kveditor does not have a way for caller to determine
-            # whether file has incorrect contents and/or missing contents
-            # possible stonix 2.0 improvement
-            # if goodfile:
-            #     modprobefiles.remove(goodfile)
-            # # we go back through all the files to make sure none of the other files
-            # # have incorrect contents
-            # for modfile in modprobefiles:
-            #     # we didn't find the contents we were looking for in THIS file
-            #     if not modprobekveditor.report():
-            #         # it's ok that we didn't find the contents we're looking for
-            #         # but let's also make sure the file we're looking at doesn't
-            #         # contain the directive but the wrong value, because that will
-            #         # also need to be corrected for our changes to work
-            #         if modprobekveditor.fixables:
-            #             self.detailedresults += modfile + " doesn't contain correct contents\n"
-            #             compliant = False
-            #             # append this messed up file to the modprobefiles global variable
-            #             # for correcting in the fix
-            #             self.modprobefiles.append(modfile)
-            # if self.modprobefiles:
-            #     self.detailedresults += "The following files have undesired contents " + \
-            #         "that need to be removed because it may conflict withe correct " + \
-            #         "values:\n"
-            #     for item in self.modprobefiles:
-            #         self.detailedresults += "\t" + item + "\n"
             if not self.modprobeOK:
                 self.detailedresults += "Didn't find desired contents inside files " + \
                     "within /etc/modprobe.d/"
@@ -571,8 +536,6 @@ the correct contents\n"
 contain the correct contents\n"
                 compliant = False
         return compliant
-
-###############################################################################
 
     def fixLinux(self):
         '''
@@ -781,34 +744,6 @@ contain the correct contents\n"
                             success = False
                             self.detailedresults += "Unable to correct contents in " + \
                                                 blacklistfile + "\n"
-        # possible future implementation
-        # this portion looks at the other files inside modprobe.d
-        # for any conflicting key value pairs such as a key appearing in two
-        # files but having different values.  self.modprobefiles list contains these
-        # such files from the report
-        # if self.modprobefiles:
-        #     # go through each file in the list
-        #     for modfile in self.modprobefiles:
-        #         # to be safe, still check if the file exists
-        #         if os.path.exists(modfile):
-        #             # create a kveditor object to establish the fix procedure
-        #             tmpfile = modfile + ".tmp"
-        #             modprobekveditor = KVEditorStonix(self.statechglogger, self.logger,
-        #                                               "conf", modfile, tmpfile, self.modprobes,
-        #                                               "present", "space")
-        #             if not modprobekveditor.report():
-        #                 modprobekveditor.fixables = ""
-        #                 self.iditerator += 1
-        #                 myid = iterate(self.iditerator, self.rulenumber)
-        #                 modprobekveditor.setEventID(myid)
-        #                 if not modprobekveditor.fix():
-        #                     success = False
-        #                     self.detailedresults += "Unable to correct contents in " + \
-        #                                             modfile + "\n"
-        #                 elif not modprobekveditor.commit():
-        #                     success = False
-        #                     self.detailedresults += "Unable to correct contents in " + \
-        #                                             modfile + "\n"
 
         # fix ifcfg (interface) files
         if self.ph.manager == "yum":
