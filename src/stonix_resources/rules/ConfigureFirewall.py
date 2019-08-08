@@ -212,7 +212,6 @@ class ConfigureFirewall(RuleKVEditor):
                 the firewall.  We must remove these from being allowed.'''
                 debug = "inside the elif block of report"
                 self.logdispatch.log(LogPriority.DEBUG, debug)
-                self.logger.l
                 compliant = False
                 for item in self.applist:
                     self.detailedresults += item +  " is allowed but shouldn't be\n"
