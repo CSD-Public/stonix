@@ -454,7 +454,7 @@ class Environment:
             description = description.split()
             # print description
             del description[0]
-            description = " ".join(description)
+            description = " ".join(str(description))
             self.operatingsystem = description
             self.osreportstring = description
             release = release.split()
@@ -554,7 +554,7 @@ class Environment:
 
         '''
 
-        ver = self.getosver()
+        ver = self.getosver().decode('utf-8')
         try:
             self.major_ver = ver.split('.')[0]
         except IndexError:
