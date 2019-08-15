@@ -354,7 +354,7 @@ class Environment:
                                      close_fds=True)
             build = proc3.stdout.readline()
             build = build.strip()
-            opsys = description + ' ' + release + ' ' + build
+            opsys = str(description) + ' ' + str(release) + ' ' + str(build)
             self.osreportstring = opsys
 
     def setosfamily(self):
@@ -418,11 +418,11 @@ class Environment:
 
         for line in netdata:
             # print "processing: " + line
-            match = re.search(macre, line)
+            match = re.search(macre, line.decode('utf-8'))
             if match is not None:
                 # print 'Matched MAC address'
                 macaddress = match.group()
-            if re.search(ipaddress, line):
+            if re.search(ipaddress, line.decode('utf-8')):
                 # print 'Found ipaddress'
                 break
 

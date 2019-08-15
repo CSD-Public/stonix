@@ -74,7 +74,7 @@ class SingletonCyLogger(type):
 ###############################################################################
 # Main class
 
-class CyLogger(object, metaclass=SingletonCyLogger):
+class CyLogger(metaclass=SingletonCyLogger):
     """
     Class to set up logging, with easy string referencing loggers and their
     handlers.
@@ -399,7 +399,7 @@ class CyLogger(object, metaclass=SingletonCyLogger):
             for mymsg in first_msg_list:
                 msg_list.append(mymsg + "\n")
         elif isinstance(msg, dict):
-            for key, value in msg.items():
+            for key, value in list(msg.items()):
                 msg_list.append(str(key) + " : " + str(value))
         else:
             msg_list = msg
