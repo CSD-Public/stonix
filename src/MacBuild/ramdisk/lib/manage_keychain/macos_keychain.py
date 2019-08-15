@@ -66,7 +66,7 @@ class MacOSKeychain(MacOSUser, ManageKeychainTemplate):
         else:
             # self.logger.log(lp.DEBUG, "cmd: " + str(command))
             commands = 0
-            for subCommand, args in command.items():
+            for subCommand, args in list(command.items()):
                 commands += 1
                 #####
                 # Check to make sure only one command is in the dictionary

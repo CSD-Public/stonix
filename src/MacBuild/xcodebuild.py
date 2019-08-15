@@ -1,16 +1,16 @@
-#!/usr/bin/python
+#!/usr/local/bin/python3
 
 import os
 import sys
 import traceback
 from optparse import OptionParser, SUPPRESS_HELP
 
-from .buildlib import MacBuildLib
+from buildlib import MacBuildLib
 
 sys.path.append('./ramdisk')
 
-from .ramdisk.lib.loggers import CyLogger
-from .ramdisk.lib.loggers import LogPriority as lp
+from ramdisk.lib.loggers import CyLogger
+from ramdisk.lib.loggers import LogPriority as lp
 
 class Xcodebuild(MacBuildLib):
     def __init__(self, logger, pypaths=None):

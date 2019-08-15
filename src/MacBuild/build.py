@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/local/bin/python3
 ###############################################################################
 #                                                                             #
 # Copyright 2019. Triad National Security, LLC. All rights reserved.          #
@@ -39,21 +39,24 @@ from tempfile import mkdtemp
 from time import time, sleep
 from subprocess import Popen, STDOUT, PIPE, call
 from shutil import rmtree, copy2
-from configparser import SafeConfigParser
+from configparser import ConfigParser
 
-# For localize
+# For MacBuildLib
+from buildlib import MacBuildLib
+
+# For FISMACAT level
 sys.path.append("..")
 from stonix_resources.localize import FISMACAT
 
 # For setupRamdisk() and detachRamdisk()
 sys.path.append("./ramdisk/")
-from .ramdisk.macRamdisk import RamDisk, detach
-from .ramdisk.lib.loggers import CyLogger
-from .ramdisk.lib.loggers import LogPriority as lp
-from .ramdisk.lib.get_libc import getLibc
-from .ramdisk.lib.run_commands import RunWith
-from .ramdisk.lib.manage_user.manage_user import ManageUser
-from .ramdisk.lib.manage_keychain.manage_keychain import ManageKeychain
+from ramdisk.macRamdisk import RamDisk, detach
+from ramdisk.lib.loggers import CyLogger
+from ramdisk.lib.loggers import LogPriority as lp
+from ramdisk.lib.get_libc import getLibc
+from ramdisk.lib.run_commands import RunWith
+from ramdisk.lib.manage_user.manage_user import ManageUser
+from ramdisk.lib.manage_keychain.manage_keychain import ManageKeychain
 
 #####
 # Exception for when the conf file can't be grokked.
@@ -178,8 +181,7 @@ class SoftwareBuilder():
             while count < 3:
                 success = False
                 self.keyuser = os.environ['SUDO_USER']
-                self.keypass = getpass.getpass("Keychain Password: ") 
-
+                self.keypass = getpass.getpass("Keychain Password: ")
                 if (self.mk.lockKeychain(self.keychain)):
                     success, _ = self.mk.unlockKeychain(self.keypass, self.keychain)
                 if success:
@@ -215,10 +217,10 @@ class SoftwareBuilder():
 
     def _detachRamdisk(self, device):
         if detach(device):
-            print(("Successfully detached disk: " + str(device).strip()))
+            print("Successfully detached disk: " + str(device).strip())
             return True
         else:
-            print(("Couldn't detach disk: " + str(device).strip()))
+            print("Couldn't detach disk: " + str(device).strip())
             raise Exception("Cannot eject disk: " + str(device).strip())
 
     def _exit(self, ramdisk, luggage, exitcode=0):
@@ -244,7 +246,7 @@ class SoftwareBuilder():
                 if dict1[option] == -1:
                     self.logger.log(lp.DEBUG, "skip: %s" % option)
             except:
-                print(("exception on %s!" % option))
+                print("exception on %s!" % option)
                 dict1[option] = None
         print(dict1)
         return dict1
@@ -257,7 +259,6 @@ class SoftwareBuilder():
         '''
         success = False
 
-        from .buildlib import MacBuildLib
         # This script should be run from [stonixroot]/src/MacBuild. We must
         os.chdir("../..")
         self.STONIX_ROOT = os.getcwd()
@@ -271,7 +272,7 @@ class SoftwareBuilder():
         try:
             if not os.path.isfile(myconf):
                 raise ConfusingConfigurationError("Configuration File Does Not Exist...")
-            self.parser = SafeConfigParser()
+            self.parser = ConfigParser()
             candidates =  [myconf, 'not_a_real_conf.conf']
             found = self.parser.read(candidates)
             missing = set(candidates) - set(found)
@@ -297,10 +298,10 @@ class SoftwareBuilder():
                 self.doCodesign = False
         else:
             self.STONIX = dict1['stonix']['app']
-            self.STONIXICON = dict1['stonix']['app_icon']
+            self.STONIXICON = "stonix_icon"
             self.STONIXVERSION = dict1['stonix']['app_version']
             self.STONIX4MAC = dict1['stonix']['wrapper']
-            self.STONIX4MACICON = dict1['stonix']['wrapper_icon']
+            self.STONIX4MACICON = "stonix_icon"
             self.STONIX4MACVERSION = dict1['stonix']['wrapper_version']
             self.APPVERSION = self.STONIXVERSION
             self.PYUIC = dict1['libpaths']['pyuic']
@@ -638,7 +639,7 @@ class SoftwareBuilder():
                        '--psd', self.tmphome + "/src/Macbuild/stonix4mac",
                        '--keychain', self.keychain]
                 self.rw.setCommand(cmd)
-                output, error, retcode = self.rw.liftDown(self.keyuser, os.getcwd())
+                output, error, retcode = self.rw.liftDown(self.keyuser, os.getcwd(), silent=False)
                 # output, error, retcode = self.rw.waitNpassThruStdout()
                 print("Output: " + output)
                 print("Error: " + error)
@@ -887,7 +888,7 @@ class SoftwareBuilder():
             makepkg = ["/usr/bin/make", "pkg", "PACKAGE_VERSION=" + self.APPVERSION,
                   "USE_PKGBUILD=1"]
             output = Popen(makepkg, stdout=PIPE, stderr=STDOUT).communicate()[0]
-            for line in output.split('\n'):
+            for line in output.decode('utf-8').split('\n'):
                 self.logger.log(lp.DEBUG, line)
             sleep(2)
             self.libc.sync()
@@ -973,20 +974,20 @@ class SoftwareBuilder():
         cmd = [self.RSYNC, "-avp", self.product, productDest]
         self.logger.log(lp.DEBUG, str(cmd))
         output, error = Popen(cmd, stdout=PIPE, stderr=STDOUT).communicate()
-        for line in output.split("\n"):
+        for line in output.decode('utf-8').split("\n"):
             self.logger.log(lp.DEBUG, str(line))
         if error:
-            for line in error.split("\n"):
+            for line in error.decode('utf-8').split("\n"):
                 self.logger.log(lp.DEBUG, str(line))
         self.libc.sync()
         self.libc.sync()
         cmd = [self.RSYNC, "-avp", self.tmphome + "/src/", self.buildHome + "/builtSrc"]
         self.logger.log(lp.DEBUG, str(cmd))
         output, error = Popen(cmd, stdout=PIPE, stderr=STDOUT).communicate()
-        for line in output.split("\n"):
+        for line in output.decode('utf-8').split("\n"):
             self.logger.log(lp.DEBUG, str(line))
         if error:
-            for line in error.split("\n"):
+            for line in error.decode('utf-8').split("\n"):
                 self.logger.log(lp.DEBUG, str(line))
         self.libc.sync()
         sleep(1)

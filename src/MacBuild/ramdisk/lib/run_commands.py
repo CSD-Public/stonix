@@ -228,6 +228,8 @@ class RunWith(object):
             try:
                 proc = Popen(self.command, stdout=PIPE, stderr=PIPE, shell=self.myshell, env=self.environ, close_fds=self.cfds)
                 self.stdout, self.stderr = proc.communicate()
+                self.stdout = self.stdout.decode('utf-8')
+                self.stderr = self.stderr.decode('utf-8')
                 self.retcode = proc.returncode
                 self.libc.sync()
             except Exception as err:
@@ -350,7 +352,7 @@ class RunWith(object):
                     while True:
                         #####
                         # process stdout
-                        myout = proc.stdout.readline()
+                        myout = proc.stdout.readline().decode('utf-8')
                         if myout == '' and proc.poll() is not None:
                             break
                         tmpline = myout.strip()
@@ -396,7 +398,7 @@ class RunWith(object):
                                     break
 
                     while True:
-                        myerr = proc.stderr.readline()
+                        myerr = proc.stderr.readline().decode('utf-8')
                         if myerr == '' and proc.poll() is not None:
                             break
                         tmpline = myerr.strip()
@@ -699,7 +701,7 @@ class RunWith(object):
                 cmd = []
                 for i in range(len(self.command)):
                     try:
-                        cmd.append(str(self.command[i].decode('utf-8')))
+                        cmd.append(str(self.command[i]))
                     except UnicodeDecodeError:
                         cmd.append(str(self.command[i]))
 

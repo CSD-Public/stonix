@@ -45,11 +45,10 @@ site.addsitedir('/opt/tools/Library/Python/2.7/site-packages')
 from PyInstaller.building import makespec, build_main
 
 sys.path.append('./ramdisk')
-
-from .ramdisk.lib.loggers import LogPriority as lp
-from .ramdisk.lib.manage_user.manage_user import ManageUser
-from .ramdisk.lib.manage_keychain.manage_keychain import ManageKeychain
-from .ramdisk.lib.run_commands import RunWith
+from ramdisk.lib.loggers import LogPriority as lp
+from ramdisk.lib.manage_user.manage_user import ManageUser
+from ramdisk.lib.manage_keychain.manage_keychain import ManageKeychain
+from ramdisk.lib.run_commands import RunWith
 
 
 class BadBuildError(BaseException):
@@ -782,6 +781,7 @@ class MacBuildLib(object):
 
         '''
         success = False
+
         header = ''''''
 
         if self.isSaneFilePath(pathToDir):
