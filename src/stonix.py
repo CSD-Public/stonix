@@ -267,7 +267,6 @@ class Controller(Observable):
                 #####
                 # Appropriate to OS that supports PyQt4
                 try:
-                    print("in try block\n\n")
                     from PyQt4 import QtCore, QtGui
                     from stonix_resources.gui import GUI
                 except(ImportError):

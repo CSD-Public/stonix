@@ -449,12 +449,12 @@ class Environment:
             proc = subprocess.Popen('/usr/bin/lsb_release -dr',
                                   shell=True, stdout=subprocess.PIPE,
                                   close_fds=True)
-            description = proc.stdout.readline()
-            release = proc.stdout.readline()
-            description = description.split()
+            description = proc.stdout.readline().decode('utf-8')
+            release = proc.stdout.readline().decode('utf-8')
+            #description = description.split()
             # print description
-            del description[0]
-            description = " ".join(str(description))
+            #del description[0]
+            #description = " ".join(str(description))
             self.operatingsystem = description
             self.osreportstring = description
             release = release.split()
@@ -554,7 +554,8 @@ class Environment:
 
         '''
 
-        ver = self.getosver().decode('utf-8')
+        ver = self.getosver()
+        #.decode('utf-8')
         try:
             self.major_ver = ver.split('.')[0]
         except IndexError:
