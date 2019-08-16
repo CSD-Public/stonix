@@ -422,7 +422,7 @@ class Environment:
             if match is not None:
                 # print 'Matched MAC address'
                 macaddress = match.group()
-            if re.search(ipaddress, line.decode('utf-8')):
+            if re.search(ipaddress, line):
                 # print 'Found ipaddress'
                 break
 
@@ -450,7 +450,7 @@ class Environment:
             except(OSError):
                 return ipaddr
             for line in routedata:
-                if re.search('^default', line):
+                if re.search('^default', line.decode('utf-8')):
                     line = line.split()
                     try:
                         gateway = line[1]
@@ -469,8 +469,8 @@ class Environment:
             except(OSError):
                 return ipaddr
             for line in routedata:
-                if re.search('gateway:', line):
-                    line = line.split()
+                if re.search('gateway:', line.decode('utf-8')):
+                    line = line.decode('utf-8').split()
                     try:
                         gateway = line[1]
                     except(IndexError):
@@ -511,7 +511,7 @@ class Environment:
             return ['127.0.0.1']
         matchlist = []
         for addr in iplist:
-            if re.search(network, addr):
+            if re.search(network, addr.decode('utf-8')):
                 matchlist.append(addr)
         if len(matchlist) == 0:
             matchlist.append('127.0.0.1')
@@ -535,7 +535,7 @@ class Environment:
             except(OSError):
                 return iplist
             for line in ifdata:
-                if re.search('inet addr:', line):
+                if re.search('inet addr:', line.decode('utf-8')):
                     try:
                         line = line.split()
                         addr = line[1]
@@ -557,7 +557,7 @@ class Environment:
             except(OSError):
                 return iplist
             for line in ifdata:
-                if re.search('inet ', line):
+                if re.search('inet ', line.decode('utf-8')):
                     try:
                         line = line.split()
                         addr = line[1]
@@ -616,7 +616,7 @@ class Environment:
                                     close_fds=True)
             cmd3output = cmd3.stdout.readlines()
             for line in cmd3output:
-                if re.search('Serial Number (system):', line):
+                if re.search('Serial Number (system):', line.decode('utf-8')):
                     line = line.split(':')
                     try:
                         systemserial = line[1]
@@ -644,7 +644,7 @@ class Environment:
                                     close_fds=True)
             cmdoutput = cmd2.stdout.readlines()
             for line in cmdoutput:
-                if re.search('UUID:', line):
+                if re.search('UUID:', line.decode('utf-8')):
                     line = line.split()
                     try:
                         uuid = line[1]
@@ -657,7 +657,7 @@ class Environment:
                                     close_fds=True)
             cmd3output = cmd3.stdout.readlines()
             for line in cmd3output:
-                if re.search('UUID:', line):
+                if re.search('UUID:', line.decode('utf-8')):
                     line = line.split()
                     try:
                         uuid = line[2]
@@ -691,7 +691,7 @@ class Environment:
                                     close_fds=True)
             cmd3output = cmd3.stdout.readlines()
             for line in cmd3output:
-                if re.search('Book', line):
+                if re.search('Book', line.decode('utf-8')):
                     ismobile = True
                     break
         return ismobile
@@ -714,8 +714,8 @@ class Environment:
                                     stdout=subprocess.PIPE, close_fds=True)
             netdata = proc.stdout.readlines()
             for line in netdata:
-                print("processing: " + line)
-                match = re.search(littlesnitch, line)
+                print("processing: " + line.decode('utf-8'))
+                match = re.search(littlesnitch, line.decode('utf-8'))
                 if match is not None:
                     print('LittleSnitch Is Running')
                     issnitchactive = True
