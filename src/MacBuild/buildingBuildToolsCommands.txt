@@ -1,0 +1,180 @@
+#####
+# FOR REFERENCE ONLY.
+#  Document not yet verified for Mac OS 10.14.
+#  Hardware Requirements:
+#  16Gb ram
+#  60Gb HD
+#  2 processors (4 recommended)
+
+#####
+# Download and install Xcode from the macOS App store
+# open xcode and "install additional components"
+# Open the xcode preferences, go to the accounts tab and add your Apple ID
+
+#####
+# Install Xcode command line tools
+# This will pop up a GUI window - follow the prompts.
+xcode-select --install
+
+#####
+#  Accept the Xcode license
+xcodebuild -license accept
+
+#####
+# Group creation borrowed heavily from Krypted:
+# http://krypted.com/mac-os-x/create-groups-using-dscl/
+# Create a group on the system called builder
+sudo dscl . create /Groups/builder
+sudo dscl . create /Groups/builder "Devs building with the PyQt stack in /opt/tools"
+# Give the group a password
+sudo dscl . create /Groups/builder passwd "******"
+# Give the group a gid
+sudo dscl . create /Groups/builder gid 2000
+# Add a user
+sudo dscl . create /Groups/builder GroupMembership [localadmin]
+sudo dscl . append /Groups/builder GroupMembership [2ndlocaladmin]
+# Read attributes of group
+sudo dscl . read /Groups/builder
+
+
+#####
+# If on proxied network, set the proxies:
+export HTTPS_PROXY=<proxy>
+export HTTP_PROXY=<proxy>
+export https_proxy=<proxy>
+export http_proxy=<proxy>
+
+#####
+# Create directory structure for build
+sudo mkdir -p /opt/tools/downloads
+sudo mkdir -p /opt/tools/logs
+sudo chown -R [localadmin]:builder /opt/tools
+sudo chmod -R g+w /opt/tools
+cd /opt/tools
+
+#####
+# Use Curl to download Qt, SIP and PyQt - it is important to use this
+# command as it will follow redirects, where the MacPkgr.py will not.
+
+### Get Qt ###
+curl -o downloads/qt-everywhere-src-5.13.0.tar.xz -L http://download.qt.io/official_releases/qt/5.13/5.13.0/single/qt-everywhere-src-5.13.0.tar.xz
+tar xvf downloads/qt-everywhere-src-5.13.0.tar.xz
+
+### Get sip ###
+curl -o downloads/sip-4.19.18.tar.gz -L https://ftp.osuosl.org/pub/gentoo/distfiles/sip-4.19.18.tar.gz
+tar xzvf downloads/sip-4.19.18.tar.gz
+
+### Get PyQt5 ###
+curl -o downloads/PyQt5_gpl-5.13.0.tar.gz -L http://gentoo.mirrors.tds.net/gentoo/distfiles/PyQt5_gpl-5.13.0.tar.gz
+tar xzvf downloads/PyQt5_gpl-5.13.0.tar.gz
+
+### Get pyinstaller ###
+curl -o downloads/PyInstaller-3.5.tar.gz  -L https://github.com/pyinstaller/pyinstaller/releases/download/v3.5/PyInstaller-3.5.tar.gz
+tar xjvf downloads/PyInstaller-3.5.tar.gz
+
+#####
+# Install Python3 using Homebrew. This step can be skipped
+# if Python3 is already available on the system
+
+### Install Homebrew ###
+/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+
+##
+# Check if brew was successfully installed (the output
+# should be "Your system is ready to brew.")
+brew doctor
+
+### Install Python3 ###
+brew install python3
+
+##
+# Check if python3 was successfully installed
+which python3
+python3 --version
+
+##
+# macholib, a python library that PyInstaller depends on,
+# is no longer automatically included with PyInstaller
+#
+# Install macholib with pip3
+pip3 install macholib
+
+#####
+# Build Qt
+cd /opt/tools/qt-everywhere-opensource-src-5.13.0
+
+############
+# Make sure the "-sdk" parameter in the .configure command below is
+# specific to the operating system you are building on.
+./configure -opensource -confirm-license -release -no-rpath -prefix /opt/tools/lib/Qt5.13.0 -libdir /opt/tools/lib/Qt5.13.0/lib -nomake examples -nomake tests -bindir /opt/tools/lib/Qt5.13.0/bin -headerdir /opt/tools/lib/Qt5.13.0/includes -plugindir /opt/tools/lib/Qt5.13.0/plugins -importdir /opt/tools/lib/Qt5.13.0/qmlOne -qmldir /opt/tools/lib/Qt5.13.0/qmlTwo -datadir /opt/tools/lib/Qt5.13.0/data -docdir /opt/tools/lib/Qt5.13.0/doc -continue -silent -archdatadir /opt/tools/lib/Qt5.13.0/arch  -no-pkg-config -sdk macosx10.14 2>&1 | tee ../logs/qt-configure-out.txt
+make -j 4 2>&1 | tee ../logs/qt-make.log
+
+sudo make install 2>&1 | tee ../logs/qt-make-install.log
+
+#####
+# Build SIP
+cd /opt/tools/sip-4.19.18
+
+python3 ./configure.py --bindir /opt/tools/bin --destdir /opt/tools/lib/Python/3.7/site-packages --incdir /opt/tools/lib/Python/3.7/site-packages/sip/includes --sipdir /opt/tools/lib/Python/3.7/site-packages/sip/sips --pyidir /opt/tools/lib/Python/3.7/site-packages/sip/pyis --sdk MacOSX10.14.sdk 2>&1 | tee ../logs/sip-configure.log
+
+make 2>&1 | tee ../logs/sip-make.log
+sudo make install 2>&1 | tee ../logs/sip-make-install.log
+
+
+#####
+# Build PyQt
+# NOTE: http://pyqt.sourceforge.net/Docs/PyQt5/introduction.html#an-explanation-of-version-numbers
+cd /opt/tools/PyQt5_gpl-5.13.0
+
+python3 ./configure.py --confirm-license --bindir=/opt/tools/bin --destdir=/opt/tools/lib/Python/3.7/site-packages --no-designer-plugin --no-qml-plugin --no-qsci-api --qmake=/opt/tools/lib/Qt5.13.0/bin/qmake --sip=/opt/tools/bin/sip --sip-incdir=/opt/tools/lib/Python/3.7/site-packages/sip/includes -v /opt/tools/lib/Python/3.7/site-packages/PyQt5/sips --verbose 2>&1 | tee ../logs/pyqt-configure.log
+
+make -j 4 2>&1 | tee ../logs/pyqt-make.log
+sudo make install 2>&1 | tee ../logs/pyqt-make-install.log
+
+cd ..
+
+#####
+# Install Luggage
+
+git clone https://github.com/unixorn/luggage.git
+
+cd luggage
+
+sudo make bootstrap_files
+
+cd ..
+
+
+#####
+# The following needs to be setup up before installing pyinstaller, 
+# as well as being necessary for build scripts:
+export PYTHONPATH=/opt/tools/lib/Python/3.7/site-packages:/opt/tools/lib/Python/3.7/site-packages/PyQt5:/opt/tools/lib/Qt5.13.0/lib:/opt/tools/lib/Python/3.7/site-packages/sip:/opt/tools/lib/python3.7/site-packages:/opt/tools/Library/Python/2.7/site-packages:/opt/tools/lib/python3.7/site-packages:/opt/tools/Library/Python/2.7/site-packages/PyInstaller:$PYTHONPATH
+
+export DYLD_LIBRARY_PATH=/opt/tools/lib/Qt5.13.0/lib:/opt/tools/lib/Python/3.7/site-packages:/opt/tools/lib/Python/3.7/site-packages/PyQt5:/opt/tools/lib/Python/3.7/site-packages/sip:$DYLD_LIBRARY_PATH
+
+export DYLD_FRAMEWORK_PATH=/opt/tools/lib/Qt5.13.0/lib:/opt/tools/lib/Python/3.7/site-packages:/opt/tools/lib/Python/3.7/site-packages/PyQt5:/opt/tools/lib/Python/3.7/site-packages/sip:$DYLD_FRAMEWORK_PATH
+
+export LD_FRAMEWORK_PATH=/opt/tools/lib/Qt5.13.0/lib:/opt/tools/lib/Python/3.7/site-packages:/opt/tools/lib/Python/3.7/site-packages/PyQt5:/opt/tools/lib/Python/3.7/site-packages/sip:$LD_FRAMEWORK_PATH
+
+export LD_LIBRARY_PATH=/opt/tools/lib/Qt5.13.0/lib:/opt/tools/lib/Python/3.7/site-packages:/opt/tools/lib/Python/3.7/site-packages/PyQt5:/opt/tools/lib/Python/3.7/site-packages/sip:$LD_LIBRARY_PATH
+
+#####
+# Install PyInstaller
+cd /opt/tools/PyInstaller-3.5
+
+chmod +x ./setup.py
+
+sudo -E ./setup.py install --root=/opt/tools
+
+#####
+# Get the usbstick from Brandon or Roy that has the signing keychain, and the password to the keychain.
+
+#####
+# Go to the following directory in the source code:
+cd <parent-dirs>/stonix/src/Macbuild
+
+#####
+# Run the build command:
+time sudo python3 ./build.py -d -s "Developer ID" -k /Volumes/<usbstick>/stonix.keychain-db 2>&1 | tee build-output_`/bin/date "+%Y-%m-%d_%H-%M-%S"`.log
+
+
