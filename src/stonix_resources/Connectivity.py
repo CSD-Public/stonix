@@ -25,6 +25,8 @@ import httplib
 import urllib
 import urllib2
 
+from urllib2 import URLError
+
 #--- non-native python libraries in this source tree
 from logdispatcher import LogPriority
 from localize import PROXY
@@ -118,9 +120,16 @@ class Connectivity(object):
                 self.set_proxy()
 
             page = site + path
-            req = urllib2.Request(page, headers={'User-Agent' : "Magic Browser"})
-            req.add_header('User-agent', 'Firefox/31.5.0')
-            request = urllib2.urlopen(req, timeout=3)
+
+            try:
+                req = urllib2.Request(page, headers={'User-Agent': "Magic Browser"})
+                req.add_header('User-agent', 'Firefox/31.5.0')
+                request = urllib2.urlopen(req, timeout=3)
+            except URLError:
+                self.logger.log(LogPriority.WARNING, "Unable to open secure (https) connection to: " + str(page) + " Attempting regular connection (http)...")
+                req = urllib2.Request(page.replace("https", "http"))
+                req.add_header('User-agent', 'Firefox/31.5.0')
+                request = urllib2.urlopen(req, timeout=3)
             retcode = request.getcode()
 
             # get the first digit of the return code
