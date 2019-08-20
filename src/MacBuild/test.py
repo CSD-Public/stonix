@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 from . import ramdisk
 from .ramdisk.lib.loggers import CyLogger
 

@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 from queue import Queue, Empty
 import threading
 import subprocess
