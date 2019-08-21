@@ -31,7 +31,7 @@ class ViewController: NSViewController {
         let arguments = ["-d"]
         sender.isEnabled = false
         let task = Process.launchedProcess(launchPath: path, arguments: arguments)
-        NSApplication.shared().terminate(self)
+        NSApplication.shared.terminate(self)
         task.waitUntilExit()
         sender.isEnabled = true
     }
@@ -64,12 +64,12 @@ class ViewController: NSViewController {
         //
         // Last edited by Camelot (2006-11-25 10:02:49 pm)
         NSAppleScript(source: "do shell script \"/Applications/stonix4mac.app/Contents/Resources/stonix.app/Contents/MacOS/stonix > /dev/null 2>&1 &\" with administrator privileges")!.executeAndReturnError(nil)
-        NSApplication.shared().terminate(self)
+        NSApplication.shared.terminate(self)
         sender.isEnabled = true
     }
     
     @IBAction func quitAction(_ sender: NSButton) {
-        NSApplication.shared().terminate(self)
+        NSApplication.shared.terminate(self)
     }
     
 }
