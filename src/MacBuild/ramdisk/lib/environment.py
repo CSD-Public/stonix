@@ -422,7 +422,7 @@ class Environment:
             if match is not None:
                 # print 'Matched MAC address'
                 macaddress = match.group()
-            if re.search(ipaddress, line):
+            if re.search(ipaddress, line.decode('utf-8')):
                 # print 'Found ipaddress'
                 break
 

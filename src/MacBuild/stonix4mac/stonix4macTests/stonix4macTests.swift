@@ -7,7 +7,6 @@
 //
 
 import XCTest
-@testable import stonix4mac
 
 class stonix4macTests: XCTestCase {
     

@@ -612,7 +612,7 @@ class SoftwareBuilder():
                 self.logger.log(lp.DEBUG, ".")
                 self.logger.log(lp.DEBUG, ".")
 
-                '''if self.ordPass:
+                if self.ordPass:
                     #####
                     # Run the xcodebuild script to build stonix4mac with codesigning enabled
                     cmd = [self.tmphome + '/src/MacBuild/xcodebuild.py',
@@ -626,24 +626,22 @@ class SoftwareBuilder():
                     self.rw.setCommand(cmd)
                     output, error, retcode = self.rw.liftDown(self.keyuser, os.getcwd())
                     # output, error, retcode = self.rw.waitNpassThruStdout()
-                    print "Output: " + output
-                    print "Error: " + error
-                    print "Return Code: " + str(retcode)
-                else:'''
-                #####
-                # Run the xcodebuild script to build stonix4mac without codesigning enabled
-                cmd = [self.tmphome + '/src/MacBuild/xcodebuild.py',
-                       '-u', self.keyuser,
-                       '-i', appName,
-                       '-d',
-                       '--psd', self.tmphome + "/src/Macbuild/stonix4mac",
-                       '--keychain', self.keychain]
-                self.rw.setCommand(cmd)
-                output, error, retcode = self.rw.liftDown(self.keyuser, os.getcwd(), silent=False)
-                # output, error, retcode = self.rw.waitNpassThruStdout()
-                print("Output: " + output)
-                print("Error: " + error)
-                print("Return Code: " + str(retcode))
+                    print("Output: " + output)
+                    print("Error: " + error)
+                    print("Return Code: " + str(retcode))
+                else:
+                    #####
+                    # Run the xcodebuild script to build stonix4mac without codesigning enabled
+                    cmd = [self.tmphome + '/src/MacBuild/xcodebuild.py',
+                           '-i', appName,
+                           '-d',
+                           '--psd', self.tmphome + "/src/Macbuild/stonix4mac"]
+                    self.rw.setCommand(cmd)
+                    output, error, retcode = self.rw.liftDown(self.keyuser, os.getcwd(), silent=False)
+                    # output, error, retcode = self.rw.waitNpassThruStdout()
+                    print("Output: " + output)
+                    print("Error: " + error)
+                    print("Return Code: " + str(retcode))
 
             elif appName == "stonix":
                 #####
@@ -900,15 +898,23 @@ class SoftwareBuilder():
 
             #####
             # Perform a codesigning on the stonix4mac application
-            cmd = [self.tmphome + '/src/MacBuild/xcodebuild.py',
-                   '--psd', self.tmphome + '/src/MacBuild/stonix4mac',
-                   '--productsign',
-                   '--tmpenc', self.ordPass, '-u', self.keyuser,
-                   '-i', appName + '-' + str(self.STONIXVERSION) + '.pkg',
-                   '-n', appName + '.' + str(self.STONIXVERSION) + '.pkg',
-                   '-d',
-                   '-s', '"Developer ID Installer"',
-                   '--keychain', self.keychain]
+            if self.ordPass:
+                cmd = [self.tmphome + '/src/MacBuild/xcodebuild.py',
+                       '--psd', self.tmphome + '/src/MacBuild/stonix4mac',
+                       '--productsign',
+                       '--tmpenc', self.ordPass, '-u', self.keyuser,
+                       '-i', appName,
+                       '-n', appName + '.' + str(self.STONIXVERSION) + '.pkg',
+                       '-d',
+                       '-s', '"Developer ID Installer"',
+                       '--keychain', self.keychain]
+            else:
+                cmd = [self.tmphome + '/src/MacBuild/xcodebuild.py',
+                       '--psd', self.tmphome + '/src/MacBuild/stonix4mac',
+                       '-u', self.keyuser,
+                       '-i', appName,
+                       '-n', appName + '.' + str(self.STONIXVERSION) + '.pkg',
+                       '-d']
 
             self.logger.log(lp.DEBUG, '.')
             self.logger.log(lp.DEBUG, '.')
