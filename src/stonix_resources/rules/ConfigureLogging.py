@@ -545,7 +545,6 @@ class ConfigureLogging(RuleKVEditor):
                         self.detailedresults += directory + " was not found in logrotate file\n"
                         fixables.append(directory)
         if fixables:
-            print("There are fixables\n\n")
             self.fixables = fixables
             compliant = False
         return compliant
@@ -627,7 +626,6 @@ class ConfigureLogging(RuleKVEditor):
             distroowner = "root"
         elif re.search("ubuntu", self.ostype, re.I):
             distroowner = "syslog"
-        print("we're here now\n\n")
         for item in self.directories:
             if os.path.exists(item):
                 if self.ph.manager == "apt-get":
@@ -683,7 +681,6 @@ class ConfigureLogging(RuleKVEditor):
                         os.chown(item, 0, 0)
                         os.chmod(item, 384)
                     resetsecon(item)
-        print("now we're here\n\n")
         if os.path.exists(self.bootlog):
             if not checkPerms(self.bootlog, [0, 0, 420], self.logger):
                 self.iditerator += 1
@@ -758,14 +755,12 @@ class ConfigureLogging(RuleKVEditor):
         # correct log rotate file
         #if logrotation file doesn't exist, create it, record createfile event
         if not os.path.exists(self.logrotpath):
-            print("logrotate path doesn't exist\n\n")
             if not createFile(self.logrotpath, self.logger):
                 debug = "Unable to create missing log rotation config " + \
                     "file: " + self.logrotpath + "\n"
                 self.logger.log(LogPriority.DEBUG, debug)
                 return False
             else:
-                print("Logrotate file created\n\n")
                 self.created2 = True
                 self.detailedresults += "successfully created log \
 rotation config file: " + self.logrotpath + "\n"
@@ -816,7 +811,7 @@ rotation config file: " + self.logrotpath + "\n"
             for directory in self.fixables:
                 tempcontents2 = []
                 for line in tempcontents:
-                    if re.search("(^|\s+)directory(\s)*({|\n)", line, re.I):
+                    if re.search("^|\s+" + directory + "\s*(\{{0,1}|\s*)", line, re.I):
                         templine = re.sub(directory, "", line)
                         tempcontents2.append(templine)
                     else:
