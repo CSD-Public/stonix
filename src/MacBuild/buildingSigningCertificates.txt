@@ -1,7 +1,7 @@
 #####
 # Setting up certificates to sign stonix4mac builds
 
-1. Get a USB with the team's Apple developer certificates from Roy Nielson.
+1. Get a USB with the team's Developer ID certificates from Roy Nielson.
 
 2. Mount the USB and open keychin utility on your build environment.
 
@@ -15,4 +15,9 @@ Application
 Install
 
 #####
-# After this, you should be able to sign stonxi4mac builds. Refer to buildingStonix.txt to build stonxi4mac.
+#
+# After this, you should be able to sign stonix builds.
+#
+# To build stonix, refer to buildingStonix.txt
+#
+#####

@@ -4,12 +4,21 @@
 # certificates (buildingSigningCertificate.txt), and have set the ram memory
 # size of your build vm to 16G.
 
-1. Update the stonix version in 'src/stonix_resources/localize.py' and 'src/MacBuild/build.conf'.
+1. Update the stonix version in 'src/stonix_resources/localize.py' and 'src/MacBuild/build.conf'. Make sure your current directory is "src/MacBuild".
 
-2. Run the following command:
-sudo -E ./build.py -d -s "Developer ID" --keychain /Users/[localadmin]/Library/Keychains/login.keychain-db
+2.
 
-3. You will be prompted to enter a keychain password. This will likely be your local user password.
+To build STONIX with signing, run the following command:
+time sudo python3 ./build.py -d -s "Developer ID" -k /Users/[localadmin]/Library/Keychains/login.keychain-db 2>&1 | tee build-output_`/bin/date "+%Y-%m-%d_%H-%M-%S"`.log
+
+To build STONIX without signing, run the following command:
+time sudo python3 ./build.py -d 2>&1 | tee build-output_`/bin/date "+%Y-%m-%d_%H-%M-%S"`.log
+
+3. If you are building STONIX with signing, you will be prompted to enter a keychain password. This will likely be your local user password.
 
 #####
-# If the build was successful, the package should be in the dmgs directory.
+#
+# If the build was successful, the package should
+# be in the src/MacBuild/dmgs directory.
+#
+#####
