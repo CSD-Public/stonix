@@ -903,7 +903,7 @@ class SoftwareBuilder():
                        '--psd', self.tmphome + '/src/MacBuild/stonix4mac',
                        '--productsign',
                        '--tmpenc', self.ordPass, '-u', self.keyuser,
-                       '-i', appName,
+                       '-i', appName + '-' + str(self.STONIXVERSION) + '.pkg',
                        '-n', appName + '.' + str(self.STONIXVERSION) + '.pkg',
                        '-d',
                        '-s', '"Developer ID Installer"',
@@ -912,7 +912,7 @@ class SoftwareBuilder():
                 cmd = [self.tmphome + '/src/MacBuild/xcodebuild.py',
                        '--psd', self.tmphome + '/src/MacBuild/stonix4mac',
                        '-u', self.keyuser,
-                       '-i', appName,
+                       '-i', appName + '-' + str(self.STONIXVERSION) + '.pkg',
                        '-n', appName + '.' + str(self.STONIXVERSION) + '.pkg',
                        '-d']
 
