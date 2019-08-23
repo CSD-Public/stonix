@@ -1231,10 +1231,11 @@ ABORTING EXECUTION!"""
 
         # build installation files list
         for d in installation_dirs:
-            files = os.listdir(d)
-            for f in files:
-                if re.search(".py", f, re.I):
-                    installation_files.append(d + "/" + f)
+            if os.path.isdir(d):
+                files = os.listdir(d)
+                for f in files:
+                    if re.search(".py", f, re.I):
+                        installation_files.append(d + "/" + f)
 
         # check installation files permissions
         for f in installation_files:
