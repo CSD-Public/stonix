@@ -87,7 +87,7 @@ class Environment:
         currpwd = pwd.getpwuid(self.euid)
         try:
             self.homedir = currpwd[5]
-        except(IndexError):
+        except IndexError:
             self.homedir = '/dev/null'
         self.installmode = False
         self.verbosemode = False
