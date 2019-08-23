@@ -145,7 +145,6 @@ from stonix_resources.StateChgLogger import StateChgLogger
 from stonix_resources.logdispatcher import LogPriority, LogDispatcher
 from stonix_resources.program_arguments import ProgramArguments
 from stonix_resources.CommandHelper import CommandHelper
-
 from stonix_resources.cli import Cli
 
 
@@ -1196,25 +1195,10 @@ ABORTING EXECUTION!"""
 
         safe = True
 
-        if self.locked():
-            safe = False
         if not self.permissions_check():
             safe = False
 
         return safe
-
-    def locked(self):
-        """
-
-        :return:
-        """
-
-        locked = False
-        if os.path.isfile(self.lockfile):
-            locked = True
-            self.logger.log(LogPriority.DEBUG, "STONIX is already running. Please close any existing instances of STONIX before attempting to run it again.")
-
-        return locked
 
     def permissions_check(self):
         """

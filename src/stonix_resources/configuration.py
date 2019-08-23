@@ -149,7 +149,7 @@ version = """ + str(STONIXVERSION) + """
                     if datatype == 'list':
                         newval = ''
                         for element in value:
-                            newval = newval + element + ' '
+                            newval = newval + str(element) + ' '
                         value = newval
                 except AttributeError:
                     continue
