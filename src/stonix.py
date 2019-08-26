@@ -170,11 +170,6 @@ class Controller(Observable):
         self.pcs = False
         self.list = False
 
-        self.logger = LogDispatcher(self.environ)
-        self.logger.log(LogPriority.DEBUG, 'Logging Started')
-        self.statechglogger = StateChgLogger(self.logger, self.environ)
-        self.logger.log(LogPriority.DEBUG, 'State Logger Started')
-
         self.euid = self.environ.geteuid()
         test_mode = self.environ.get_test_mode()
         self.lockfile = '/var/run/stonix.pid'
@@ -183,12 +178,6 @@ class Controller(Observable):
         self.numrulescomplete = 0
         self.currulename = ''
         self.currulenum = 0
-        self.ch = CommandHelper(self.logger)
-
-        if not self.safetycheck():
-            self.logger.log(LogPriority.CRITICAL, ['SafetyCheck', 'ERROR: Installation safety check failed!'])
-            self.logger.log(LogPriority.WARNING, ['SafetyCheck', 'STONIX will now exit.'])
-            sys.exit(1)
 
         # this part added so stonix will create files with the intended root umask (022)
         # instead of using the default user umask (which is currently being set to 077)
@@ -200,8 +189,21 @@ class Controller(Observable):
         if test_mode:
             self.setuptesting()
         if not self.mode == 'test':
+            # processargs() MUST be called BEFORE logging object is instantiated to
+            # get the given logging level provided via command line!
             self.prog_args = ProgramArguments()
             self.processargs()
+
+        self.logger = LogDispatcher(self.environ)
+        self.logger.log(LogPriority.DEBUG, 'Logging Started')
+        self.ch = CommandHelper(self.logger)
+        self.statechglogger = StateChgLogger(self.logger, self.environ)
+        self.logger.log(LogPriority.DEBUG, 'State Logger Started')
+
+        if not self.safetycheck():
+            self.logger.log(LogPriority.CRITICAL, ['SafetyCheck', 'ERROR: Installation safety check failed!'])
+            self.logger.log(LogPriority.WARNING, ['SafetyCheck', 'STONIX will now exit.'])
+            sys.exit(1)
 
         try:
             fismacategory = self.config.getconfvalue('main', 'fismacat')
