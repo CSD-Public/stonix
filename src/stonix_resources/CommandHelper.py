@@ -306,11 +306,6 @@ class CommandHelper(object):
             if self.stderr:
                 if type(self.stderr) is str:
                     errstring = self.stderr
-                elif type(self.stderr) is bytes:
-                    try:
-                        errstring = self.stderr.decode('utf-8')
-                    except:
-                        errstring = ""
                 elif type(self.stderr) is list:
                     for i in self.stderr:
                         if type(i) is str:

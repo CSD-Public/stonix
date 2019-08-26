@@ -816,7 +816,7 @@ class Environment:
             try:
                 routecmd = subprocess.Popen('/sbin/route -n', shell=True, stdout=subprocess.PIPE, close_fds=True)
                 routedata = routecmd.stdout.readlines()
-            except OSError:
+            except (IOError, OSError):
                 return ipaddr
 
             for line in routedata:
@@ -837,7 +837,7 @@ class Environment:
                     cmd = '/sbin/route -n get default'
                 routecmd = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, close_fds=True)
                 routedata = routecmd.stdout.readlines()
-            except OSError:
+            except (IOError, OSError):
                 return ipaddr
 
             for line in routedata:
@@ -1181,6 +1181,8 @@ class Environment:
                                     stdout=subprocess.PIPE,
                                     close_fds=True)
             uuid = cmd1.stdout.readline()
+        if type(uuid) is bytes:
+            uuid = uuid.decode('utf-8')
         uuid = uuid.strip()
         return uuid
 
