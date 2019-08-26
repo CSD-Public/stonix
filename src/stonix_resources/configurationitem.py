@@ -35,13 +35,12 @@ Created: 2011/08/01
 Author: D. Kennel
 """
 
-import types
 import re
 
 
 class ConfigurationItem(object):
 
-    '''ConfigurationItem encapsulates all of the information regarding an
+    """ConfigurationItem encapsulates all of the information regarding an
     individual configuration item.
     
     :version:
@@ -98,13 +97,13 @@ class ConfigurationItem(object):
     coercion inside a list is not supported.
 
 
-    '''
+    """
 
     def __init__(self, datatype, key='DefaultKey', defvalue=None,
-                 usercomment='', instructions='''
+                 usercomment='', instructions="""
 Default Instructions: If you are seeing this text then a stonix developer
 forgot to override the default instructions for this key. Please file a bug.
-''', currvalue=None, simple=False, validvalueset=None,
+""", currvalue=None, simple=False, validvalueset=None,
                  maxnumselections=1, regexpattern=None):
         self.datatype = None
         validtypes = ['bool', 'string', 'int', 'float', 'list', 'dict']
@@ -117,10 +116,10 @@ forgot to override the default instructions for this key. Please file a bug.
         self.defvalue = 'DefaultValue'
         self.usercomment = ''
         self.setusercomment(usercomment)
-        self.instructions = '''
+        self.instructions = """
 Default Instructions: If you are seeing this text then a stonix developer
 forgot to override the default instructions for this key. Please file a bug.
-'''
+"""
         self.setinstructions(instructions)
         self.simple = False
         self.setsimple(simple)
@@ -130,7 +129,7 @@ forgot to override the default instructions for this key. Please file a bug.
         self.setmaxnumselections(maxnumselections)
         self.regexpattern = None
         self.setregexpattern(regexpattern)
-        if defvalue == None:
+        if defvalue is None:
             if self.datatype == 'bool':
                 self.defvalue = False
             elif self.datatype == 'string':
@@ -144,21 +143,19 @@ forgot to override the default instructions for this key. Please file a bug.
         else:
             self.setdefvalue(defvalue)
         self.currvalue = self.defvalue
-        if currvalue != None:
+        if currvalue is not None:
             self.updatecurrvalue(currvalue)
 
     def validate(self, testvalue):
-        '''The validate method attempts to validate the passed value according to
+        """The validate method attempts to validate the passed value according to
         the data type for the class. Returns a bool which is true if the value
         is valid for the CI.
 
-        :param varies: New value for this CI
-        @author: D. Kennel
-        :param testvalue: 
-        :returns: bool : True if testvalue is valid for this CI
+        :param testvalue: New value for this CI
+        :return: valid
+        :rtype: bool
 
-        '''
-        valid = False
+        """
 
         if self.datatype == 'bool':
             valid = self.__validatebool(testvalue)
@@ -172,10 +169,11 @@ forgot to override the default instructions for this key. Please file a bug.
             valid = self.__validatelist(testvalue)
         elif self.datatype == 'dict':
             valid = self.__validatedict(testvalue)
-        if valid and self.datatype == 'string' and not \
-        self.regexpattern == None:
+        else:valid = False
+
+        if valid and self.datatype == 'string' and self.regexpattern is not None:
             valid = self.validateagainstregex(testvalue)
-        if valid and self.datatype == 'list' and not self.validvalueset == None:
+        if valid and self.datatype == 'list' and self.validvalueset is not None:
             testresults = []
             for entry in testvalue:
                 result = self.validateagainstlist(entry)
@@ -184,46 +182,46 @@ forgot to override the default instructions for this key. Please file a bug.
                 valid = False
             else:
                 valid = True
-        if valid and not self.validvalueset == None and \
-        self.datatype not in ['list', 'dict']:
+
+        if valid and not self.validvalueset is None and self.datatype not in ['list', 'dict']:
             valid = self.validateagainstlist(testvalue)
 
         return valid
 
     def getkey(self):
-        '''Return the Key for this configuration item. The key is the identifier
+        """Return the Key for this configuration item. The key is the identifier
         for this configuration element as seen in the config file.
 
 
         :returns: string : CI Key
         @author: D. Kennel
 
-        '''
+        """
         return self.key
 
     def getdefvalue(self):
-        '''Returns the default value for this CI.
+        """Returns the default value for this CI.
 
 
         :returns: varies : CI value
         @author: D. Kennel
 
-        '''
+        """
         return self.defvalue
 
     def getdatatype(self):
-        '''Returns what datatype this CI is. Common types are Boolean, String and
+        """Returns what datatype this CI is. Common types are Boolean, String and
         List.
 
 
         :returns: string : datatype
         @author: D. Kennel
 
-        '''
+        """
         return self.datatype
 
     def getusercomment(self):
-        '''Returns a string that is the current value of the user comment field
+        """Returns a string that is the current value of the user comment field
         for this CI. This field may return an empty string if no comment has
         been set.
 
@@ -231,31 +229,31 @@ forgot to override the default instructions for this key. Please file a bug.
         :returns: string : user comment
         @author: D. Kennel
 
-        '''
+        """
         return self.usercomment
 
     def setusercomment(self, usercomment):
-        '''Set the user comment text. Ideally this should be formatted into 80
+        """Set the user comment text. Ideally this should be formatted into 80
         character lines.
 
         :param usercomment: user comment text
         @author: D. Kennel
 
-        '''
+        """
         self.usercomment = usercomment
 
     def getinstructions(self):
-        '''Return a string containing instructions to the user for this CI.
+        """Return a string containing instructions to the user for this CI.
 
 
         :returns: string : Instructions for this CI
         @author: D. Kennel
 
-        '''
+        """
         return self.instructions
 
     def insimple(self):
-        '''Return true if this configuration item should appear in a simple config
+        """Return true if this configuration item should appear in a simple config
         file. Only frequently modified items should appear in the 'simple'
         config.
 
@@ -263,22 +261,22 @@ forgot to override the default instructions for this key. Please file a bug.
         :returns: bool : True if CI should be in simple
         @author: D. Kennel
 
-        '''
+        """
         return self.simple
 
     def getcurrvalue(self):
-        '''Returns the current value for this configuration element. Datatype
+        """Returns the current value for this configuration element. Datatype
         varies and should match the return for getdatatype.
 
 
         :returns: varies : current value for this CI
         @author: D. Kennel
 
-        '''
+        """
         return self.currvalue
 
     def updatecurrvalue(self, newvalue, coercing=True, listdelim=' '):
-        '''Updates the current value for this CI the update will call the
+        """Updates the current value for this CI the update will call the
         validation routine before writing the supplied value to the class
         property. This method will attempt to coerce the value of the supplied
         input to match the datatype of the CI unless the coerce parameter is
@@ -286,40 +284,40 @@ forgot to override the default instructions for this key. Please file a bug.
         supported. This method can handle converting a string to an int but it
         cannot manage converting a string to a list of integers.
 
-        :param varies: newvalue new value for this CI
-        :param coerce: Bool default = True. Whether or not to attempt to coerce
-        input to match the specified datatype.
-        :param string: listdelim is the list delimiter to be used when
-        splitting strings into lists.
-        @author: D. Kennel
-        :param newvalue: 
-        :param coercing:  (Default value = True)
-        :param listdelim:  (Default value = ' ')
+        :param newvalue: new value for this CI
+        :param coercing: Bool default = True. Whether or not to attempt to coerce (Default value = True)
+            input to match the specified datatype.
+        :param listdelim: is the list delimiter to be used when (Default value = ' ')
+            splitting strings into lists.
 
-        '''
+        """
+
         try:
+
             if coercing:
-                if self.datatype == 'bool' and type(newvalue) is not \
-                bool:
+                if self.datatype == 'bool' and type(newvalue) is not bool:
                     newvalue = newvalue.lower()
                     if newvalue in ['yes', 'true']:
                         newvalue = True
                     elif newvalue in ['no', 'false']:
                         newvalue = False
-                elif self.datatype == 'int' and type(newvalue) is not \
-                int:
+                elif self.datatype == 'int' and type(newvalue) is not int:
                     newvalue = int(newvalue)
-                elif self.datatype == 'float' and type(newvalue) is not \
-                float:
+                elif self.datatype == 'float' and type(newvalue) is not float:
                     newvalue = float(newvalue)
-                elif self.datatype == 'list' and type(newvalue) is not \
-                list:
+                elif self.datatype == 'list' and type(newvalue) is not list:
                     if not newvalue:
                         newvalue = []
                     else:
                         newvalue = newvalue.split(listdelim)
-        except(TypeError, ValueError):
+
+            if type(newvalue) is bytes:
+                if self.datatype == 'string':
+                    newvalue = newvalue.decode('utf-8')
+
+        except (TypeError, ValueError):
             return False
+
         if self.validate(newvalue):
             self.currvalue = newvalue
             return True
@@ -327,23 +325,21 @@ forgot to override the default instructions for this key. Please file a bug.
             return False
 
     def setkey(self, key):
-        '''Set the Key of the CI. This is the 'name' of the CI as it appears in
+        """Set the Key of the CI. This is the 'name' of the CI as it appears in
         the configuration file or the GUI. This may only safely be set during
         the initial construction of the CI. Runtime changes of the Key will
         have bad side effects.
 
-        :param string: Key
-        @author: dkennel
         :param key: 
 
-        '''
+        """
         if self.__validatestring(key):
             self.key = key
         else:
             raise TypeError('Invalid type provided as Key')
 
     def setdefvalue(self, value):
-        '''Set the default value for the CI. This must be set after the datatype
+        """Set the default value for the CI. This must be set after the datatype
         and the type of the default value must match the datatype. If a regex
         or validvalueset has been provided then the default value must match
         those as well. This may only safely be set during the initial
@@ -353,8 +349,8 @@ forgot to override the default instructions for this key. Please file a bug.
         :param value: varies
         @author: dkennel
 
-        '''
-        if self.datatype == None:
+        """
+        if self.datatype is None:
             raise TypeError('Attempted to set default value when datatype is not set.')
         if self.validate(value):
             self.defvalue = value
@@ -362,7 +358,7 @@ forgot to override the default instructions for this key. Please file a bug.
             raise ValueError('Could not validate submitted default value')
 
     def setinstructions(self, instructions):
-        '''Set the instructions for the CI. The Instructions are information
+        """Set the instructions for the CI. The Instructions are information
         provided to the user on what the CI setting controls. It should contain
         information on acceptable values, and what the default is. This should
         only be set during the intial construction of the CI.
@@ -370,14 +366,14 @@ forgot to override the default instructions for this key. Please file a bug.
         :param instructions: string
         @author: dkennel
 
-        '''
+        """
         if self.__validatestring(instructions):
             self.instructions = instructions
         else:
             raise TypeError('Invalid type provided as Instructions')
 
     def setsimple(self, simple):
-        '''Set whether or not this CI should appear in a simple config. This
+        """Set whether or not this CI should appear in a simple config. This
         affects the config file which can be generated in two ways simple,
         which contains only the key settings and options that have been changed
         from their default values, or full which contains all the settings.
@@ -386,25 +382,24 @@ forgot to override the default instructions for this key. Please file a bug.
         :param simple: Bool - True to include in simple config
         @author: dkennel
 
-        '''
+        """
         if self.__validatebool(simple):
             self.simple = simple
         else:
             raise TypeError('Setsimple requires a Bool.')
 
     def setvalidvalueset(self, valset):
-        '''Set a list of valid values that the default value and any passed value
+        """Set a list of valid values that the default value and any passed value
         will be checked against. This property is only safely set when the CI
         is being constructed. Runtime changes will produce bad behavior.
 
-        :param valset: python list
-        @author: dkennel
+        :param valset: list
 
-        '''
-        if valset == None:
+        """
+        if valset is None:
             self.validvalueset = valset
             return
-        if self.datatype == None:
+        if self.datatype is None:
             raise TypeError('Attempted to set a valid value set when datatype is not set.')
         if self.__validatelist(valset):
             results = []
@@ -419,6 +414,8 @@ forgot to override the default instructions for this key. Please file a bug.
                     valid = self.__validatestring(item)
                 elif self.datatype == 'bool':
                     raise TypeError('Valid value sets make no sense with boolean data types')
+                else:
+                    valid = False
                 results.append(valid)
             if False in results:
                 raise TypeError('Set contains an invalid type.')
@@ -427,7 +424,7 @@ forgot to override the default instructions for this key. Please file a bug.
         self.validvalueset = valset
 
     def setmaxnumselections(self, selmax):
-        '''Set a maximum permissible number of selections for items being selected
+        """Set a maximum permissible number of selections for items being selected
         from a validvalueset. The default for this property is 1. This property
         may only be safely set during the initial CI construction. Runtime
         changes will produce bad behavior.
@@ -435,7 +432,7 @@ forgot to override the default instructions for this key. Please file a bug.
         :param selmax: int
         @author: dkennel
 
-        '''
+        """
         if self.__validateint(selmax):
             if selmax > 0:
                 self.maxnumselections = selmax
@@ -445,7 +442,7 @@ forgot to override the default instructions for this key. Please file a bug.
             raise TypeError('Setmaxnumselections requires a positive integer.')
 
     def setregexpattern(self, pattern):
-        '''Set a regular expression pattern that will be used to validate user
+        """Set a regular expression pattern that will be used to validate user
         input to the CI. If no pattern is provided this check will be skipped.
         This property may only be safely changed during the initial CI
         construction. Runtime changes will result in bad behavior.
@@ -453,8 +450,8 @@ forgot to override the default instructions for this key. Please file a bug.
         :param pattern: string
         @author: dkennel
 
-        '''
-        if pattern == None:
+        """
+        if pattern is None:
             self.regexpattern = pattern
             return
         if self.datatype == 'string':
@@ -466,7 +463,7 @@ forgot to override the default instructions for this key. Please file a bug.
             raise TypeError('Setregexpattern only makes sense with string datatype')
 
     def validateagainstregex(self, entry):
-        '''This method validates a submitted entry against the regex pattern
+        """This method validates a submitted entry against the regex pattern
         stored for this CI. If there is no regex pattern stored this method
         will always return True.
 
@@ -474,8 +471,8 @@ forgot to override the default instructions for this key. Please file a bug.
         :returns: Bool - True if matched.
         @author: dkennel
 
-        '''
-        if self.regexpattern == None:
+        """
+        if self.regexpattern is None:
             return True
         if re.match(self.regexpattern, entry):
             return True
@@ -483,7 +480,7 @@ forgot to override the default instructions for this key. Please file a bug.
             return False
 
     def validateagainstlist(self, entry):
-        '''This method will validate a submitted entry against the entries in the
+        """This method will validate a submitted entry against the entries in the
         validvalueset. It expects only a single entry and does a simple
         membership check.
 
@@ -491,7 +488,7 @@ forgot to override the default instructions for this key. Please file a bug.
         :returns: bool - True if matched.
         @author: dkennel
 
-        '''
+        """
         if entry in self.validvalueset:
             return True
         else:
@@ -509,7 +506,7 @@ forgot to override the default instructions for this key. Please file a bug.
                 return True
             else:
                 return False
-        except (NameError):
+        except NameError:
             # testvar was undefined
             return False
 
@@ -527,7 +524,7 @@ forgot to override the default instructions for this key. Please file a bug.
                 return True
             else:
                 return False
-        except (NameError):
+        except NameError:
             print("Throwing an error when checking type\n")
             # testvar was undefined
             return False
@@ -545,7 +542,7 @@ forgot to override the default instructions for this key. Please file a bug.
                 return True
             else:
                 return False
-        except (NameError):
+        except NameError:
             # testvar was undefined
             return False
 
@@ -562,7 +559,7 @@ forgot to override the default instructions for this key. Please file a bug.
                 return True
             else:
                 return False
-        except (NameError):
+        except NameError:
             # testvar was undefined
             return False
 
@@ -579,7 +576,7 @@ forgot to override the default instructions for this key. Please file a bug.
                 return True
             else:
                 return False
-        except (NameError):
+        except NameError:
             # testvar was undefined
             return False
 
@@ -596,6 +593,6 @@ forgot to override the default instructions for this key. Please file a bug.
                 return True
             else:
                 return False
-        except (NameError):
+        except NameError:
             # testvar was undefined
             return False

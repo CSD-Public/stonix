@@ -337,7 +337,6 @@ class GUI (View, QtWidgets.QMainWindow, main_window.Ui_MainWindow):
 
         foundin = []
         allrules = self.rule_list_widget.findItems('.*', Qt.MatchRegExp)
-        searchTerm = ''
         searchTerm = self.searchbox.text()
 
         # if a user clears the searchbox, show all rules
@@ -997,7 +996,10 @@ class CiFrame(QtWidgets.QFrame):
                 rawlist = opt.getcurrvalue()
                 strlist = ''
                 for item in rawlist:
-                    strlist = strlist + item + ' '
+                    if type(item) is bytes:
+                        strlist += item.decode('utf-8') + ' '
+                    else:
+                        strlist += item + ' '
                 mydata.setText(strlist)
             myuc.setPlainText(opt.getusercomment())
 
