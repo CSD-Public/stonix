@@ -102,7 +102,7 @@ dictionary"""
 
         :param pValue: string; value to format
         :return: outputvalue - formatted string
-        :rtype: basestring
+        :rtype: str
         """
 
         outputvalue = pValue

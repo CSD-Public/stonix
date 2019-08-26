@@ -143,7 +143,7 @@ class KVAConf():
 
 
         :returns: self.intent; present | not present
-        :rtype: basestring
+        :rtype: str
 
         '''
         return self.intent

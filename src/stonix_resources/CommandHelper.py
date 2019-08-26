@@ -304,7 +304,7 @@ class CommandHelper(object):
         try:
 
             if self.stderr:
-                if type(self.stderr) is basestring:
+                if type(self.stderr) is str:
                     errstring = self.stderr
                 elif type(self.stderr) is bytes:
                     try:
@@ -313,7 +313,7 @@ class CommandHelper(object):
                         errstring = ""
                 elif type(self.stderr) is list:
                     for i in self.stderr:
-                        if type(i) is basestring:
+                        if type(i) is str:
                             errstring += "\n" + i
                         elif type(i) is bytes:
                             errstring += "\n" + i.decode('utf-8')

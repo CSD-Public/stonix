@@ -255,7 +255,7 @@ remove command"
 
             # parameter validation
             if package:
-                if not isinstance(package, basestring):
+                if not isinstance(package, str):
                     self.logger.log(LogPriority.DEBUG, "Parameter: package must be of type string. Got: " + str(type(package)))
                     return updatesavail
 

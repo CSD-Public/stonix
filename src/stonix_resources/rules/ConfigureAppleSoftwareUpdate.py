@@ -480,7 +480,7 @@ class ConfigureAppleSoftwareUpdate(RuleKVEditor):
 
         :param pValue: argument to format
         :return: outputvalue
-        :rtype: basestring
+        :rtype: str
         """
 
         outputvalue = pValue

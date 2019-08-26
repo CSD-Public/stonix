@@ -543,7 +543,7 @@ class RunWith(object):
             '''
                 internal_command.append(str("/usr/bin/sudo -v -u #0 -S -s '" + \
                                             " ".join(cmd) + "'"))
-            elif isinstance(self.command, basestring):
+            elif isinstance(self.command, str):
                 try:
                     internal_command.append(str("/usr/bin/sudo -v -u #0  -S -s " + \
                                                 "'" + \

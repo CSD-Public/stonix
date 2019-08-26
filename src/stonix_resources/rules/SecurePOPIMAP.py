@@ -238,7 +238,7 @@ class SecurePOPIMAP(Rule):
         try:
 
             if not isinstance(filepath, str):
-                self.logger.log(LogPriority.DEBUG, "Parameter filepath must be of type: basestring")
+                self.logger.log(LogPriority.DEBUG, "Parameter filepath must be of type: str")
             if not filepath:
                 self.logger.log(LogPriority.DEBUG, "Parameter filepath must not be blank")
 
@@ -269,7 +269,7 @@ class SecurePOPIMAP(Rule):
         try:
 
             if not isinstance(regex, str):
-                self.logger.log(LogPriority.DEBUG, "Parameter regex must be of type: basestring")
+                self.logger.log(LogPriority.DEBUG, "Parameter regex must be of type: str")
                 retval = False
                 return retval
             if not isinstance(contents, list):
@@ -310,7 +310,7 @@ class SecurePOPIMAP(Rule):
             retval = False
             return retval
         if not isinstance(filepath, str):
-            self.logger.log(LogPriority.DEBUG, "Parameter filepath must be of type: basestring")
+            self.logger.log(LogPriority.DEBUG, "Parameter filepath must be of type: str")
             retval = False
             return retval
         if not isinstance(contents, list):

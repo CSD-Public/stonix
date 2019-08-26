@@ -567,7 +567,7 @@ class Controller(Observable):
 
         :param int rulenum: of the rule to fetch a name for.
         :return: rulename
-        :rtype: basestring
+        :rtype: str
         
 
         """
@@ -915,7 +915,7 @@ class Controller(Observable):
 
         :param int ruleid: int (identifier) of rule to get help text for.
         :return: helptxt
-        :rtype: basestring
+        :rtype: str
         
         """
         helptxt = ""
@@ -1036,7 +1036,7 @@ class Controller(Observable):
 
         :param int ruleid:
         :return: detailedresults
-        :rtype: basestring
+        :rtype: str
 
         """
         detailedresults = ""
@@ -1112,7 +1112,7 @@ class Controller(Observable):
 
 
         :return: self.logger.displaylastrun()
-        :rtype: basestring
+        :rtype: str
         
 
         """
