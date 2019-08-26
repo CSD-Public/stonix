@@ -288,12 +288,14 @@ class CommandHelper(object):
 
     def getErrorString(self):
         """Get standard error in string format
+        error string could be one of several types:
+        bytes (or bytes-like object)
+        list
+        string
+        we need to handle all cases
 
-        :param self: essential if you override this definition
-        :returns: self.stderr
+        :return: errstring
         :rtype: string
-@author: dwalker
-@change: Breen Malmberg - 12/3/2015
 
         """
 
@@ -302,19 +304,21 @@ class CommandHelper(object):
         try:
 
             if self.stderr:
-                if not isinstance(self.stderr, list):
-                    self.logdispatcher.log(LogPriority.DEBUG,
-                                           "Parameter self.stderr is not a " +
-                                           "list. Cannot compile error " +
-                                           "string. Returning blank error " +
-                                           "string...")
-                    return errstring
-
-                for line in self.stderr:
-                    errstring += line + "\n"
-            else:
-                self.logdispatcher.log(LogPriority.DEBUG,
-                                       "No error string to display")
+                if type(self.stderr) is basestring:
+                    errstring = self.stderr
+                elif type(self.stderr) is bytes:
+                    try:
+                        errstring = self.stderr.decode('utf-8')
+                    except:
+                        errstring = ""
+                elif type(self.stderr) is list:
+                    for i in self.stderr:
+                        if type(i) is basestring:
+                            errstring += "\n" + i
+                        elif type(i) is bytes:
+                            errstring += "\n" + i.decode('utf-8')
+                        elif type(i) is int:
+                            errstring += "\n" + str(i)
 
         except Exception:
             raise
