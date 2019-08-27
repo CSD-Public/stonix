@@ -133,6 +133,8 @@ class TCPWrappers(Rule):
                 self.hosts_allow_contents.append(line)
             else:
                 for s in subnets:
+                    if type(s) is bytes:
+                        s = s.decode('utf-8')
                     self.hosts_allow_contents.append(re.sub("{allownet}", s, line))
 
     def convert_to_legacy(self, subnet):
