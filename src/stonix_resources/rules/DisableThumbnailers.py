@@ -71,8 +71,6 @@ class DisableThumbnailers(Rule):
         default = True
         self.ci = self.initCi(datatype, key, instructions, default)
 
-        self.localize()
-
     def localize(self):
         """
         set paths based on what versions of which utilities exist on the system
@@ -117,12 +115,10 @@ class DisableThumbnailers(Rule):
         """
 
         self.compliant = True
-        self.ch = CommandHelper(self.logger)
-        self.ph = Pkghelper(self.logger, self.environ)
         self.detailedresults = ""
 
         try:
-
+            self.localize()
             if self.gnome_installed:
                 # This portion of the code is relevant to user context
                 if self.environ.geteuid() != 0:
