@@ -109,25 +109,26 @@ class ConfigureFirewall(RuleKVEditor):
         '''Any values inside stonix.conf overrule the values inserted 
         in the text field unless changes are saved to stonix.conf'''
         try:
-            '''variable to hold apps currently allowed by firewall'''
-            self.ch.executeCommand(self.list)
-            output = self.ch.getOutput()
-            for line in output:
-                if search("^\d+\ :\s+/Applications", line) and search("/", line):
-                    appsplit = line.split("/")
-                    try:
-                        '''Get the application name and store it in self.currallowed'''
-                        app = appsplit[-1].strip()
-                        self.currallowed.append(app)
-                    except IndexError:
-                        continue
+            # '''variable to hold apps currently allowed by firewall'''
+            # self.ch.executeCommand(self.list)
+            # output = self.ch.getOutput()
+            # for line in output:
+            #     if search("^\d+\ :\s+/Applications", line) and search("/", line):
+            #         appsplit = line.split("/")
+            #         try:
+            #             '''Get the application name and store it in self.currallowed'''
+            #             app = appsplit[-1].strip()
+            #             self.currallowed.append(app)
+            #         except IndexError:
+            #             continue
             '''Put any already allowed apps into the CI'''
             datatype = 'list'
             key = 'ALLOWEDAPPS'
             instructions = "Space separated list of Applications allowed by the firewall\n" + \
                 "All applications end with .app.  For a list of applications check the\n" + \
                 "/Applications folder."
-            default = self.currallowed
+            default = []
+            #default = self.currallowed
             self.appci = self.initCi(datatype, key, instructions, default)
             self.appci.updatecurrvalue(self.currallowed, True, ",")
         except OSError:
