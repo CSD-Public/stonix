@@ -40,7 +40,7 @@ from ..CommandHelper import CommandHelper
 from ..ServiceHelper import ServiceHelper
 from ..logdispatcher import LogPriority
 from ..stonixutilityfunctions import iterate
-from re import search
+from re import search, escape
 import traceback
 
 class ConfigureFirewall(RuleKVEditor):
@@ -129,6 +129,7 @@ class ConfigureFirewall(RuleKVEditor):
                 "/Applications folder."
             default = self.currallowed
             self.appci = self.initCi(datatype, key, instructions, default)
+            self.appci.updatecurrvalue(self.currallowed, True, ",")
         except OSError:
             '''There are no currently allowed apps for the fw'''
             datatype = 'list'
@@ -205,7 +206,7 @@ class ConfigureFirewall(RuleKVEditor):
                     self.logdispatch.log(LogPriority.DEBUG, debug)
                     compliant = False
                     for item in self.templist:
-                        self.detailedresults += item +  " is allowed but shouldn't be\n"
+                        self.detailedresults += item + " is allowed but shouldn't be\n"
             elif self.applist:
                 '''self.allowedapps is blank but there are apps being allowed through
                 the firewall.  We must remove these from being allowed.'''
@@ -213,7 +214,7 @@ class ConfigureFirewall(RuleKVEditor):
                 self.logdispatch.log(LogPriority.DEBUG, debug)
                 compliant = False
                 for item in self.applist:
-                    self.detailedresults += item +  " is allowed but shouldn't be\n"
+                    self.detailedresults += item + " is allowed but shouldn't be\n"
             self.compliant = compliant
         except Exception:
             self.rulesuccess = False
@@ -244,13 +245,15 @@ class ConfigureFirewall(RuleKVEditor):
                 success = False
             self.templist = self.applist[:]
             if self.allowedapps:
+                print "There are allowed apps\n\n\n"
+                print "self.applist: " + str(self.applist) + "\n\n"
                 debug = "there are allowedapps in fix: " + str(self.allowedapps) + "\n"
                 self.logdispatch.log(LogPriority.DEBUG, debug)
                 for app in self.allowedapps:
                     '''The current application should be allowed but isn't
                     so on the next line we're going to try and allow it'''
                     if app not in self.applist:
-                        if not self.ch.executeCommand(self.add + "/Applications/" + app):
+                        if not self.ch.executeCommand(self.add + "/Applications/" + escape(app)):
                             '''Trying to add the application to the allowed apps
                             wasn't successful'''
                             success = False
@@ -261,7 +264,7 @@ class ConfigureFirewall(RuleKVEditor):
                             successful so record an even to remove it on undo'''
                             self.iditerator += 1
                             myid = iterate(self.iditerator, self.rulenumber)
-                            undocmd = self.rmv + "/Applications/" + app
+                            undocmd = self.rmv + "/Applications/" + escape(app)
                             event = {"eventtype": "comm",
                                      "command": undocmd}
                             self.statechglogger.recordchgevent(myid, event)
@@ -270,28 +273,28 @@ class ConfigureFirewall(RuleKVEditor):
                 if self.templist:
                     for app in self.templist:
                         debug = app + " isn't in " + str(self.allowedapps) + " so we're going to remove it\n"
-                        if not self.ch.executeCommand(self.rmv + "/Applications/" + app):
+                        if not self.ch.executeCommand(self.rmv + "/Applications/" + escape(app)):
                             success = False
                             self.detailedresults += "Unable to remove " + \
                                 app + " from firewall allowed list\n"
                         else:
                             self.iditerator += 1
                             myid = iterate(self.iditerator, self.rulenumber)
-                            undocmd = self.add + "/Applications/" + app
+                            undocmd = self.add + "/Applications/" + escape(app)
                             event = {"eventtype": "comm",
                                      "command": undocmd}
                             self.statechglogger.recordchgevent(myid, event)
             elif self.applist:
                 tmp = []
                 for app in self.applist:
-                    if not self.ch.executeCommand(self.rmv + "/Applications/" + app):
+                    if not self.ch.executeCommand(self.rmv + "/Applications/" + escape(app)):
                         success = False
                         self.detailedresults += "Unable to remove " + \
                             app + " from firewall allowed list\n"
                     else:
                         self.iditerator += 1
                         myid = iterate(self.iditerator, self.rulenumber)
-                        undocmd = self.add + "/Applications/" + app
+                        undocmd = self.add + "/Applications/" + escape(app)
                         event = {"eventtype": "comm",
                                  "command": undocmd}
                         self.statechglogger.recordchgevent(myid, event)
