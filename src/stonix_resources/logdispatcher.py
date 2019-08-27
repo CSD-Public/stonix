@@ -88,7 +88,7 @@ class LogDispatcher (Observable):
         self.reportlog = os.path.join(self.logpath, reportfile)
         self.xmllog = os.path.join(self.logpath, xmlfile)
         if self.debug:
-            print('LOGDISPATCHER: xml log path: ' + self.xmllog)
+            print(('LOGDISPATCHER: xml log path: ' + self.xmllog))
         if os.path.isfile(self.xmllog):
             try:
                 if os.path.exists(self.xmllog + '.old'):
@@ -99,7 +99,7 @@ class LogDispatcher (Observable):
                 raise
             except Exception as err:
                 print('logdispatcher: ')
-                print(traceback.format_exc())
+                print((traceback.format_exc()))
                 print(err)
         self.xmlreport = xmlReport(self.xmllog, self.debug)
         self.metadataopen = False
@@ -205,12 +205,8 @@ class LogDispatcher (Observable):
 
         """
 
-        entry = self.format_message_data(msg_data)
-
         try:
 
-            self.last_message_received = entry
-            self.last_prio = priority
             if type(msg_data) is list:
                 if type(msg_data[0]) is bytes:
                     msg_data[0] = msg_data[0].decode('utf-8')
@@ -220,8 +216,12 @@ class LogDispatcher (Observable):
             else:
                 if type(msg_data) is bytes:
                     msg_data = msg_data.decode('utf-8')
-                # msg = 'none' + ':' + msg_data.strip()
                 msg = msg_data.strip()
+
+            entry = self.format_message_data(msg_data)
+            self.last_message_received = entry
+            self.last_prio = priority
+
             if self.debug:
                 #####
                 # Set up inspect to use stack variables to log file and
@@ -426,7 +426,7 @@ Subject: STONIX Error Report: ''' + prefix + '''
                 raise
             except Exception as err:
                 print('logdispatcher: ')
-                print(traceback.format_exc())
+                print((traceback.format_exc()))
                 print(err)
                 return False
 
@@ -464,7 +464,7 @@ Subject: STONIX Error Report: ''' + prefix + '''
                 raise
             except Exception as err:
                 print('logdispatcher: ')
-                print(traceback.format_exc())
+                print((traceback.format_exc()))
                 print(err)
                 return False
         if os.path.isfile(self.reportlog):
@@ -477,7 +477,7 @@ Subject: STONIX Error Report: ''' + prefix + '''
                 raise
             except Exception as err:
                 print('logdispatcher: ')
-                print(traceback.format_exc())
+                print((traceback.format_exc()))
                 print(err)
                 return False
 
