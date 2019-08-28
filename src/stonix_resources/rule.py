@@ -709,7 +709,7 @@ LANL-stonix."""
 
         self.targetstate = state
 
-    def initCi(self, datatype, key, instructions, default):
+    def initCi(self, datatype, key, instructions, default, delimiter=' '):
         '''This method constructs a ConfigurationItem for the rule. This is a
         shorthand method for instantiating a CI that should cover most cases.
         All parameters are required.
@@ -722,7 +722,9 @@ LANL-stonix."""
         @author: dkennel
 
         '''
-        myci = ConfigurationItem(datatype)
+        print "current rule is: " + self.rulename + "\n\n"
+        print "delimiter inside initCi is: " + delimiter + "\n\n"
+        myci = ConfigurationItem(datatype, delimiter)
         myci.setkey(key)
         myci.setinstructions(instructions)
         myci.setdefvalue(default)

@@ -100,7 +100,7 @@ class ConfigurationItem(object):
 
     '''
 
-    def __init__(self, datatype, key='DefaultKey', defvalue=None,
+    def __init__(self, datatype, delimiter, key='DefaultKey', defvalue=None,
                  usercomment='', instructions='''
 Default Instructions: If you are seeing this text then a stonix developer
 forgot to override the default instructions for this key. Please file a bug.
@@ -112,6 +112,9 @@ forgot to override the default instructions for this key. Please file a bug.
             raise ValueError('Invalid datatype specified. Valid entries bool, string, int, float, list. Recieved: ' + str(datatype))
         else:
             self.datatype = datatype
+        print "self.datatype: " + str(self.datatype) + "\n\n"
+        self.delimiter = delimiter
+        print "self.delimiter inside configurationItem init: " + self.delimiter + "\n\n"
         self.key = 'DefaultKey'
         self.setkey(key)
         self.defvalue = 'DefaultValue'
@@ -144,8 +147,10 @@ forgot to override the default instructions for this key. Please file a bug.
         else:
             self.setdefvalue(defvalue)
         self.currvalue = self.defvalue
-        if currvalue != None:
-            self.updatecurrvalue(currvalue)
+        if self.currvalue != None:
+            print "about to call updatecurrvalue and self.delimiter is still " + self.delimiter + "\n\n"
+            print "self.currvalue is " + str(self.currvalue) + "\n\n"
+            self.updatecurrvalue(self.currvalue, True, listdelim=self.delimiter)
 
     def validate(self, testvalue):
         '''The validate method attempts to validate the passed value according to
@@ -298,9 +303,16 @@ forgot to override the default instructions for this key. Please file a bug.
 
         '''
         try:
+            delim = listdelim
+            print "delim inside updatecurrvalue is: " + delim + "\n"
+            print "listdelim inside updatecurrvalue is: " + listdelim + "\n"
+            print "self.datatype: " + self.datatype + "\n"
+            print "newvalue: " + str(newvalue) + "\n"
             if coercing:
+                print "we are coercing\n"
                 if self.datatype == 'bool' and type(newvalue) is not \
                 types.BooleanType:
+                    print "inside boolean section\n"
                     newvalue = newvalue.lower()
                     if newvalue in ['yes', 'true']:
                         newvalue = True
@@ -308,17 +320,24 @@ forgot to override the default instructions for this key. Please file a bug.
                         newvalue = False
                 elif self.datatype == 'int' and type(newvalue) is not \
                 types.IntType:
+                    print "inside int section\n"
                     newvalue = int(newvalue)
                 elif self.datatype == 'float' and type(newvalue) is not \
                 types.FloatType:
+                    print "inside float sections\n"
                     newvalue = float(newvalue)
                 elif self.datatype == 'list' and type(newvalue) is not \
                 types.ListType:
+                    print "inside list section\n"
                     if not newvalue:
+                        print "not newvalue"
                         newvalue = []
                     else:
-                        newvalue = newvalue.split(listdelim)
+                        newvalue = re.split(delim, newvalue)
+                        print("newvalue is ", newvalue, "\n\n ")
+                        #newvalue = newvalue.split(listdelim)
         except(TypeError, ValueError):
+            print "returning False exception\n"
             return False
         if self.validate(newvalue):
             self.currvalue = newvalue

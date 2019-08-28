@@ -106,31 +106,29 @@ class ConfigureFirewall(RuleKVEditor):
                          False,
                          {"stealthenabled": ["1", "-int 1"]})
         self.currallowed = []
-        '''Any values inside stonix.conf overrule the values inserted 
+        '''Any values inside stonix.conf overrule the values inserted
         in the text field unless changes are saved to stonix.conf'''
         try:
-            # '''variable to hold apps currently allowed by firewall'''
-            # self.ch.executeCommand(self.list)
-            # output = self.ch.getOutput()
-            # for line in output:
-            #     if search("^\d+\ :\s+/Applications", line) and search("/", line):
-            #         appsplit = line.split("/")
-            #         try:
-            #             '''Get the application name and store it in self.currallowed'''
-            #             app = appsplit[-1].strip()
-            #             self.currallowed.append(app)
-            #         except IndexError:
-            #             continue
+            '''variable to hold apps currently allowed by firewall'''
+            self.ch.executeCommand(self.list)
+            output = self.ch.getOutput()
+            for line in output:
+                if search("^\d+\ :\s+/Applications", line) and search("/", line):
+                    appsplit = line.split("/")
+                    try:
+                        '''Get the application name and store it in self.currallowed'''
+                        app = appsplit[-1].strip()
+                        self.currallowed.append(app)
+                    except IndexError:
+                        continue
             '''Put any already allowed apps into the CI'''
             datatype = 'list'
             key = 'ALLOWEDAPPS'
             instructions = "Space separated list of Applications allowed by the firewall\n" + \
                 "All applications end with .app.  For a list of applications check the\n" + \
                 "/Applications folder."
-            default = []
-            #default = self.currallowed
-            self.appci = self.initCi(datatype, key, instructions, default)
-            self.appci.updatecurrvalue(self.currallowed, True, ",")
+            default = self.currallowed
+            self.appci = self.initCi(datatype, key, instructions, default, "\.app\s*")
         except OSError:
             '''There are no currently allowed apps for the fw'''
             datatype = 'list'
@@ -138,8 +136,8 @@ class ConfigureFirewall(RuleKVEditor):
             instructions = "Space separated list of Applications allowed by the firewall\n" + \
                 "All applications end with .app.  For a list of applications check the\n" + \
                 "/Applications folder."
-            default = self.currallowed
-            self.appci = self.initCi(datatype, key, instructions, default)
+            default = []
+            self.appci = self.initCi(datatype, key, instructions, default, "\.app\s*")
 
     def report(self):
         '''@summary: Checks compliancy of system according to this rule
@@ -185,6 +183,14 @@ class ConfigureFirewall(RuleKVEditor):
             '''
             self.templist = self.applist[:]
             if self.allowedapps:
+                print "self.allowedapps: " + str(self.allowedapps) + "\n\n"
+                '''clean up self.allowedapps before processing'''
+                tempallowedapps = []
+                for app in self.allowedapps:
+                    if app.strip() != "":
+                        app += ".app"
+                        tempallowedapps.append(app)
+                self.allowedapps = tempallowedapps
                 for app in self.allowedapps:
                     '''One of the apps the user wants allowed isn't showing
                     up in the allowed apps output'''
