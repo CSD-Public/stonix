@@ -18,7 +18,6 @@
 '''
 This method runs all the report methods for RuleKVEditors in defined in the
 dictionary
-
 @author: ekkehard j. koch
 @change: 03/25/2014 Original Implementation
 @change: 2014/10/17 ekkehard OS X Yosemite 10.10 Update
@@ -33,15 +32,14 @@ dictionary
 @change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
 @change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
-@change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
 '''
-
+from __future__ import absolute_import
 from ..ruleKVEditor import RuleKVEditor
 from ..CommandHelper import CommandHelper
 from ..ServiceHelper import ServiceHelper
 from ..logdispatcher import LogPriority
 from ..stonixutilityfunctions import iterate
-from re import search
+from re import search, escape
 import traceback
 
 class ConfigureFirewall(RuleKVEditor):
@@ -60,7 +58,7 @@ class ConfigureFirewall(RuleKVEditor):
         self.rootrequired = True
         self.guidance = []
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.15', 'r', '10.15.10']}}
+                           'os': {'Mac OS X': ['10.12', 'r', '10.14.10']}}
         self.ch = CommandHelper(self.logdispatch)
         self.sh = ServiceHelper(self.environ, self.logdispatch)
         self.fwcmd = "/usr/libexec/ApplicationFirewall/socketfilterfw"
@@ -106,47 +104,47 @@ class ConfigureFirewall(RuleKVEditor):
                          None,
                          False,
                          {"stealthenabled": ["1", "-int 1"]})
-        self.currallowed = []
-        '''Any values inside stonix.conf overrule the values inserted 
+        #self.currallowed = []
+        '''Any values inside stonix.conf overrule the values inserted
         in the text field unless changes are saved to stonix.conf'''
-        try:
-            '''variable to hold apps currently allowed by firewall'''
-            self.ch.executeCommand(self.list)
-            output = self.ch.getOutput()
-            for line in output:
-                if search("^\d+\ :\s+/Applications", line) and search("/", line):
-                    appsplit = line.split("/")
-                    try:
-                        '''Get the application name and store it in self.currallowed'''
-                        app = appsplit[-1].strip()
-                        self.currallowed.append(app)
-                    except IndexError:
-                        continue
-            '''Put any already allowed apps into the CI'''
-            datatype = 'list'
-            key = 'ALLOWEDAPPS'
-            instructions = "Space separated list of Applications allowed by the firewall\n" + \
-                "All applications end with .app.  For a list of applications check the\n" + \
-                "/Applications folder."
-            default = self.currallowed
-            self.appci = self.initCi(datatype, key, instructions, default)
-        except OSError:
-            '''There are no currently allowed apps for the fw'''
-            datatype = 'list'
-            key = 'ALLOWEDAPPS'
-            instructions = "Space separated list of Applications allowed by the firewall\n" + \
-                "All applications end with .app.  For a list of applications check the\n" + \
-                "/Applications folder."
-            default = self.currallowed
-            self.appci = self.initCi(datatype, key, instructions, default)
+        # try:
+        #     print "about to create init ci\n"
+        #     '''variable to hold apps currently allowed by firewall'''
+        #     self.ch.executeCommand(self.list)
+        #     output = self.ch.getOutput()
+        #     for line in output:
+        #         if search("^\d+\ :\s+/Applications", line) and search("/", line):
+        #             appsplit = line.split("/")
+        #             try:
+        #                 '''Get the application name and store it in self.currallowed'''
+        #                 app = appsplit[-1].strip()
+        #                 self.currallowed.append(app)
+        #             except IndexError:
+        #                 continue
+        #     print "self.currallowed in ci init: " + str(self.currallowed) + "\n"
+        #     '''Put any already allowed apps into the CI'''
+        #     datatype = 'list'
+        #     key = 'ALLOWEDAPPS'
+        #     instructions = "Space separated list of Applications allowed by the firewall\n" + \
+        #         "All applications end with .app.  For a list of applications check the\n" + \
+        #         "/Applications folder."
+        #     default = self.currallowed
+        #     self.appci = self.initCi(datatype, key, instructions, default, "\.app\s*")
+        #     print "self.appci inside try block: " + str(self.appci.getcurrvalue()) + "\n"
+        # except OSError:
+        '''There are no currently allowed apps for the fw'''
+        datatype = 'list'
+        key = 'ALLOWEDAPPS'
+        instructions = "Space separated list of Applications allowed by the firewall\n" + \
+            "All applications end with .app.  For a list of applications check the\n" + \
+            "/Applications folder."
+        default = []
+        self.appci = self.initCi(datatype, key, instructions, default, "\.app\s*")
 
     def report(self):
         '''@summary: Checks compliancy of system according to this rule
         @author: dwalker
-
-
         :returns: bool - True or False
-
         '''
         try:
             self.iditerator = 0
@@ -184,6 +182,17 @@ class ConfigureFirewall(RuleKVEditor):
             '''
             self.templist = self.applist[:]
             if self.allowedapps:
+                '''clean up self.allowedapps before processing'''
+                tempallowedapps = []
+                for app in self.allowedapps:
+                    if app.strip() == "":
+                        continue
+                    elif not search("\.app\s*", app):
+                        app = app.strip() + ".app"
+                        tempallowedapps.append(app)
+                    elif search("\.app\s*", app):
+                        tempallowedapps.append(app.strip())
+                self.allowedapps = tempallowedapps
                 for app in self.allowedapps:
                     '''One of the apps the user wants allowed isn't showing
                     up in the allowed apps output'''
@@ -200,13 +209,13 @@ class ConfigureFirewall(RuleKVEditor):
                 '''If there are any application names remaining in self.templist
                 then we have apps that the user didn't specify to be allowed'''
                 if self.templist:
-                    debug =  "There are still items left in self.templist\n"
+                    debug = "There are still items left in self.templist\n"
                     self.logdispatch.log(LogPriority.DEBUG, debug)
-                    debug =  "self.templist: " + str(self.applist) +"\n"
+                    debug = "self.templist: " + str(self.applist) +"\n"
                     self.logdispatch.log(LogPriority.DEBUG, debug)
                     compliant = False
                     for item in self.templist:
-                        self.detailedresults += item +  " is allowed but shouldn't be\n"
+                        self.detailedresults += item + " is allowed but shouldn't be\n"
             elif self.applist:
                 '''self.allowedapps is blank but there are apps being allowed through
                 the firewall.  We must remove these from being allowed.'''
@@ -214,7 +223,7 @@ class ConfigureFirewall(RuleKVEditor):
                 self.logdispatch.log(LogPriority.DEBUG, debug)
                 compliant = False
                 for item in self.applist:
-                    self.detailedresults += item +  " is allowed but shouldn't be\n"
+                    self.detailedresults += item + " is allowed but shouldn't be\n"
             self.compliant = compliant
         except Exception:
             self.rulesuccess = False
@@ -228,10 +237,7 @@ class ConfigureFirewall(RuleKVEditor):
     def fix(self):
         '''@summary: Fixes the system is report returns False
         @author: dwalker
-
-
         :returns: bool - True or False
-
         '''
         try:
             success = True
@@ -251,7 +257,7 @@ class ConfigureFirewall(RuleKVEditor):
                     '''The current application should be allowed but isn't
                     so on the next line we're going to try and allow it'''
                     if app not in self.applist:
-                        if not self.ch.executeCommand(self.add + "/Applications/" + app):
+                        if not self.ch.executeCommand(self.add + "/Applications/" + escape(app)):
                             '''Trying to add the application to the allowed apps
                             wasn't successful'''
                             success = False
@@ -262,7 +268,7 @@ class ConfigureFirewall(RuleKVEditor):
                             successful so record an even to remove it on undo'''
                             self.iditerator += 1
                             myid = iterate(self.iditerator, self.rulenumber)
-                            undocmd = self.rmv + "/Applications/" + app
+                            undocmd = self.rmv + "/Applications/" + escape(app)
                             event = {"eventtype": "comm",
                                      "command": undocmd}
                             self.statechglogger.recordchgevent(myid, event)
@@ -271,28 +277,28 @@ class ConfigureFirewall(RuleKVEditor):
                 if self.templist:
                     for app in self.templist:
                         debug = app + " isn't in " + str(self.allowedapps) + " so we're going to remove it\n"
-                        if not self.ch.executeCommand(self.rmv + "/Applications/" + app):
+                        if not self.ch.executeCommand(self.rmv + "/Applications/" + escape(app)):
                             success = False
                             self.detailedresults += "Unable to remove " + \
                                 app + " from firewall allowed list\n"
                         else:
                             self.iditerator += 1
                             myid = iterate(self.iditerator, self.rulenumber)
-                            undocmd = self.add + "/Applications/" + app
+                            undocmd = self.add + "/Applications/" + escape(app)
                             event = {"eventtype": "comm",
                                      "command": undocmd}
                             self.statechglogger.recordchgevent(myid, event)
             elif self.applist:
                 tmp = []
                 for app in self.applist:
-                    if not self.ch.executeCommand(self.rmv + "/Applications/" + app):
+                    if not self.ch.executeCommand(self.rmv + "/Applications/" + escape(app)):
                         success = False
                         self.detailedresults += "Unable to remove " + \
                             app + " from firewall allowed list\n"
                     else:
                         self.iditerator += 1
                         myid = iterate(self.iditerator, self.rulenumber)
-                        undocmd = self.add + "/Applications/" + app
+                        undocmd = self.add + "/Applications/" + escape(app)
                         event = {"eventtype": "comm",
                                  "command": undocmd}
                         self.statechglogger.recordchgevent(myid, event)
@@ -320,4 +326,3 @@ class ConfigureFirewall(RuleKVEditor):
         afterfixsuccessful &= self.sh.disableService(service, servicename=servicename)
         afterfixsuccessful &= self.sh.enableService(service, servicename=servicename)
         return afterfixsuccessful
-    
