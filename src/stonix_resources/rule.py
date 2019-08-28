@@ -722,9 +722,7 @@ LANL-stonix."""
         @author: dkennel
 
         '''
-        print "current rule is: " + self.rulename + "\n\n"
-        print "delimiter inside initCi is: " + delimiter + "\n\n"
-        myci = ConfigurationItem(datatype, delimiter)
+        myci = ConfigurationItem(datatype, delimiter, key, default)
         myci.setkey(key)
         myci.setinstructions(instructions)
         myci.setdefvalue(default)
@@ -732,7 +730,7 @@ LANL-stonix."""
             confcurr = self.config.getconfvalue(self.rulename, key)
         except(KeyError):
             confcurr = default
-        myci.updatecurrvalue(confcurr)
+        myci.updatecurrvalue(confcurr, True, delimiter)
         try:
             confuc = self.config.getusercomment(self.rulename, key)
         except(KeyError):

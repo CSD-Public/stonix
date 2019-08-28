@@ -105,39 +105,42 @@ class ConfigureFirewall(RuleKVEditor):
                          None,
                          False,
                          {"stealthenabled": ["1", "-int 1"]})
-        self.currallowed = []
+        #self.currallowed = []
         '''Any values inside stonix.conf overrule the values inserted
         in the text field unless changes are saved to stonix.conf'''
-        try:
-            '''variable to hold apps currently allowed by firewall'''
-            self.ch.executeCommand(self.list)
-            output = self.ch.getOutput()
-            for line in output:
-                if search("^\d+\ :\s+/Applications", line) and search("/", line):
-                    appsplit = line.split("/")
-                    try:
-                        '''Get the application name and store it in self.currallowed'''
-                        app = appsplit[-1].strip()
-                        self.currallowed.append(app)
-                    except IndexError:
-                        continue
-            '''Put any already allowed apps into the CI'''
-            datatype = 'list'
-            key = 'ALLOWEDAPPS'
-            instructions = "Space separated list of Applications allowed by the firewall\n" + \
-                "All applications end with .app.  For a list of applications check the\n" + \
-                "/Applications folder."
-            default = self.currallowed
-            self.appci = self.initCi(datatype, key, instructions, default, "\.app\s*")
-        except OSError:
-            '''There are no currently allowed apps for the fw'''
-            datatype = 'list'
-            key = 'ALLOWEDAPPS'
-            instructions = "Space separated list of Applications allowed by the firewall\n" + \
-                "All applications end with .app.  For a list of applications check the\n" + \
-                "/Applications folder."
-            default = []
-            self.appci = self.initCi(datatype, key, instructions, default, "\.app\s*")
+        # try:
+        #     print "about to create init ci\n"
+        #     '''variable to hold apps currently allowed by firewall'''
+        #     self.ch.executeCommand(self.list)
+        #     output = self.ch.getOutput()
+        #     for line in output:
+        #         if search("^\d+\ :\s+/Applications", line) and search("/", line):
+        #             appsplit = line.split("/")
+        #             try:
+        #                 '''Get the application name and store it in self.currallowed'''
+        #                 app = appsplit[-1].strip()
+        #                 self.currallowed.append(app)
+        #             except IndexError:
+        #                 continue
+        #     print "self.currallowed in ci init: " + str(self.currallowed) + "\n"
+        #     '''Put any already allowed apps into the CI'''
+        #     datatype = 'list'
+        #     key = 'ALLOWEDAPPS'
+        #     instructions = "Space separated list of Applications allowed by the firewall\n" + \
+        #         "All applications end with .app.  For a list of applications check the\n" + \
+        #         "/Applications folder."
+        #     default = self.currallowed
+        #     self.appci = self.initCi(datatype, key, instructions, default, "\.app\s*")
+        #     print "self.appci inside try block: " + str(self.appci.getcurrvalue()) + "\n"
+        # except OSError:
+        '''There are no currently allowed apps for the fw'''
+        datatype = 'list'
+        key = 'ALLOWEDAPPS'
+        instructions = "Space separated list of Applications allowed by the firewall\n" + \
+            "All applications end with .app.  For a list of applications check the\n" + \
+            "/Applications folder."
+        default = []
+        self.appci = self.initCi(datatype, key, instructions, default, "\.app\s*")
 
     def report(self):
         '''@summary: Checks compliancy of system according to this rule
@@ -183,13 +186,16 @@ class ConfigureFirewall(RuleKVEditor):
             '''
             self.templist = self.applist[:]
             if self.allowedapps:
-                print "self.allowedapps: " + str(self.allowedapps) + "\n\n"
                 '''clean up self.allowedapps before processing'''
                 tempallowedapps = []
                 for app in self.allowedapps:
-                    if app.strip() != "":
-                        app += ".app"
+                    if app.strip() == "":
+                        continue
+                    elif not search("\.app\s*", app):
+                        app = app.strip() + ".app"
                         tempallowedapps.append(app)
+                    elif search("\.app\s*", app):
+                        tempallowedapps.append(app.strip())
                 self.allowedapps = tempallowedapps
                 for app in self.allowedapps:
                     '''One of the apps the user wants allowed isn't showing
@@ -207,9 +213,9 @@ class ConfigureFirewall(RuleKVEditor):
                 '''If there are any application names remaining in self.templist
                 then we have apps that the user didn't specify to be allowed'''
                 if self.templist:
-                    debug =  "There are still items left in self.templist\n"
+                    debug = "There are still items left in self.templist\n"
                     self.logdispatch.log(LogPriority.DEBUG, debug)
-                    debug =  "self.templist: " + str(self.applist) +"\n"
+                    debug = "self.templist: " + str(self.applist) +"\n"
                     self.logdispatch.log(LogPriority.DEBUG, debug)
                     compliant = False
                     for item in self.templist:
@@ -252,8 +258,6 @@ class ConfigureFirewall(RuleKVEditor):
                 success = False
             self.templist = self.applist[:]
             if self.allowedapps:
-                print "There are allowed apps\n\n\n"
-                print "self.applist: " + str(self.applist) + "\n\n"
                 debug = "there are allowedapps in fix: " + str(self.allowedapps) + "\n"
                 self.logdispatch.log(LogPriority.DEBUG, debug)
                 for app in self.allowedapps:
