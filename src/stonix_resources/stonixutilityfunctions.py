@@ -678,7 +678,7 @@ def readFileString(filepath, logger):
     return contents
 
 def writeFile(tmpfile, contents, logger):
-    '''Write <contents> to <tmpfile>.
+    """Write <contents> to <tmpfile>.
     Return True if successful, False if not.
     
     @author: Derek Walker
@@ -693,21 +693,37 @@ def writeFile(tmpfile, contents, logger):
         to implementation in rules
 @change: Breen Malmberg - 7/12/2017 - minor doc string edit
 
-    '''
-
-    success = True
+    """
 
     try:
 
-        w = open(tmpfile, 'w')
-        if isinstance(contents, str):
-            w.write(contents)
-        elif isinstance(contents, list):
-            w.writelines(contents)
-        else:
+        # python 3 safety check on string/bytes argument input
+        if type(tmpfile) is bytes:
+            tmpfile = tmpfile.decode('utf-8')
+        if type(contents) is bytes:
+            contents = contents.decode('utf-8')
+        if type(contents) is list:
+            for i in contents:
+                if type(i) is bytes:
+                    contents = [i.decode('utf-8') for i in contents]
+
+        # check if parent directory exists first
+        parentdir = os.path.abspath(os.path.join(tmpfile, os.pardir))
+        if not os.path.isdir(parentdir):
             success = False
-            logger.log(LogPriority.DEBUG, "Given contents was niether a string, nor a list! Could not write to file " + str(tmpfile))
-        w.close()
+            logger.log(LogPriority.DEBUG, "Parent directory for given path does not exist. Cannot write file.")
+        else:
+            w = open(tmpfile, 'w')
+
+            if type(contents) is str:
+                w.write(contents)
+            elif type(contents) is list:
+                w.writelines(contents)
+            else:
+                success = False
+                logger.log(LogPriority.DEBUG, "Given contents was niether a string, nor a list! Could not write to file " + str(tmpfile))
+            w.close()
+
     except Exception:
         raise
     return success
