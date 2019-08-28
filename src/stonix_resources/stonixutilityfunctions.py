@@ -695,6 +695,8 @@ def writeFile(tmpfile, contents, logger):
 
     """
 
+    success = True
+
     try:
 
         # python 3 safety check on string/bytes argument input

@@ -273,6 +273,20 @@ forgot to override the default instructions for this key. Please file a bug.
         @author: D. Kennel
 
         """
+
+        if type(self.currvalue) is bytes:
+            self.currvalue = self.currvalue.decode('utf-8')
+        elif type(self.currvalue) is list:
+            for li in self.currvalue:
+                if type(li) is bytes:
+                    self.currvalue = [li.decode('utf-8') for li in self.currvalue]
+
+        # bytes to string decode done here as there are a number of places
+        # in stonix where the value of getcurrvalue is expected to be a string
+        # and is input as a string but is retrieved as a bytes-like object due to
+        # a change in how python 3 (versus python 2) handles the retrieval, storing
+        # and interpretation of string data
+
         return self.currvalue
 
     def updatecurrvalue(self, newvalue, coercing=True, listdelim=' '):

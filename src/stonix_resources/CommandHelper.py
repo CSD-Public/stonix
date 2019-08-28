@@ -41,7 +41,6 @@ import inspect
 import re
 import subprocess
 import traceback
-import types
 import time
 
 from .logdispatcher import LogPriority
@@ -207,15 +206,12 @@ class CommandHelper(object):
         returns the first instance (string) of the group specified in the
         regular expression that is found in the output.
 
-        :param self: essential if you override this definition
-        :param expresssion: string: expression to search for
+        :param str expression: expression to search for
         :param groupnumber: integer: number of group to return
         :param searchgroup: string: group to search in output, stdout, stderr (Default value = "output")
-        :param expression: 
-        :returns: returnstring
+
+        :return: returnstring
         :rtype: bool
-@author: rsn
-@change: Breen Malmberg - 12/3/2015
 
         """
 
@@ -407,8 +403,6 @@ class CommandHelper(object):
             raise
         return alllist
 
-###############################################################################
-
     def getReturnCode(self):
         """Get return code for last executed command
 
@@ -422,7 +416,70 @@ class CommandHelper(object):
 
         return self.returncode
 
-###############################################################################
+    def validate_command(self, command):
+        """
+        A valid format for a command is:
+        list of non-empty strings
+        -or-
+        non-empty string
+
+        :param command: the command to evaluate
+        """
+
+        self.valid_command = True
+
+        self.logdispatcher.log(LogPriority.DEBUG, "Validating command format...")
+
+        command_type = type(command)
+
+        valid_types = [list, str]
+
+        if command_type not in valid_types:
+            self.logdispatcher.log(LogPriority.DEBUG, "Invalid data type for command. Expecting: str or list. Got: " + str(command_type))
+            self.valid_command = False
+
+        if command == "":
+            self.logdispatcher.log(LogPriority.DEBUG, "Command was an empty string. Cannot run nothing")
+            self.valid_command = False
+        elif command == []:
+            self.logdispatcher.log(LogPriority.DEBUG, "Command was an empty list. Cannot run nothing")
+            self.valid_command = False
+
+        if not self.valid_command:
+            self.logdispatcher.log(LogPriority.DEBUG, "Command is not a valid format")
+
+    def convert_bytes_to_string(self, data):
+        """
+
+        :param data:
+        :return: data
+        :rtype: str|list
+        """
+
+        self.logdispatcher.log(LogPriority.DEBUG, "Converting any bytes objects into strings...")
+
+        data_type = type(data)
+
+        if data_type is list:
+            for e in data:
+                if type(e) is bytes:
+                    data = [e.decode('utf-8') for e in data]
+        elif data_type is bytes:
+            data = data.decode('utf-8')
+            data = str(data)
+
+        return data
+
+    def set_shell_bool(self, command_type):
+        """
+
+        :param command_type: data type
+        """
+
+        self.shell = True
+
+        if command_type is list:
+            self.shell = False
 
     def setCommand(self, command):
         """setCommand (command) set the command for the CommandHelper
@@ -454,68 +511,40 @@ class CommandHelper(object):
         """
 
         success = True
-        self.stdout = []
-        self.stderr = []
-        self.output = []
-        msg = ""
-        message = ""
 
         try:
 
-            if command == "":
-                msg = "The given command string parameter was blank!"
-                self.logdispatcher.log(LogPriority.DEBUG, msg)
-                raise ValueError(msg)
+            # convert any bytes objects to strings
+            command = self.convert_bytes_to_string(command)
 
-            if command == []:
-                msg = "The given command list parameter was empty!"
-                self.logdispatcher.log(LogPriority.DEBUG, msg)
-                raise ValueError(msg)
+            # validate the format of the command
+            self.validate_command(command)
 
-
-            commandtype = type(command)
-
-            if (commandtype is str):
-                self.shell = True
-                if len(command.strip()) > 0:
-                    self.commandblank = False
-                self.command = command.strip()
-                msg = "Command Set To '" + self.command + "'"
-                self.logdispatcher.log(LogPriority.DEBUG, msg)
-
-            elif (commandtype is list):
-                self.shell = False
-                self.command = []
-                self.commandblank = True
-
-                for commandlistitem in command:
-                    commandlitype = type(commandlistitem)
-
-                    if (commandlitype is str):
-                        self.command.append(commandlistitem.strip())
-                        if len(commandlistitem.strip()) > 0:
-                            self.commandblank = False
-                    else:
-                        success = False
-                        msg = "Command List Item '" + str(commandlistitem) + \
-                            "' has in invalid type of '" + str(commandlitype) + "'"
-                        self.logdispatcher.log(LogPriority.DEBUG, msg)
-
-                msg = "Command Set To '" + str(self.command) + "'"
-                self.logdispatcher.log(LogPriority.DEBUG, msg)
-
-            else:
+            if not self.valid_command:
+                self.logdispatcher.log(LogPriority.DEBUG, "Cannot run invalid command")
                 success = False
-                msg = "Command '" + str(command) + "' has an invalid type of '" + \
-                    str(commandtype) + "'"
-                self.logdispatcher.log(LogPriority.DEBUG, msg)
+                return success
+
+            command_type = type(command)
+
+            # determine whether to use shell or no in subprocess command
+            self.set_shell_bool(command_type)
+
+            # strip command or command elements
+            if command_type is str:
+                self.command = command.strip()
+            elif command_type is list:
+                command = [li.strip() for li in command]
+
+            self.command = command
+
+            self.logdispatcher.log(LogPriority.DEBUG, "Command set to: " + str(self.command))
 
         except Exception:
-            message = str(self.__calledBy()) + "\nInvalid command input: " + str(traceback.format_exc())
-            self.logdispatcher.log(LogPriority.ERROR, message)
-        return success
+            self.logdispatcher.log(LogPriority.ERROR, str(traceback.format_exc()))
+            raise
 
-###############################################################################
+        return success
 
     def setLogPriority(self, logpriority=None):
         """Setting log priority use LogPriority.DEBUG, LogPrority.ERROR, etc.
@@ -529,7 +558,7 @@ class CommandHelper(object):
 
         success = True
 
-        #logprioritytype = type(logpriority)
+        logprioritytype = type(logpriority)
         #print("logprioritytype: ", logprioritytype, "\n")
         if (logpriority is None):
             self.logpriority = LogPriority.DEBUG
@@ -560,104 +589,101 @@ class CommandHelper(object):
 ###############################################################################
 
     def executeCommand(self, command=None):
-        """executeCommand (command) excecute the command for the CommandHelper
+        """
+        attempt to execute the given command
 
-        :param self: essential if you override this definition
         :param command: string or list: command to set the command property to (Default value = None)
-        :returns: bool indicating success or failure
-        @author: ekkehard j. koch
+        :return: success
+        :rtype: bool
 
         """
 
         commandaborted = False
         commandobj = None
         success = True
+        self.stdout = []
+        self.stderr = []
+        self.output = []
 
         try:
 
-            if type(command) is not None:
-                success = self.setCommand(command)
-            else:
-                if self.command:
-                    self.logdispatcher.log(LogPriority.DEBUG,
-                                           "Unable to set command " +
-                                           str(self.command))
+            if not self.setCommand(command):
+                success = False
+                return success
+            start_time = time.time()
+            self.logdispatcher.log(LogPriority.DEBUG, "Beginning new command execution")
+            commandobj = subprocess.Popen(self.command,
+                                          stdout=subprocess.PIPE,
+                                          stderr=subprocess.PIPE,
+                                          shell=self.shell)
 
-            if success:
-                if self.commandblank:
-                    success = False
-                    self.logdispatcher.log(LogPriority.WARNING, "Attempted to execute a blank command!")
+            # if a time limit is specified for this command run,
+            # time out if that limit is reached
+            if self.cmdtimeout:
+                while commandobj.poll() is None:
+                    if time.time() - start_time >= self.cmdtimeout:
+                        commandobj.terminate()
+                        commandobj.returncode = -1
+                        self.logdispatcher.log(LogPriority.DEBUG, "Command run exceeded timeout limit. Command run aborted.")
+                        commandaborted = True
+                        break
+                    else:
+                        continue
+            if commandaborted:
+                success = False
+                self.returncode = commandobj.returncode
+                return success
 
-            if success:
-                time_start = time.time()
-                commandobj = subprocess.Popen(self.command,
-                                              stdout=subprocess.PIPE,
-                                              stderr=subprocess.PIPE,
-                                              shell=self.shell)
-                if self.cmdtimeout:
-                    while commandobj.poll() is None:
-                        if time.time() - time_start >= self.cmdtimeout:
-                            commandobj.terminate()
-                            commandobj.returncode = -1
-                            self.logdispatcher.log(LogPriority.DEBUG, "Command exceeded specified max. run time of: " + str(self.cmdtimeout) + " seconds! Command aborted!")
-                            commandaborted = True
-                            break
-                        else:
-                            continue
+            outlines = []
+            errlines = []
+            outstr = ""
 
-                if commandaborted:
-                    success = False
-                    self.returncode = commandobj.returncode
-                    return success
-
-                outlines = []
-                errlines = []
-                outstr = ""
-                # If we are not waiting, we cannot collect stdout and stderr
-                if self.wait:
-
-                    if commandobj is not None:
-                        outs, errs = commandobj.communicate()
-                        outlines = str(outs.decode('utf-8')).splitlines()
-                        errlines = str(errs.decode('utf-8')).splitlines()
-                        outstr = str(outs)
+            # If we are not waiting, we cannot collect stdout and stderr
+            if self.wait:
 
                 if commandobj is not None:
-                    self.stdout = outlines
-                    self.stderr = errlines
-                    self.output = self.stderr + self.stdout
-                    outstr = " ".join(self.output)
+                    outs, errs = commandobj.communicate()
+                    outs = self.convert_bytes_to_string(outs)
+                    errs = self.convert_bytes_to_string(errs)
+                    outlines = outs.splitlines()
+                    errlines = errs.splitlines()
+                    outstr = str(outs)
 
-                    self.returncode = commandobj.returncode
-                    msg = "returncode: " + str(self.returncode)
-                    self.logdispatcher.log(self.logpriority, msg)
+            if commandobj is not None:
+                self.stdout = outlines
+                self.stderr = errlines
+                self.output = self.stderr + self.stdout
+                outstr = " ".join(self.output)
+
+            self.returncode = commandobj.returncode
+
+            try:
+                commandobj.stdout.close()
+            except:
+                pass
+            try:
+                commandobj.stderr.close()
+            except:
+                pass
+
+            if "outstr" not in locals():
+                outstr = ""
+
+            self.logdispatcher.log(LogPriority.DEBUG, "Command: " + str(self.command))
+            self.logdispatcher.log(LogPriority.DEBUG, "Output: " + str(outstr))
+            self.logdispatcher.log(LogPriority.DEBUG, "Return Code: " + str(self.returncode))
+
+            if success:
+                self.logdispatcher.log(LogPriority.DEBUG, "Command executed successfully")
+            else:
+                self.logdispatcher.log(LogPriority.DEBUG, "Command execution failed")
 
         except (KeyboardInterrupt, SystemExit):
             raise
-        except Exception as err:
-            success = False
-            msg = str(err) + " - " + str(traceback.format_exc())
-            self.logdispatcher.log(LogPriority.ERROR, msg)
-            raise
-        else:
-            if commandobj is not None:
-                if commandobj.stdout is not None:
-                    commandobj.stdout.close()
-                if commandobj.stderr is not None:
-                    commandobj.stderr.close()
-        finally:
-            if 'outstr' not in locals():
-                outstr = ""
-            msg = "You should not see this. CommandHelper.executeCommand()"
-            if self.returncode is not None:
-                msg = "returncode:(" + str(self.returncode) + ") \noutput:(" + str(outstr) + "); command:(" + str(self.command) + ")"
-            else:
-                msg = "returncode:(None) \noutput:(" + str(outstr) + "); command:(" + str(self.command) + ")"
-            self.logdispatcher.log(LogPriority.DEBUG, msg)
+        except Exception:
+            self.logdispatcher.log(LogPriority.ERROR, str(traceback.format_exc()))
 
         return success
-
-###############################################################################
 
     def findInOutput(self, expression, searchgroup="output", dtype="list"):
         """findInOutput (expression) finds an expression in the combined stderr
@@ -674,7 +700,7 @@ class CommandHelper(object):
         """
 
         try:
-            searchstring = ""
+
             msg = ""
             success = False
             if searchgroup == "output":

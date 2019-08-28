@@ -157,6 +157,8 @@ filesystem support modules are not disabled."""
                 else:
                     fdata = []
                 for fstype in self.fslist.getcurrvalue():
+                    if type(fstype) is bytes:
+                        fstype = fstype.decode('utf-8')
                     entry = 'install ' + fstype + ' /bin/true\n'
                     if entry not in fdata:
                         fdata.append(entry)

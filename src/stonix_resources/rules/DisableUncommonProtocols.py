@@ -73,6 +73,8 @@ class DisableUncommonProtocols(Rule):
             mpdir = "/etc/modprobe.d/"
 
             for proto in protocols:
+                if type(proto) is bytes:
+                    proto = proto.decode('utf-8')
                 cmd = ["grep", "-R", proto, mpdir]
                 self.ch.executeCommand(cmd)
                 if not re.search(":install " + proto + " /bin/true",
