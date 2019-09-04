@@ -27,7 +27,7 @@ def removeOldStonix(target):
     try:
         shutil.rmtree(target)
     except OSError:
-        print "Could not find " + str(target)
+        print("Could not find " + str(target))
     return 0
 
 def backupOldStonixConf(target):
