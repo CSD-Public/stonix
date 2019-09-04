@@ -56,7 +56,7 @@ def getLibc():
         log_message(traceback.format_exc())
         raise Exception("DAMN IT JIM!!!")
     else:
-        print "Loading Mac dylib......................................"
+        print("Loading Mac dylib......................................")
 
     return libc
 
@@ -100,20 +100,20 @@ def log_message(message="", level="normal", priority="debug",
 
     if levels.index(level) <= levels.index(priority):
 
-        print message
+        print(message)
         cmd_string = "/usr/bin/logger " + syslog_level + "\"" + message + "\""
         retcode = ""
         try:
             retcode = call(cmd_string, shell=True)
             if retcode < 0:
-                print >> sys.stderr, \
-                    "logger Child was terminated by signal", retcode
+                print(sys.stderr, \
+                    "logger Child was terminated by signal", retcode)
             else:
                 pass
 
-        except OSError, err:
-            print >> sys.stderr, \
-                "Execution of " + str(cmd_string) + " failed: ", err
+        except OSError as err:
+            print(sys.stderr, \
+                "Execution of " + str(cmd_string) + " failed: ",  err)
 
 
 def touch(fname="", message_level="normal"):
@@ -159,7 +159,7 @@ def isvalidlink(path):
     assert os.path.lexists(path)
     try:
         os.stat(path)
-    except os.error, err:
+    except os.error as err:
         log_message(traceback.format_exc())
         # errno.ENOENT: broken link - "No such file or directory"
         # errno.ELOOP: circular link - "Too many levels of symlinks"
@@ -205,14 +205,14 @@ def make_valid_link(my_link, my_link_source, message_level="normal"):
         # move "/usr/local/bin" to "/usr/local/bin".myDate.myTime
         try:
             shutil.move("/usr/local/bin", binbackup)
-        except Exception, err:
+        except Exception as err:
             log_message("Exception trying to move file: " + str(my_link))
             log_message(traceback.format_exc())
             log_message("Associated exception: " + str(err))
         finally:
             try:
                 os.makedirs("/usr/local/bin")
-            except Exception, err:
+            except Exception as err:
                 log_message("Exception trying to create link: " +
                             str(my_link) + " -> " + str(my_link_source))
                 log_message(traceback.format_exc())
@@ -221,15 +221,15 @@ def make_valid_link(my_link, my_link_source, message_level="normal"):
     # chown /usr/local/bin (both user and group)
     try:
         os.chown("/usr/local/bin", 0, 0)
-    except Exception, err:
+    except Exception as err:
         log_message("Could not chown /usr/local/bin")
         log_message(traceback.format_exc())
         log_message("Associated exception: " + str(err))
 
     # fix /usr/local/bin
     try:
-        os.chmod("/usr/local/bin", 0755)
-    except Exception, err:
+        os.chmod("/usr/local/bin", 0o755)
+    except Exception as err:
         log_message("Cannot chmod /usr/local/bin")
         log_message(traceback.format_exc())
         log_message("Associated exception: " + str(err))
@@ -264,7 +264,7 @@ def make_valid_link(my_link, my_link_source, message_level="normal"):
         try:
             os.symlink(my_link_source, my_link)
             success = True
-        except Exception, err:
+        except Exception as err:
             log_message("Exception trying to create link: " +
                         str(my_link) + " -> " + str(my_link_source))
             log_message(traceback.format_exc())
@@ -274,7 +274,7 @@ def make_valid_link(my_link, my_link_source, message_level="normal"):
         # move "mylink" to mylink.myDate.myTime
         try:
             shutil.move(my_link, backup)
-        except Exception, err:
+        except Exception as err:
             log_message("Exception trying to move file: " + str(my_link))
             log_message(traceback.format_exc())
             log_message("Associated exception: " + str(err))
@@ -282,7 +282,7 @@ def make_valid_link(my_link, my_link_source, message_level="normal"):
             try:
                 os.symlink(my_link_source, my_link)
                 success = True
-            except Exception, err:
+            except Exception as err:
                 log_message("Exception trying to create link: " +
                             str(my_link) + " -> " + str(my_link_source))
                 log_message(traceback.format_exc())
@@ -396,7 +396,7 @@ def install_launchd_job(source_path="", targetDir="/", message_level="normal"):
 
         #try:
         #    shutil.move(plist_path, backup)
-        #except Exception, err:
+        #except Exception as err:
         #    log_message("Exception trying to move file: " + str(plist_path))
         #    log_message("Associated exception: " + str(err))
         """
@@ -404,22 +404,22 @@ def install_launchd_job(source_path="", targetDir="/", message_level="normal"):
             f = open(plist_path, 'w')
             f.write(stonixplistfix)
             f.close()
-        except Exception, err:
+        except Exception as err:
             log_message("Problem trying to write plist for fix..")
             log_message(traceback.format_exc())
 
         # chown launchagent (both user and group)
         try:
             os.chown(plist_path, 0, 0)
-        except Exception, err:
+        except Exception as err:
             log_message("Could not chown file: " + str(plist_path))
             log_message(traceback.format_exc())
             log_message("Associated exception: " + str(err))
 
         # chmod launchagent
         try:
-            os.chmod(plist_path, 0644)
-        except Exception, err:
+            os.chmod(plist_path, 0o644)
+        except Exception as err:
             log_message("Cannot chmod file: " + str(plist_path))
             log_message(traceback.format_exc())
             log_message("Associated exception: " + str(err))
@@ -438,13 +438,13 @@ def fix_app_perms(rootDir="/Applications/stonix4mac.app",
         fullDirName = os.path.join(os.path.abspath(rootDir), dirName)
         log_message('Found directory: %s' % fullDirName, "normal",
                     message_level)
-        os.chmod(fullDirName, 0755)
+        os.chmod(fullDirName, 0o755)
         os.chown(fullDirName, 0, 80)
         for fname in fileList:
             fullFName = os.path.join(os.path.abspath(rootDir), dirName, fname)
             log_message('\t%s' % fullFName, "normal", message_level)
             if os.path.isfile(fullFName):
-                os.chmod(fullFName, 0664)
+                os.chmod(fullFName, 0o664)
                 os.chown(fullFName, 0, 80)
 
 
@@ -457,7 +457,7 @@ def make_files_executable():
              "Contents/MacOS/stonix"]
 
     for myfile in files:
-        os.chmod(myfile, 0775)
+        os.chmod(myfile, 0o775)
 
 
 def make_whatis(message_level):
@@ -468,7 +468,7 @@ def make_whatis(message_level):
     err = ""
     try:
         out, err = Popen("/usr/libexec/makewhatis", stdout=PIPE, stderr=PIPE).communicate()
-    except Exception, err:
+    except Exception as err:
         log_message(traceback.format_exc())
         log_message("error trying to re-index the man page database...", "normal", message_level)
 
@@ -491,13 +491,13 @@ def touch_stonix_conf(message_level):
         time.sleep(1)
         try:
             os.chmod(stonix_conf, 0o644)
-        except Exception, err:
+        except Exception as err:
             log_message("Could not chmod file: " + str(stonix_conf))
             log_message(traceback.format_exc())
             log_message("Associated exception: " + str(err))
         try:
             os.chown(stonix_conf, 0, 0)
-        except Exception, err:
+        except Exception as err:
             log_message("Could not chown file: " + str(stonix_conf))
             log_message(traceback.format_exc())
             log_message("Associated exception: " + str(err))
