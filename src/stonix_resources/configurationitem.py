@@ -270,20 +270,17 @@ forgot to override the default instructions for this key. Please file a bug.
         try:
             delim = listdelim
             if coercing:
-                if self.datatype == 'bool' and type(newvalue) is not \
-                        types.BooleanType:
+                if self.datatype == 'bool' and not isinstance(newvalue, bool):
                     newvalue = newvalue.lower()
                     if newvalue in ['yes', 'true']:
                         newvalue = True
                     elif newvalue in ['no', 'false']:
                         newvalue = False
-                elif self.datatype == 'int' and type(newvalue) is not \
-                        types.IntType:
+                elif self.datatype == 'int' and not isinstance(newvalue, int):
                     newvalue = int(newvalue)
-                elif self.datatype == 'float' and type(newvalue) is not \
-                        types.FloatType:
+                elif self.datatype == 'float' and not isinstance(newvalue, float):
                     newvalue = float(newvalue)
-                elif self.datatype == 'list' and type(newvalue) is not types.ListType:
+                elif self.datatype == 'list' and not isinstance(newvalue, list):
                     if not newvalue:
                         newvalue = []
                     else:
@@ -461,7 +458,7 @@ forgot to override the default instructions for this key. Please file a bug.
         @author: D. Kennel
         """
         try:
-            if type(testvar) is bool:
+            if isinstance(testvar, bool):
                 return True
             else:
                 return False
@@ -495,7 +492,7 @@ forgot to override the default instructions for this key. Please file a bug.
         @author: D. Kennel
         """
         try:
-            if type(testvar) is list:
+            if isinstance(testvar, list):
                 return True
             else:
                 return False
@@ -511,7 +508,7 @@ forgot to override the default instructions for this key. Please file a bug.
         @author: D. Kennel
         """
         try:
-            if type(testvar) is int:
+            if isinstance(testvar, int):
                 return True
             else:
                 return False
@@ -527,7 +524,7 @@ forgot to override the default instructions for this key. Please file a bug.
         @author: D. Kennel
         """
         try:
-            if type(testvar) is float:
+            if isinstance(testvar, float):
                 return True
             else:
                 return False
@@ -543,7 +540,7 @@ forgot to override the default instructions for this key. Please file a bug.
         @author: D. Kennel
         """
         try:
-            if type(testvar) is dict:
+            if isinstance(testvar, dict):
                 return True
             else:
                 return False
