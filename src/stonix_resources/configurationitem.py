@@ -461,7 +461,7 @@ forgot to override the default instructions for this key. Please file a bug.
         @author: D. Kennel
         """
         try:
-            if type(testvar) is types.BooleanType:
+            if type(testvar) is bool:
                 return True
             else:
                 return False
@@ -477,11 +477,13 @@ forgot to override the default instructions for this key. Please file a bug.
         @author: D. Kennel
         """
         try:
-            if type(testvar) is types.StringType:
+            if isinstance(testvar, str):
+                # if type(testvar) is bytes:
                 return True
             else:
                 return False
         except (NameError):
+            print("Throwing an error when checking type\n")
             # testvar was undefined
             return False
 
@@ -493,7 +495,7 @@ forgot to override the default instructions for this key. Please file a bug.
         @author: D. Kennel
         """
         try:
-            if type(testvar) is types.ListType:
+            if type(testvar) is list:
                 return True
             else:
                 return False
@@ -509,7 +511,7 @@ forgot to override the default instructions for this key. Please file a bug.
         @author: D. Kennel
         """
         try:
-            if type(testvar) is types.IntType:
+            if type(testvar) is int:
                 return True
             else:
                 return False
@@ -525,7 +527,7 @@ forgot to override the default instructions for this key. Please file a bug.
         @author: D. Kennel
         """
         try:
-            if type(testvar) is types.FloatType:
+            if type(testvar) is float:
                 return True
             else:
                 return False
@@ -541,7 +543,7 @@ forgot to override the default instructions for this key. Please file a bug.
         @author: D. Kennel
         """
         try:
-            if type(testvar) is types.DictType:
+            if type(testvar) is dict:
                 return True
             else:
                 return False
