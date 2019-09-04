@@ -36,24 +36,24 @@ Created on Aug 24, 2010
 @change: 2017/10/23 rsn - change to new service helper interface
 '''
 
-from observable import Observable
-from configurationitem import ConfigurationItem
-from logdispatcher import LogPriority
+from .observable import Observable
+from .configurationitem import ConfigurationItem
+from .logdispatcher import LogPriority
 from types import *
 import os
 import re
 from distutils.version import LooseVersion
 from shutil import rmtree
 
-from stonixutilityfunctions import isServerVersionHigher
+from .stonixutilityfunctions import isServerVersionHigher
 from subprocess import call
-from localize import DRINITIAL
-from localize import DRREPORTCOMPIANT, DRREPORTNOTCOMPIANT, DRREPORTNOTAVAILABLE
-from localize import DRFIXSUCCESSFUL, DRFIXFAILED, DRFIXNOTAVAILABLE
-from localize import DRUNDOSUCCESSFUL, DRUNDOFAILED, DRUNDONOTAVAILABLE
-from CommandHelper import CommandHelper
-from pkghelper import Pkghelper
-from ServiceHelper import ServiceHelper
+from .localize import DRINITIAL
+from .localize import DRREPORTCOMPIANT, DRREPORTNOTCOMPIANT, DRREPORTNOTAVAILABLE
+from .localize import DRFIXSUCCESSFUL, DRFIXFAILED, DRFIXNOTAVAILABLE
+from .localize import DRUNDOSUCCESSFUL, DRUNDOFAILED, DRUNDONOTAVAILABLE
+from .CommandHelper import CommandHelper
+from .pkghelper import Pkghelper
+from .ServiceHelper import ServiceHelper
 import traceback
 from CheckApplicable import CheckApplicable
 
