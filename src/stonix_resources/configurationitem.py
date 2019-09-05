@@ -272,9 +272,13 @@ forgot to override the default instructions for this key. Please file a bug.
             if self.datatype == 'string':
                 newvalue = newvalue.decode('utf-8')
         elif type(newvalue) is list:
+            correctedvaluelist = []
             for item in newvalue:
                 if type(item) is bytes:
-                    newvalue = [item.decode('utf-8') for item in newvalue]
+                    correctedvaluelist.append(item.decode('utf-8'))
+                else:
+                    correctedvaluelist.append(item)
+            newvalue = correctedvaluelist
 
         try:
             delim = listdelim
