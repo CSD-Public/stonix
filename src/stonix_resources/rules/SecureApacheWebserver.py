@@ -75,7 +75,7 @@ class SecureApacheWebserver(Rule):
     Solaris 10 that insisted on shipping both Apache 1.3.4 and Apache 2.0 and
     making it possible to have both installed on the system at the same time.
     This affects all operations on the config file.
-    
+
     @author: dkennel
 
 
@@ -222,26 +222,13 @@ class SecureApacheWebserver(Rule):
         @return: configuration object instance
         @author: dkennel
         '''
-        conf = 'SECUREAPACHE'
-        confinst = '''If set to yes or true the SECUREAPACHE variable will set
+        datatype = 'bool'
+        key = 'SECUREAPACHE'
+        instructions = '''If set to yes or true the SECUREAPACHE variable will set
 the basic security settings for the Apache Webserver. This should be safe for
 all systems.'''
-        confdefault = True
-        try:
-            confcurr = self.config.getconfvalue(self.rulename, conf)
-        except(KeyError):
-            confcurr = confdefault
-        conftype = 'bool'
-        try:
-            confuc = self.config.getusercomment(self.rulename, conf)
-        except(KeyError):
-            confuc = ''
-        myci = ConfigurationItem(conftype, conf, confdefault, confuc,
-                                 confinst, confcurr)
-        self.logdispatch.log(LogPriority.DEBUG,
-                             ['SecureApacheWebserver.__initializeSecureApache',
-                              'SECUREAPACHE val = ' + str(confcurr)])
-        self.confitems.append(myci)
+        defaultvalue = True
+        myci = self.initCi(datatype, key, instructions, defaultvalue)
         return myci
 
     def __initializeSecureApacheMods(self):
@@ -251,35 +238,19 @@ all systems.'''
         @return: configuration object instance
         @author: dkennel
         '''
-        myci = ConfigurationItem('bool')
+        datatype = 'bool'
         key = 'SECUREAPACHEMODS'
-        myci.setkey(key)
-        confinst = "If set to yes or true the SECUREAPACHEMODS variable " + \
-                   "will install security Apache modules on rpm based " + \
-                   "systems and minimize non-essetintial modules on all " + \
-                   "systems. Security modules provide protections " + \
-                   "against malicious attackers while non-essential " + \
-                   "Apache modules can increase a system's attack " + \
-                   "surface and information leakage. Users disabling " + \
-                   "this action should manually validate and minimize " + \
-                   "the installed modules."
-        myci.setinstructions(confinst)
-        default = True
-        myci.setdefvalue(default)
-        try:
-            confcurr = self.config.getconfvalue(self.rulename, key)
-        except(KeyError):
-            confcurr = default
-        myci.updatecurrvalue(confcurr)
-        try:
-            confuc = self.config.getusercomment(self.rulename, key)
-        except(KeyError):
-            confuc = ''
-        myci.setusercomment(confuc)
-        self.confitems.append(myci)
-        self.logdispatch.log(LogPriority.DEBUG,
-                             ['SecureApacheWebserver.__initializeSecureApacheMods',
-                              'SECUREAPACHEMODS val = ' + str(confcurr)])
+        instructions = "If set to yes or true the SECUREAPACHEMODS variable " + \
+                       "will install security Apache modules on rpm based " + \
+                       "systems and minimize non-essetintial modules on all " + \
+                       "systems. Security modules provide protections " + \
+                       "against malicious attackers while non-essential " + \
+                       "Apache modules can increase a system's attack " + \
+                       "surface and information leakage. Users disabling " + \
+                       "this action should manually validate and minimize " + \
+                       "the installed modules."
+        defaultvalue = True
+        myci = self.initCi(datatype, key, instructions, defaultvalue)
         return myci
 
     def __initializeSecureApacheSsl(self):
@@ -295,8 +266,8 @@ all systems.'''
 the Apache server from using weak crypto for SSL sessions. This should be safe
 unless the client population includes browsers restricted to US export level
 crypto.'''
-        default = True
-        myci = self.initCi(datatype, key, instructions, default)
+        defaultvalue = True
+        myci = self.initCi(datatype, key, instructions, defaultvalue)
         return myci
 
     def __initializeSecurePhp(self):
@@ -311,8 +282,8 @@ crypto.'''
         instructions = '''If set to yes or true the SECUREPHP action will secure the
 configuration in the php.ini file. This is generally safe for new PHP
 development but some existing applications may use insecure side effects.'''
-        default = True
-        myci = self.initCi(datatype, key, instructions, default)
+        defaultvalue = True
+        myci = self.initCi(datatype, key, instructions, defaultvalue)
         return myci
 
     def __initializeSecureWebDirs(self):
@@ -329,8 +300,8 @@ development but some existing applications may use insecure side effects.'''
                        "This includes requiring/restricting specific web " + \
                        "directory 'Options' and limiting the available " + \
                        "web server methods to GET and POST."
-        default = True
-        myci = self.initCi(datatype, key, instructions, default)
+        defaultvalue = True
+        myci = self.initCi(datatype, key, instructions, defaultvalue)
         return myci
 
     def locatesslfiles(self):
@@ -1439,10 +1410,10 @@ development but some existing applications may use insecure side effects.'''
     def makeEventId(self, iditerator):
         '''Method to create event ID numbers for use with the state change
         logger. Modified from D.Walkers original for use by this rule.
-        
+
         @author: dkennel
 
-        :param iditerator: 
+        :param iditerator:
         :returns: string
 
         '''
