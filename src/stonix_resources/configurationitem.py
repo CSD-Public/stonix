@@ -285,11 +285,11 @@ forgot to override the default instructions for this key. Please file a bug.
                         newvalue = []
                     else:
                         newvalue = re.split(delim, newvalue)
-                        # newvalue = newvalue.split(listdelim)
-                # else:
-                # print "inside else section of updatecurrvalue method\n\n"
-                # newvalue = re.split(delim, newvalue)
-                # print "newvalue after splitting: " + str(newvalue) + "\n"
+
+            if type(newvalue) is bytes:
+                if self.datatype ==  'string':
+                    newvalue = newvalue.decode('utf-8')
+
         except(TypeError, ValueError):
             return False
         if self.validate(newvalue):
