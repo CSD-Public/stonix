@@ -267,11 +267,20 @@ forgot to override the default instructions for this key. Please file a bug.
         :param coercing:  (Default value = True)
         :param listdelim:  (Default value = ' ')
         '''
+
+        if type(newvalue) is bytes:
+            if self.datatype == 'string':
+                newvalue = newvalue.decode('utf-8')
+        elif type(newvalue) is list:
+            for item in newvalue:
+                if type(item) is bytes:
+                    newvalue = [item.decode('utf-8') for item in newvalue]
+
         try:
             delim = listdelim
             if coercing:
                 if self.datatype == 'bool' and not isinstance(newvalue, bool):
-                    newvalue = newvalue.lower()
+                    newvalue = str(newvalue).lower()
                     if newvalue in ['yes', 'true']:
                         newvalue = True
                     elif newvalue in ['no', 'false']:
@@ -285,10 +294,6 @@ forgot to override the default instructions for this key. Please file a bug.
                         newvalue = []
                     else:
                         newvalue = re.split(delim, newvalue)
-
-            if type(newvalue) is bytes:
-                if self.datatype ==  'string':
-                    newvalue = newvalue.decode('utf-8')
 
         except(TypeError, ValueError):
             return False
@@ -307,8 +312,11 @@ forgot to override the default instructions for this key. Please file a bug.
         @author: dkennel
         :param key:
         '''
+
         if self.__validatestring(key):
             self.key = key
+        elif type(key) is bytes:
+            self.key = key.decode('utf-8')
         else:
             raise TypeError('Invalid type provided as Key')
 
@@ -322,6 +330,7 @@ forgot to override the default instructions for this key. Please file a bug.
         :param value: varies
         @author: dkennel
         '''
+
         if self.datatype == None:
             raise TypeError('Attempted to set default value when datatype is not set.')
         if self.validate(value):
@@ -475,7 +484,6 @@ forgot to override the default instructions for this key. Please file a bug.
         """
         try:
             if isinstance(testvar, str):
-                # if type(testvar) is bytes:
                 return True
             else:
                 return False
