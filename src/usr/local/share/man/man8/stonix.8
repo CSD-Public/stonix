@@ -1,0 +1,245 @@
+.\" Process this file with
+.\" groff -man -Tascii stonix.8
+.TH STONIX 8 "March 2018" "Version 0.9.17"
+.SH NAME
+STONIX \- Security Tool On *NIX, Cross platform system hardening tool for
+various Unix and Unix like operating systems.
+.SH SYNOPSIS
+.B STONIX [options]
+.SH DESCRIPTION
+.B STONIX
+hardens various Unix and Unix-like (e.g. Linux) systems according to published
+security requirements from USGCB, DISA-STIGs, CIS and others. It reads its
+configuration from 
+.I /etc/stonix.conf.
+Users of STONIX are encouraged to be familiar with
+the hardening guidance for their platform and the notes associated with each
+rule so that they are familiar with the changes made to the system by this
+program.
+
+
+.B STONIX 
+has three basic modes of operation: Fix, Report and Rollback. The fix mode will
+apply changes to harden a system to published standards. The program may safely
+be run repeatedly and we recommend doing so in order to prevent system updates
+from weakening the desired security posture. Fix mode may be controlled by
+editing 
+.I /etc/stonix.conf
+or by adjusting the configuration via the GUI. 
+The default configuration file is typically empty as it contains only deviations
+from the default behavior. The -P or --printconfigfull option may be used to
+generate a configuration file that contains all options for those whose systems
+do not support the GUI or who prefer to work from the command line.
+ 
+.B STONIX 
+will, unless configured not to, create crontab entries to run 
+.B STONIX 
+in both report and fix mode once per week. These entries are set to run at a nice level of 19 to minimize impact on operations. The timing for the fix and report crontabs are both determined randomly. 
+.B STONIX 
+will also install hooks to run in the users context. This will allow STONIX to correct permissions on users dot files, remove .netrc files and configure the screensaver. Running in the user's context is required to ensure that NFS mounted home directories are configured correctly.
+
+.B STONIX
+creates a number of databases during its operation. These databases contain information on security sensitive issues such as SUID/SGID files, rpm status, un-owned files, world writable files and directories. Update mode allows the administrator to update the databases mentioned above without executing a full run. The databases are also updated during normal fix runs.
+
+Rollback mode will rollback changes that 
+.B STONIX 
+has made to various configuration files. 
+.B STONIX 
+creates diffs and will attempt to use those to restore the configuration. 
+.B STONIX 
+also creates a backup of each file that it touches. These backups are stored at 
+.I /usr/share/stonix/archive. 
+If the restoration of file content fails for any reason then the administrator may recover the original files from that location.
+
+When run in report mode 
+.B STONIX 
+will generate a configuration compliance report that will indicate deviations from the recommended configuration. The plain text version of the report is available for viewing at 
+.I /var/log/stonix-report. 
+Logs from user mode runs will be located inside the user's home directory inside a hidden folder named .stonix. 
+.B STONIX
+creates an XML file containing deviations from the recommended configuration which, depending on your site configuration, may be forwarded to a central logging server to help meet institutional reporting requirements.
+
+Module mode.
+Module mode allows a single STONIX module to be run. This is primarily to aid debugging of the 
+.B STONIX 
+program but may be useful in certain circumstances for regular use. The module names are the rule names as listed in the GUI or the rules directory.
+
+
+.SH OPTIONS
+.TP
+\fB -f --fix\fB\fR
+Fix mode. Use this flag to apply system hardening.
+.TP
+\fB -G \fB\fR
+Graphical mode. Use this flag to run STONIX in a graphical user interface mode. (This is STONIX's default behavior, when run with no flags).
+.TP
+\fB -u --update\fB\fR
+Update mode. Update STONIX databases without applying system hardening.
+.TP
+\fB -h --help\fB\fR
+Print help message.
+.TP
+\fB -r --report\fB\fR
+Report mode. Generate a STONIX compliance report. A human readable version of the last report is viewable at /var/log/stonix-report.
+.TP
+\fB -X --rollback\fB\fR
+Rollback mode. Rollback changes made to configuration files.
+.TP
+\fB -c --cli\fB\fR
+Command line run. Stonix runs in GUI mode by default. This option will force a command line run and must be accompanied by one of the -f, -r, -u or -X options.
+.TP
+\fB -v --verbose\fB\fR
+Verbose. Print additional information on STONIX actions.
+.TP
+\fB -d --debug\fB\fR
+Debug. Print additional information used for debugging STONIX. Warning: This will result in copious amounts of output and may be most useful if redirected to a file.
+.TP
+\fB -m --module\fB\fR
+Module mode. Run just a single module.
+.TP
+\fB -p --printconfigsimple\fB\fR
+Generate a new config file with current options in the simple format.
+.TP
+\fB -P --printconfigfull\fB\fR
+Generate a new config file with current options in the full format (shows all options).
+.TP
+\fB -l --list\fB\fR
+Print the list of installed rules that apply to this platform.
+
+.SH EXAMPLES
+.TP
+.B stonix -cfv
+To run 
+.B STONIX 
+in command line fix mode with verbose output.
+.TP
+.B stonix \-crvd
+To run 
+.B STONIX 
+in report mode with verbose and debugging output.
+.TP
+.B stonix \-cfvd &> stonix.out
+To run 
+.B STONIX 
+in fix mode with verbose and debugging output redirected to the file stonix.out.
+.TP
+.B stonix \-cfv \-m SetNTP
+To run 
+.B STONIX 
+in module mode for the SetNTP module with verbose output.
+.TP
+.B stonix \-cl 
+To list installed and applicable 
+.B STONIX 
+rules for this platform.
+
+.SH DIAGNOSTICS
+.B STONIX
+maintains a log of each run in /var/log/stonix-report. User mode reports are stored at ~/.stonix/stonix-report.
+Linux Only: maintains a full debug log of the last run of stonix, in fix mode, at: /var/log/stonix-lastfix.log
+.SH FILES
+.I /etc/stonix.conf
+.RS
+The configuration file.
+.RE
+.I /usr/bin/stonix
+.RS
+Link to the STONIX executable.
+.RE
+.I /var/log/stonix-report
+.RS
+Logfile created by STONIX.
+.RE
+.I /usr/share/stonix/archive
+.RS
+Directory containing backups of original configuration files.
+.RE
+.SH DEPENDENCIES
+.B STONIX
+requires Qt4 and PyQt4 for operation of the GUI but is typically packaged without explicit dependencies on those packages to support systems running in a command line only mode. 
+.B STONIX requires Python version 2.7 libraries.
+.SH CI CONFIGURATION
+.TP AuditFirefoxUsage
+.B APPROVEDDOMAINS
+acceptable values: a space-delimited list of fully qualified domain names
+.B DISABLEPROXY
+acceptable values: true, false
+.TP AuditNetworkSniffing
+.B <NONE>
+.TP AuditSSHKeys
+.B <NONE>
+.TP BlockSystemAccounts
+.B BLOCKSYSACCOUNTS
+acceptable values: true, false
+.TP BootLoaderPerms
+.B BOOTLOADERPERMS
+acceptable values: true, false
+.TP BootSecurity
+.B BOOTSECURITY
+acceptable values: true, false
+.TP CheckDupIDs
+.B <NONE>
+.TP CheckParitioning
+.B <NONE>
+.TP CheckRootPath
+.B CHECKROOTPATH
+acceptable values: true, false
+.TP ConfigureAIDE
+.B CONFIGUREAIDE
+acceptable values: true, false
+.B AIDEJOBTIME
+acceptable values: standard cron job time designation format; * means all
+example: * * * 0 5
+example: 0 1 1 2 7
+format: minute hour day-of-month month-of-year day-of-week
+.TP ConfigureAppleSoftwareUpdate
+.B <NONE>
+.TP ConfigureComputerName
+.B CONFIGURECOMPUTERNAME
+acceptable values: true, false
+.TP ConfigureDiagnosticReporting
+.B <NONE>
+.TP ConfigureDotFiles
+.B CONFIGUREDOTFILES
+acceptable values: true, false
+.TP ConfigureFirewall
+.B FIREWALLON
+acceptable values: true, false
+.B FIREWALLLOGINENABLED
+acceptable values: true, false
+.B FIREWALLSTEALTHDISABLED
+acceptable values: true, false
+.TP ConfigureKerberos
+.B CONFIGUREFILES
+acceptable values: true, false
+.TP ConfigureLDAPServer
+.B CONFIGURELDAPSERV
+acceptable values: true, false
+.TP ConfigureLinuxFirewall
+.B CONFIGURELINUXFIREWALL
+acceptable values: true, false
+.TP ConfigureLogging
+.B CONFIGURELOGGING
+acceptable values: true, false
+.B OPENDIRECTORYLOGGING
+acceptable values: true, false
+.TP ConfigureLoginWindow
+.B LOGINNAMEPASSWORD
+acceptable values: true, false
+.B DISABLECONSOLEACCESS
+acceptable values: true, false
+.TP ConfigureMACPolicy
+.B CONFIGUREMAC
+acceptable values: true, false
+.B MODE
+acceptable values: (if using apparmor: complain, enforce), (if using selinux: permissive, enforcing)
+.TP ConfigureNetworks
+.B DISABLEBLUETOOTHINTERFACE
+acceptable values: true, false
+.B DISABLEBLUETOOTHINTERNETSHARING
+acceptable values: true, false
+.TP ConfigurePasswordPolicy
+.B 
+
+.SH AUTHOR
+NIE-CDS Development Services <stonix-dev@lanl.gov>
