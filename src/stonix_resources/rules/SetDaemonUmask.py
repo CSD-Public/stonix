@@ -43,9 +43,9 @@ import os
 import re
 import traceback
 
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..stonixutilityfunctions import iterate
+from rule import Rule
+from logdispatcher import LogPriority
+from stonixutilityfunctions import iterate
 
 
 class SetDaemonUmask(Rule):

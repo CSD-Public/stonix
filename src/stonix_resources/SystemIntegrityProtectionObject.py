@@ -25,8 +25,8 @@
 import os
 import traceback
 import types
-from .CommandHelper import CommandHelper
-from .logdispatcher import LogPriority
+from stonix_resources.CommandHelper import CommandHelper
+from stonix_resources.logdispatcher import LogPriority
 
 
 class SystemIntegrityProtectionObject():

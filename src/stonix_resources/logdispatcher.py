@@ -37,11 +37,11 @@ Created on Aug 24, 2010
     reporterr method, and added debug output for both exceptions.
 """
 
-from .observable import Observable
+from stonix_resources.observable import Observable
 
 import re
 import logging
-from . import localize
+from stonix_resources import localize
 import logging.handlers
 import os.path
 import os

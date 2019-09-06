@@ -20,8 +20,8 @@ Created on Jun 12, 2013
 
 @author: dwalker
 '''
-from .KVEditor import KVEditor
-from .logdispatcher import LogPriority
+from stonix_resources.KVEditor import KVEditor
+from stonix_resources.logdispatcher import LogPriority
 import os
 
 

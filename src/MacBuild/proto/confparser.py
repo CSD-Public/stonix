@@ -24,10 +24,10 @@ def getConfOptions():
 
     optionsDict = {}
     for section_name in parser.sections():
-        print('Section : ' + str(section_name))
-        print('    opts: ' + str(parser.options(section_name)))
+        print(('Section : ' + str(section_name)))
+        print(('    opts: ' + str(parser.options(section_name))))
         for name, value in parser.items(section_name):
-            print('          %s = %s'%(name, value))
+            print(('          %s = %s'%(name, value)))
         print()
 
 getConfOptions()

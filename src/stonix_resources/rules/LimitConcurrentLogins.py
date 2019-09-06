@@ -37,9 +37,9 @@ import traceback
 import re
 import os
 
-from ..rule import Rule
-from ..stonixutilityfunctions import iterate, resetsecon, checkPerms
-from ..logdispatcher import LogPriority
+from rule import Rule
+from stonixutilityfunctions import iterate, resetsecon, checkPerms
+from logdispatcher import LogPriority
 
 
 class LimitConcurrentLogins(Rule):

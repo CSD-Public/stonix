@@ -52,7 +52,7 @@ import webbrowser
 from .view import View
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
-from . import main_window
+from stonix_resources import main_window
 from .stonix_log_viewer import Ui_log_viewer_window
 from .logdispatcher import LogPriority
 

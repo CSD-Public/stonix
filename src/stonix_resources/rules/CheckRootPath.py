@@ -1,4 +1,4 @@
-###############################################################################
+################################################################################
 #                                                                             #
 # Copyright 2019. Triad National Security, LLC. All rights reserved.          #
 # This program was produced under U.S. Government contract 89233218CNA000001  #
@@ -45,9 +45,9 @@ import os
 import re
 import traceback
 
-from ..rule import Rule
-from ..KVEditorStonix import KVEditorStonix
-from ..logdispatcher import LogPriority
+from rule import Rule
+from KVEditorStonix import KVEditorStonix
+from logdispatcher import LogPriority
 
 
 class CheckRootPath(Rule):

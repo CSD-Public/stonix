@@ -36,26 +36,26 @@ Created on Aug 24, 2010
 @change: 2017/10/23 rsn - change to new service helper interface
 '''
 
-from .observable import Observable
-from .configurationitem import ConfigurationItem
-from .logdispatcher import LogPriority
+from stonix_resources.observable import Observable
+from stonix_resources.configurationitem import ConfigurationItem
+from stonix_resources.logdispatcher import LogPriority
 from types import *
 import os
 import re
 from distutils.version import LooseVersion
 from shutil import rmtree
 
-from .stonixutilityfunctions import isServerVersionHigher
+from stonix_resources.stonixutilityfunctions import isServerVersionHigher
 from subprocess import call
-from .localize import DRINITIAL
-from .localize import DRREPORTCOMPIANT, DRREPORTNOTCOMPIANT, DRREPORTNOTAVAILABLE
-from .localize import DRFIXSUCCESSFUL, DRFIXFAILED, DRFIXNOTAVAILABLE
-from .localize import DRUNDOSUCCESSFUL, DRUNDOFAILED, DRUNDONOTAVAILABLE
-from .CommandHelper import CommandHelper
-from .pkghelper import Pkghelper
-from .ServiceHelper import ServiceHelper
+from stonix_resources.localize import DRINITIAL
+from stonix_resources.localize import DRREPORTCOMPIANT, DRREPORTNOTCOMPIANT, DRREPORTNOTAVAILABLE
+from stonix_resources.localize import DRFIXSUCCESSFUL, DRFIXFAILED, DRFIXNOTAVAILABLE
+from stonix_resources.localize import DRUNDOSUCCESSFUL, DRUNDOFAILED, DRUNDONOTAVAILABLE
+from stonix_resources.CommandHelper import CommandHelper
+from stonix_resources.pkghelper import Pkghelper
+from stonix_resources.ServiceHelper import ServiceHelper
 import traceback
-from .CheckApplicable import CheckApplicable
+from stonix_resources.CheckApplicable import CheckApplicable
 
 
 class Rule(Observable):
@@ -482,7 +482,8 @@ LANL-stonix."""
 
         # Process the OS list
         if 'os' in self.applicable:
-            for ostype, osverlist in self.applicable['os'].iteritems():
+            for ostype, osverlist in list(self.applicable['os'].items()):
+
                 if re.search(ostype, myostype):
                     # Process version and up
                     if '+' in osverlist:

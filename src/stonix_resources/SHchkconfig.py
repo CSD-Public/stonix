@@ -25,9 +25,9 @@ Created on Aug 9, 2012
 import os
 import re
 
-from .logdispatcher import LogPriority
-from .ServiceHelperTemplate import ServiceHelperTemplate
-from .CommandHelper import CommandHelper
+from stonix_resources.logdispatcher import LogPriority
+from stonix_resources.ServiceHelperTemplate import ServiceHelperTemplate
+from stonix_resources.CommandHelper import CommandHelper
 
 
 class SHchkconfig(ServiceHelperTemplate):

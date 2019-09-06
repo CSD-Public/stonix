@@ -24,9 +24,9 @@ Created on May 13, 2015
 @change: 2015-05-13 ekkehard - original implementation
 '''
 import unittest
-from . import environment
-from . import logdispatcher
-from . import networksetup
+from stonix_resources import environment
+from stonix_resources import logdispatcher
+from stonix_resources import networksetup
 
 
 class zzzTestFrameworknetworksetup(unittest.TestCase):

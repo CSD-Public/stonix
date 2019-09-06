@@ -32,14 +32,14 @@ Created on Jun 17, 2013
 @change: 2016/12/7 dwalker changed min number of days value from 7 to 1
 '''
 
-from ..stonixutilityfunctions import iterate, writeFile, readFile, resetsecon
-from ..stonixutilityfunctions import checkPerms, setPerms, createFile
-from ..stonixutilityfunctions import getUserGroupName, getOctalPerms
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..KVEditorStonix import KVEditorStonix
-from ..CommandHelper import CommandHelper
-from ..pkghelper import Pkghelper
+from stonixutilityfunctions import iterate, writeFile, readFile, resetsecon
+from stonixutilityfunctions import checkPerms, setPerms, createFile
+from stonixutilityfunctions import getUserGroupName, getOctalPerms
+from rule import Rule
+from logdispatcher import LogPriority
+from KVEditorStonix import KVEditorStonix
+from CommandHelper import CommandHelper
+from pkghelper import Pkghelper
 from subprocess import Popen, PIPE
 from time import strftime
 import traceback

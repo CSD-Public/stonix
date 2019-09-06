@@ -33,9 +33,9 @@ import os
 import re
 import traceback
 
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..CommandHelper import CommandHelper
+from rule import Rule
+from logdispatcher import LogPriority
+from CommandHelper import CommandHelper
 
 
 class VerifySysFilePerms(Rule):

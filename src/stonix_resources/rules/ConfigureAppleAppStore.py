@@ -30,9 +30,9 @@ dictionary
 import re
 import types
 
-from ..ruleKVEditor import RuleKVEditor
-from ..CommandHelper import CommandHelper
-from ..localize import APPLESOFTUPDATESERVER
+from ruleKVEditor import RuleKVEditor
+from CommandHelper import CommandHelper
+from localize import APPLESOFTUPDATESERVER
 
 
 class ConfigureAppleAppStore(RuleKVEditor):

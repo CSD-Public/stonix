@@ -42,13 +42,13 @@ dictionary
 import os
 import traceback
 
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..filehelper import FileHelper
-from ..CommandHelper import CommandHelper
-from ..pkghelper import Pkghelper
-from ..stonixutilityfunctions import iterate
-from ..localize import MACKRB5, LINUXKRB5
+from rule import Rule
+from logdispatcher import LogPriority
+from filehelper import FileHelper
+from CommandHelper import CommandHelper
+from pkghelper import Pkghelper
+from stonixutilityfunctions import iterate
+from localize import MACKRB5, LINUXKRB5
 
 
 class ConfigureKerberos(Rule):

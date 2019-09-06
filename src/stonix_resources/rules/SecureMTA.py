@@ -47,14 +47,14 @@ reference localize.py MAILRELAYSERVER instead of static local value.
 '''
 
 
-from ..rule import Rule
-from ..stonixutilityfunctions import resetsecon, readFile, iterate, setPerms
-from ..stonixutilityfunctions import checkPerms, writeFile
-from ..logdispatcher import LogPriority
-from ..pkghelper import Pkghelper
-from ..KVEditorStonix import KVEditorStonix
-from ..CommandHelper import CommandHelper
-from ..localize import MAILRELAYSERVER
+from rule import Rule
+from stonixutilityfunctions import resetsecon, readFile, iterate, setPerms
+from stonixutilityfunctions import checkPerms, writeFile
+from logdispatcher import LogPriority
+from pkghelper import Pkghelper
+from KVEditorStonix import KVEditorStonix
+from CommandHelper import CommandHelper
+from localize import MAILRELAYSERVER
 import os
 import traceback
 import re

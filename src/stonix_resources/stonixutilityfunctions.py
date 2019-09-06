@@ -77,7 +77,7 @@ from pwd import getpwuid
 from types import *
 from distutils.version import LooseVersion
 from subprocess import call, Popen, PIPE, STDOUT
-from .logdispatcher import LogPriority
+from stonix_resources.logdispatcher import LogPriority
 
 
 def resetsecon(filename):
@@ -812,6 +812,7 @@ def checkUserGroupName(ownergrp, owner, group, actualmode, desiredmode, logger):
 
     except Exception:
         raise
+
     return retval
 
 def checkPerms(path, perm, logger):
@@ -823,6 +824,7 @@ def checkPerms(path, perm, logger):
     @author: Derek Walker
     @change: Breen Malmberg - 1/10/2017 - doc string edit; return val init;
             minor refactor; parameter validation; logging
+    @change: Breen Malmberg - 06/18/2018 - minor doc string edit
     :returns: retval
     :rtype: bool
 
@@ -1092,7 +1094,7 @@ def isServerVersionHigher(client_version="0.0.0", server_version="0.0.0", logger
                 logger.log(LogPriority.DEBUG, "isServerVersion: " + x)
         else:
             def logprint(x):
-                print(str(x))
+                print((str(x)))
 
         if re.match("^$", client_version) or re.match("^$", server_version):
             needToUpdate = False
@@ -1373,7 +1375,7 @@ def validateParam(logger, param, ptype, pname):
         if log:
             logger.log(LogPriority.ERROR, str(errmsg))
         else:
-            print(str(errmsg))
+            print((str(errmsg)))
     return valid
 
 def reportStack(level=1):

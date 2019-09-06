@@ -38,9 +38,9 @@ dictionary
 
 import traceback
 import types
-from ..rule import Rule
-from ..CommandHelper import CommandHelper
-from ..logdispatcher import LogPriority
+from rule import Rule
+from CommandHelper import CommandHelper
+from logdispatcher import LogPriority
 
 
 class ConfigurePowerManagement(Rule):

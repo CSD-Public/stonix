@@ -46,10 +46,10 @@ import os
 import re
 import traceback
 import pwd
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..stonixutilityfunctions import isWritable
-from ..CommandHelper import CommandHelper
+from rule import Rule
+from logdispatcher import LogPriority
+from stonixutilityfunctions import isWritable
+from CommandHelper import CommandHelper
 
 
 class ConfigureDotFiles(Rule):

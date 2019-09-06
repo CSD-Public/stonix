@@ -9,9 +9,9 @@ Some methods might be useful in older Mac OS X operating systems.
 '''
 import re
 
-from .logdispatcher import LogPriority as lp
-from .CommandHelper import CommandHelper
-from .stonixutilityfunctions import reportStack
+from stonix_resources.logdispatcher import LogPriority as lp
+from stonix_resources.CommandHelper import CommandHelper
+from stonix_resources.stonixutilityfunctions import reportStack
 
 class LaunchCtl(object):
     '''Service manager that provides an interface to the Mac OS launchctl command.
@@ -135,7 +135,7 @@ class LaunchCtl(object):
             self.logger.log(lp.ERROR, "Command must be a dictionary...")
         else:
             commands = 0
-            for subCommand, args in command.items():
+            for subCommand, args in list(command.items()):
                 commands += 1
                 #####
                 # Check to make sure only one command is in the dictionary

@@ -25,7 +25,7 @@ Note: Each concrete helper will inherit this class, which will be the default
 '''
 import inspect
 
-from .logdispatcher import LogPriority
+from stonix_resources.logdispatcher import LogPriority
 
 
 class MethodNotImplementedError(Exception):

@@ -31,11 +31,11 @@ import traceback
 import re
 import time
 
-from ..ServiceHelper import ServiceHelper
-from ..CommandHelper import CommandHelper
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..stonixutilityfunctions import iterate, writeFile, readFile, createFile, checkPerms, setPerms, resetsecon
+from ServiceHelper import ServiceHelper
+from CommandHelper import CommandHelper
+from rule import Rule
+from logdispatcher import LogPriority
+from stonixutilityfunctions import iterate, writeFile, readFile, createFile, checkPerms, setPerms, resetsecon
 
 
 class ConfigureLinuxFirewall(Rule):

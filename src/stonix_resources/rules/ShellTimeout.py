@@ -27,11 +27,11 @@ after 15 minutes.
     Ekkehard's change of the same nature (due to merge conflicts)
 '''
 
-from ..stonixutilityfunctions import iterate, setPerms, checkPerms
-from ..stonixutilityfunctions import resetsecon, createFile, writeFile
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..KVEditorStonix import KVEditorStonix
+from stonixutilityfunctions import iterate, setPerms, checkPerms
+from stonixutilityfunctions import resetsecon, createFile, writeFile
+from rule import Rule
+from logdispatcher import LogPriority
+from KVEditorStonix import KVEditorStonix
 import traceback
 import os
 import re

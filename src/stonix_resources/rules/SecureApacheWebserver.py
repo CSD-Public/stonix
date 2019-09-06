@@ -61,12 +61,12 @@ import shutil
 import stat
 import traceback
 
-from ..configurationitem import ConfigurationItem
-from ..logdispatcher import LogPriority
-from ..CommandHelper import CommandHelper
-from ..pkghelper import Pkghelper
-from ..rule import Rule
-from ..stonixutilityfunctions import readFile, writeFile, resetsecon, getOctalPerms
+from configurationitem import ConfigurationItem
+from logdispatcher import LogPriority
+from CommandHelper import CommandHelper
+from pkghelper import Pkghelper
+from rule import Rule
+from stonixutilityfunctions import readFile, writeFile, resetsecon, getOctalPerms
 
 
 class SecureApacheWebserver(Rule):

@@ -24,9 +24,9 @@ Unprivileged access to the kernel syslog can expose sensitive kernel address inf
 '''
 
 
-from ..rule import Rule
-from ..CommandHelper import CommandHelper
-from ..logdispatcher import LogPriority
+from rule import Rule
+from CommandHelper import CommandHelper
+from logdispatcher import LogPriority
 
 import re
 import traceback

@@ -17,8 +17,8 @@
 
 
 
-from .logdispatcher import LogPriority
-from .CommandHelper import CommandHelper
+from stonix_resources.logdispatcher import LogPriority
+from stonix_resources.CommandHelper import CommandHelper
 
 
 class Freebsd(object):

@@ -43,7 +43,7 @@ import subprocess
 import traceback
 import time
 
-from .logdispatcher import LogPriority
+from stonix_resources.logdispatcher import LogPriority
 
 
 class CommandHelper(object):

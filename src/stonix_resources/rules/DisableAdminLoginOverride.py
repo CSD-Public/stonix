@@ -34,9 +34,9 @@ locked session.
 import os
 import re
 import traceback
-from ..stonixutilityfunctions import writeFile, readFile, iterate, resetsecon
-from ..rule import Rule
-from ..logdispatcher import LogPriority
+from stonixutilityfunctions import writeFile, readFile, iterate, resetsecon
+from rule import Rule
+from logdispatcher import LogPriority
 
 
 class DisableAdminLoginOverride(Rule):

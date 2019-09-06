@@ -3,7 +3,7 @@ import os
 import getpass
 from subprocess import Popen, PIPE, check_call
 
-username = input("Username: ")
+username = eval(input("Username: "))
 passwd = getpass.getpass("passwd: ")
 
 #cmdOne = '/usr/bin/su - ' + username + ' -c "/usr/bin/top -l 1"'

@@ -422,7 +422,7 @@ class Environment:
             if match is not None:
                 # print 'Matched MAC address'
                 macaddress = match.group()
-            if re.search(ipaddress, line):
+            if re.search(ipaddress, line.decode('utf-8')):
                 # print 'Found ipaddress'
                 break
 
@@ -824,7 +824,7 @@ class Environment:
             srcpath = script_path_one.split('/')[:-2]
             srcpath = '/'.join(srcpath)
             self.conf_path = os.path.join(srcpath, 'etc', 'stonix.conf')
-            print(self.conf_path)
+            print((self.conf_path))
         else:
             self.conf_path = "/etc/stonix.conf"
 

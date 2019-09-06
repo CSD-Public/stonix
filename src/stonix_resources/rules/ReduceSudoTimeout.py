@@ -44,10 +44,10 @@ import re
 import os
 import traceback
 
-from ..rule import Rule
-from ..stonixutilityfunctions import iterate
-from ..stonixutilityfunctions import resetsecon
-from ..logdispatcher import LogPriority
+from rule import Rule
+from stonixutilityfunctions import iterate
+from stonixutilityfunctions import resetsecon
+from logdispatcher import LogPriority
 
 
 class ReduceSudoTimeout(Rule):

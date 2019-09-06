@@ -30,9 +30,9 @@ Set default group and home directory for root.
 
 
 
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..CommandHelper import CommandHelper
+from rule import Rule
+from logdispatcher import LogPriority
+from CommandHelper import CommandHelper
 
 import traceback
 import grp

@@ -89,7 +89,7 @@ class CyLogger(object, metaclass=SingletonCyLogger):
     def __init__(self, environ=False, debug_mode=False, verbose_mode=False, level=30, *args, **kwargs):
         """
         """
-        print(".............Level: " + str(level))
+        print((".............Level: " + str(level)))
         self.lvl = int(level)
         if environ:
             self.environment = environ

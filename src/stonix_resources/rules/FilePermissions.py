@@ -52,10 +52,10 @@ import re
 import pwd
 import grp
 
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..localize import SITELOCALWWWDIRS
-from ..stonixutilityfunctions import getlocalfs
+from rule import Rule
+from logdispatcher import LogPriority
+from localize import SITELOCALWWWDIRS
+from stonixutilityfunctions import getlocalfs
 
 
 class FilePermissions(Rule):

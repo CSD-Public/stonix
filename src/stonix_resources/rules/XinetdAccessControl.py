@@ -33,12 +33,12 @@ present.
 
 
 
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..localize import XINETDALLOW
-from ..stonixutilityfunctions import getOctalPerms
-from ..stonixutilityfunctions import getOwnership
-from ..stonixutilityfunctions import iterate
+from rule import Rule
+from logdispatcher import LogPriority
+from localize import XINETDALLOW
+from stonixutilityfunctions import getOctalPerms
+from stonixutilityfunctions import getOwnership
+from stonixutilityfunctions import iterate
 import traceback
 import os
 import re

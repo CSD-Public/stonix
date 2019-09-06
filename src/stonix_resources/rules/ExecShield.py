@@ -31,10 +31,10 @@ import re
 import traceback
 import subprocess
 
-from ..rule import Rule
-from ..stonixutilityfunctions import resetsecon
-from ..logdispatcher import LogPriority
-from ..KVEditorStonix import KVEditorStonix
+from rule import Rule
+from stonixutilityfunctions import resetsecon
+from logdispatcher import LogPriority
+from KVEditorStonix import KVEditorStonix
 
 
 class ExecShield(Rule):

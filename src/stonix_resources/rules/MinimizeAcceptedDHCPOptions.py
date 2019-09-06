@@ -32,10 +32,10 @@ import os
 import re
 import traceback
 
-from ..rule import Rule
-from ..localize import DHCPDict, DHCPSup
-from ..logdispatcher import LogPriority
-from ..stonixutilityfunctions import iterate
+from rule import Rule
+from localize import DHCPDict, DHCPSup
+from logdispatcher import LogPriority
+from stonixutilityfunctions import iterate
 
 
 class MinimizeAcceptedDHCPOptions(Rule):

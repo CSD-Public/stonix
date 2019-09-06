@@ -35,14 +35,14 @@ account modifications, and authentication events.
 
 
 
-from ..logdispatcher import LogPriority
-from ..rule import Rule
-from ..KVEditorStonix import KVEditorStonix
-from ..CommandHelper import CommandHelper
-from ..ServiceHelper import ServiceHelper
-from ..pkghelper import Pkghelper
-from ..stonixutilityfunctions import resetsecon
-from ..stonixutilityfunctions import iterate
+from logdispatcher import LogPriority
+from rule import Rule
+from KVEditorStonix import KVEditorStonix
+from CommandHelper import CommandHelper
+from ServiceHelper import ServiceHelper
+from pkghelper import Pkghelper
+from stonixutilityfunctions import resetsecon
+from stonixutilityfunctions import iterate
 
 import traceback
 import os

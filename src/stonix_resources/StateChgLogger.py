@@ -40,7 +40,7 @@ import time
 import difflib
 import weakref
 import subprocess
-from .logdispatcher import LogPriority
+from stonix_resources.logdispatcher import LogPriority
 
 
 class StateChgLogger(object):

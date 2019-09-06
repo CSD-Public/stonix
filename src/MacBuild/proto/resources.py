@@ -35,4 +35,4 @@ def getResourcesDir() :
     return resource_dir
 
 
-print(getResourcesDir())
+print((getResourcesDir()))

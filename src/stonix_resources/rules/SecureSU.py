@@ -39,13 +39,13 @@ import os
 import re
 import traceback
 
-from ..rule import Rule
-from ..stonixutilityfunctions import readFile
-from ..stonixutilityfunctions import resetsecon, writeFile, iterate
-from ..stonixutilityfunctions import checkPerms, setPerms
-from ..logdispatcher import LogPriority
-from ..pkghelper import Pkghelper
-from ..CommandHelper import CommandHelper
+from rule import Rule
+from stonixutilityfunctions import readFile
+from stonixutilityfunctions import resetsecon, writeFile, iterate
+from stonixutilityfunctions import checkPerms, setPerms
+from logdispatcher import LogPriority
+from pkghelper import Pkghelper
+from CommandHelper import CommandHelper
 
 
 class SecureSU(Rule):

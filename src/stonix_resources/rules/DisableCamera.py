@@ -37,10 +37,10 @@ Created on Dec 10, 2013
 '''
 
 
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..KVEditorStonix import KVEditorStonix
-from ..stonixutilityfunctions import iterate
+from rule import Rule
+from logdispatcher import LogPriority
+from KVEditorStonix import KVEditorStonix
+from stonixutilityfunctions import iterate
 import os
 import traceback
 

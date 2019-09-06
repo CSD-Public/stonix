@@ -65,9 +65,9 @@ class BuildAndRunSuite(object):
                 if os.path.exists(pycfile):
                     os.unlink(pycfile)
                 elif re.match("^test_.+.py$", check_file):
-                    print("Loading test: " + str(check_file))
+                    print(("Loading test: " + str(check_file)))
                     test_list.append(os.path.join("./tests/", check_file))
-            print(str(test_list))
+            print((str(test_list)))
 
         return test_list
 

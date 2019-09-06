@@ -49,18 +49,18 @@ import os
 import re
 import traceback
 
-from ..logdispatcher import LogPriority
-from ..CommandHelper import CommandHelper
-from ..ruleKVEditor import RuleKVEditor
-from ..KVEditorStonix import KVEditorStonix
-from ..pkghelper import Pkghelper
-from ..localize import WARNINGBANNER
-from ..localize import GDMWARNINGBANNER
-from ..localize import GDM3WARNINGBANNER
-from ..localize import ALTWARNINGBANNER
-from ..localize import OSXSHORTWARNINGBANNER
-from ..stonixutilityfunctions import fixInflation, iterate, createFile
-from ..stonixutilityfunctions import setPerms, readFile, writeFile
+from logdispatcher import LogPriority
+from CommandHelper import CommandHelper
+from ruleKVEditor import RuleKVEditor
+from KVEditorStonix import KVEditorStonix
+from pkghelper import Pkghelper
+from localize import WARNINGBANNER
+from localize import GDMWARNINGBANNER
+from localize import GDM3WARNINGBANNER
+from localize import ALTWARNINGBANNER
+from localize import OSXSHORTWARNINGBANNER
+from stonixutilityfunctions import fixInflation, iterate, createFile
+from stonixutilityfunctions import setPerms, readFile, writeFile
 
 
 class InstallBanners(RuleKVEditor):
@@ -416,9 +416,9 @@ class InstallBanners(RuleKVEditor):
                         self.setgnome3()
                     else:
                         self.setgnome2()
-                elif os.path.exists("/usr/sbin/lightdm"):
+                if os.path.exists("/usr/sbin/lightdm"):
                     self.setlightdm()
-                elif os.path.exists("/usr/bin/startkde"):
+                if os.path.exists("/usr/bin/startkde"):
                     self.setkde()
 
         except Exception:
@@ -985,51 +985,7 @@ class InstallBanners(RuleKVEditor):
                         self.detailedresults += '\nThe following required options are missing from ' + \
                             str(self.kdefile) + ':\n' + '\n'.join(str(f) for f in self.kdeditor.fixables) \
                             + '\n'
-                # else:
-                #     # Since the warning banner spans multiple lines in the
-                #     # config file, the KVEditor does not properly detect it.
-                #     # This is a modified version of the KVATaggedConf algorithm
-                #     # to find a multi-line value
-                #     conflines = open(self.kdefile, "r").readlines()
-                #     tagstart = -1
-                #     greetlinestart = -1
-                #     for ind, line in enumerate(conflines):
-                #         if re.search("^\[X-\*-Greeter\]", line):
-                #             tagstart = ind + 1
-                #             break
-                #     if tagstart > 0:
-                #         for ind, line in enumerate(conflines[tagstart:]):
-                #             if re.search("^#", line) or \
-                #                re.search("^\s*$", line):
-                #                 continue
-                #             elif re.search("^\[.*?\]\s*$", line):  # New tag
-                #                 retval = False
-                #                 self.detailedresults += "\nCould not find " + \
-                #                     "required banner in " + self.kdefile
-                #                 break
-                #             elif re.search("^" + self.greetbanner[0] + "=",
-                #                            line):
-                #                 greetlinestart = ind
-                #                 break
-                #     if greetlinestart > 0:
-                #         banner = self.bannertext
-                #         bannerlines = banner.splitlines(True)
-                #         greetlines = []
-                #         startline = conflines[greetlinestart +
-                #                               tagstart].replace(self.greetbanner[0]
-                #                                                 + '="', '')
-                #         greetlines.append(startline)
-                #         for line in conflines[greetlinestart + tagstart + 1:]:
-                #             if re.search('^"\s*', line):
-                #                 break
-                #             greetlines.append(line)
-                #         if bannerlines != greetlines:
-                #             retval = False
-                #             self.detailedresults += "\nDid not find " + \
-                #                 "correct warning banner in " + self.kdefile
-                #             debug = "Current GreetString: " + "".join(greetlines) \
-                #                 + "\nBanner wanted: " + "".join(bannerlines)
-                #             self.logger.log(LogPriority.DEBUG, debug)
+
         except Exception:
             raise
         return retval
@@ -1410,7 +1366,7 @@ they are only called if the fix calls completed successfully
                     self.detailedresults += 'kdeditor commit failed. ' + \
                         'Fix not applied'
             key1 = 'GreetString'
-            val1 = '"' + self.bannertext + '"'
+            val1 = '"' + self.kdebannertext + '"'
             data = {"X-*-Greeter": {key1: val1}}
             tmpfile = self.kdefile + ".stonixtmp2"
             greeteditor = KVEditorStonix(self.statechglogger, self.logger,

@@ -34,11 +34,11 @@ import os
 import re
 import traceback
 
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..CommandHelper import CommandHelper
-from ..pkghelper import Pkghelper
-from ..stonixutilityfunctions import iterate
+from rule import Rule
+from logdispatcher import LogPriority
+from CommandHelper import CommandHelper
+from pkghelper import Pkghelper
+from stonixutilityfunctions import iterate
 
 
 class DisableThumbnailers(Rule):

@@ -30,10 +30,10 @@ import tempfile
 import traceback
 import ctypes as C
 
-from .localize import MACREPOROOT
-from .logdispatcher import LogPriority
-from .CommandHelper import CommandHelper
-from .Connectivity import Connectivity
+from stonix_resources.localize import MACREPOROOT
+from stonix_resources.logdispatcher import LogPriority
+from stonix_resources.CommandHelper import CommandHelper
+from stonix_resources.Connectivity import Connectivity
 from ssl import SSLError
 
 
@@ -290,7 +290,7 @@ class MacPkgr(object):
                 count = 0
                 self.ch.executeCommand(cmd_one)
                 files2remove = self.ch.getOutputString().split("\n")
-                print("Files to remove: " + str(files2remove))
+                print(("Files to remove: " + str(files2remove)))
                 self.logger.log(LogPriority.DEBUG, files2remove)
                 if str(self.ch.getReturnCode()) == str(0):
                     for file in files2remove:
@@ -388,7 +388,7 @@ class MacPkgr(object):
                 self.libc.sync()
             except:
                 pass
-        print("Remove Package success: " + str(success))
+        print(("Remove Package success: " + str(success)))
         return success
 
     ###########################################################################
@@ -575,7 +575,7 @@ class MacPkgr(object):
                 #####
                 # Log the domain...
                 self.logger.log(LogPriority.DEBUG, "Domain: " + str(domain))
-            print("findDomain: " + str(domain))
+            print(("findDomain: " + str(domain)))
         except(KeyboardInterrupt, SystemExit):
             raise
         except Exception as err:

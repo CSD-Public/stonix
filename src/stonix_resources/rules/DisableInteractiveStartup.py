@@ -30,13 +30,13 @@ startup mode for all supported flavors of Linux operating systems.
 import os
 import traceback
 
-from ..rule import Rule
-from ..stonixutilityfunctions import resetsecon, checkPerms
-from ..stonixutilityfunctions import iterate, setPerms, createFile
-from ..logdispatcher import LogPriority
-from ..pkghelper import Pkghelper
-from ..KVEditorStonix import KVEditorStonix
-from ..CommandHelper import CommandHelper
+from rule import Rule
+from stonixutilityfunctions import resetsecon, checkPerms
+from stonixutilityfunctions import iterate, setPerms, createFile
+from logdispatcher import LogPriority
+from pkghelper import Pkghelper
+from KVEditorStonix import KVEditorStonix
+from CommandHelper import CommandHelper
 
 
 class DisableInteractiveStartup(Rule):

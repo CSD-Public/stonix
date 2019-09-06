@@ -28,11 +28,11 @@ This rule will enable process accounting, using the acct/psacct service.
 
 import traceback
 
-from ..stonixutilityfunctions import iterate
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..pkghelper import Pkghelper
-from ..ServiceHelper import ServiceHelper
+from stonixutilityfunctions import iterate
+from rule import Rule
+from logdispatcher import LogPriority
+from pkghelper import Pkghelper
+from ServiceHelper import ServiceHelper
 
 
 class ConfigureProcessAccounting(Rule):

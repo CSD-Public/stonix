@@ -37,14 +37,14 @@ Created on May 20, 2013
 @change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
 """
 
-from ..stonixutilityfunctions import iterate, resetsecon, createFile, getUserGroupName
-from ..stonixutilityfunctions import readFile, writeFile, checkPerms, setPerms, checkUserGroupName
-from ..ruleKVEditor import RuleKVEditor
-from ..pkghelper import Pkghelper
-from ..logdispatcher import LogPriority
-from ..ServiceHelper import ServiceHelper
-from ..CommandHelper import CommandHelper
-from ..localize import WINLOG, LANLLOGROTATE
+from stonixutilityfunctions import iterate, resetsecon, createFile, getUserGroupName
+from stonixutilityfunctions import readFile, writeFile, checkPerms, setPerms, checkUserGroupName
+from ruleKVEditor import RuleKVEditor
+from pkghelper import Pkghelper
+from logdispatcher import LogPriority
+from ServiceHelper import ServiceHelper
+from CommandHelper import CommandHelper
+from localize import WINLOG, LANLLOGROTATE
 from subprocess import PIPE, Popen
 import os
 import traceback

@@ -544,11 +544,17 @@ This rule verifies that Mac OS X 'System Integrity Protection' (SIP) functionali
 
 <85>        "This rule prevents users from logging into root directly through virtual console or tty connections. Users can still access root through non-tty connections or by escalating privileges using sudo."
 
+<173>		"This rule installs the LANL Certificate Authority (CA) certificate and updates the trust services on various Linux platforms.  For Ubuntu 16 and Ubuntu 18 users, after running the rule you must import the lanl certificate into firefox manually through the preferences window.  The certificate is located in /usr/share/ca-certificates/extra."
+
 <330>		"***OPTIONAL RULE***
 
 This rule will limit the number of concurrent login sessions the system can have. The default limit amount is 10. The user can specify what they want this number to be, by entering a different number for the MAXSYSLOGINS configuration item value. This rule is disabled by default.
 
 Users should keep in mind, while setting this number, that login sessions can include how many terminals you currently have open."
+
+<254>       "This rule will configure LDAP for use at LANL. For full functionality, the ConfigureKerberos rule will also need to be run.
+
+On Debian and Ubuntu systems, this rule will require a restart to take effect."
 
 <311>       "New data collection and reporting utilities have been added to the stable LTS Ubuntu release cycle and enabled by default. This rule will disable or remove these new utilities so no information is collected or reported to Ubuntu."
 

@@ -37,7 +37,7 @@ are vulnerable to exploit and monitoring.
 
 
 
-from ..ruleKVEditor import RuleKVEditor
+from ruleKVEditor import RuleKVEditor
 
 
 class ConfigureRemoteManagement(RuleKVEditor):

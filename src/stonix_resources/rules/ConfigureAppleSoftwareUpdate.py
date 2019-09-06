@@ -51,10 +51,10 @@ import re
 import types
 import traceback
 
-from ..ruleKVEditor import RuleKVEditor
-from ..CommandHelper import CommandHelper
-from ..logdispatcher import LogPriority
-from ..localize import APPLESOFTUPDATESERVER
+from ruleKVEditor import RuleKVEditor
+from CommandHelper import CommandHelper
+from logdispatcher import LogPriority
+from localize import APPLESOFTUPDATESERVER
 
 
 class ConfigureAppleSoftwareUpdate(RuleKVEditor):

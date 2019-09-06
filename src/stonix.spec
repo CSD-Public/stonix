@@ -49,7 +49,10 @@ mkdir -p $RPM_BUILD_ROOT/usr/share/man/man8
 /usr/bin/install $RPM_BUILD_DIR/%{name}-%{version}/stonix_resources/*.py $RPM_BUILD_ROOT/usr/bin/stonix_resources/
 /usr/bin/install $RPM_BUILD_DIR/%{name}-%{version}/stonix_resources/rules/*.py $RPM_BUILD_ROOT/usr/bin/stonix_resources/rules/
 /usr/bin/install $RPM_BUILD_DIR/%{name}-%{version}/stonix_resources/gfx/* $RPM_BUILD_ROOT/usr/bin/stonix_resources/gfx/
-#/usr/bin/install $RPM_BUILD_DIR/%{name}-%{version}/stonix_resources/files/* $RPM_BUILD_ROOT/usr/bin/stonix_resources/files/
+/usr/bin/install $RPM_BUILD_DIR/%{name}-%{version}/stonix_resources/files/*.mobileconfig $RPM_BUILD_ROOT/usr/bin/stonix_resources/files/
+/usr/bin/install $RPM_BUILD_DIR/%{name}-%{version}/stonix_resources/files/*.mobileconfigfake $RPM_BUILD_ROOT/usr/bin/stonix_resources/files/
+#/usr/bin/install $RPM_BUILD_DIR/%{name}-%{version}/stonix_resources/files/passwordprofile-10.11 $RPM_BUILD_ROOT/usr/bin/stonix_resources/files/
+/usr/bin/install $RPM_BUILD_DIR/%{name}-%{version}/stonix_resources/files/*.plist $RPM_BUILD_ROOT/usr/bin/stonix_resources/files/
 /usr/bin/cp -R $RPM_BUILD_DIR/%{name}-%{version}/stonix_resources/files/* $RPM_BUILD_ROOT/usr/bin/stonix_resources/files/
 /usr/bin/cp -R $RPM_BUILD_DIR/%{name}-%{version}/stonix_resources/help/* $RPM_BUILD_ROOT/usr/bin/stonix_resources/help/
 /usr/bin/install $RPM_BUILD_DIR/%{name}-%{version}/stonix_resources/help/images/* $RPM_BUILD_ROOT/usr/bin/stonix_resources/help/images/
@@ -118,6 +121,24 @@ installed at /usr/local/stonix/stonixdb.sql
 %attr(0750,root,apache) /var/www/html/stonix/results.php
 
 %changelog
+* Thu Jun 27 2019 Derek Walker <dwalker@lanl.gov> - 0.9.32
+- Docstrings in multiple rules updated to python 3 REST format
+- New icons and splash screen for mac package
+- Fixed - with DisablIPV6 and NoCoreDumps where ipv6 directives weren't being recognized as legit keys after disabling it with sysctl command
+- Fixed - issue with kveditor class that handles config files returning None value and stonix not handling properly.
+- Fixed - issue with ConfigureAppleSoftwareUpdate.  Now properly configures for both user and root
+- Fixed - EnableKernelAuditing: Fedora29 changed the location/name of their configuration file for this functionality.
+- Updated - ScheduleStonix now has a report only in userspace option for the red network
+
+* Thu Jun 6 2019 Derek Walker <dwalker@lanl.gov> - 0.9.31
+- Preparation for code base change from python 2 to 3
+- Compatibility for the NSN (non secure network)
+- Fixed - Alias name parsing issue in our service helper class
+- Fixed - ConfigureProcessAccounting bug, non compliant after fix
+- Fixed - traceback in ConfigureLANLLDAP
+- Updated SSH to support smart card only authentication
+- Fixed - DisableThumbnailers to disallow users from changing values after setting them
+
 * Thu Jan 10 2019 Breen Malmberg <bemalmbe@lanl.gov> - 0.9.26
 - Fixed - Unit test for MuteMic was failing on all operating systems
 - Fixed - Unit test for SecureIPV6 was failing on RHEL 7
@@ -358,6 +379,14 @@ installed at /usr/local/stonix/stonixdb.sql
 - Fixed an incorrect return code comparison issue in helper class zypper.py
 
 * Tue Apr 4 2017 David Kennel <dkennel@lanl.gov> - 0.9.7
+- Public code base now has placeholders for certain constants, in localize and informs the user when attempting to use rules which require these constants, i$
+- Stonix now has a new "FISMA" setting in localize, which can be overridden in each rule if necessary, which determines which rules are run by default, when $
+- Debian/Ubuntu package will now no longer overwrite existing stonix.conf
+- MinimizeServices - Will no longer disable ntp, chrony or syslog, by default
+- SecureATCron - Now assigns the correct permissions to cron.log
+- RemoveSoftware - Fixed a typo which was resulting in 2 service names being concatenated in the CI list
+- ConfigureLANLLDAP - Fixed a bug which was preventing required packages sssd, krb5, pam_ldap from being installed, related services from being started/enabl$
+- ConfigureLogging - Fixed a traceback error which was preventing the rule from running on CentOS 6
 - Added filter mechanism and variables to support fine tuned actions and rule filtering based on FISMA risk categorization
 - Corrected issue with duplicate rule id numbers affecting ConfigureProcessAccounting and EncryptSwap
 - Corrected multiple issues with MacOS STIG rules

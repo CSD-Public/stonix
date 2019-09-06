@@ -25,7 +25,7 @@ Created on Aug 24, 2010
 '''
 
 from distutils.version import LooseVersion
-from .loggers import LogPriority
+from stonix_resources.loggers import LogPriority
 import re
 
 
@@ -149,7 +149,7 @@ class CheckApplicable(object):
 
         # Process the OS list
         if 'os' in applicable:
-            for ostype, osverlist in applicable['os'].items():
+            for ostype, osverlist in list(applicable['os'].items()):
                 if re.search(ostype, self.myostype):
                     inRange = self.isInRange(osverlist)
                     if inRange:

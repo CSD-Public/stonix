@@ -43,8 +43,8 @@ import os
 import traceback
 import re
 
-from ..rule import Rule
-from ..logdispatcher import LogPriority
+from rule import Rule
+from logdispatcher import LogPriority
 
 
 class SymlinkDangerFiles(Rule):

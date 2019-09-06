@@ -219,7 +219,7 @@ class CheckApplicable(object):
 
         # Process the OS list
         if 'os' in applicable:
-            for ostype, osverlist in applicable['os'].items():
+            for ostype, osverlist in list(applicable['os'].items()):
                 if re.search(ostype, self.myostype):
                     inRange = self.isInRange(osverlist)
                     if inRange:

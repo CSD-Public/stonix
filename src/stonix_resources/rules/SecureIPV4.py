@@ -45,14 +45,14 @@ variable.
 @change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
 '''
 
-from ..stonixutilityfunctions import resetsecon, iterate, readFile, writeFile
-from ..stonixutilityfunctions import checkPerms, setPerms, createFile
-from ..stonixutilityfunctions import getOctalPerms
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..CommandHelper import CommandHelper
+from stonixutilityfunctions import resetsecon, iterate, readFile, writeFile
+from stonixutilityfunctions import checkPerms, setPerms, createFile
+from stonixutilityfunctions import getOctalPerms
+from rule import Rule
+from logdispatcher import LogPriority
+from CommandHelper import CommandHelper
 from subprocess import Popen, PIPE, call
-from ..KVEditorStonix import KVEditorStonix
+from KVEditorStonix import KVEditorStonix
 import os
 import traceback
 import re

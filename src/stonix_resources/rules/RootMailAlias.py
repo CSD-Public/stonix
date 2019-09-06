@@ -46,11 +46,11 @@ was not checked before exectuing fix()
 
 
 
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..stonixutilityfunctions import checkPerms
-from ..stonixutilityfunctions import iterate, resetsecon
-from ..pkghelper import Pkghelper
+from rule import Rule
+from logdispatcher import LogPriority
+from stonixutilityfunctions import checkPerms
+from stonixutilityfunctions import iterate, resetsecon
+from pkghelper import Pkghelper
 
 import os
 import re

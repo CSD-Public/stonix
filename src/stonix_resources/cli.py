@@ -37,8 +37,8 @@ Created on Aug 24, 2010
 @author: dkennel
 '''
 
-from .view import View
-from .logdispatcher import LogPriority
+from stonix_resources.view import View
+from stonix_resources.logdispatcher import LogPriority
 
 class Cli (View):
     

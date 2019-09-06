@@ -28,11 +28,11 @@ This InstallVLock object installs the vlock package to enable screen locking
 
 import traceback
 
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..stonixutilityfunctions import iterate
-from ..CommandHelper import CommandHelper
-from ..pkghelper import Pkghelper
+from rule import Rule
+from logdispatcher import LogPriority
+from stonixutilityfunctions import iterate
+from CommandHelper import CommandHelper
+from pkghelper import Pkghelper
 
 
 class InstallVLock(Rule):

@@ -28,7 +28,7 @@ Created on Mar 2, 2015
 @change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
 '''
 
-from ..ruleKVEditor import RuleKVEditor
+from ruleKVEditor import RuleKVEditor
 
 
 class EncryptSwap(RuleKVEditor):

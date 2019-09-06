@@ -38,13 +38,13 @@ import traceback
 import re
 import os
 
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..pkghelper import Pkghelper
-from ..CommandHelper import CommandHelper
-from ..ServiceHelper import ServiceHelper
-from ..KVEditorStonix import KVEditorStonix
-from ..stonixutilityfunctions import iterate
+from rule import Rule
+from logdispatcher import LogPriority
+from pkghelper import Pkghelper
+from CommandHelper import CommandHelper
+from ServiceHelper import ServiceHelper
+from KVEditorStonix import KVEditorStonix
+from stonixutilityfunctions import iterate
 
 
 class ConfigureMACPolicy(Rule):

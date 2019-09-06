@@ -36,10 +36,10 @@ Created on Aug 23, 2016
 import traceback
 import re
 
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..stonixutilityfunctions import iterate
-from ..CommandHelper import CommandHelper
+from rule import Rule
+from logdispatcher import LogPriority
+from stonixutilityfunctions import iterate
+from CommandHelper import CommandHelper
 
 
 class STIGConfigurePasswordPolicy(Rule):

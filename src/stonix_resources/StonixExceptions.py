@@ -26,9 +26,9 @@ All custom exceptions for STONIX should go in this module
 
 import re
 
-from .environment import Environment
-from .logdispatcher import LogDispatcher
-from .logdispatcher import LogPriority
+from stonix_resources.environment import Environment
+from stonix_resources.logdispatcher import LogDispatcher
+from stonix_resources.logdispatcher import LogPriority
 
 
 class repoError(Exception):

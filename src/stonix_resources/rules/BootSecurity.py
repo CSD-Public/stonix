@@ -43,9 +43,9 @@ import os
 import re
 import subprocess
 
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..ServiceHelper import ServiceHelper
+from rule import Rule
+from logdispatcher import LogPriority
+from ServiceHelper import ServiceHelper
 
 
 class BootSecurity(Rule):

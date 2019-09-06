@@ -28,10 +28,10 @@ import re
 import pwd
 
 from plistlib import readPlist
-from .launchctl import LaunchCtl
-from .logdispatcher import LogPriority as lp
-from .ServiceHelperTemplate import ServiceHelperTemplate
-from .stonixutilityfunctions import reportStack, findUserLoggedIn
+from stonix_resources.launchctl import LaunchCtl
+from stonix_resources.logdispatcher import LogPriority as lp
+from stonix_resources.ServiceHelperTemplate import ServiceHelperTemplate
+from stonix_resources.stonixutilityfunctions import reportStack, findUserLoggedIn
 
 
 class SHlaunchdTwo(ServiceHelperTemplate):

@@ -8,7 +8,7 @@ logdispatch = ramdisk.lib.loggers.CyLogger(debug_mode=True)
 
 logdispatch.initializeLogs()
 
-print(str(logdispatch))
+print((str(logdispatch)))
 
 testlib = buildlib.MacBuildLib(logdispatch)
 

@@ -30,10 +30,10 @@ This method disables AFP file sharing on mac os x systems
 '''
 
 
-from ..ruleKVEditor import RuleKVEditor
+from ruleKVEditor import RuleKVEditor
 
-from ..CommandHelper import CommandHelper
-from ..logdispatcher import LogPriority
+from CommandHelper import CommandHelper
+from logdispatcher import LogPriority
 
 import re
 import traceback

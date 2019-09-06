@@ -31,7 +31,7 @@ This rule will configure the diagnostic reporting in macOS (OS X).
 '''
 
 
-from ..ruleKVEditor import RuleKVEditor
+from ruleKVEditor import RuleKVEditor
 
 
 class ConfigureDiagnosticReporting(RuleKVEditor):

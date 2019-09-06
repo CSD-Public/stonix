@@ -41,10 +41,10 @@ import stat
 import re
 import pwd
 
-from ..stonixutilityfunctions import readFile
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..CommandHelper import CommandHelper
+from stonixutilityfunctions import readFile
+from rule import Rule
+from logdispatcher import LogPriority
+from CommandHelper import CommandHelper
 
 
 class SecureHomeDir(Rule):

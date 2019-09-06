@@ -29,10 +29,10 @@ through non-tty connections or by escalating privileges using sudo.
 import os
 import traceback
 
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..CommandHelper import CommandHelper
-from ..stonixutilityfunctions import createFile, writeFile, readFileString,\
+from rule import Rule
+from logdispatcher import LogPriority
+from CommandHelper import CommandHelper
+from stonixutilityfunctions import createFile, writeFile, readFileString,\
     iterate, checkPerms, setPerms, resetsecon
 
 class NoDirectRootLogin(Rule):

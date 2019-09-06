@@ -158,9 +158,9 @@ class RunWith(object):
 
 
         '''
-        print("Output: " + str(self.output))
-        print("Error: " + str(self.error))
-        print("Return code: " + str(self.returncode))
+        print(("Output: " + str(self.output)))
+        print(("Error: " + str(self.error)))
+        print(("Return code: " + str(self.returncode)))
         return self.output, self.error, self.returncode
 
     ############################################################################
@@ -833,8 +833,8 @@ def runMyThreadCommand(cmd=[], logger=False) :
     '''
     retval = None
     reterr = None
-    print(str(cmd))
-    print(str(logger))
+    print((str(cmd)))
+    print((str(logger)))
     if cmd and logger :
         run_thread = RunThread(cmd, logger)
         run_thread.start()

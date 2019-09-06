@@ -26,11 +26,11 @@ Created on Nov 12, 2013
 @change 2017/08/28 rsn Fixing to use new help text methods
 '''
 
-from ..stonixutilityfunctions import readFile, writeFile, checkPerms
-from ..stonixutilityfunctions import resetsecon
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..pkghelper import Pkghelper
+from stonixutilityfunctions import readFile, writeFile, checkPerms
+from stonixutilityfunctions import resetsecon
+from rule import Rule
+from logdispatcher import LogPriority
+from pkghelper import Pkghelper
 from re import search
 import os
 import traceback
@@ -118,7 +118,7 @@ class DisableScreenSavers(Rule):
                     if search(saver, config):
                         compliant = False
             for saver in self.badsavers:
-                for k, v in self.paths.items():
+                for k, v in list(self.paths.items()):
                     if os.path.exists(k + saver) or \
                        os.path.exists(k + saver + v):
                         compliant = False
@@ -189,7 +189,7 @@ class DisableScreenSavers(Rule):
                 else:
                     self.rulesuccess = False
             for saver in self.badsavers:
-                for k, v in self.paths.items():
+                for k, v in list(self.paths.items()):
                     try:
                         if os.path.exists(k + saver):
                             os.remove(k + saver)

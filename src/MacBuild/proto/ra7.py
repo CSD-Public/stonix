@@ -15,7 +15,7 @@ def run_as(username):
     #print out
 
 if __name__ == "__main__":
-    username = input("Username: ")
+    username = eval(input("Username: "))
 
     run_as(username)
 

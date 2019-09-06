@@ -22,9 +22,9 @@ Created on Aug 6, 2012
 '''
 import traceback
 from re import search
-from .logdispatcher import LogPriority
+from stonix_resources.logdispatcher import LogPriority
 from subprocess import Popen,call,PIPE
-from .CommandHelper import CommandHelper
+from stonix_resources.CommandHelper import CommandHelper
 
 class Solaris(object):
     

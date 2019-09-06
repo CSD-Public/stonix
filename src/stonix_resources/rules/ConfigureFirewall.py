@@ -34,11 +34,11 @@ dictionary
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
 '''
 from __future__ import absolute_import
-from ..ruleKVEditor import RuleKVEditor
-from ..CommandHelper import CommandHelper
-from ..ServiceHelper import ServiceHelper
-from ..logdispatcher import LogPriority
-from ..stonixutilityfunctions import iterate
+from ruleKVEditor import RuleKVEditor
+from CommandHelper import CommandHelper
+from ServiceHelper import ServiceHelper
+from logdispatcher import LogPriority
+from stonixutilityfunctions import iterate
 from re import search, escape
 import traceback
 

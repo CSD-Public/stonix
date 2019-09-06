@@ -24,12 +24,12 @@ Created on Nov 9, 2015
 
 
 
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..pkghelper import Pkghelper
-from ..ServiceHelper import ServiceHelper
-from ..CommandHelper import CommandHelper
-from ..stonixutilityfunctions import iterate
+from rule import Rule
+from logdispatcher import LogPriority
+from pkghelper import Pkghelper
+from ServiceHelper import ServiceHelper
+from CommandHelper import CommandHelper
+from stonixutilityfunctions import iterate
 
 import os
 import re

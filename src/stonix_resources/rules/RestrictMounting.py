@@ -38,14 +38,14 @@ import os
 import re
 import traceback
 
-from ..stonixutilityfunctions import iterate, resetsecon
-from ..stonixutilityfunctions import writeFile, readFile
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..CommandHelper import CommandHelper
-from ..KVEditorStonix import KVEditorStonix
-from ..pkghelper import Pkghelper
-from ..ServiceHelper import ServiceHelper
+from stonixutilityfunctions import iterate, resetsecon
+from stonixutilityfunctions import writeFile, readFile
+from rule import Rule
+from logdispatcher import LogPriority
+from CommandHelper import CommandHelper
+from KVEditorStonix import KVEditorStonix
+from pkghelper import Pkghelper
+from ServiceHelper import ServiceHelper
 
 
 class RestrictMounting(Rule):

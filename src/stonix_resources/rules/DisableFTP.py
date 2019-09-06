@@ -29,10 +29,10 @@ Created on Mar 4, 2015
 @change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
 '''
 
-from ..rule import Rule
-from ..CommandHelper import CommandHelper
-from ..logdispatcher import LogPriority
-from ..stonixutilityfunctions import iterate
+from rule import Rule
+from CommandHelper import CommandHelper
+from logdispatcher import LogPriority
+from stonixutilityfunctions import iterate
 import traceback
 import re
 

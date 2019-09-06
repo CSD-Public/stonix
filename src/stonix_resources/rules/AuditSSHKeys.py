@@ -36,11 +36,11 @@ import traceback
 import os
 import re
 
-from ..rule import Rule
-from ..logdispatcher import LogPriority
+from rule import Rule
+from logdispatcher import LogPriority
 from glob import glob
-from ..CommandHelper import CommandHelper
-from ..stonixutilityfunctions import getOctalPerms
+from CommandHelper import CommandHelper
+from stonixutilityfunctions import getOctalPerms
 
 
 class AuditSSHKeys(Rule):

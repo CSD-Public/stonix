@@ -36,7 +36,7 @@ This is a rule for Verifying and/or setting the state of the LoginWindow.
 
 # The period was making python complain. Adding the correct paths to PyDev
 # made this the working scenario.
-from ..ruleKVEditor import RuleKVEditor
+from ruleKVEditor import RuleKVEditor
 
 
 class ConfigureLoginWindow(RuleKVEditor):

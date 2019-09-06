@@ -37,9 +37,9 @@ have the correct (secure) permissions.
 import os
 import traceback
 
-from ..rule import Rule
-from ..stonixutilityfunctions import getOctalPerms
-from ..logdispatcher import LogPriority
+from rule import Rule
+from stonixutilityfunctions import getOctalPerms
+from logdispatcher import LogPriority
 
 
 class VerifyAccPerms(Rule):

@@ -56,13 +56,13 @@ import os
 import re
 import traceback
 import configparser
-from ..logdispatcher import LogPriority
-from ..ServiceHelper import ServiceHelper
-from ..rule import Rule
-from ..stonixutilityfunctions import iterate, setPerms, resetsecon, createFile
-from ..KVEditorStonix import KVEditorStonix
-from ..pkghelper import Pkghelper
-from ..CommandHelper import CommandHelper
+from logdispatcher import LogPriority
+from ServiceHelper import ServiceHelper
+from rule import Rule
+from stonixutilityfunctions import iterate, setPerms, resetsecon, createFile
+from KVEditorStonix import KVEditorStonix
+from pkghelper import Pkghelper
+from CommandHelper import CommandHelper
 
 
 class SecureMDNS(Rule):

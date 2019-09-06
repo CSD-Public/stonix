@@ -26,11 +26,11 @@ This rule disables the prelinking of executable binaries.
 import os
 import re
 import traceback
-from ..CommandHelper import CommandHelper
-from ..stonixutilityfunctions import createFile, iterate, resetsecon, writeFile
-from ..KVEditorStonix import KVEditorStonix
-from ..rule import Rule
-from ..logdispatcher import LogPriority
+from CommandHelper import CommandHelper
+from stonixutilityfunctions import createFile, iterate, resetsecon, writeFile
+from KVEditorStonix import KVEditorStonix
+from rule import Rule
+from logdispatcher import LogPriority
 
 
 class DisablePrelinking(Rule):

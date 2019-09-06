@@ -30,7 +30,7 @@ Created on 09/17/2013
 @change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
 '''
 
-from ..ruleKVEditor import RuleKVEditor
+from ruleKVEditor import RuleKVEditor
 
 
 class DisableInternetSharing(RuleKVEditor):

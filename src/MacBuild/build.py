@@ -170,7 +170,7 @@ class SoftwareBuilder():
         print(" ")
         print("   ************************************************************")
         print("   ************************************************************")
-        print("   ***** App Version: " + self.APPVERSION)
+        print(("   ***** App Version: " + self.APPVERSION))
         print("   ************************************************************")
         print("   ************************************************************")
         print(" ")
@@ -227,7 +227,7 @@ class SoftwareBuilder():
         os.chdir(self.STONIX_ROOT)
         self._detachRamdisk(ramdisk)
         self._detachRamdisk(luggage)
-        print(traceback.format_exc())
+        print((traceback.format_exc()))
         exit(exitcode)
 
     def _configSectionMap(self, section):
@@ -398,9 +398,9 @@ class SoftwareBuilder():
                                "/src/MacBuild/")
 
         except (KeyboardInterrupt, SystemExit):
-            print(traceback.format_exc())
+            print((traceback.format_exc()))
         except Exception:
-            print(traceback.format_exc())
+            print((traceback.format_exc()))
         finally:
             self.tearDown()
 
@@ -426,7 +426,7 @@ class SoftwareBuilder():
             os.mkdir("/tmp/the_luggage")
             self.luggage = self._setupRamdisk(self.ramdisk_size,
                                         "/tmp/the_luggage")
-            print("Device for tmp ramdisk is: " + self.ramdisk)
+            print(("Device for tmp ramdisk is: " + self.ramdisk))
 
             print(".")
             print(".")
@@ -435,21 +435,21 @@ class SoftwareBuilder():
             rsync = [self.RSYNC, "-apv", "--exclude=\".svn\"",
                   "--exclude=\"*.tar.gz\"", "--exclude=\"*.dmg\"",
                   "../../src", self.tmphome]
-            print(str(rsync))
+            print((str(rsync)))
 
             print(".")
             print(".")
             print(".")
 
             output = Popen(rsync, stdout=PIPE, stderr=STDOUT).communicate()[0]
-            print("\t\trsync output: " + str(output))
+            print(("\t\trsync output: " + str(output)))
 
             print(".")
             print(".")
             print(".")
 
         except Exception as err:
-            print(traceback.format_exc())
+            print((traceback.format_exc()))
             self.logger.log(lp.WARNING, "Problem setting up ramdisks, not likely to succeed...")
             raise err
         else:
@@ -547,7 +547,7 @@ class SoftwareBuilder():
                 self.libc.sync()
                 sleep(1)
 
-                print(str(output))
+                print((str(output)))
             elif appName == 'stonix4mac':
                 #####
                 # Change the Info.plist with the new version string
@@ -575,7 +575,7 @@ class SoftwareBuilder():
 
             os.chdir(returnDir)
         except:
-            print(traceback.format_exc())
+            print((traceback.format_exc()))
             raise
         else:
             success = True
@@ -592,8 +592,8 @@ class SoftwareBuilder():
         @author: Eric Ball, Roy Nielsen
 
         '''
-        print("Started compileApp with " + appName + ", " + appVersion + \
-            ", " + appIcon)
+        print(("Started compileApp with " + appName + ", " + appVersion + \
+            ", " + appIcon))
         try:
             returnDir = os.getcwd()
             os.chdir(appPath)
@@ -686,7 +686,7 @@ class SoftwareBuilder():
         finally:
             os.chdir(returnDir)
 
-        print("compileApp with " + appName + ", " + appVersion + " Finished...")
+        print(("compileApp with " + appName + ", " + appVersion + " Finished..."))
 
     def postCompile(self, appName, prepPath):
         '''Perform post-compile processing.
@@ -879,8 +879,8 @@ class SoftwareBuilder():
             if not os.path.exists(dmgsPath):
                 os.mkdir(dmgsPath)
 
-            print("Creating a .dmg file with a .pkg file inside for " + \
-                "installation purposes...")
+            print(("Creating a .dmg file with a .pkg file inside for " + \
+                "installation purposes..."))
             #call(["make", "dmg", "PACKAGE_VERSION=" + appVersion,
             #      "USE_PKGBUILD=1"])
             makepkg = ["/usr/bin/make", "pkg", "PACKAGE_VERSION=" + self.APPVERSION,
@@ -955,7 +955,7 @@ class SoftwareBuilder():
 
             os.chdir(returnDir)
         except Exception:
-            print(traceback.format_exc())
+            print((traceback.format_exc()))
             raise
         print("buildStonix4MacAppPkg... Finished")
 

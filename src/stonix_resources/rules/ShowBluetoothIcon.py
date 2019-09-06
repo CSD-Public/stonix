@@ -32,9 +32,9 @@ import re
 import os
 import pwd
 
-from ..ruleKVEditor import RuleKVEditor
-from ..CommandHelper import CommandHelper
-from ..logdispatcher import LogPriority
+from ruleKVEditor import RuleKVEditor
+from CommandHelper import CommandHelper
+from logdispatcher import LogPriority
 
 class ShowBluetoothIcon(RuleKVEditor):
     '''@author: bgonz12'''

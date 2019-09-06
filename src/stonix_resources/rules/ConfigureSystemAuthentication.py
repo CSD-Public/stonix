@@ -36,18 +36,18 @@ import os
 import re
 from subprocess import call
 import traceback
-from ..KVEditorStonix import KVEditorStonix
-from ..localize import PWQUALITY_HIGH_REGEX, PWQUALITY_REGEX, \
+from KVEditorStonix import KVEditorStonix
+from localize import PWQUALITY_HIGH_REGEX, PWQUALITY_REGEX, \
     CRACKLIB_HIGH_REGEX, CRACKLIB_REGEX, PAMFAIL_REGEX, PAMTALLY_REGEX, \
     AUTH_APT, ACCOUNT_APT, PASSWORD_ZYPPER, AUTH_ZYPPER, ACCOUNT_ZYPPER, \
     PASSWORD_NSLCD, AUTH_NSLCD, ACCOUNT_NSLCD, SESSION_NSLCD, AUTH_YUM, \
     ACCOUNT_YUM, SESSION_YUM, PASSWORD_YUM, PASSWORD_APT
-from ..logdispatcher import LogPriority
-from ..pkghelper import Pkghelper
-from ..rule import Rule
-from ..stonixutilityfunctions import iterate, setPerms, checkPerms, readFile, \
+from logdispatcher import LogPriority
+from pkghelper import Pkghelper
+from rule import Rule
+from stonixutilityfunctions import iterate, setPerms, checkPerms, readFile, \
     writeFile, resetsecon, createFile
-from ..CommandHelper import CommandHelper
+from CommandHelper import CommandHelper
 
 class ConfigureSystemAuthentication(Rule):
 

@@ -35,13 +35,13 @@ Created on Jan 14, 2014
 @change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
 '''
 
-from ..stonixutilityfunctions import iterate, setPerms, checkPerms, writeFile
-from ..stonixutilityfunctions import readFile, resetsecon, createFile
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..KVEditorStonix import KVEditorStonix
-from ..CommandHelper import CommandHelper
-from ..pkghelper import Pkghelper
+from stonixutilityfunctions import iterate, setPerms, checkPerms, writeFile
+from stonixutilityfunctions import readFile, resetsecon, createFile
+from rule import Rule
+from logdispatcher import LogPriority
+from KVEditorStonix import KVEditorStonix
+from CommandHelper import CommandHelper
+from pkghelper import Pkghelper
 import traceback
 import os
 import glob

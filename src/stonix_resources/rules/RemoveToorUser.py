@@ -23,9 +23,9 @@ Created on Nov 13, 2012
 @change: 2015/04/16 dkennel updated for new isApplicable
 '''
 
-from ..stonixutilityfunctions import readFile
-from ..rule import Rule
-from ..logdispatcher import LogPriority
+from stonixutilityfunctions import readFile
+from rule import Rule
+from logdispatcher import LogPriority
 from subprocess import call
 import traceback
 import re

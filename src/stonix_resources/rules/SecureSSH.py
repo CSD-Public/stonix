@@ -49,13 +49,13 @@ import os
 import traceback
 import re
 
-from ..rule import Rule
-from ..stonixutilityfunctions import iterate, checkPerms, setPerms, resetsecon
-from ..stonixutilityfunctions import createFile
-from ..KVEditorStonix import KVEditorStonix
-from ..logdispatcher import LogPriority
-from ..pkghelper import Pkghelper
-from ..ServiceHelper import ServiceHelper
+from rule import Rule
+from stonixutilityfunctions import iterate, checkPerms, setPerms, resetsecon
+from stonixutilityfunctions import createFile
+from KVEditorStonix import KVEditorStonix
+from logdispatcher import LogPriority
+from pkghelper import Pkghelper
+from ServiceHelper import ServiceHelper
 
 
 class SecureSSH(Rule):

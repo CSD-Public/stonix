@@ -39,11 +39,11 @@ import os
 import re
 import traceback
 
-from ..rule import Rule
-from ..stonixutilityfunctions import readFile, writeFile, iterate, resetsecon
-from ..logdispatcher import LogPriority
-from ..pkghelper import Pkghelper
-from ..CommandHelper import CommandHelper
+from rule import Rule
+from stonixutilityfunctions import readFile, writeFile, iterate, resetsecon
+from logdispatcher import LogPriority
+from pkghelper import Pkghelper
+from CommandHelper import CommandHelper
 
 
 class ConfigureAIDE(Rule):

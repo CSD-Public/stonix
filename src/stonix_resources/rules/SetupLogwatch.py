@@ -29,10 +29,10 @@ Created on Oct 15, 2013
 
 import traceback
 
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..pkghelper import Pkghelper
-from ..stonixutilityfunctions import iterate
+from rule import Rule
+from logdispatcher import LogPriority
+from pkghelper import Pkghelper
+from stonixutilityfunctions import iterate
 
 
 class SetupLogwatch(Rule):

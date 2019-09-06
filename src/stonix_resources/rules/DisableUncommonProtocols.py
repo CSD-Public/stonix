@@ -26,10 +26,10 @@ This rule disables support for several uncommon network protocols.
 import os
 import re
 import traceback
-from ..CommandHelper import CommandHelper
-from ..stonixutilityfunctions import iterate, createFile
-from ..rule import Rule
-from ..logdispatcher import LogPriority
+from CommandHelper import CommandHelper
+from stonixutilityfunctions import iterate, createFile
+from rule import Rule
+from logdispatcher import LogPriority
 
 
 class DisableUncommonProtocols(Rule):

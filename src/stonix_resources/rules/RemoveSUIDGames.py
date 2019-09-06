@@ -27,10 +27,10 @@ This rule removes all detected games.
 
 import os
 import traceback
-from ..stonixutilityfunctions import iterate
-from ..pkghelper import Pkghelper
-from ..rule import Rule
-from ..logdispatcher import LogPriority
+from stonixutilityfunctions import iterate
+from pkghelper import Pkghelper
+from rule import Rule
+from logdispatcher import LogPriority
 
 
 class RemoveSUIDGames(Rule):

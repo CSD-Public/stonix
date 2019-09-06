@@ -27,9 +27,9 @@ Created on Sep 19, 2012
 
 import re
 
-from .logdispatcher import LogPriority
-from .CommandHelper import CommandHelper
-from .ServiceHelperTemplate import ServiceHelperTemplate
+from stonix_resources.logdispatcher import LogPriority
+from stonix_resources.CommandHelper import CommandHelper
+from stonix_resources.ServiceHelperTemplate import ServiceHelperTemplate
 
 
 class SHupdaterc(ServiceHelperTemplate):

@@ -25,9 +25,9 @@ Created on Dec 14, 2017
 import os, re
 
 import unittest
-from . import environment
-from . import logdispatcher
-from .logdispatcher import LogPriority
+from stonix_resources import environment
+from stonix_resources import logdispatcher
+from stonix_resources.logdispatcher import LogPriority
 
 
 class zzzTestRuleProperties(unittest.TestCase):

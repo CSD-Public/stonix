@@ -44,10 +44,10 @@ import re
 import os
 import sys # for testing
 
-from ..ServiceHelper import ServiceHelper
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..CommandHelper import CommandHelper
+from ServiceHelper import ServiceHelper
+from rule import Rule
+from logdispatcher import LogPriority
+from CommandHelper import CommandHelper
 
 
 class MinimizeServices(Rule):

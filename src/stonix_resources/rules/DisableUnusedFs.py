@@ -34,9 +34,9 @@ import re
 import traceback
 import stat
 
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..stonixutilityfunctions import resetsecon
+from rule import Rule
+from logdispatcher import LogPriority
+from stonixutilityfunctions import resetsecon
 
 
 class DisableUnusedFs(Rule):

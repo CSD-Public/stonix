@@ -83,7 +83,7 @@ class LogDispatcher (Observable):
                 raise
             except Exception as err:
                 print('logdispatcher: ')
-                print(traceback.format_exc())
+                print((traceback.format_exc()))
                 print(err)
         self.xmlreport = xmlReport(self.xmllog, self.debug)
         self.metadataopen = False
@@ -362,7 +362,7 @@ Subject: STONIX Error Report: ''' + prefix + '''
                 raise
             except Exception as err:
                 print('logdispatcher: ')
-                print(traceback.format_exc())
+                print((traceback.format_exc()))
                 print(err)
                 return False
         if os.path.isfile(self.reportlog):
@@ -375,7 +375,7 @@ Subject: STONIX Error Report: ''' + prefix + '''
                 raise
             except Exception as err:
                 print('logdispatcher: ')
-                print(traceback.format_exc())
+                print((traceback.format_exc()))
                 print(err)
                 return False
 
@@ -536,8 +536,8 @@ class xmlReport:
         '''
         ET.SubElement(self.meta, entry.Tag, val=entry.Detail)
         if self.debug:
-            print('xmlReport.writeMetadata: Added entry ' + entry.Tag + \
-            ' ' + entry.Detail)
+            print(('xmlReport.writeMetadata: Added entry ' + entry.Tag + \
+            ' ' + entry.Detail))
 
     def writeFinding(self, entry):
         '''xmlReport.writeFindings(entry): The xmlReport method to add a findings
@@ -550,8 +550,8 @@ class xmlReport:
         '''
         ET.SubElement(self.findings, entry.Tag, val=entry.Detail)
         if self.debug:
-            print('xmlReport.writeFinding: Added entry ' + entry.Tag + \
-            ' ' + entry.Detail)
+            print(('xmlReport.writeFinding: Added entry ' + entry.Tag + \
+            ' ' + entry.Detail))
 
     def closeReport(self):
         '''xmlReport.closeReport(): This method will write the xmlReport to disk.

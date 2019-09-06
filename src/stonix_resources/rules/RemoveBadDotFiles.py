@@ -31,8 +31,8 @@ Created on Jul 13, 2012
 '''
 
 import pwd
-from ..rule import Rule
-from ..stonixutilityfunctions import *
+from rule import Rule
+from stonixutilityfunctions import *
 
 
 class RemoveBadDotFiles(Rule):

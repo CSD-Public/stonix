@@ -20,8 +20,8 @@ from subprocess import Popen
 
 ########## 
 # local app libraries
-from ..manage_user.manage_user_template import ManageUserTemplate
-from ..manage_user.manage_user_template import BadUserInfoError
+from .manage_user_template import ManageUserTemplate
+from .manage_user_template import BadUserInfoError
 from ..run_commands import RunWith
 from ..loggers import CyLogger
 from ..loggers import LogPriority as lp
@@ -1073,7 +1073,7 @@ class MacOSUser(ManageUserTemplate):
         else:
             #self.logger.log(lp.DEBUG, "cmd: " + str(command))
             commands = 0
-            for subCommand, args in command.items():
+            for subCommand, args in list(command.items()):
                 commands += 1
                 #####
                 # Check to make sure only one command is in the dictionary

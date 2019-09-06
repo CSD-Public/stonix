@@ -7,7 +7,7 @@ import time
 import getpass
 from subprocess import Popen, PIPE, STDOUT
 
-username = input("Username: ")
+username = eval(input("Username: "))
 passwd = getpass.getpass('gPass: ')
 
 print(passwd)

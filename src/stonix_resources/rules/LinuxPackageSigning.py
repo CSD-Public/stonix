@@ -34,11 +34,11 @@ import re
 import os
 import traceback
 
-from ..ruleKVEditor import RuleKVEditor
-from ..KVEditorStonix import KVEditorStonix
-from ..logdispatcher import LogPriority
-from ..CommandHelper import CommandHelper
-from ..stonixutilityfunctions import iterate, readFile, writeFile, resetsecon
+from ruleKVEditor import RuleKVEditor
+from KVEditorStonix import KVEditorStonix
+from logdispatcher import LogPriority
+from CommandHelper import CommandHelper
+from stonixutilityfunctions import iterate, readFile, writeFile, resetsecon
 
 
 class LinuxPackageSigning(RuleKVEditor):

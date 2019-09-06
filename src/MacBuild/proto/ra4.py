@@ -5,7 +5,7 @@ import sys
 import getpass
 from subprocess import Popen, PIPE
 
-username = input("Username: ")
+username = eval(input("Username: "))
 passwd = getpass.getpass("Password: ")
 print(username)
 print(passwd)

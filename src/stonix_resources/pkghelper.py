@@ -18,9 +18,9 @@
 
 import re
 #import yum, aptGet, portage, zypper, freebsd, solaris, dnf
-from . import yum, aptGet, portage, zypper, freebsd, solaris, dnf
+from stonix_resources import yum, aptGet, portage, zypper, freebsd, solaris, dnf
 import traceback
-from .logdispatcher import LogPriority
+from stonix_resources.logdispatcher import LogPriority
 
 
 class Pkghelper(object):
@@ -321,7 +321,7 @@ remove command"
         except Exception:
             self.detailedresults = traceback.format_exc()
             self.logger.log(LogPriority.ERROR, self.detailedresults)
-            raise(self.detailedresults)
+            raise self
 
     def getInstall(self):
         """return the commandline command for installing a package

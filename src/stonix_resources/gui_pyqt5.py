@@ -50,10 +50,10 @@ import sys
 import traceback
 import webbrowser
 
-from .view import View
-from .logdispatcher import LogPriority
+from stonix_resources.view import View
+from stonix_resources.logdispatcher import LogPriority
 
-from . import main_window_pyqt5 as main_window
+from stonix_resources import main_window_pyqt5 as main_window
 #####
 # PyQt specific imports - Needs importing:
 # QThread (QtCore)

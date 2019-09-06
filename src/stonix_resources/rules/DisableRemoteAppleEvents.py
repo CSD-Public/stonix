@@ -41,10 +41,10 @@ import os
 import re
 import traceback
 
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..stonixutilityfunctions import iterate
-from ..CommandHelper import CommandHelper
+from rule import Rule
+from logdispatcher import LogPriority
+from stonixutilityfunctions import iterate
+from CommandHelper import CommandHelper
 
 
 class DisableRemoteAppleEvents(Rule):
@@ -101,13 +101,13 @@ class DisableRemoteAppleEvents(Rule):
 
         try:
 
-            print("Value of disableremoteevents CI = " + str(self.disableremoteevents.getcurrvalue()))
+            print(("Value of disableremoteevents CI = " + str(self.disableremoteevents.getcurrvalue())))
 
             if self.disableremoteevents.getcurrvalue():
                 if not self.reportDisabled():
                     self.compliant = False
 
-            print("Value of secureremoteevents CI = " + str(self.secureremoteevents.getcurrvalue()))
+            print(("Value of secureremoteevents CI = " + str(self.secureremoteevents.getcurrvalue())))
 
             if self.secureremoteevents.getcurrvalue() != []:
                 if not self.reportSecured():

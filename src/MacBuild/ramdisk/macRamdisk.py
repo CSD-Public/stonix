@@ -215,9 +215,9 @@ class RamDisk(RamDiskTemplate) :
 
     def getNprintData(self):
         '''Getter for mount data, and if the mounting of a ramdisk was successful'''
-        print("Success: " + str(self.success))
-        print("Mount point: " + str(self.mntPoint))
-        print("Device: " + str(self.myRamdiskDev))
+        print(("Success: " + str(self.success)))
+        print(("Mount point: " + str(self.mntPoint)))
+        print(("Device: " + str(self.myRamdiskDev)))
         return (self.success, str(self.mntPoint), str(self.myRamdiskDev))
 
     ###########################################################################
@@ -607,8 +607,8 @@ class RamDisk(RamDiskTemplate) :
         self.logger.log(lp.DEBUG, "Size requested: " + str(self.diskSize))
         if int(self.free) > int(float(self.diskSize))/(2*1024):
             success = True
-        print(str(self.free))
-        print(str(success))
+        print((str(self.free)))
+        print((str(success)))
         return success
 
     ###########################################################################

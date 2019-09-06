@@ -49,7 +49,7 @@ import platform
 import pwd
 import time
 
-from .localize import CORPORATENETWORKSERVERS, STONIXVERSION, FISMACAT
+from stonix_resources.localize import CORPORATENETWORKSERVERS, STONIXVERSION, FISMACAT
 
 if os.geteuid() == 0:
     try:

@@ -27,11 +27,11 @@ Created on Aug 12, 2013
 @change 2017/08/28 rsn Fixing to use new help text methods
 '''
 
-from ..stonixutilityfunctions import readFile, writeFile, setPerms, checkPerms
-from ..stonixutilityfunctions import resetsecon
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..pkghelper import Pkghelper
+from stonixutilityfunctions import readFile, writeFile, setPerms, checkPerms
+from stonixutilityfunctions import resetsecon
+from rule import Rule
+from logdispatcher import LogPriority
+from pkghelper import Pkghelper
 import os
 import traceback
 import re

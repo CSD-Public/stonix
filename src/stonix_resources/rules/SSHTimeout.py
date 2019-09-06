@@ -33,12 +33,12 @@ Created on Mar 12, 2013
 @change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
 '''
 
-from ..stonixutilityfunctions import iterate, checkPerms, setPerms, resetsecon
-from ..stonixutilityfunctions import createFile
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..KVEditorStonix import KVEditorStonix
-from ..pkghelper import Pkghelper
+from stonixutilityfunctions import iterate, checkPerms, setPerms, resetsecon
+from stonixutilityfunctions import createFile
+from rule import Rule
+from logdispatcher import LogPriority
+from KVEditorStonix import KVEditorStonix
+from pkghelper import Pkghelper
 import traceback
 import os
 import re
@@ -230,7 +230,7 @@ class SSHTimeout(Rule):
                             success = False
 
                 if self.editor.fixables:
-                    print("editor has fixables and they are " + str(self.editor.fixables) + "\n")
+                    print(("editor has fixables and they are " + str(self.editor.fixables) + "\n"))
                     if not created:
                         self.iditerator += 1
                         myid = iterate(self.iditerator, self.rulenumber)

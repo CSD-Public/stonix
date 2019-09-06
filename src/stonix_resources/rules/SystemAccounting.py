@@ -47,12 +47,12 @@ import traceback
 import os
 import re
 
-from ..rule import Rule
-from ..pkghelper import Pkghelper
-from ..CommandHelper import CommandHelper
-from ..logdispatcher import LogPriority
-from ..KVEditorStonix import KVEditorStonix
-from ..stonixutilityfunctions import createFile, writeFile, iterate, resetsecon
+from rule import Rule
+from pkghelper import Pkghelper
+from CommandHelper import CommandHelper
+from logdispatcher import LogPriority
+from KVEditorStonix import KVEditorStonix
+from stonixutilityfunctions import createFile, writeFile, iterate, resetsecon
 
 
 class SystemAccounting(Rule):

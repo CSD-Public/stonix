@@ -41,11 +41,11 @@ import re
 import traceback
 import socket
 
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..stonixutilityfunctions import iterate
+from rule import Rule
+from logdispatcher import LogPriority
+from stonixutilityfunctions import iterate
 
-from ..localize import ALLOWNETS, HOSTSALLOWDEFAULT, HOSTSDENYDEFAULT
+from localize import ALLOWNETS, HOSTSALLOWDEFAULT, HOSTSDENYDEFAULT
 
 
 class TCPWrappers(Rule):

@@ -26,8 +26,8 @@ import urllib.request, urllib.parse, urllib.error
 import urllib.request, urllib.error, urllib.parse
 
 #--- non-native python libraries in this source tree
-from .logdispatcher import LogPriority
-from .localize import PROXY
+from stonix_resources.logdispatcher import LogPriority
+from stonix_resources.localize import PROXY
 
 
 class ConnectivityInvalidURL(Exception):

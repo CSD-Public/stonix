@@ -38,14 +38,14 @@ import os
 import re
 import traceback
 
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..pkghelper import Pkghelper
-from ..stonixutilityfunctions import iterate
-from ..localize import NTPSERVERSINTERNAL
-from ..localize import NTPSERVERSEXTERNAL
-from ..CommandHelper import CommandHelper
-from ..get_libc import getLibc
+from rule import Rule
+from logdispatcher import LogPriority
+from pkghelper import Pkghelper
+from stonixutilityfunctions import iterate
+from localize import NTPSERVERSINTERNAL
+from localize import NTPSERVERSEXTERNAL
+from CommandHelper import CommandHelper
+from get_libc import getLibc
 
 class SetNTP(Rule):
     '''The SetNTP class sets the ntpd and ntp config for each client.'''

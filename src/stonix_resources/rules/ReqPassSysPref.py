@@ -35,10 +35,10 @@ likely to compromise the security of the Mac.
 
 
 
-from ..rule import Rule
-from ..stonixutilityfunctions import iterate
-from ..logdispatcher import LogPriority
-from ..CommandHelper import CommandHelper
+from rule import Rule
+from stonixutilityfunctions import iterate
+from logdispatcher import LogPriority
+from CommandHelper import CommandHelper
 from subprocess import Popen, PIPE, STDOUT
 import re
 import traceback

@@ -31,11 +31,11 @@ Created on Feb 10, 2015
 import traceback
 import os
 
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..stonixutilityfunctions import iterate
-from ..KVEditorStonix import KVEditorStonix
-from ..localize import FISMACAT
+from rule import Rule
+from logdispatcher import LogPriority
+from stonixutilityfunctions import iterate
+from KVEditorStonix import KVEditorStonix
+from localize import FISMACAT
 
 
 class ConfigurePasswordPolicy(Rule):

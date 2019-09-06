@@ -69,7 +69,7 @@ class GenericTestUtilities(object):
         except:
             raise Exception("..............................Cannot Sync.")
 
-        print("OS Family: " + str(self.osFamily))
+        print(("OS Family: " + str(self.osFamily)))
 
     ################################################
 

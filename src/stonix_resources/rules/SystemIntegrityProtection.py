@@ -30,9 +30,9 @@ dictionary
 
 import traceback
 import types
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..SystemIntegrityProtectionObject import SystemIntegrityProtectionObject
+from rule import Rule
+from logdispatcher import LogPriority
+from SystemIntegrityProtectionObject import SystemIntegrityProtectionObject
 
 
 class SystemIntegrityProtection(Rule):

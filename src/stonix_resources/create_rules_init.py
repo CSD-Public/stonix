@@ -21,8 +21,8 @@ import re
 import sys
 import optparse
 import traceback
-from .loggers import CyLogger
-from .loggers import LogPriority as lp
+from stonix_resources.loggers import CyLogger
+from stonix_resources.loggers import LogPriority as lp
 
 def getRulesList(pathToRules=''):
     '''Get a directory listing of the path passed in - the stonix/rules path.

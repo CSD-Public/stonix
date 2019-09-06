@@ -14,7 +14,7 @@ import traceback
 
 from distutils.version import LooseVersion
 
-from .logdispatcher import LogPriority as lp
+from stonix_resources.logdispatcher import LogPriority as lp
 
 class FileStateManager(object):
     '''Handles state management of files based on directory path.

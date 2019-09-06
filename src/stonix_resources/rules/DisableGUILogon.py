@@ -32,14 +32,14 @@ Created on 2015/07/01
 import os
 import re
 import traceback
-from ..KVEditorStonix import KVEditorStonix
-from ..logdispatcher import LogPriority
-from ..pkghelper import Pkghelper
-from ..rule import Rule
-from ..CommandHelper import CommandHelper
-from ..ServiceHelper import ServiceHelper
-from ..stonixutilityfunctions import iterate, readFile, writeFile, createFile
-from ..stonixutilityfunctions import resetsecon
+from KVEditorStonix import KVEditorStonix
+from logdispatcher import LogPriority
+from pkghelper import Pkghelper
+from rule import Rule
+from CommandHelper import CommandHelper
+from ServiceHelper import ServiceHelper
+from stonixutilityfunctions import iterate, readFile, writeFile, createFile
+from stonixutilityfunctions import resetsecon
 
 
 class DisableGUILogon(Rule):

@@ -32,10 +32,10 @@ This object is designed to automate rules using the KV Editor paradigm
 '''
 import traceback
 import types
-from .rule import Rule
-from .KVEditorStonix import KVEditorStonix
-from .logdispatcher import LogPriority
-from .configurationitem import ConfigurationItem
+from stonix_resources.rule import Rule
+from stonix_resources.KVEditorStonix import KVEditorStonix
+from stonix_resources.logdispatcher import LogPriority
+from stonix_resources.configurationitem import ConfigurationItem
 
 
 class RuleKVEditor (Rule):

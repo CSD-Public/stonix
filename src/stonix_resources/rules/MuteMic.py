@@ -47,11 +47,11 @@ import os
 import re
 import subprocess
 
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..stonixutilityfunctions import resetsecon, readFile, writeFile, iterate
-from ..stonixutilityfunctions import checkPerms, setPerms, createFile
-from ..CommandHelper import CommandHelper
+from rule import Rule
+from logdispatcher import LogPriority
+from stonixutilityfunctions import resetsecon, readFile, writeFile, iterate
+from stonixutilityfunctions import checkPerms, setPerms, createFile
+from CommandHelper import CommandHelper
 
 
 class MuteMic(Rule):
