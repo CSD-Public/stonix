@@ -524,12 +524,12 @@ class Environment:
             proc1 = subprocess.Popen('/usr/bin/sw_vers -productName',
                                      shell=True, stdout=subprocess.PIPE,
                                      close_fds=True)
-            description = proc1.stdout.readline()
+            description = proc1.stdout.readline().decode('utf-8')
             description = description.strip()
             proc2 = subprocess.Popen('/usr/bin/sw_vers -productVersion',
                                      shell=True, stdout=subprocess.PIPE,
                                      close_fds=True)
-            release = proc2.stdout.readline()
+            release = proc2.stdout.readline().decode('utf-8')
             release = release.strip()
             self.operatingsystem = description
             self.osversion = release
@@ -537,7 +537,7 @@ class Environment:
             proc3 = subprocess.Popen('/usr/bin/sw_vers -buildVersion',
                                      shell=True, stdout=subprocess.PIPE,
                                      close_fds=True)
-            build = proc3.stdout.readline()
+            build = proc3.stdout.readline().decode('utf-8')
             build = build.strip()
             opsys = description + ' ' + release + ' ' + build
             self.osreportstring = opsys
@@ -1046,7 +1046,7 @@ class Environment:
                                     close_fds=True)
             cmd3output = cmd3.stdout.readlines()
             for line in cmd3output:
-                if re.search('Serial Number (system):', line):
+                if re.search('Serial Number (system):', line.decode('utf-8')):
                     line = line.split(':')
                     try:
                         systemserial = line[1]
@@ -1169,7 +1169,7 @@ class Environment:
                                     close_fds=True)
             cmd3output = cmd3.stdout.readlines()
             for line in cmd3output:
-                if re.search('UUID:', line):
+                if re.search('UUID:', line.decode('utf-8')):
                     line = line.split()
                     try:
                         uuid = line[2]
