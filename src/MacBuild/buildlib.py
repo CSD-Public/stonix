@@ -791,7 +791,7 @@ class MacBuildLib(object):
         
             for rule in allFilesList:
                 if re.search("\.py$", rule) and not re.match("__init__\.py", rule):
-                    ruleClass = re.sub("\.py$", "", rule)
+                    ruleClass = "stonix_resources.rules." + re.sub("\.py$", "", rule)
                     rulesList.append(ruleClass)
         
             try:
