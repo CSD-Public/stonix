@@ -115,7 +115,7 @@ sudo make install 2>&1 | tee ../logs/qt-make-install.log
 # Build SIP
 cd /opt/tools/sip-4.19.18
 
-python3 ./configure.py --bindir /opt/tools/bin --destdir /opt/tools/lib/Python/3.7/site-packages --incdir /opt/tools/lib/Python/3.7/site-packages/sip/includes --sipdir /opt/tools/lib/Python/3.7/site-packages/sip/sips --pyidir /opt/tools/lib/Python/3.7/site-packages/sip/pyis --sdk MacOSX10.15.sdk 2>&1 | tee ../logs/sip-configure.log
+python3 ./configure.py --bindir /opt/tools/bin --destdir /opt/tools/lib/Python/3.7/site-packages --incdir /opt/tools/lib/Python/3.7/site-packages/sip/includes --sipdir /opt/tools/lib/Python/3.7/site-packages/sip/sips --pyidir /opt/tools/lib/Python/3.7/site-packages/sip/pyis --sip-module PyQt5.sip --sdk MacOSX10.15.sdk 2>&1 | tee ../logs/sip-configure.log
 
 make 2>&1 | tee ../logs/sip-make.log
 sudo make install 2>&1 | tee ../logs/sip-make-install.log
