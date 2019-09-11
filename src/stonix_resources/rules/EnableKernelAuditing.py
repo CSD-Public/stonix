@@ -250,13 +250,10 @@ this system, set the value of EnableKernelAuditing to False"""
             for loc in auditdispconflocs:
                 if os.path.exists(loc):
                     self.auditdispconffile = loc
-            # fedora doesn't have a separate audit dispatcher and bundles all of the normal audispd conf
-            # options into the audit daemon config file (auditd.conf) instead
-            if self.environ.getosname().lower() == "fedora":
-                self.auditdispconffile = self.auditconffile
+
             if not self.auditdispconffile:
-                self.logger.log(LogPriority.DEBUG, "Couldn't locate audit " +
-                                "dispatcher configuration file")
+                self.auditdispconffile = self.auditconffile
+
             self.audisptmp = self.auditdispconffile + '.stonixtmp'
             self.auditdispconfoptions = {'q_depth': '1024'}
 
