@@ -15,7 +15,7 @@
 #                                                                             #
 ###############################################################################
 
-'''
+"""
 Created on Sep 11, 2013
 
 @author: dwalker
@@ -29,7 +29,7 @@ Created on Sep 11, 2013
     CNSSI standards
 @change: 2016/11/14 eball Updated for PAM configurations in localize.py
 @change: 2017/08/28 ekkehard - Added self.sethelptext()
-'''
+"""
 
 
 import os
@@ -121,14 +121,14 @@ class ConfigureSystemAuthentication(Rule):
             self.session = SESSION_YUM
 
     def report(self):
-        '''ConfigureSystemAuthentication() report method to report if system
+        """ConfigureSystemAuthentication() report method to report if system
         is compliant with authentication and password settings
         @author: dwalker
 
         :param self: essential if you override this definition
         :returns: bool - True if system is compliant, False if it isn't
 
-        '''
+        """
         try:
             self.ci2comp, self.ci3comp, self.ci4comp = True, True, True
             self.detailedresults = ""
@@ -148,19 +148,19 @@ class ConfigureSystemAuthentication(Rule):
                                    self.detailedresults)
         self.logger.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
-    
-###############################################################################
 
     def fix(self):
-        '''ConfigureSystemAuthentication.fix() method to fix the system to be
+        """ConfigureSystemAuthentication.fix() method to fix the system to be
         compliant with authentication and password settings
         @author: dwalker
 
         :param self: essential if you override this definition
         :returns: bool - True if fix is successful, False if it isn't
 
-        '''
+        """
+
         self.detailedresults = ""
+
         try:
             if not self.ci1.getcurrvalue():
                 return
@@ -179,26 +179,23 @@ class ConfigureSystemAuthentication(Rule):
             elif self.environ.getosfamily() == "darwin":
                 self.rulesuccess = self.fixMac()
         except (KeyboardInterrupt, SystemExit):
-            # User initiated exit
             raise
         except Exception:
             self.rulesuccess = False
             self.detailedresults += "\n" + traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("fix", self.rulesuccess,
-                                   self.detailedresults)
+        self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.rulesuccess
-###############################################################################
 
     def reportLinux(self):
-        '''Linux specific submethod for linux distributions.
+        """Linux specific submethod for linux distributions.
         @author: dwalker
 
         :param self: essential if you override this definition
         :returns: bool - True if system is compliant, False if it isn't
 
-        '''
+        """
         self.logindefs = "/etc/login.defs"
         debug = ""
         compliant = True
@@ -214,18 +211,26 @@ class ConfigureSystemAuthentication(Rule):
                               "pam_pwquality",
                               "libpwquality"]
         self.libuserfile = "/etc/libuser.conf"
-        if self.ph.manager == "apt-get":
-            self.pampassfile = "/etc/pam.d/common-password"
-            self.pamauthfile = "/etc/pam.d/common-auth"
-        elif self.ph.manager == "zypper":
-            self.pampassfile = "/etc/pam.d/common-password-pc"
-            self.pamauthfile = "/etc/pam.d/common-auth-pc"
-        elif self.ph.manager == "dnf":
-            self.pampassfile = "/etc/pam.d/password-auth"
-            self.pamauthfile = "/etc/pam.d/system-auth"
-        else:
-            self.pampassfile = "/etc/pam.d/password-auth-ac"
-            self.pamauthfile = "/etc/pam.d/system-auth-ac"
+
+        # set pam password and authentication file paths
+        pampassfiles = ["/etc/pam.d/common-password", "/etc/pam.d/common-password-pc", "/etc/pam.d/password-auth", "/etc/pam.d/password-auth-ac"]
+        pamauthfiles = ["/etc/pam.d/common-auth", "/etc/pam.d/common-auth-pc", "/etc/pam.d/system-auth", "/etc/pam.d/system-auth-ac"]
+        for f in pampassfiles:
+            if os.path.isfile(f):
+                self.pampassfile = f
+        for f in pamauthfiles:
+            if os.path.isfile(f):
+                self.pamauthfile = f
+        if not bool(self.pampassfile and self.pamauthfile):
+            if self.ph.manager == "apt-get":
+                self.pampassfile = "/etc/pam.d/common-password"
+                self.pamauthfile = "/etc/pam.d/common-auth"
+            elif self.ph.manager == "zypper":
+                self.pampassfile = "/etc/pam.d/common-password-pc"
+                self.pamauthfile = "/etc/pam.d/common-auth-pc"
+            else:
+                self.pampassfile = "/etc/pam.d/password-auth"
+                self.pamauthfile = "/etc/pam.d/system-auth"
 
         if not self.checkpasswordreqs():
             self.ci2comp = False
@@ -246,10 +251,9 @@ class ConfigureSystemAuthentication(Rule):
         if debug:
             self.logger.log(LogPriority.DEBUG, debug)
         return compliant
-###############################################################################
 
     def fixLinux(self):
-        '''Linux specific submethod to correct linux distributions.  If your
+        """Linux specific submethod to correct linux distributions.  If your
         system is portage based, i.e. gentoo, you will need to do a manual
         fix for everything except the login.defs file
         @author: dwalker
@@ -259,7 +263,7 @@ class ConfigureSystemAuthentication(Rule):
         @change: Breen Malmberg - 9/26/2018 - added a check and installation of a
                 necessary package for fedora 28, in order for the fix to continue
 
-        '''
+        """
 
         success = True
         debug = ""
@@ -272,7 +276,7 @@ class ConfigureSystemAuthentication(Rule):
         except:
             pass
 
-        '''create backups of pamfiles'''
+        """create backups of pamfiles"""
         if os.path.exists(self.pampassfile):
             createFile(self.pampassfile + ".backup", self.logger)
         if os.path.exists(self.pamauthfile):
@@ -357,41 +361,41 @@ class ConfigureSystemAuthentication(Rule):
         return success
 
     def checkpasswordreqs(self):
-        '''Method to check which password checking program the system
+        """Method to check which password checking program the system
         is or should be using.
         @author: dwalker
 
 
         :returns: bool
 
-        '''
+        """
         self.pwqinstalled, self.clinstalled = False, False
         self.pwqpkg, self.crackpkg = "", ""
-        '''Check if either pam_pwquality or cracklib are installed'''
+        """Check if either pam_pwquality or cracklib are installed"""
         for pkg in self.pwqualitypkgs:
             if self.ph.check(pkg):
                 self.pwqinstalled = True
         for pkg in self.cracklibpkgs:
             if self.ph.check(pkg):
                 self.clinstalled = True
-        '''if pwquality is installed we check to see if it's configured'''
+        """if pwquality is installed we check to see if it's configured"""
         if self.pwqinstalled:
-            '''If it's not, since it is already installed we want to
-            configure pwquality and not cracklib since it's better'''
+            """If it's not, since it is already installed we want to
+            configure pwquality and not cracklib since it's better"""
             if not self.checkpasswordsetup("pwquality"):
                 self.usingpwquality = True
                 self.detailedresults += "System is using pwquality but " + \
                     "it's not configured properly in PAM\n"
                 return False
             else:
-                '''pwquality is installed and configured'''
+                """pwquality is installed and configured"""
                 return True
         elif self.clinstalled:
-            '''Although we want pwquality over cracklib, if cracklib is
-            already installed and configured correctly, we will go with that'''
+            """Although we want pwquality over cracklib, if cracklib is
+            already installed and configured correctly, we will go with that"""
             if not self.checkpasswordsetup("cracklib"):
-                '''cracklib is not configured correctly so we check
-                if pwquality is available for install'''
+                """cracklib is not configured correctly so we check
+                if pwquality is available for install"""
                 for pkg in self.pwqualitypkgs:
                     if self.ph.checkAvailable(pkg):
                         self.usingpwquality = True
@@ -405,11 +409,11 @@ class ConfigureSystemAuthentication(Rule):
                     "configured properly\n"
                 self.usingcracklib = True
             else:
-                '''cracklib is installed and configured'''
+                """cracklib is installed and configured"""
                 return True
         else:
-            '''neither pwquality or cracklib is installed, we prefer
-            pwquality so we check if it's available for install'''
+            """neither pwquality or cracklib is installed, we prefer
+            pwquality so we check if it's available for install"""
             for pkg in self.pwqualitypkgs:
                 if self.ph.checkAvailable(pkg):
                     self.usingpwquality = True
@@ -417,7 +421,7 @@ class ConfigureSystemAuthentication(Rule):
                     self.detailedresults += "pwquality is available for " + \
                         "install\n"
                     return False
-            '''pwquality wasn't available for install, check for cracklib'''
+            """pwquality wasn't available for install, check for cracklib"""
             for pkg in self.cracklibpkgs:
                 if self.ph.checkAvailable(pkg):
                     self.usingcracklib = True
@@ -428,13 +432,13 @@ class ConfigureSystemAuthentication(Rule):
             return False
     
     def checkpasswordsetup(self, package):
-        '''Method called from within checkpasswordreqs method
+        """Method called from within checkpasswordreqs method
         @author: dwalker
 
         :param package: pwquality or cracklib
         :returns: bool
 
-        '''
+        """
         compliant = True
         if package == "pwquality":
             self.password = re.sub("pam_cracklib\.so", "pam_pwquality.so",
@@ -564,7 +568,7 @@ class ConfigureSystemAuthentication(Rule):
                     "Stonix will not attempt to create this file " + \
                     "and the fix for the this rule will not continue\n"
                 return False
-        '''Check permissions on pam file(s)'''
+        """Check permissions on pam file(s)"""
         for pamfile in pamfiles:
             if not checkPerms(pamfile, [0, 0, 0o644], self.logger):
                 self.iditerator += 1
@@ -597,83 +601,16 @@ class ConfigureSystemAuthentication(Rule):
                     self.detailedresults += "Unable to write to " + pamfile + "\n"
                     success = False
         return success
-        ''''section of code commented out can be uncommented if we
-        decide that we will create the pam files if they don't exist.
-        Currently, if the pam file(s) don't exist, we don't do 
-        anything.'''
-#         '''Check existence of pam file(s)'''
-#         for pamfile in pamfiles:
-#             if not os.path.exists(pamfile):
-#                 if createFile(pamfile, self.logger):
-#                     if self.ph.manager == "yum":
-#                         if pamfile == self.pamauthfile:
-#                             self.created1 = True
-#                         else:
-#                             self.created2 = True
-#                     else:
-#                         self.created1 = True
-#                     self.iditerator += 1
-#                     myid = iterate(self.iditerator, self.rulenumber)
-#                     event = {"eventtype": "creation",
-#                              "filepath": pamfile}
-#                     self.statechglogger.recordchgevent(myid, event)
-#                 else:
-#                     success = False
-#                     self.detailedresults += "Unable to create " + pamfile + "\n"
-#         '''Check permissions on pam file(s)'''
-#         for pamfile in pamfiles:
-#             if not os.path.exists(pamfile):
-#                 if not checkPerms(pamfile, [0, 0, 0o644], self.logger):
-#                     if self.ph.manager == "yum":
-#                         if pamfile == self.pamauthfile:
-#                             if self.created1:
-#                                 if not setPerms(pamfile, [0, 0, 0o644], self.logger):
-#                                     success = False
-#                                     self.detailedresults += "Unable to set " + \
-#                                         "correct permissions on " + pamfile + "\n"
-#                             else:
-#                                 self.iditerator += 1
-#                                 myid = iterate(self.iditerator, self.rulenumber)
-#                                 if not setPerms(pamfile, [0, 0, 0o644], self.logger, self.statechglogger, myid):
-#                                     success = False
-#                                     self.detailedresults += "Unable to set " + \
-#                                         "correct permissions on " + pamfile + "\n"
-#                         elif pamfile == self.pampassfile:
-#                             if self.created2:
-#                                 if not setPerms(pamfile, [0, 0, 0o644], self.logger):
-#                                     success = False
-#                                     self.detailedresults += "Unable to set " + \
-#                                         "correct permissions on " + pamfile + "\n"
-#                             else:
-#                                 self.iditerator += 1
-#                                 myid = iterate(self.iditerator, self.rulenumber)
-#                                 if not setPerms(pamfile, [0, 0, 0o644], self.logger, self.statechglogger, myid):
-#                                     success = False
-#                                     self.detailedresults += "Unable to set " + \
-#                                         "correct permissions on " + pamfile + "\n"
-#                     else:
-#                         if self.created1:
-#                             if not setPerms(pamfile, [0, 0, 0o644], self.logger):
-#                                 success = False
-#                                 self.detailedresults += "Unable to set " + \
-#                                     "correct permissions on " + pamfile + "\n"
-#                         else:
-#                             self.iditerator += 1
-#                             myid = iterate(self.iditerator, self.rulenumber)
-#                             if not setPerms(pamfile, [0, 0, 0o644], self.logger, self.statechglogger, myid):
-#                                 success = False
-#                                 self.detailedresults += "Unable to set " + \
-#                                     "correct permissions on " + pamfile + "\n"
 
     def checkaccountlockout(self):
-        '''Method to determine which account locking program to
+        """Method to determine which account locking program to
         use if any.
         @author: dwalker
 
 
         :returns: bool
 
-        '''
+        """
         which = "/usr/bin/which "
         cmd1 = which + "faillock"
         cmd2 = which + "pam_tally2"
@@ -772,7 +709,7 @@ class ConfigureSystemAuthentication(Rule):
                     "Stonix will not attempt to create this file " + \
                     "and the fix for the this rule will not continue\n"
                 return False
-        '''Check permissions on pam file(s)'''
+        """Check permissions on pam file(s)"""
         for pamfile in pamfiles:
             if not checkPerms(pamfile, [0, 0, 0o644], self.logger):
                 self.iditerator += 1
@@ -840,16 +777,14 @@ class ConfigureSystemAuthentication(Rule):
                 "crucial file /etc/security/pwquality doesn't exist\n"
         return compliant
 
-###############################################################################
-
     def chklockout(self):
-        '''Systemauth.__chklockout() Private method to check the account lock
+        """Systemauth.__chklockout() Private method to check the account lock
         out settings that should be enforced via pam_tally2. There are two
         potential styles of lockout, the old style setup by STOR 4.0 and the
         new style setup by STOR 4.1. Either version is valid.
 
 
-        '''
+        """
         # the first auth line should be the pam_tally2.so line
         if self.ph.manager == "solaris":
             compliant = True
@@ -873,14 +808,12 @@ class ConfigureSystemAuthentication(Rule):
                 self.detailedresults += path + " doesn't exist\n"
                 return False
 
-###############################################################################
-
     def checklogindefs(self):
-        '''Method to check the password hash algorithm settings in
+        """Method to check the password hash algorithm settings in
         login.defs.
 
 
-        '''
+        """
         compliant = True
         debug = ""
         if os.path.exists(self.logindefs):
@@ -950,29 +883,28 @@ class ConfigureSystemAuthentication(Rule):
                 self.logger.log(LogPriority.DEBUG, debug)
                 compliant = False
         return compliant
-###############################################################################
 
     def checklibuser(self):
-        '''Private method to check the password hash algorithm settings in
+        """Private method to check the password hash algorithm settings in
         libuser.conf.
         @author: dwalker
 
 
         :returns: bool
 
-        '''
+        """
         compliant = True
-        '''check if libuser is intalled'''
+        """check if libuser is intalled"""
         if not self.ph.check("libuser"):
-            '''if not, check if available'''
+            """if not, check if available"""
             if self.ph.checkAvailable("libuser"):
                 self.detailedresults += "libuser available but not installed\n"
                 return False
             else:
-                '''not available, not a problem'''
+                """not available, not a problem"""
                 return True
-        '''create a kveditor for file if it exists, if not, we do it in
-        the setlibuser method inside the fix'''
+        """create a kveditor for file if it exists, if not, we do it in
+        the setlibuser method inside the fix"""
         if os.path.exists(self.libuserfile):
             data = {"defaults": {"crypt_style": "sha512"}}
             datatype = "tagconf"
@@ -997,8 +929,6 @@ class ConfigureSystemAuthentication(Rule):
                 "file doesn't exist\n"
             compliant = False
         return compliant
-
-###############################################################################
 
     def fixFreebsd(self):
         changed = False
@@ -1082,8 +1012,6 @@ class ConfigureSystemAuthentication(Rule):
                 success = False
         return success
 
-###############################################################################
-
     def chkpolicy(self):
         compliant = True
         path = "/etc/security/policy.conf"
@@ -1106,8 +1034,6 @@ class ConfigureSystemAuthentication(Rule):
             compliant = False
         return compliant
 
-###############################################################################
-
     def fixPolicy(self):
         path = "/etc/security/policy.conf"
         if not checkPerms(path, [0, 0, 0o644], self.logger):
@@ -1128,8 +1054,6 @@ class ConfigureSystemAuthentication(Rule):
             os.chmod(path, 0o644)
             resetsecon(path)
         return True
-
-###############################################################################
 
     def fixLogin(self):
         # only for freebsd
@@ -1213,8 +1137,6 @@ class ConfigureSystemAuthentication(Rule):
         else:
             return False
 
-###############################################################################
-
     def setpwquality(self):
         success = True
         created = False
@@ -1264,31 +1186,29 @@ class ConfigureSystemAuthentication(Rule):
                 self.detailedresults += "Unable to correct " + pwqfile + "\n"
         return success
 
-###############################################################################
-
     def setlibuser(self):
-        '''Method to check if libuser is installed and the contents of libuser
+        """Method to check if libuser is installed and the contents of libuser
         file.
         @author: dwalker
 
 
         :returns: bool
 
-        '''
+        """
         created = False
         success = True
         data = {"defaults": {"crypt_style": "sha512"}}
-        '''check if installed'''
+        """check if installed"""
         if not self.ph.check("libuser"):
-            '''if not installed, check if available'''
+            """if not installed, check if available"""
             if self.ph.checkAvailable("libuser"):
-                '''if available, install it'''
+                """if available, install it"""
                 if not self.ph.install("libuser"):
                     self.detailedresults += "Unable to install libuser\n"
                     return False
                 else:
-                    '''since we're just now installing it we know we now
-                    need to create the kveditor'''
+                    """since we're just now installing it we know we now
+                    need to create the kveditor"""
                     self.iditerator += 1
                     myid = iterate(self.iditerator, self.rulenumber)
                     comm = self.ph.getRemove() + "libuser"
@@ -1355,7 +1275,6 @@ class ConfigureSystemAuthentication(Rule):
                     "be corrected\n"
                 success = False
         return success
-###############################################################################
 
     def setlogindefs(self):
         success = True
