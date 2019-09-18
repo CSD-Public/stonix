@@ -1216,6 +1216,9 @@ class Environment:
                                     close_fds=True)
             cmd3output = cmd3.stdout.readlines()
             for line in cmd3output:
+                if type(line) is bytes:
+                    line = line.decode('utf-8')
+
                 if re.search('Book', line):
                     ismobile = True
                     break
