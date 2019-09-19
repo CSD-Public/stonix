@@ -90,7 +90,7 @@ class SystemIntegrityProtection(Rule):
 
         '''
         datatype = type(pMessage)
-        if datatype == bytes:
+        if datatype == str:
             if not (pMessage == ""):
                 messagestring = pMessage
                 if (self.detailedresults == ""):
@@ -110,7 +110,7 @@ class SystemIntegrityProtection(Rule):
         else:
             raise TypeError("pMessage with value" + str(pMessage) + \
                             "is of type " + str(datatype) + " not of " + \
-                            "type " + str(bytes) + \
+                            "type " + str(str) + \
                             " or type " + str(list) + \
                             " as expected!")
 

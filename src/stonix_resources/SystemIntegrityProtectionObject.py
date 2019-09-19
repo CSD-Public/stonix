@@ -212,7 +212,7 @@ class SystemIntegrityProtectionObject():
 
         '''
         datatype = type(pMessage)
-        if datatype == bytes:
+        if datatype == str:
             if not (pMessage == ""):
                 msg = pMessage
                 if (self.msg == ""):
@@ -232,7 +232,7 @@ class SystemIntegrityProtectionObject():
         else:
             raise TypeError("pMessage with value" + str(pMessage) + \
                             "is of type " + str(datatype) + " not of " + \
-                            "type " + str(bytes) + \
+                            "type " + str(str) + \
                             " or type " + str(list) + \
                             " as expected!")
         return self.msg
