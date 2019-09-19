@@ -138,6 +138,9 @@ def getlocalfs(logger, environ):
             proc.wait()
             mountdata = proc.stdout.readlines()
             for line in mountdata:
+                if type(line) is bytes:
+                    line = line.decode('utf-8')
+
                 logger.log(LogPriority.DEBUG,
                            ['GetLocalFs', 'OS X processing: ' + line])
                 if re.search('^/dev/disk', line):
