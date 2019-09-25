@@ -162,10 +162,15 @@ class ReqPassSysPref(Rule):
                 contents = self.plists[pref]
                 contents = re.sub(r"(<key>shared</key>\s+<)\w+/>",
                                   r"\1false/>", contents)
-                p = Popen(["security", "authorizationdb", "write", pref],
-                          stdout=PIPE, stdin=PIPE, stderr=STDOUT)
-                secOut = p.communicate(contents)[0]
-                debug = "Popen result for " + pref + ": " + secOut
+
+                if not self.ch.executeCommand(["security", "authorizationdb", "write", pref, contents]):
+                    success = False
+                    results += "Failed to execute 'security " + \
+                               "authorizationdb write' command\n"
+
+                secOut = self.ch.getOutputString()
+
+                debug = "Command output for " + pref + ": " + secOut
                 self.logger.log(LogPriority.DEBUG, debug)
                 if not re.search("YES", secOut):
                     success = False
