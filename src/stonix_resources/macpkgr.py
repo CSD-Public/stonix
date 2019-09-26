@@ -649,15 +649,16 @@ class MacPkgr(object):
                             while 1:
                                 try:
                                     if urlfile:
-                                        data = urlfile.read(chunk)
-                                        if not data:
+                                        databytes = urlfile.read(chunk)
+                                        if not databytes:
                                             message = "Done reading file: " + \
                                                       self.pkgUrl
                                             self.logger.log(LogPriority.DEBUG,
                                                             message)
                                             break
-                                        f.write(data)
-                                        message = "Read " + str(len(data)) + \
+                                        data = databytes
+                                        f.write(data.decode('utf-8', 'replace'))
+                                        message = "Read " + str(len(databytes)) + \
                                             " bytes"
                                         self.logger.log(LogPriority.DEBUG,
                                                         message)
@@ -791,7 +792,7 @@ class MacPkgr(object):
                 chunk = 16 * 1024 * 1024
                 m = hashlib.md5()
                 while True:
-                    data = fh.read(chunk)
+                    data = fh.read(chunk).encode('utf-8')
                     if not data:
                         break
                     m.update(data)
