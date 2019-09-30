@@ -35,6 +35,8 @@ Created on May 20, 2013
 @change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
 @change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
+@change: 2019/09/30 Brandon R. Gonzales - Commented out the kveditor item for
+    opendirectoryd and added a TODO
 """
 
 import os
@@ -97,20 +99,23 @@ class ConfigureLogging(RuleKVEditor):
         self.ostype = self.environ.getostype()
         self.osfamily = self.environ.getosfamily()
         self.osver = self.environ.getosver()
-        if self.ostype == "Mac OS X":
-            self.addKVEditor("OpenDirectoryLogging",
-                             "defaults",
-                             "/Library/Preferences/OpenDirectory/opendirectoryd",
-                             "",
-                             {"Debug Logging Level": ["5", "5"]},
-                             "present",
-                             "",
-                             'Set OpenDirectory "Debug Logging Level" Level to 5 ' + \
-                             "This show user creation and deletion events " + \
-                             "in '/private/var/log/opendirectoryd.log'.",
-                             None,
-                             False,
-                             {})
+
+        # TODO: Research a better way to implement this setting [artf56995]
+        #if self.ostype == "Mac OS X":
+        #
+        #    self.addKVEditor("OpenDirectoryLogging",
+        #                     "defaults",
+        #                     "/Library/Preferences/OpenDirectory/opendirectoryd",
+        #                     "",
+        #                     {"Debug Logging Level": ["5", "5"]},
+        #                     "present",
+        #                     "",
+        #                     'Set OpenDirectory "Debug Logging Level" Level to 5 ' + \
+        #                     "This show user creation and deletion events " + \
+        #                     "in '/private/var/log/opendirectoryd.log'.",
+        #                     None,
+        #                     False,
+        #                     {})
 
     def report(self):
         """ConfigureLogging.report() Public method to report on the
@@ -617,7 +622,7 @@ class ConfigureLogging(RuleKVEditor):
                     myid = iterate(self.iditerator, self.rulenumber)
                     if not setPerms(item, [0, 0, 384], self.logger,
                                     self.statechglogger, myid):
-                        debug = "Unable to set " + "permissions on " + item + "\n"
+                        debug = "Unable to set permissions on " + item + "\n"
                         self.logger.log(LogPriority.DEBUG, debug)
                         success = False
             else:
@@ -648,7 +653,7 @@ class ConfigureLogging(RuleKVEditor):
                 myid = iterate(self.iditerator, self.rulenumber)
                 if not setPerms(self.bootlog, [0, 0, 420], self.logger,
                                 self.statechglogger, myid):
-                    debug = "Unable to set " + "permissions on " + self.bootlog + "\n"
+                    debug = "Unable to set permissions on " + self.bootlog + "\n"
                     self.logger.log(LogPriority.DEBUG, debug)
                     success = False
         elif not createFile(self.bootlog, self.logger):
@@ -732,7 +737,7 @@ rotation config file: " + self.logrotpath + "\n"
 
         if not checkPerms(self.logrotpath, [0, 0, 420], self.logger):
             if not setPerms(self.logrotpath, [0, 0, 420], self.logger):
-                debug = "Unable to set " + "permissions on " + self.logrotpath + "\n"
+                debug = "Unable to set permissions on " + self.logrotpath + "\n"
                 self.logger.log(LogPriority.DEBUG, debug)
                 success = False
 
