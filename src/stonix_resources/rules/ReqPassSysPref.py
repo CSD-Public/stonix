@@ -31,6 +31,7 @@ likely to compromise the security of the Mac.
 @change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
 @change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
+@change: 2019/10/02 Brandon R. Gonzales - Update process for configuring plists
 '''
 
 
@@ -40,6 +41,7 @@ from stonixutilityfunctions import iterate
 from logdispatcher import LogPriority
 from CommandHelper import CommandHelper
 from subprocess import Popen, PIPE, STDOUT
+from stonixutilityfunctions import setPerms
 import re
 import traceback
 
@@ -159,29 +161,38 @@ class ReqPassSysPref(Rule):
         # is used instead. This is then piped back into the security command.
         try:
             for pref in self.plists:
-                contents = self.plists[pref]
-                contents = re.sub(r"(<key>shared</key>\s+<)\w+/>",
-                                  r"\1false/>", contents)
+                tmppref = "/tmp/" + pref + ".plist"
 
-                if not self.ch.executeCommand(["security", "authorizationdb", "write", pref, contents]):
+                if not self.ch.executeCommand("security authorizationdb read " + pref + " > " + tmppref):
+                    success = False
+                    results += "Failed to execute 'security " + \
+                               "authorizationdb read' command\n"
+                elif not self.ch.executeCommand(["defaults", "write", tmppref, "shared", "0"]):
+                    success = False
+                    results += "Failed to execute 'defaults " + \
+                               "write' command\n"
+                elif not setPerms(tmppref, [0, 0, 0o666], self.logger):
+                    success = False
+                    results += "Failed to change permissions for temp file\n"
+                elif not self.ch.executeCommand("security authorizationdb write " + pref + " < " + tmppref):
                     success = False
                     results += "Failed to execute 'security " + \
                                "authorizationdb write' command\n"
-
-                secOut = self.ch.getOutputString()
-
-                debug = "Command output for " + pref + ": " + secOut
-                self.logger.log(LogPriority.DEBUG, debug)
-                if not re.search("YES", secOut):
-                    success = False
-                    results += "'security authorizationdb write' command " + \
-                        "was not successful\n"
                 else:
-                    # Write was successful; make state change event
-                    self.iditerator += 1
-                    myid = iterate(self.iditerator, self.rulenumber)
-                    event = {"eventtype": "applesec", "pref": pref}
-                    self.statechglogger.recordchgevent(myid, event)
+                    secOut = self.ch.getOutputString()
+
+                    debug = "Command output for " + pref + ": " + secOut
+                    self.logger.log(LogPriority.DEBUG, debug)
+                    if not re.search("YES", secOut):
+                        success = False
+                        results += "'security authorizationdb write' " + \
+                                   "command was not successful\n"
+                    else:
+                        # Write was successful; make state change event
+                        self.iditerator += 1
+                        myid = iterate(self.iditerator, self.rulenumber)
+                        event = {"eventtype": "applesec", "pref": pref}
+                        self.statechglogger.recordchgevent(myid, event)
             self.rulesuccess = success
             self.detailedresults = results
         except (KeyboardInterrupt, SystemExit):
