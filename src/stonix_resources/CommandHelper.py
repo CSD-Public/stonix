@@ -409,7 +409,7 @@ class CommandHelper(object):
 
         :returns: self.returncode
 
-        :rtype: bool
+        :rtype: int
 @author: ekkehard j. koch
 
         """

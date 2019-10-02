@@ -211,7 +211,7 @@ class LogDispatcher (Observable):
                 if type(msg_data[0]) is bytes:
                     msg_data[0] = msg_data[0].decode('utf-8')
                 if type(msg_data[1]) is bytes:
-                    msg_data[1] = msg_data[1].decode('uft-8')
+                    msg_data[1] = msg_data[1].decode('utf-8')
                 msg = str(msg_data[0]).strip() + ':' + str(msg_data[1]).strip()
             else:
                 if type(msg_data) is bytes:

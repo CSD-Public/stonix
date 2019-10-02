@@ -181,7 +181,7 @@ class Yum(object):
             else:
                 outputlines = self.ch.getAllList()
                 for line in outputlines:
-                    if re.search("No matching Packages to list", line, re.I):
+                    if re.search("No matching Packages", line, re.I):
                         installed = False
 
             if installed:
@@ -214,6 +214,7 @@ class Yum(object):
                 retcode = self.ch.getReturnCode()
                 errstr = self.ch.getErrorString()
                 if retcode != 0:
+                    updated = False
                     raise repoError('yum', retcode, str(errstr))
             except repoError as repoerr:
                 if not repoerr.success:
@@ -310,16 +311,17 @@ class Yum(object):
 
         try:
 
-            try:
-                self.ch.executeCommand(self.listavail + package)
-                retcode = self.ch.getReturnCode()
+            self.ch.executeCommand(self.listavail + package)
+            retcode = self.ch.getReturnCode()
+            if retcode in [0,1]:
+                output = self.ch.getAllList()
+                for line in output:
+                    if re.search("No matching Packages", line, re.I):
+                        available = False
+            else:
                 errstr = self.ch.getErrorString()
-                if retcode != 0:
-                    raise repoError('yum', retcode, str(errstr))
-            except repoError as repoerr:
-                if not repoerr.success:
-                    self.logger.log(LogPriority.DEBUG, str(repoerr))
-                    available = False
+                available = False
+                self.logger.log(LogPriority.DEBUG, errstr)
 
             if available:
                 self.logger.log(LogPriority.DEBUG, "Package " + str(package) + " is available to install")
