@@ -899,22 +899,41 @@ class SoftwareBuilder():
             #####
             # Perform a codesigning on the stonix4mac application
             if self.ordPass:
-                cmd = [self.tmphome + '/src/MacBuild/xcodebuild.py',
-                       '--psd', self.tmphome + '/src/MacBuild/stonix4mac',
-                       '--productsign',
-                       '--tmpenc', self.ordPass, '-u', self.keyuser,
-                       '-i', appName + '-' + str(self.STONIXVERSION) + '.pkg',
-                       '-n', appName + '.' + str(self.STONIXVERSION) + '.pkg',
-                       '-d',
-                       '-s', '"Developer ID Installer"',
-                       '--keychain', self.keychain]
+                if self.FISMACAT == "high":
+                    cmd = [self.tmphome + '/src/MacBuild/xcodebuild.py',
+                           '--psd', self.tmphome + '/src/MacBuild/stonix4mac',
+                           '--productsign',
+                           '--tmpenc', self.ordPass, '-u', self.keyuser,
+                           '-i', appName + '-red-' + str(self.STONIXVERSION) + '.pkg',
+                           '-n', appName + '-red.' + str(self.STONIXVERSION) + '.pkg',
+                           '-d',
+                           '-s', '"Developer ID Installer"',
+                           '--keychain', self.keychain]
+                else:
+                    cmd = [self.tmphome + '/src/MacBuild/xcodebuild.py',
+                           '--psd', self.tmphome + '/src/MacBuild/stonix4mac',
+                           '--productsign',
+                           '--tmpenc', self.ordPass, '-u', self.keyuser,
+                           '-i', appName + '-' + str(self.STONIXVERSION) + '.pkg',
+                           '-n', appName + '.' + str(self.STONIXVERSION) + '.pkg',
+                           '-d',
+                           '-s', '"Developer ID Installer"',
+                           '--keychain', self.keychain]
             else:
-                cmd = [self.tmphome + '/src/MacBuild/xcodebuild.py',
-                       '--psd', self.tmphome + '/src/MacBuild/stonix4mac',
-                       '-u', self.keyuser,
-                       '-i', appName + '-' + str(self.STONIXVERSION) + '.pkg',
-                       '-n', appName + '.' + str(self.STONIXVERSION) + '.pkg',
-                       '-d']
+                if self.FISMACAT == "high":
+                    cmd = [self.tmphome + '/src/MacBuild/xcodebuild.py',
+                           '--psd', self.tmphome + '/src/MacBuild/stonix4mac',
+                           '-u', self.keyuser,
+                           '-i', appName + '-red-' + str(self.STONIXVERSION) + '.pkg',
+                           '-n', appName + '-red.' + str(self.STONIXVERSION) + '.pkg',
+                           '-d']
+                else:
+                    cmd = [self.tmphome + '/src/MacBuild/xcodebuild.py',
+                           '--psd', self.tmphome + '/src/MacBuild/stonix4mac',
+                           '-u', self.keyuser,
+                           '-i', appName + '-' + str(self.STONIXVERSION) + '.pkg',
+                           '-n', appName + '.' + str(self.STONIXVERSION) + '.pkg',
+                           '-d']
 
             self.logger.log(lp.DEBUG, '.')
             self.logger.log(lp.DEBUG, '.')
@@ -941,7 +960,10 @@ class SoftwareBuilder():
             self.libc.sync()
 
             print("Moving dmg and pkg to the dmgs directory.")
-            pkgname = self.STONIX4MAC + "." + self.APPVERSION + ".pkg"
+            if self.FISMACAT == "high":
+                pkgname = self.STONIX4MAC + "-red." + self.APPVERSION + ".pkg"
+            else:
+                pkgname = self.STONIX4MAC + "." + self.APPVERSION + ".pkg"
             self.product = self.tmphome + "/src/Macbuild/" + self.STONIX4MAC + "/" + pkgname
             self.logger.log(lp.DEBUG, "Copying: " + str(pkgname) + " to: " + dmgsPath + "/" + pkgname)
             copy2(self.product, dmgsPath)
