@@ -139,101 +139,52 @@ class ConfigureAppleSoftwareUpdate(RuleKVEditor):
                                "compliant if you disable this option."
                 default = True
                 self.ccurlci = self.initCi(datatype, key, instructions, default)
-        osxversion = str(self.environ.getosver())
-        if osxversion.startswith("10.9"):
-            self.addKVEditor("DisableAutomaticDownload",
-                             "defaults",
-                             softwareupdate_path,
-                             "",
-                             {"AutomaticDownload": ["0", "-bool no"]},
-                             "present",
-                             "",
-                             "Disable Automatic Software Update Downloads. " +
-                             "This should be enabled.",
-                             None,
-                             False,
-                             {"AutomaticDownload": ["1", "-bool yes"]})
-            self.addKVEditor("DisableAutomaticCheckEnabled",
-                             "defaults",
-                             softwareupdate_path,
-                             "",
-                             {"AutomaticCheckEnabled": ["0", "-bool no"]},
-                             "present",
-                             "",
-                             "Disable Automatic Checking For Downloads. " +
-                             "This should be enabled.",
-                             None,
-                             False,
-                             {"AutomaticCheckEnabled": ["1", "-bool yes"]})
-            self.addKVEditor("DisableConfigDataInstall",
-                             "defaults",
-                             softwareupdate_path,
-                             "",
-                             {"ConfigDataInstall": ["0", "-bool no"]},
-                             "present",
-                             "",
-                             "Disable Installing of system data files.",
-                             None,
-                             False,
-                             {"ConfigDataInstall": ["1", "-bool yes"]})
-            self.addKVEditor("DisableCriticalUpdateInstall",
-                             "defaults",
-                             softwareupdate_path,
-                             "",
-                             {"CriticalUpdateInstall": ["0", "-bool no"]},
-                             "present",
-                             "",
-                             "Disable Installing of security updates.",
-                             None,
-                             False,
-                             {"CriticalUpdateInstall": ["1", "-bool yes"]})
-        else:
-            self.addKVEditor("EnableAutomaticDownload",
-                             "defaults",
-                             softwareupdate_path,
-                             "",
-                             {"AutomaticDownload": ["1", "-bool yes"]},
-                             "present",
-                             "",
-                             "Enable Automatic Software Update Downloads. " +
-                             "This should be enabled.",
-                             None,
-                             False,
-                             {"AutomaticDownload": ["0", "-bool no"]})
-            self.addKVEditor("EnableAutomaticCheckEnabled",
-                             "defaults",
-                             softwareupdate_path,
-                             "",
-                             {"AutomaticCheckEnabled": ["1", "-bool yes"]},
-                             "present",
-                             "",
-                             "Enable Automatic Checking For Downloads. " +
-                             "This should be enabled.",
-                             None,
-                             False,
-                             {"AutomaticCheckEnabled": ["0", "-bool no"]})
-            self.addKVEditor("EnableConfigDataInstall",
-                             "defaults",
-                             softwareupdate_path,
-                             "",
-                             {"ConfigDataInstall": ["1", "-bool yes"]},
-                             "present",
-                             "",
-                             "Enable Installing of system data files.",
-                             None,
-                             False,
-                             {"ConfigDataInstall": ["0", "-bool no"]})
-            self.addKVEditor("EnableCriticalUpdateInstall",
-                             "defaults",
-                             softwareupdate_path,
-                             "",
-                             {"CriticalUpdateInstall": ["1", "-bool yes"]},
-                             "present",
-                             "",
-                             "Enable Installing of security updates.",
-                             None,
-                             False,
-                             {"CriticalUpdateInstall": ["0", "-bool no"]})
+        self.addKVEditor("EnableAutomaticDownload",
+                         "defaults",
+                         softwareupdate_path,
+                         "",
+                         {"AutomaticDownload": ["1", "-bool yes"]},
+                         "present",
+                         "",
+                         "Enable Automatic Software Update Downloads. " +
+                         "This should be enabled.",
+                         None,
+                         False,
+                         {"AutomaticDownload": ["0", "-bool no"]})
+        self.addKVEditor("EnableAutomaticCheckEnabled",
+                         "defaults",
+                         softwareupdate_path,
+                         "",
+                         {"AutomaticCheckEnabled": ["1", "-bool yes"]},
+                         "present",
+                         "",
+                         "Enable Automatic Checking For Downloads. " +
+                         "This should be enabled.",
+                         None,
+                         False,
+                         {"AutomaticCheckEnabled": ["0", "-bool no"]})
+        self.addKVEditor("EnableConfigDataInstall",
+                         "defaults",
+                         softwareupdate_path,
+                         "",
+                         {"ConfigDataInstall": ["1", "-bool yes"]},
+                         "present",
+                         "",
+                         "Enable Installing of system data files.",
+                         None,
+                         False,
+                         {"ConfigDataInstall": ["0", "-bool no"]})
+        self.addKVEditor("EnableCriticalUpdateInstall",
+                         "defaults",
+                         softwareupdate_path,
+                         "",
+                         {"CriticalUpdateInstall": ["1", "-bool yes"]},
+                         "present",
+                         "",
+                         "Enable Installing of security updates.",
+                         None,
+                         False,
+                         {"CriticalUpdateInstall": ["0", "-bool no"]})
         self.addKVEditor("DisableAllowPreReleaseInstallation",
                          "defaults",
                          softwareupdate_path,
@@ -336,14 +287,14 @@ class ConfigureAppleSoftwareUpdate(RuleKVEditor):
                             #we set in localize.py and if the ci was enabled.  complicancy
                             #is False if ci was enabled but URL doesn't match that in
                             #localize.py
-                            if output != APPLESOFTUPDATESERVER and self.ccurlci.getcurrvalue():
+                            if output.strip() != APPLESOFTUPDATESERVER and self.ccurlci.getcurrvalue():
                                 self.detailedresults += "Apple catalog URL is not set to " + APPLESOFTUPDATESERVER + "\n"
                                 compliant = False
                             #This condition checks if our ci wasn't enabled, this should
                             #find the output to be cleared and contain the words does not
                             #exist. If the words does not exist don't appear in the output
                             #compliancy is False
-                            elif not re.search("does not exist", output) and not self.ccurlci.getcurrvalue():
+                            elif output.strip() != "" and not self.ccurlci.getcurrvalue():
                                 self.detailedresults += "CI for apple catalog url is unchecked " + \
                                     "which means the default url should be used, but url is " + \
                                     "pointing to another location\n"
@@ -351,8 +302,8 @@ class ConfigureAppleSoftwareUpdate(RuleKVEditor):
                             #However, because the rule requires the CI to be enabled, at
                             #least for now, even if the words does not exist are found
                             #in the output and the CI is not enabled, this is still
-                            #not compliant.
-                            elif re.search("does not exist", output) and not self.ccurlci.getcurrvalue():
+                            #not compliant. We may eventually make this be compliant = True
+                            elif output.strip() == "" and not self.ccurlci.getcurrvalue():
                                 compliant = False
                                 detailedresults += "\nThe Configure Catalogue URL " + \
                                                    "portion of this rule requires that " + \
