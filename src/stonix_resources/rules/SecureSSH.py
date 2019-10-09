@@ -138,7 +138,8 @@ class SecureSSH(Rule):
                            "UsePAM": "yes",
                            "Ciphers": "aes128-ctr,aes192-ctr,aes256-ctr",
                            "PermitUserEnvironment": "no",
-                           "PrintLastLog": "yes"}
+                           "PrintLastLog": "yes",
+                           "MACs": "hmac-sha2-256,hmac-sha2-512"}
 
             if self.environ.getostype() == "Mac OS X":
                 self.serverfile = '/private/etc/ssh/sshd_config'
