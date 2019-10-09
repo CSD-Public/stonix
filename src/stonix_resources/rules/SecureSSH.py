@@ -118,7 +118,6 @@ class SecureSSH(Rule):
             self.sh = ServiceHelper(self.environ, self.logger)
             self.macloaded = False
             compliant = True
-            debug = ""
             self.client = {"Host": "*",
                            "Protocol": "2",
                            "GSSAPIAuthentication": "yes",
@@ -137,8 +136,9 @@ class SecureSSH(Rule):
                            "GSSAPIAuthentication": "yes",
                            "GSSAPICleanupCredentials": "yes",
                            "UsePAM": "yes",
-                           "Ciphers": "aes128-ctr,aes192-ctr,aes256-ctr,aes128-cbc,3des-cbc,aes192-cbc,aes256-cbc",
-                           "PermitUserEnvironment": "no"}
+                           "Ciphers": "aes128-ctr,aes192-ctr,aes256-ctr",
+                           "PermitUserEnvironment": "no",
+                           "PrintLastLog": "yes"}
 
             if self.environ.getostype() == "Mac OS X":
                 self.serverfile = '/private/etc/ssh/sshd_config'
