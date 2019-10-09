@@ -21,30 +21,27 @@ def main():
     if os.path.exists('/usr/bin/amixer'):
         setlevels = "/usr/bin/amixer sset Capture Volume 0,0 mute"
 
-    if setlevels != None:
+    if setlevels is not None:
         try:
-            proc = subprocess.Popen(setlevels, stdout=subprocess.PIPE,
-                                    stderr=subprocess.PIPE, shell=True)
+            subprocess.Popen(setlevels, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
         except Exception:
             pass
 
     netmgr = None
     if os.path.exists('/usr/bin/nmcli'):
         netmgr = '/usr/bin/nmcli nm wifi off'
-    if netmgr != None:
+    if netmgr is not None:
         try:
-            proc = subprocess.Popen(netmgr, stdout=subprocess.PIPE,
-                                    stderr=subprocess.PIPE, shell=True)
+            subprocess.Popen(netmgr, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
         except Exception:
             pass
 
     rfkill = None
     if os.path.exists('/usr/sbin/rfkill'):
-        netmgr = '/usr/sbin/rfkill block bluetooth'
-    if rfkill != None:
+        rfkill = '/usr/sbin/rfkill block bluetooth'
+    if rfkill is not None:
         try:
-            proc = subprocess.Popen(rfkill, stdout=subprocess.PIPE,
-                                    stderr=subprocess.PIPE, shell=True)
+            subprocess.Popen(rfkill, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
         except Exception:
             pass
 
