@@ -841,7 +841,7 @@ class Environment:
                 return ipaddr
 
             for line in routedata:
-                if re.search('gateway:', line):
+                if re.search('gateway:', line.decode('utf-8')):
                     line = line.split()
                     try:
                         gateway = line[1]
