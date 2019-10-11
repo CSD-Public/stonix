@@ -877,7 +877,7 @@ class Environment:
 
         try:
 
-            quad = target.split('.')
+            quad = target.split(b'.')
 
             if level == 1:
                 network = quad[0]
