@@ -154,7 +154,10 @@ NTPSERVERSINTERNAL = []
 
 # Variable Type: List (strings)
 # Specify a list of external Network Time Protocol (NTP) Servers
-NTPSERVERSEXTERNAL = []
+NTPSERVERSEXTERNAL = ["0.us.pool.ntp.org",
+                      "1.us.pool.ntp.org",
+                      "2.us.pool.ntp.org",
+                      "3.us.pool.ntp.org"]
 
 # Variable Type: List (strings)
 # List Of Corporate Network Servers used to determine if we are on the
