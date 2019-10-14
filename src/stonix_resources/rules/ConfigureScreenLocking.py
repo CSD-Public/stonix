@@ -200,6 +200,10 @@ class ConfigureScreenLocking(RuleKVEditor):
             compliant = True
             self.detailedresults = ""
             if self.environ.osfamily == 'linux':
+                if not self.ph.check("screen"):
+                    compliant = False
+                    self.detailedresults += "\nRequired package 'screen' is missing"
+
                 if self.ph.check("gdm") or self.ph.check("gdm3"):
                     self.gnomeInstalled = True
                     if not self.reportGnome():
@@ -592,6 +596,9 @@ class ConfigureScreenLocking(RuleKVEditor):
                     self.detailedresults += "Rule not enabled so nothing was done\n"
                     self.logger.log(LogPriority.DEBUG, 'Rule was not enabled, so nothing was done')
                     return
+                if not self.ph.install("screen"):
+                    success = False
+                    self.logger.log(LogPriority.DEBUG, "Failed to install required package 'screen'")
                 if self.gnomeInstalled:
                     if not self.fixGnome():
                         success = False
