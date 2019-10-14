@@ -486,7 +486,7 @@ This rule will not configure su on Debian distributions."
 
 <21>        "This rule sets the file system mount options for non-root, local partitions and file systems mounted on removable media, removable storage partitions, and temporary storage partitions such as /tmp and /dev/shm in order to help protect against malicious code being run on the system."
 
-<96>        "This rule configures the 'Network Time Protocol' (NTP) daemon to use the internal and external servers specified in localize.py ('NTPSERVERSINTERNAL' and 'NTPSERVERSEXTERNAL')."
+<96>        "This rule configures network time to use the internal or external servers specified in localize.py ('NTPSERVERSINTERNAL' and 'NTPSERVERSEXTERNAL')."
 
 <77>        "This rule sets root's 'group id' (GID) to 0 and root's home directory to /root."
 
