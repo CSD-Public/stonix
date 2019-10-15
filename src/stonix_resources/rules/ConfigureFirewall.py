@@ -134,6 +134,7 @@ class ConfigureFirewall(RuleKVEditor):
             '''Check to see if other parts of rule are compliant'''
             if not RuleKVEditor.report(self, True):
                 compliant = False
+            '''check localize.py for any institute specific apps and add them to list'''
             if ALLOWEDAPPS and ALLOWEDAPPS is not None:
                 templist = self.appci.getcurrvalue()[:]
                 for app in ALLOWEDAPPS:
@@ -142,7 +143,7 @@ class ConfigureFirewall(RuleKVEditor):
                 self.appci.updatecurrvalue(templist)
             self.applist = []
             '''Run the list command to see which applications are
-            currently allowed past the firewall'''
+            currently allowed past the firewall and store in self.applist'''
             self.ch.executeCommand(self.list)
             output = self.ch.getOutput()
             for line in output:
