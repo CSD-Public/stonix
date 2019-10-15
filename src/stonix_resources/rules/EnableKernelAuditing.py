@@ -401,19 +401,39 @@ this system, set the value of EnableKernelAuditing to False"""
                                       '-w /var/log/wtmp -p wa -k session': True,
                                       '-w /sbin/insmod -p x -k modules': True,
                                       '-w /sbin/rmmod -p x -k modules': True,
-                                      '-w /sbin/modprobe -p x -k modules': True,
-                                      '-a always,exit -F arch=b' + str(self.arch) + ' -S chmod -S lchown -S fsetxattr -S fremovexattr -S fchownat -S fchown -S fchmodat -S fchmod -S chown -S lremovexattr -S lsetxattr -S setxattr -F auid>=1000 -F auid!=4294967295 -k perm_mod': True,
-                                      '-a always,exit -F arch=b' + str(self.arch) + ' -S creat -S open -S openat -S open_by_handle_at -S truncate -S ftruncate -F exit=-EACCES -F exit=-EPERM -F auid>=1000 -F auid!=4294967295 -k access': True,
-                                      '-a always,exit -F arch=b' + str(self.arch) + ' -S mount -F auid>=1000 -F auid!=4294967295 -k export': True,
-                                      '-a always,exit -F arch=b' + str(self.arch) + ' -S rmdir -F auid>=1000 -F auid!=4294967295 -k delete': True,
-                                      # the following rule commented out due to the massive log spam it creates (system-killer)
-                                      # this is due primarily to cache and temp files management by java, browsers, and other applications as well
-                                      # '-a always,exit -F ' + str(self.arch) + ' -S unlink -S unlinkat -S rename -S renameat -F auid>=1000 -F auid!=4294967295 -k delete': True,
-                                      '-a always,exit -F arch=b' + str(self.arch) + ' -S init_module -S delete_module -k modules': True,
-                                      '-a always,exit -F arch=b' + str(self.arch) + ' -S settimeofday -S adjtimex -S clock_settime -k audit_time_rules': True,
-                                      '-a always,exit -F arch=b32 -S stime -k audit_time_rules': True,
-                                      '-a always,exit -F arch=b' + str(self.arch) + ' -S sethostname -S setdomainname -k audit_rules_networkconfig_modification': True,
-                                      '-a always,exit -F perm=x -F euid=0 -F auid>=1000 -F auid!=4294967295 -k privileged': True}
+                                      '-w /sbin/modprobe -p x -k modules': True}
+
+            audit_perm_mod_list = ["chmod", "chown", "lchown", "fchown", "fchownat", "fchmodat", "fchown", "fsetxattr", "fremovexattr", "lremovexattr", "lsetxattr", "setxattr"]
+            audit_access_list = ["creat", "open", "openat", "open_by_handle_at", "truncate", "ftruncate"]
+            audit_export_list = ["mount"]
+            audit_delete_list = ["rmdir"]
+            audit_modules_list = ["init_module", "delete_module"]
+            audit_time_list = ["settimeofday", "adjtimex", "clock_settime"]
+            audit_networking_list = ["sethostname", "setdomainname"]
+            arches = ["b32", "b64"]
+            for i in audit_perm_mod_list:
+                for arch in arches:
+                    self.auditrulesoptions["-a always,exit -F arch=" + arch + " -S " + i + " -F auid>=1000 -F auid!=4294967295 -k perm_mod"] = True
+            for i in audit_access_list:
+                for arch in arches:
+                    self.auditrulesoptions["-a always,exit -F arch=" + arch + " -S " + i + " -F exit=-EACCES -F exit=-EPERM -F auid>=1000 -F auid!=4294967295 -k access"] = True
+            for i in audit_export_list:
+                for arch in arches:
+                    self.auditrulesoptions["-a always,exit -F arch=" + arch + " -S " + i + " -F auid>=1000 -F auid!=4294967295 -k export"] = True
+            for i in audit_delete_list:
+                for arch in arches:
+                    self.auditrulesoptions["-a always,exit -F arch=" + arch + " -S " + i + " -F -F auid>=1000 -F auid!=4294967295 -k export"] = True
+            for i in audit_modules_list:
+                for arch in arches:
+                    self.auditrulesoptions["-a always,exit -F arch=" + arch + " -S " + i + " -k modules"] = True
+            for i in audit_time_list:
+                for arch in arches:
+                    self.auditrulesoptions["-a always,exit -F arch=" + arch + " -S " + i + " -k audit_time_rules"] = True
+            for i in audit_networking_list:
+                for arch in arches:
+                    self.auditrulesoptions["-a always,exit -F arch=" + arch + " -S " + i + " -k audit_rules_networkconfig_mofidication"] = True
+            self.auditrulesoptions["-a always,exit -F arch=b32 -S stime -k audit_time_rules"] = True
+            self.auditrulesoptions["-a always,exit -F perm=x euid=0 -F auid>=1000 -F auid!=4294967295 -k privileged"] = True
 
             if self.environ.getosfamily() == 'darwin':
                 self.localization()
@@ -423,8 +443,6 @@ this system, set the value of EnableKernelAuditing to False"""
                                            self.detailedresults)
                 self.logdispatch.log(LogPriority.INFO, self.detailedresults)
                 return self.compliant
-
-            outputlines = []
 
             # GET LIST OF SETUID & SETGID FILES ON SYSTEM
             self.logger.log(LogPriority.DEBUG, "Getting list of setuid and setgid files on this system...")
@@ -978,7 +996,7 @@ this system, set the value of EnableKernelAuditing to False"""
 
             if not contentlines:
                 contentlines.append('-D\n')
-                contentlines.append('-b 320\n')
+                contentlines.append('-b 8192\n')
             else:
                 # find -e 2 line if it already exists, remove it
                 # and move it to the end of the file
@@ -1017,7 +1035,7 @@ this system, set the value of EnableKernelAuditing to False"""
                 for line in primcontentlines:
                     if re.search('(^-D|^-b|^-e)', line, re.IGNORECASE):
                         primcontentlines.remove(line)
-                primcontentlines.insert(0, "-b 320\n")
+                primcontentlines.insert(0, "-b 8192\n")
                 primcontentlines.insert(0, "-D\n")
                 primcontentlines = self.fixArches(primcontentlines)
                 primcontentlines.append('-e 2\n')
@@ -1036,57 +1054,6 @@ this system, set the value of EnableKernelAuditing to False"""
         except Exception:
             raise
         return retval
-
-    def fixArches(self, contentlines):
-        '''fix any arch flags to be appropriate to the current
-        system's arch (64 or 32)
-        cannot have rule entries for both 64 and 32 of the
-        same sys calls, because audit control reads them as
-        duplicates and will not load the rules file if it
-        detects duplicates
-
-        :param contentlines: 
-        :returns: contentlines
-        :rtype: list
-@author: Breen Malmberg
-
-        '''
-
-        self.logger.log(LogPriority.DEBUG, "Fixing arches...")
-
-        linefixedcount = 0
-
-        if not contentlines:
-            return contentlines
-        if not isinstance(contentlines, list):
-            return contentlines
-
-        try:
-
-            if self.arch == '64':
-                for line in contentlines:
-                    if re.search("arch=b32", line, re.IGNORECASE):
-                        # stime only has a 32 bit call, even on 64 bit systems
-                        if not re.search("stime", line, re.IGNORECASE):
-                            fixedline = line.replace("arch=b32", "arch=b64")
-                            linefixedcount += 1
-                            contentlines = [c.replace(line, fixedline) for c in contentlines]
-            elif self.arch == '32':
-                for line in contentlines:
-                    if re.search("arch=b64", line, re.IGNORECASE):
-                        fixedline = line.replace("arch=b64", "arch=b32")
-                        linefixedcount += 1
-                        contentlines = [c.replace(line, fixedline) for c in contentlines]
-
-            if linefixedcount > 0:
-                self.logger.log(LogPriority.DEBUG, "Fixed " + str(linefixedcount) + " arch lines")
-                self.detailedresults += "\nFixed " + str(linefixedcount) + " arch flags in audit rules"
-            else:
-                self.logger.log(LogPriority.DEBUG, "Nothing was changed")
-
-        except Exception:
-            raise
-        return contentlines
 
     def fixDuplicates(self, contentlines):
         '''build a new list which is a copy of contentlines
