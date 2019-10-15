@@ -241,6 +241,8 @@ class ConfigureFirewall(RuleKVEditor):
             if not RuleKVEditor.fix(self, True):
                 success = False
             self.templist = self.applist[:]
+            debug = "Inside fix\n"
+            self.logdispatch.log(LogPriority.DEBUG, debug)
             if self.allowedapps:
                 debug = "there are allowedapps in fix: " + str(self.allowedapps) + "\n"
                 self.logdispatch.log(LogPriority.DEBUG, debug)
@@ -280,9 +282,11 @@ class ConfigureFirewall(RuleKVEditor):
                                      "command": undocmd}
                             self.statechglogger.recordchgevent(myid, event)
             elif self.applist:
+                debug = "there weren't alloweapps in fix\n"
+                self.logdispatch.log(LogPriority.DEBUG, debug)
                 tmp = []
                 for app in self.applist:
-                    if not self.ch.executeCommand(self.rmv + "/Applications/" + app):
+                    if not self.ch.executeCommand(self.rmv + app):
                         success = False
                         self.detailedresults += "Unable to remove " + \
                                                 app + " from firewall allowed list\n"
