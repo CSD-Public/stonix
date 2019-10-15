@@ -30,6 +30,7 @@
 # ============================================================================#
 '''
 Created on Aug 24, 2010
+
 @author: dkennel
 @change: eball 2015/07/08 - Added pkghelper and ServiceHelper undos
 @change: 2017/03/07 dkennel - Added FISMA risk level support to isapplicable
@@ -66,6 +67,8 @@ class Rule(Observable):
     @change: Breen Malmberg - 7/18/2017 - added method getauditonly();
             added and initialized variable self.auditonly to False (default);
             fixed doc string
+
+
     '''
 
     def __init__(self, config, environ, logger, statechglogger):
@@ -104,6 +107,8 @@ LANL-stonix."""
         self.rulesuccess will be updated if the rule does not succeed.
 
         @author
+
+
         '''
         # This must be implemented later once the parameter option or observable
         # pattern for taking control of self.detailedresults refresh is implemented
@@ -120,6 +125,8 @@ LANL-stonix."""
         if the rule does not succeed.
 
         @author D. Kennel
+
+
         '''
         # This must be implemented later once the parameter option or observable
         # pattern for taking control of self.detailedresults refresh is implemented
@@ -137,6 +144,8 @@ LANL-stonix."""
                    Mac rules will need to set the self.serviceTarget
                    variable in their __init__ method after runing
                    "super" on this parent class.
+
+
         '''
         # pass
         if not self.environ.geteuid() == 0:
@@ -253,23 +262,32 @@ LANL-stonix."""
 
     def getrulenum(self):
         '''Return the rule number
+
+
         :returns: int :
         @author D. Kennel
+
         '''
         return self.rulenumber
 
     def getrulename(self):
         '''Return the name of the rule
+
+
         :returns: string :
         @author D. Kennel
+
         '''
         return self.rulename
 
     def getmandatory(self):
         '''Return true if the rule in question represents a mandatory
         configuration. False indicates that the rule is optional.
+
+
         :returns: bool :
         @author D. Kennel
+
         '''
         return self.mandatory
 
@@ -277,8 +295,11 @@ LANL-stonix."""
         '''This returns true if the configuration in question is compliant with
         the rule's required settings. The associated property is set by the
         report method.
+
+
         :returns: bool :
         @author D. Kennel
+
         '''
         return self.compliant
 
@@ -286,15 +307,21 @@ LANL-stonix."""
         '''Return true if the rule requires root privileges to execute correctly.
         Rules that return true for this will not run when stonix is run without
         privileges.
+
+
         :returns: bool :
         @author D. Kennel
+
         '''
         return self.rootrequired
 
     def gethelptext(self):
         '''Return the help text for the rule.
+
+
         :returns: string :
         @author D. Kennel
+
         '''
         return self.helptext
 
@@ -305,29 +332,41 @@ LANL-stonix."""
         configuration file object and instantiate it's dependent
         configuration item objects. Instantiated configurationitems will be
         added to the self.confitems property.
+
+
         :returns: void :
         @author D. Kennel
+
         '''
         pass
 
     def getconfigitems(self):
         '''This method will return all instantiated configitems for the rule.
+
+
         :returns: list : configurationitem instances
         @author D. Kennel
+
         '''
         return self.confitems
 
     def getdetailedresults(self):
         '''Return the detailed results string.
+
+
         :returns: string :
         @author D. Kennel
+
         '''
         return self.detailedresults
 
     def getrulesuccess(self):
         '''Return true if the rule executed successfully.
+
+
         :returns: bool :
         @author D. Kennel
+
         '''
         return self.rulesuccess
 
@@ -336,8 +375,11 @@ LANL-stonix."""
         the rule. If any CI fails the validation we will return false. Rules
         with complicated CI's may want to override this to do more in-depth
         checks as the default CI checks are rudimentary.
+
+
         :returns: bool : True is all CI objs check out OK
         @author D. Kennel
+
         '''
         allvalid = True
         for ciobj in self.confitems:
@@ -350,8 +392,11 @@ LANL-stonix."""
     def isdatabaserule(self):
         '''Return true if the rule in question maintains a database on disk. E.g.
         a rule that tracks programs installed with SUID permissions.
+
+
         :returns: bool :
         @author D. Kennel
+
         '''
         return self.databaserule
 
@@ -430,10 +475,13 @@ LANL-stonix."""
         case 10.11 only matches 10.11.0 and does not match 10.11.3 or 10.11.5.
 
         This method may be overridden if required.
+
+
         :returns: bool :
         @author D. Kennel
         @change: 2015/04/13 added this method to template class
         @change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
+
         '''
         # return True
         # Shortcut if we are defaulting to true
@@ -578,10 +626,12 @@ LANL-stonix."""
         This method was implemented to handle the
         default undefined state of constants in localize.py
         when operating in the public environment
+
         :param constlist:  (Default value = [])
         :returns: retval
         :rtype: bool
 @author: Breen Malmberg
+
         '''
 
         retval = True
@@ -613,23 +663,32 @@ LANL-stonix."""
     def addresses(self):
         '''This method returns the list of guidance elements addressed by the
         rule.
+
+
         :returns: list
         @author: D. Kennel
+
         '''
         return self.guidance
 
     def getcurrstate(self):
         '''This method returns the current state. This information is only valid
         after the report() method is run.
+
+
         :returns: string
         @author: D. Kennel
+
         '''
         return self.currstate
 
     def gettargetstate(self):
         '''This method returns the target state.
+
+
         :returns: string
         @author: D. Kennel
+
         '''
         return self.targetstate
 
@@ -639,7 +698,9 @@ LANL-stonix."""
         will be set to 'notconfigured'.
 
         @author: D. Kennel
+
         :param state:
+
         '''
 
         assert state in ['configured', 'notconfigured'], 'Invalid state: ' + \
@@ -647,18 +708,20 @@ LANL-stonix."""
 
         self.targetstate = state
 
-    def initCi(self, datatype, key, instructions, default):
+    def initCi(self, datatype, key, instructions, default, delimiter=' '):
         '''This method constructs a ConfigurationItem for the rule. This is a
         shorthand method for instantiating a CI that should cover most cases.
         All parameters are required.
+
         :param datatype: string indicating data type - string, bool, int,
         float, list
         :param key: The Name of the CI as it appears in the GUI and Conf file.
         :param instructions: Text instructions to be shown to the user.
         :param default: default value for the rule.
         @author: dkennel
+
         '''
-        myci = ConfigurationItem(datatype)
+        myci = ConfigurationItem(datatype, delimiter, key, default)
         myci.setkey(key)
         myci.setinstructions(instructions)
         myci.setdefvalue(default)
@@ -666,7 +729,7 @@ LANL-stonix."""
             confcurr = self.config.getconfvalue(self.rulename, key)
         except(KeyError):
             confcurr = default
-        myci.updatecurrvalue(confcurr)
+        myci.updatecurrvalue(confcurr, True, delimiter)
         try:
             confuc = self.config.getusercomment(self.rulename, key)
         except(KeyError):
@@ -685,9 +748,11 @@ LANL-stonix."""
         observable pattern for taking control of self.detailedresults refresh
         is implemented. see artf30937 : self.detailedresults through
         application flow for details
+
         :param mode:
         :param result:  (Default value = True)
         :param detailedresults:  (Default value = "")
+
         '''
         try:
             formattedDetailedResults = ""
@@ -752,9 +817,13 @@ LANL-stonix."""
         meant to indicate whether a particular
         rule is intended to be audit-only or not.
         Default = False.
+
+
         :returns: self.auditonly
+
         :rtype: bool
 @author: Breen Malmberg
+
         '''
 
         return self.auditonly
@@ -773,8 +842,11 @@ LANL-stonix."""
         followed by double quote)
         3) Each help text block must not contain any "
         (double quotes) other than starting and ending
+
+
         :returns: void
         @author: Breen Malmberg
+
         '''
 
         # change helpdir variable if you change where the help text is stored!
@@ -809,3 +881,4 @@ LANL-stonix."""
 
         except Exception:
             raise
+

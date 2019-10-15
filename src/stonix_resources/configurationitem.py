@@ -1,27 +1,23 @@
 #!/usr/bin/env python
+###############################################################################
+#                                                                             #
+# Copyright 2019. Triad National Security, LLC. All rights reserved.          #
+# This program was produced under U.S. Government contract 89233218CNA000001  #
+# for Los Alamos National Laboratory (LANL), which is operated by Triad       #
+# National Security, LLC for the U.S. Department of Energy/National Nuclear   #
+# Security Administration.                                                    #
+#                                                                             #
+# All rights in the program are reserved by Triad National Security, LLC, and #
+# the U.S. Department of Energy/National Nuclear Security Administration. The #
+# Government is granted for itself and others acting on its behalf a          #
+# nonexclusive, paid-up, irrevocable worldwide license in this material to    #
+# reproduce, prepare derivative works, distribute copies to the public,       #
+# perform publicly and display publicly, and to permit others to do so.       #
+#                                                                             #
+###############################################################################
 
-###############################################################################
-#                                                                             #
-# Copyright 2015.  Los Alamos National Security, LLC. This material was       #
-# produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos    #
-# National Laboratory (LANL), which is operated by Los Alamos National        #
-# Security, LLC for the U.S. Department of Energy. The U.S. Government has    #
-# rights to use, reproduce, and distribute this software.  NEITHER THE        #
-# GOVERNMENT NOR LOS ALAMOS NATIONAL SECURITY, LLC MAKES ANY WARRANTY,        #
-# EXPRESS OR IMPLIED, OR ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE.  #
-# If software is modified to produce derivative works, such modified software #
-# should be clearly marked, so as not to confuse it with the version          #
-# available from LANL.                                                        #
-#                                                                             #
-# Additionally, this program is free software; you can redistribute it and/or #
-# modify it under the terms of the GNU General Public License as published by #
-# the Free Software Foundation; either version 2 of the License, or (at your  #
-# option) any later version. Accordingly, this program is distributed in the  #
-# hope that it will be useful, but WITHOUT ANY WARRANTY; without even the     #
-# implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.    #
-# See the GNU General Public License for more details.                        #
-#                                                                             #
-###############################################################################
+
+
 
 # ============================================================================#
 #               Filename          $RCSfile: stonix/configurationitem.py,v $
@@ -45,21 +41,24 @@ import re
 
 class ConfigurationItem(object):
 
-    """
-    ConfigurationItem encapsulates all of the information regarding an
+    '''ConfigurationItem encapsulates all of the information regarding an
     individual configuration item.
+
     :version:
     :author: D. Kennel
     ATTRIBUTES
+
        The type of data in the value field. Valid values bool, string, int,
        float, list.
        datatype  (public) Required.
+
        This is the key portion of the Key = Value pair
        key  (public)
        The default value for this CI
        defvalue  (public)
        Comment entered by user for this CI
        usercomment  (public)
+
        Instructions to the end user for this CI entry.
        instructions  (public)
        The current value for this CI
@@ -76,25 +75,32 @@ class ConfigurationItem(object):
        The regex pattern can be used with configurations that should be checked
        for conformation with an known regular expression.
        regexpattern (public) (string(valid regular expression))
+
     The constructor for the ConfigurationItem can take all of the properties as
     arguments at object instantiation time. So if the ConfigurationItem class
     is being used without overrides then it can be constructed thusly
     myci = configurationitem.ConfigurationItem(mykey, mydefvalue, myusercomment,
     mydatatype, myinstructions, mycurrvalue, mysimple, myvalidset,
     mynumselections, myregexpattern)
+
     The CI object properties can also be set via setter methods after
     instantiation. CAUTION, the getters & setters should not be used in an
     attempt to make one CI instance do double duty. This will result in broken
     behavior.
+
     The validation routines do not support validation of dependencies between
     multiple selection items.
+
     NOTE: Dict support in this code is stub support. This class does not, at
     present, support dictionaries as data types.
+
     NOTE: The list type is, in effect, a list of strings datatype as data
     coercion inside a list is not supported.
-    """
 
-    def __init__(self, datatype, key='DefaultKey', defvalue=None,
+
+    '''
+
+    def __init__(self, datatype, delimiter=' ', key='DefaultKey', defvalue=None,
                  usercomment='', instructions='''
 Default Instructions: If you are seeing this text then a stonix developer
 forgot to override the default instructions for this key. Please file a bug.
@@ -106,6 +112,7 @@ forgot to override the default instructions for this key. Please file a bug.
             raise ValueError('Invalid datatype specified. Valid entries bool, string, int, float, list. Recieved: ' + str(datatype))
         else:
             self.datatype = datatype
+        self.delimiter = delimiter
         self.key = 'DefaultKey'
         self.setkey(key)
         self.defvalue = 'DefaultValue'
@@ -138,18 +145,20 @@ forgot to override the default instructions for this key. Please file a bug.
         else:
             self.setdefvalue(defvalue)
         self.currvalue = self.defvalue
-        if currvalue != None:
-            self.updatecurrvalue(currvalue)
+        if self.currvalue != None:
+            self.updatecurrvalue(self.currvalue, True, listdelim=self.delimiter)
 
     def validate(self, testvalue):
-        """
-        The validate method attempts to validate the passed value according to
+        '''The validate method attempts to validate the passed value according to
         the data type for the class. Returns a bool which is true if the value
         is valid for the CI.
-        @return bool : True if testvalue is valid for this CI
-        @param varies : New value for this CI
+
+        :param varies: New value for this CI
         @author: D. Kennel
-        """
+        :param testvalue:
+        :returns: bool : True if testvalue is valid for this CI
+
+        '''
         valid = False
 
         if self.datatype == 'bool':
@@ -183,94 +192,114 @@ forgot to override the default instructions for this key. Please file a bug.
         return valid
 
     def getkey(self):
-        """
-        Return the Key for this configuration item. The key is the identifier
+        '''Return the Key for this configuration item. The key is the identifier
         for this configuration element as seen in the config file.
-        @return: string : CI Key
+
+
+        :returns: string : CI Key
         @author: D. Kennel
-        """
+
+        '''
         return self.key
 
     def getdefvalue(self):
-        """
-        Returns the default value for this CI.
-        @return: varies : CI value
+        '''Returns the default value for this CI.
+
+
+        :returns: varies : CI value
         @author: D. Kennel
-        """
+
+        '''
         return self.defvalue
 
     def getdatatype(self):
-        """
-        Returns what datatype this CI is. Common types are Boolean, String and
+        '''Returns what datatype this CI is. Common types are Boolean, String and
         List.
-        @return: string : datatype
+
+
+        :returns: string : datatype
         @author: D. Kennel
-        """
+
+        '''
         return self.datatype
 
     def getusercomment(self):
-        """
-        Returns a string that is the current value of the user comment field
+        '''Returns a string that is the current value of the user comment field
         for this CI. This field may return an empty string if no comment has
         been set.
-        @return: string : user comment
+
+
+        :returns: string : user comment
         @author: D. Kennel
-        """
+
+        '''
         return self.usercomment
 
     def setusercomment(self, usercomment):
-        """
-        Set the user comment text. Ideally this should be formatted into 80
+        '''Set the user comment text. Ideally this should be formatted into 80
         character lines.
-        @param usercomment: user comment text
+
+        :param usercomment: user comment text
         @author: D. Kennel
-        """
+
+        '''
         self.usercomment = usercomment
 
     def getinstructions(self):
-        """
-        Return a string containing instructions to the user for this CI.
-        @return: string : Instructions for this CI
+        '''Return a string containing instructions to the user for this CI.
+
+
+        :returns: string : Instructions for this CI
         @author: D. Kennel
-        """
+
+        '''
         return self.instructions
 
     def insimple(self):
-        """
-        Return true if this configuration item should appear in a simple config
+        '''Return true if this configuration item should appear in a simple config
         file. Only frequently modified items should appear in the 'simple'
         config.
-        @return: bool : True if CI should be in simple
+
+
+        :returns: bool : True if CI should be in simple
         @author: D. Kennel
-        """
+
+        '''
         return self.simple
 
     def getcurrvalue(self):
-        """
-        Returns the current value for this configuration element. Datatype
+        '''Returns the current value for this configuration element. Datatype
         varies and should match the return for getdatatype.
-        @return: varies : current value for this CI
+
+
+        :returns: varies : current value for this CI
         @author: D. Kennel
-        """
+
+        '''
         return self.currvalue
 
     def updatecurrvalue(self, newvalue, coercing=True, listdelim=' '):
-        """
-        Updates the current value for this CI the update will call the
+        '''Updates the current value for this CI the update will call the
         validation routine before writing the supplied value to the class
         property. This method will attempt to coerce the value of the supplied
         input to match the datatype of the CI unless the coerce parameter is
         set to False. Note that only simple, one dimensional coercions are
         supported. This method can handle converting a string to an int but it
         cannot manage converting a string to a list of integers.
-        @param varies: newvalue new value for this CI
-        @param coerce: Bool default = True. Whether or not to attempt to coerce
+
+        :param varies: newvalue new value for this CI
+        :param coerce: Bool default = True. Whether or not to attempt to coerce
         input to match the specified datatype.
-        @param string: listdelim is the list delimiter to be used when
+        :param string: listdelim is the list delimiter to be used when
         splitting strings into lists.
         @author: D. Kennel
-        """
+        :param newvalue:
+        :param coercing:  (Default value = True)
+        :param listdelim:  (Default value = ' ')
+
+        '''
         try:
+            delim = listdelim
             if coercing:
                 if self.datatype == 'bool' and type(newvalue) is not \
                 types.BooleanType:
@@ -285,9 +314,16 @@ forgot to override the default instructions for this key. Please file a bug.
                 elif self.datatype == 'float' and type(newvalue) is not \
                 types.FloatType:
                     newvalue = float(newvalue)
-                elif self.datatype == 'list' and type(newvalue) is not \
-                types.ListType:
-                    newvalue = newvalue.split(listdelim)
+                elif self.datatype == 'list' and type(newvalue) is not types.ListType:
+                        if not newvalue:
+                            newvalue = []
+                        else:
+                            newvalue = re.split(delim, newvalue)
+                            #newvalue = newvalue.split(listdelim)
+                    #else:
+                        #print "inside else section of updatecurrvalue method\n\n"
+                        #newvalue = re.split(delim, newvalue)
+                        #print "newvalue after splitting: " + str(newvalue) + "\n"
         except(TypeError, ValueError):
             return False
         if self.validate(newvalue):
@@ -297,30 +333,33 @@ forgot to override the default instructions for this key. Please file a bug.
             return False
 
     def setkey(self, key):
-        """
-        Set the Key of the CI. This is the 'name' of the CI as it appears in
+        '''Set the Key of the CI. This is the 'name' of the CI as it appears in
         the configuration file or the GUI. This may only safely be set during
         the initial construction of the CI. Runtime changes of the Key will
         have bad side effects.
-        @param string: Key
+
+        :param string: Key
         @author: dkennel
-        """
+        :param key:
+
+        '''
         if self.__validatestring(key):
             self.key = key
         else:
             raise TypeError('Invalid type provided as Key')
 
     def setdefvalue(self, value):
-        """
-        Set the default value for the CI. This must be set after the datatype
+        '''Set the default value for the CI. This must be set after the datatype
         and the type of the default value must match the datatype. If a regex
         or validvalueset has been provided then the default value must match
         those as well. This may only safely be set during the initial
         construction of the CI. Runtime changes of the default value may have
         bad side effects.
-        @param value: varies
+
+        :param value: varies
         @author: dkennel
-        """
+
+        '''
         if self.datatype == None:
             raise TypeError('Attempted to set default value when datatype is not set.')
         if self.validate(value):
@@ -329,42 +368,45 @@ forgot to override the default instructions for this key. Please file a bug.
             raise ValueError('Could not validate submitted default value')
 
     def setinstructions(self, instructions):
-        """
-        Set the instructions for the CI. The Instructions are information
+        '''Set the instructions for the CI. The Instructions are information
         provided to the user on what the CI setting controls. It should contain
         information on acceptable values, and what the default is. This should
         only be set during the intial construction of the CI.
-        @param instructions: string
+
+        :param instructions: string
         @author: dkennel
-        """
+
+        '''
         if self.__validatestring(instructions):
             self.instructions = instructions
         else:
             raise TypeError('Invalid type provided as Instructions')
 
     def setsimple(self, simple):
-        """
-        Set whether or not this CI should appear in a simple config. This
+        '''Set whether or not this CI should appear in a simple config. This
         affects the config file which can be generated in two ways simple,
         which contains only the key settings and options that have been changed
         from their default values, or full which contains all the settings.
         This option should only be set during initial CI object construction.
-        @param simple: Bool - True to include in simple config
+
+        :param simple: Bool - True to include in simple config
         @author: dkennel
-        """
+
+        '''
         if self.__validatebool(simple):
             self.simple = simple
         else:
             raise TypeError('Setsimple requires a Bool.')
 
     def setvalidvalueset(self, valset):
-        """
-        Set a list of valid values that the default value and any passed value
+        '''Set a list of valid values that the default value and any passed value
         will be checked against. This property is only safely set when the CI
         is being constructed. Runtime changes will produce bad behavior.
-        @param valset: python list
+
+        :param valset: python list
         @author: dkennel
-        """
+
+        '''
         if valset == None:
             self.validvalueset = valset
             return
@@ -391,14 +433,15 @@ forgot to override the default instructions for this key. Please file a bug.
         self.validvalueset = valset
 
     def setmaxnumselections(self, selmax):
-        """
-        Set a maximum permissible number of selections for items being selected
+        '''Set a maximum permissible number of selections for items being selected
         from a validvalueset. The default for this property is 1. This property
         may only be safely set during the initial CI construction. Runtime
         changes will produce bad behavior.
-        @param selmax: int
+
+        :param selmax: int
         @author: dkennel
-        """
+
+        '''
         if self.__validateint(selmax):
             if selmax > 0:
                 self.maxnumselections = selmax
@@ -408,14 +451,15 @@ forgot to override the default instructions for this key. Please file a bug.
             raise TypeError('Setmaxnumselections requires a positive integer.')
 
     def setregexpattern(self, pattern):
-        """
-        Set a regular expression pattern that will be used to validate user
+        '''Set a regular expression pattern that will be used to validate user
         input to the CI. If no pattern is provided this check will be skipped.
         This property may only be safely changed during the initial CI
         construction. Runtime changes will result in bad behavior.
-        @param pattern: string
+
+        :param pattern: string
         @author: dkennel
-        """
+
+        '''
         if pattern == None:
             self.regexpattern = pattern
             return
@@ -428,14 +472,15 @@ forgot to override the default instructions for this key. Please file a bug.
             raise TypeError('Setregexpattern only makes sense with string datatype')
 
     def validateagainstregex(self, entry):
-        """
-        This method validates a submitted entry against the regex pattern
+        '''This method validates a submitted entry against the regex pattern
         stored for this CI. If there is no regex pattern stored this method
         will always return True.
-        @param entry: string to be checked
-        @return: Bool - True if matched.
+
+        :param entry: string to be checked
+        :returns: Bool - True if matched.
         @author: dkennel
-        """
+
+        '''
         if self.regexpattern == None:
             return True
         if re.match(self.regexpattern, entry):
@@ -444,14 +489,15 @@ forgot to override the default instructions for this key. Please file a bug.
             return False
 
     def validateagainstlist(self, entry):
-        """
-        This method will validate a submitted entry against the entries in the
+        '''This method will validate a submitted entry against the entries in the
         validvalueset. It expects only a single entry and does a simple
         membership check.
-        @param entry: varies
-        @return: bool - True if matched.
+
+        :param entry: varies
+        :returns: bool - True if matched.
         @author: dkennel
-        """
+
+        '''
         if entry in self.validvalueset:
             return True
         else:
@@ -460,6 +506,7 @@ forgot to override the default instructions for this key. Please file a bug.
     def __validatebool(self, testvar):
         """
         This is a helper validation method used to validate boolean options.
+
         @return bool : True if passed a bool
         @author: D. Kennel
         """
@@ -476,6 +523,7 @@ forgot to override the default instructions for this key. Please file a bug.
         """
         This is a helper validation method used to validate string options. It
         only checks the data type not the contents.
+
         @return: bool : True if testvar is a string
         @author: D. Kennel
         """
@@ -492,6 +540,7 @@ forgot to override the default instructions for this key. Please file a bug.
         """
         This is a helper validation method used to validate list options. It
         only checks the data type, not the contents.
+
         @return: bool : True if testvar is a list
         @author: D. Kennel
         """
@@ -508,6 +557,7 @@ forgot to override the default instructions for this key. Please file a bug.
         """
         This is a helper validation method used to validate integer options. It
         only checks the data type, not the contents.
+
         @return: bool : True if testvar is an integer
         @author: D. Kennel
         """
@@ -524,6 +574,7 @@ forgot to override the default instructions for this key. Please file a bug.
         """
         This is a helper validation method used to validate floating point
         options. It only checks the data type, not the contents.
+
         @return: bool : True if testvar is a floating point number
         @author: D. Kennel
         """
@@ -540,6 +591,7 @@ forgot to override the default instructions for this key. Please file a bug.
         """
         This is a helper validation method used to validate dictionary options.
         It only checks the data type, not the contents.
+
         @return: bool : True if testvar is a dictionary
         @author: D. Kennel
         """
@@ -551,3 +603,4 @@ forgot to override the default instructions for this key. Please file a bug.
         except (NameError):
             # testvar was undefined
             return False
+
