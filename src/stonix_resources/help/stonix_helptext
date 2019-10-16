@@ -51,7 +51,7 @@ A user who can modify another user's configuration files can likely execute comm
 
 <14>        "This rule configures the OS X 'firewall'. 
 
-A firewall is a set of rules applied to incoming/outgoing network traffic, which denies or allows access to different kinds of network traffic, based on certain conditions. This rule will only allow applications through the firewall that are explicitly listed in the stonix.conf file and will disregard any currently allowed applications unless they also appear in the stonix.conf file."
+A firewall is a set of rules applied to incoming/outgoing network traffic, which denies or allows access to different kinds of network traffic, based on certain conditions. This rule will only allow applications through the firewall that are explicitly listed in the stonix.conf file and will disregard any currently allowed applications unless they also appear in the stonix.conf file. Other applications may be specified in localize.py and will not show up in the text field of the GUI"
 
 <255>        "This rule configures Kerberos on your system, based on the settings in the localize.py file. 
 
