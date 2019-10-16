@@ -208,7 +208,7 @@ class BootSecurity(Rule):
 
         compliant = True
 
-        self.logdispatch.logger(LogPriority.DEBUG,  "Looking for macOS launchd job")
+        self.logdispatch.log(LogPriority.DEBUG,  "Looking for macOS launchd job")
 
         self.stonix_plist_contents = """<?xml version="1.0" encoding="UTF-8"?>
         <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
