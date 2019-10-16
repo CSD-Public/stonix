@@ -250,6 +250,7 @@ class ConfigureFirewall(RuleKVEditor):
                     '''The current application should be allowed but isn't
                     so on the next line we're going to try and allow it'''
                     if app not in self.applist:
+                        app = '"' + app + '"'
                         if not self.ch.executeCommand(self.add + app):
                             '''Trying to add the application to the allowed apps
                             wasn't successful'''
@@ -270,6 +271,7 @@ class ConfigureFirewall(RuleKVEditor):
                 if self.templist:
                     for app in self.templist:
                         debug = app + " isn't in " + str(self.allowedapps) + " so we're going to remove it\n"
+                        app = '"' + app + '"'
                         if not self.ch.executeCommand(self.rmv + app):
                             success = False
                             self.detailedresults += "Unable to remove " + \
@@ -286,6 +288,7 @@ class ConfigureFirewall(RuleKVEditor):
                 self.logdispatch.log(LogPriority.DEBUG, debug)
                 tmp = []
                 for app in self.applist:
+                    app = '"' + app + '"'
                     if not self.ch.executeCommand(self.rmv + app):
                         success = False
                         self.detailedresults += "Unable to remove " + \
@@ -294,7 +297,6 @@ class ConfigureFirewall(RuleKVEditor):
                         self.iditerator += 1
                         myid = iterate(self.iditerator, self.rulenumber)
                         undocmd = self.add + app
-                        # undocmd = self.add + "/Applications/" + escape(app)
                         event = {"eventtype": "comm",
                                  "command": undocmd}
                         self.statechglogger.recordchgevent(myid, event)
