@@ -33,6 +33,8 @@ dictionary
 @change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
 @change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
+@change: 2019/10/16 dwalker - updated rule to allow applications located anywhere
+    on the filesystem and also if application names contained spaces
 '''
 from __future__ import absolute_import
 from ..ruleKVEditor import RuleKVEditor
@@ -41,7 +43,7 @@ from ..ServiceHelper import ServiceHelper
 from ..logdispatcher import LogPriority
 from ..stonixutilityfunctions import iterate
 from ..localize import ALLOWEDAPPS
-from re import search, escape, sub
+from re import search, sub
 import traceback
 
 
@@ -113,7 +115,7 @@ class ConfigureFirewall(RuleKVEditor):
         '''There are no currently allowed apps for the fw'''
         datatype = 'list'
         key = 'ALLOWEDAPPS'
-        instructions = "Space separated list of Applications allowed by the firewall.\n" + \
+        instructions = "Comma separated list of Applications allowed by the firewall.\n" + \
                        "Most applications end with .app and must contain the full path to the application.\n"
         default = []
         self.appci = self.initCi(datatype, key, instructions, default, ",")
@@ -156,7 +158,6 @@ class ConfigureFirewall(RuleKVEditor):
             is run however this list can be manually changed and saved
             by the user'''
             self.allowedapps = self.appci.getcurrvalue()
-            print "self.allowedapps from stonix.conf file: " + str(self.allowedapps) + "\n\n"
             templist = []
             for app in self.allowedapps:
                 if search("^\"", app) and search("\"$", app):
