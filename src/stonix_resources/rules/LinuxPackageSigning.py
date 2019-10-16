@@ -71,9 +71,9 @@ class LinuxPackageSigning(RuleKVEditor):
         instructions = 'If you wish to disable this rule, set the value ' + \
             'of LinuxPackageSigning to False.'
         default = True
-        self.applicable = self.isapplicable()
         self.ci = self.initCi(datatype, key, instructions, default)
         self.ostype = self.environ.getostype()
+        self.applicable = self.isapplicable()
 
         self.localize()
 
