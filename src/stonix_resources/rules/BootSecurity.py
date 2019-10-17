@@ -389,7 +389,7 @@ class BootSecurity(Rule):
             whandle = open(self.stonix_launchd_plist, 'w')
             whandle.write(self.stonix_plist_contents)
             whandle.close()
-            os.chown(self.stonix_boot_plist, 0, 0)
+            os.chown(self.stonix_launchd_plist, 0, 0)
             os.chmod(self.stonix_launchd_plist, 0o644)
 
         except:
