@@ -62,7 +62,7 @@ class ConfigureFirewall(RuleKVEditor):
         self.rootrequired = True
         self.guidance = []
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.12', 'r', '10.14.10']}}
+                           'os': {'Mac OS X': ['10.12', 'r', '10.15.10']}}
         self.ch = CommandHelper(self.logdispatch)
         self.sh = ServiceHelper(self.environ, self.logdispatch)
         self.fwcmd = "/usr/libexec/ApplicationFirewall/socketfilterfw"
@@ -324,4 +324,3 @@ class ConfigureFirewall(RuleKVEditor):
         afterfixsuccessful &= self.sh.disableService(service, servicename=servicename)
         afterfixsuccessful &= self.sh.enableService(service, servicename=servicename)
         return afterfixsuccessful
-
