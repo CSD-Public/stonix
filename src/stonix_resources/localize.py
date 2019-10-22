@@ -139,7 +139,7 @@ PROXYDOMAINBYPASS = None
 # Variable Type: String
 # Domain Name Server (DNS) defaults
 DNS = None
-
+ALLOWEDAPPS = ["/usr/libexec/emlog.pl"]
 # Variable Type: List (strings)
 # Specify a subnet to allow services access to in /etc/hosts.allow
 # use format: xxx.xxx.0.0/16
