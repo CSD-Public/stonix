@@ -213,7 +213,7 @@ class ConfigurePasswordPolicy(Rule):
 
         try:
             self.detailedresults = ""
-            if not self.pwci.getcurrvalue() and not self.sci.getcurrvalue():
+            if not self.pwci.getcurrvalue(): #and not self.sci.getcurrvalue():
                 self.detailedresults += "Neither configuration item was enabled\n" + \
                     "Rule fix will not run\n"
                 return
