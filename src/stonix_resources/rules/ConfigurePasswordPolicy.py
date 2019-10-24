@@ -213,12 +213,12 @@ class ConfigurePasswordPolicy(Rule):
 
         try:
             self.detailedresults = ""
-            if not self.pwci.getcurrvalue(): #and not self.sci.getcurrvalue():
+            if not self.pwci.getcurrvalue(): #and not self.sci.getcurravlue():
                 self.detailedresults += "Neither configuration item was enabled\n" + \
                     "Rule fix will not run\n"
                 return
             self.rulesuccess = True
-            if self.pwci.getcurrvalue() and self.sci.getcurrvalue():
+            if self.pwci.getcurrvalue(): #and self.sci.getcurrvalue():
                 self.iditerator = 0
                 eventlist = self.statechglogger.findrulechanges(self.rulenumber)
                 for event in eventlist:
