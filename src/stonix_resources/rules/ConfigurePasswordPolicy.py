@@ -66,15 +66,16 @@ class ConfigurePasswordPolicy(Rule):
         key = "PWPOLICY"
         instructions = "To disable the installation of the password " + \
                        "profile set the value of PWPOLICY to False"
-        default = True
+        default = False
         self.pwci = self.initCi(datatype, key, instructions, default)
 
-        datatype = "bool"
-        key = "SECPOLICY"
-        instructions = "To disable the installation of the security " + \
-                       "profile set the value of SECPOLICY to False"
-        default = True
-        self.sci = self.initCi(datatype, key, instructions, default)
+        # uncomment if/when there is a security and privacy proflie available for catalina
+        # datatype = "bool"
+        # key = "SECPOLICY"
+        # instructions = "To disable the installation of the security " + \
+        #                "profile set the value of SECPOLICY to False"
+        # default = True
+        # self.sci = self.initCi(datatype, key, instructions, default)
         self.iditerator = 0
         self.setvars()
 
@@ -86,28 +87,28 @@ class ConfigurePasswordPolicy(Rule):
         self.os_major_ver = self.environ.getosmajorver()
         self.os_minor_ver = self.environ.getosminorver()
         baseconfigpath = "/Applications/stonix4mac.app/Contents/Resources/stonix.app/Contents/MacOS/stonix_resources/files/"
-        # if self.fismacat == "high":
-        #     self.passprofiledict = {"10.15": baseconfigpath + "stonix4macPasscodeConfigurationProfile-Catalina10.15-high"}
-        #     #uncomment line below when catalina has a security profile
-        #     #self.secprofiledict = {"10.15": baseconfigpath + "stonix4macSecurity"}
-        # else:
-        #     self.passprofiledict = {"10.15": baseconfigpath + "stonix4macPasscodeConfigurationProfile-Catalina10.15"}
-        #     #uncomment line below when catalina has a security profile
-        #     self.secprofiledict = {"10.15": baseconfigpath + "stonix4macSecurity"}
+        if self.fismacat == "high":
+            self.passprofiledict = {"10.15": baseconfigpath + "stonix4macPasscodeConfigurationProfile-high.mobileconfig"}
+            #uncomment line below when catalina has a security profile
+            #self.secprofiledict = {"10.15": baseconfigpath + "stonix4macSecurity"}
+        else:
+            self.passprofiledict = {"10.15": baseconfigpath + "stonix4macPasscodeConfigurationProfile.mobileconfig"}
+            #uncomment line below when catalina has a security profile
+            self.secprofiledict = {"10.15": baseconfigpath + "stonix4macSecurity"}
 
         # the following path and dictionaries are for testing on local vm's
         # without installing stonix package each time.  DO NOT DELETE
-        basetestpath = "/Users/dwalker/stonix/src/stonix_resources/files/"
-        if self.fismacat == "high":
-            self.passprofiledict = {
-                "10.15": basetestpath + "stonix4macPasscodeConfigurationProfile-high.mobileconfig"}
-            self.secprofiledict = {
-                "10.15": basetestpath + "nameOfSecurityProfileWhenAvailable"}
-        else:
-            self.passprofiledict = {
-                "10.15": basetestpath + "stonix4macPasscodeConfigurationProfile.mobileconfig"}
-            self.secprofiledict = {
-                "10.15": basetestpath + "nameOfSecurityProfileWhenAvailable"}
+        # basetestpath = "/Users/username/stonix/src/stonix_resources/files/"
+        # if self.fismacat == "high":
+        #     self.passprofiledict = {
+        #         "10.15": basetestpath + "stonix4macPasscodeConfigurationProfile-high.mobileconfig"}
+        #     self.secprofiledict = {
+        #         "10.15": basetestpath + "nameOfSecurityProfileWhenAvailable"}
+        # else:
+        #     self.passprofiledict = {
+        #         "10.15": basetestpath + "stonix4macPasscodeConfigurationProfile.mobileconfig"}
+        #     self.secprofiledict = {
+        #         "10.15": basetestpath + "nameOfSecurityProfileWhenAvailable"}
         try:
             self.pwprofile = self.passprofiledict[str(self.os_major_ver) + "." + str(self.os_minor_ver)]
         except KeyError:
