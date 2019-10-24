@@ -29,6 +29,7 @@ Created on Mar 9, 2016
 import re
 from stonix_resources.logdispatcher import LogPriority
 from stonix_resources.CommandHelper import CommandHelper
+from stonix_resources.environment import Environment
 
 
 class KVAProfiles():
@@ -38,6 +39,11 @@ class KVAProfiles():
         self.path = path
         self.undocmd = ""
         self.installcmd = ""
+        self.osver = ""
+        enviro = Environment()
+        if enviro:
+            print ("we have an enviro object!!!!!")
+            self.osver = enviro.getosminorver()
 
     def validate(self, output, key, val):
         '''@summary: Method checks if either profile is installed and/or contents of
@@ -112,10 +118,11 @@ class KVAProfiles():
             section stopping before the next identifier'''
             for line in keyoutput:
                 if not re.search(".*:", line):
-                    line = re.sub("\s+", "", line)
-                    payloadblocktemp.append(line)
+                    #line = re.sub("\s+", "", line)
+                    payloadblocktemp.append(line.strip())
                 else:
                     break
+            print("payloadblocktemp: ", str(payloadblocktemp), "\n\n")
             payloadblock = []
             i = 0
             dontadd = False
@@ -199,8 +206,11 @@ class KVAProfiles():
         retval = True
         unsecure = False
         debug = ""
+        print ("key we're looking at: ", k, "\n")
         for line in payloadblock:
+            print("current line: ", line, "\n")
             if re.search("^" + k + " = ", line.strip()):
+                print("found the key\n\n")
                 founditem = True
                 temp = line.strip().split("=")
                 try:
@@ -447,10 +457,16 @@ class KVAProfiles():
         :returns: bool - True
 
         '''
-        cmd = ["/usr/bin/profiles", "-I", "-F", self.path]
-        self.setInstallCmd(cmd)
-        cmd = ["/usr/bin/profiles", "-R", "-F", self.path]
-        self.setUndoCmd(cmd)
+        print ("osver is: ", self.osver, "\n\n")
+        if int(self.osver) <= 12:
+            pinstall = "/usr/bin/profiles -I -F " + self.path
+            premove = "/usr/bin/profiles -R -F " + self.path
+            # else use newer profiles commands
+        else:
+            pinstall = "/usr/bin/profiles install -path=" + self.path
+            premove = "/usr/bin/profiles remove -path=" + self.path
+        self.setInstallCmd(pinstall)
+        self.setUndoCmd(premove)
         return True
     
     def commit(self):

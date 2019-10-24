@@ -81,6 +81,7 @@ class KVEditorStonix(KVEditor):
             return True
         else:
             debug = "KVEditorStonix report is returning False\n"
+            self.logger.log(LogPriority.DEBUG, debug)
             return False
 ###############################################################################
     def fix(self):
@@ -164,3 +165,9 @@ class KVEditorStonix(KVEditor):
 ###############################################################################
     def setCurrentHostBool(self, val):
         self.editor.setCurrentHostbool(val)
+###############################################################################
+    def getUndoCmd(self):
+        self.editor.getUndoCmd()
+###############################################################################
+    def getInstallCmd(self):
+        self.editor.getInstallcmd()
