@@ -122,7 +122,7 @@ class KVEditorStonix(KVEditor):
                 return False
             if self.getEventID():
                 event = {"eventtype": "comm",
-                         "command": self.editor.getundoCmd()}
+                         "command": self.editor.getUndoCmd()}
                 self.stchlgr.recordchgevent(self.getEventID(), event)
             debug = "KVEditorStonix commit is returning True\n"
             self.logger.log(LogPriority.DEBUG, debug)
@@ -165,9 +165,3 @@ class KVEditorStonix(KVEditor):
 ###############################################################################
     def setCurrentHostBool(self, val):
         self.editor.setCurrentHostbool(val)
-###############################################################################
-    def getUndoCmd(self):
-        self.editor.getUndoCmd()
-###############################################################################
-    def getInstallCmd(self):
-        self.editor.getInstallcmd()

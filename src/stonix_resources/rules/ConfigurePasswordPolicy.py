@@ -215,7 +215,6 @@ class ConfigurePasswordPolicy(Rule):
             if not self.pwci.getcurrvalue() and not self.sci.getcurrvalue():
                 self.detailedresults += "Neither configuration item was enabled\n" + \
                     "Rule fix will not run\n"
-
                 return
             self.rulesuccess = True
             if self.pwci.getcurrvalue() and self.sci.getcurrvalue():
@@ -226,19 +225,16 @@ class ConfigurePasswordPolicy(Rule):
             # if password policy ci enabled
             if self.pwci.getcurrvalue():
                 if not self.pweditor.report():
-                    if not self.pweditor.fix():
-                        self.rulesuccess = False
-                        self.logdispatch.log(LogPriority.DEBUG, "Kveditor fix failed")
-                    elif not self.pweditor.commit():
-                        self.rulesuccess = False
-                        self.logdispatch.log(LogPriority.DEBUG, "Kveditor commit failed")
-                    else:
+                    if self.pweditor.fix():
                         self.iditerator += 1
                         myid = iterate(self.iditerator, self.rulenumber)
-                        undocmd = self.pweditor.getUndoCmd()
-                        event = {"eventtype": "comm",
-                                 "command": undocmd}
-                        self.statechglogger.recordchgevent(myid, event)
+                        self.pweditor.setEventID(myid)
+                        if not self.pweditor.commit():
+                            self.rulesuccess = False
+                            self.logdispatch.log(LogPriority.DEBUG, "Kveditor commit failed")
+                    else:
+                        self.rulesuccess = False
+                        self.logdispatch.log(LogPriority.DEBUG, "Kveditor fix failed")
                 else:
                     self.detailedresults += "\nPassword policy profile was already installed. Nothing to do."
             # uncomment if/when catlina we have a security and privacy profile for catalina
