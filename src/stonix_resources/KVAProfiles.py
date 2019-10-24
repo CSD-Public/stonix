@@ -42,7 +42,6 @@ class KVAProfiles():
         self.osver = ""
         enviro = Environment()
         if enviro:
-            print ("we have an enviro object!!!!!")
             self.osver = enviro.getosminorver()
 
     def validate(self, output, key, val):
@@ -122,7 +121,6 @@ class KVAProfiles():
                     payloadblocktemp.append(line.strip())
                 else:
                     break
-            print("payloadblocktemp: ", str(payloadblocktemp), "\n\n")
             payloadblock = []
             i = 0
             dontadd = False
@@ -206,11 +204,8 @@ class KVAProfiles():
         retval = True
         unsecure = False
         debug = ""
-        print ("key we're looking at: ", k, "\n")
         for line in payloadblock:
-            print("current line: ", line, "\n")
             if re.search("^" + k + " = ", line.strip()):
-                print("found the key\n\n")
                 founditem = True
                 temp = line.strip().split("=")
                 try:
@@ -457,7 +452,6 @@ class KVAProfiles():
         :returns: bool - True
 
         '''
-        print ("osver is: ", self.osver, "\n\n")
         if int(self.osver) <= 12:
             pinstall = "/usr/bin/profiles -I -F " + self.path
             premove = "/usr/bin/profiles -R -F " + self.path
