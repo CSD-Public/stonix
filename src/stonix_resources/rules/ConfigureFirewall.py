@@ -45,6 +45,7 @@ from ..stonixutilityfunctions import iterate
 from ..localize import ALLOWEDAPPS
 from re import search, sub
 import traceback
+import os
 
 
 class ConfigureFirewall(RuleKVEditor):
@@ -183,6 +184,8 @@ class ConfigureFirewall(RuleKVEditor):
                         tempallowedapps.append(app.strip())
                 self.allowedapps = tempallowedapps
                 for app in self.allowedapps:
+                    if not os.path.exists(app):
+                        continue
                     '''One of the apps the user wants allowed isn't showing
                     up in the allowed apps output'''
                     if app not in self.applist:
@@ -202,9 +205,12 @@ class ConfigureFirewall(RuleKVEditor):
                     self.logdispatch.log(LogPriority.DEBUG, debug)
                     debug = "self.templist: " + str(self.applist) + "\n"
                     self.logdispatch.log(LogPriority.DEBUG, debug)
-                    compliant = False
                     for item in self.templist:
+                        if not os.path.exists(item):
+                            continue
+                        compliant = False
                         self.detailedresults += item + " is allowed but shouldn't be\n"
+
             elif self.applist:
                 '''self.allowedapps is blank but there are apps being allowed through
                 the firewall.  We must remove these from being allowed.'''
