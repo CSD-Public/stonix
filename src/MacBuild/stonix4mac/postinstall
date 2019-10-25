@@ -109,7 +109,7 @@ if [[ ! -a ${STONIX_LINK} ]]; then
     logger "Creating symlink: ${STONIX_LINK} -> ${STONIX_LINK_SOURCE}..."
     ln -s ${STONIX_LINK_SOURCE} ${STONIX_LINK}
 
-elif [[ ! -L ${STONIX_LINK } || ! -e ${STONIX_LINK} || ! ${STONIX_LINK} -ef ${STONIX_LINK_SOURCE} ]]; then
+elif [[ ! -L ${STONIX_LINK} || ! -e ${STONIX_LINK} || ! ${STONIX_LINK} -ef ${STONIX_LINK_SOURCE} ]]; then
     #####
     # File exists but is not a symlink to our source, moving the existing file to backup and creating the symlink
     logger "${STONIX_LINK} already exists but is not a symlink to ${STONIX_LINK_SOURCE}. Moving ${STONIX_LINK} to ${STONIX_LINK}.bak.date.time"
@@ -138,7 +138,7 @@ if [[ ! -a ${STOINX4MAC_LINK} ]]; then
     logger "Creating symlink: ${STOINX4MAC_LINK} -> ${STONIX4MAC_LINK_SOURCE}..."
     ln -s ${STONIX4MAC_LINK_SOURCE} ${STOINX4MAC_LINK}
 
-elif [[ ! -L ${STOINX4MAC_LINK } || ! -e ${STOINX4MAC_LINK} || ! ${STOINX4MAC_LINK} -ef ${STONIX4MAC_LINK_SOURCE} ]]; then
+elif [[ ! -L ${STOINX4MAC_LINK} || ! -e ${STOINX4MAC_LINK} || ! ${STOINX4MAC_LINK} -ef ${STONIX4MAC_LINK_SOURCE} ]]; then
     #####
     # File exists but is not a symlink to our source, moving the existing file to backup and creating the symlink
     logger "${STOINX4MAC_LINK} already exists but is not a symlink to ${STONIX4MAC_LINK_SOURCE}. Moving ${STOINX4MAC_LINK} to ${STOINX4MAC_LINK}.bak.date.time"
