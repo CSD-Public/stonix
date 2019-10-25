@@ -18,8 +18,10 @@
 
 # Postflight script that is run during the install of the stonix4mac.pkg
 #
-# Creates a /etc/stonix.conf file. Creates a symlink from
-# /usr/local/bin/stonix -> /Applications/stonix4mac.app/Contents/Resources/stonix.app/Contents/MacOS/stonix
+# This script sets the permissions for the stonix executables, creates the
+# /etc/stonix.conf file if it doesn't already exist, creates a symlink for
+# /usr/local/bin/stonix -> /Applications/stonix4mac.app/Contents/Resources/stonix.app/Contents/MacOS/stonix,
+# creates a symlink for /usr/local/bin/stonix4mac -> /Applications/stonix4mac.app/Contents/MacOS/stonix4mac
 #
 # Author: Roy Nielsen
 # Change: 25/10/2019 - Brandon R. Gonzales - Convert from python3 to zsh
@@ -38,10 +40,6 @@ if [[ ! -a /etc/stonix.conf ]]; then
     chmod 644 /etc/stonix.conf
 fi
 
-
-# sync
-
-
 # Make sure directories are 775, files and links are 664
 # Required on the Mac, especially for admins to be able to
 # update the app.
@@ -56,11 +54,7 @@ if [[ -a ${APP_DIR} ]]; then
 fi
 
 
-# sync
-
-
-# Purpose: to make stonix4mac and stonix executable blobs executable.
-# Note from Brandon: Redundant?
+# Make stonix4mac and stonix executable blobs executable.
 STONIX4MAC_EXEC=/Applications/stonix4mac.app/Contents/MacOS/stonix4mac
 STONIX_EXEC=/Applications/stonix4mac.app/Contents/Resources/stonix.app/Contents/MacOS/stonix
 
@@ -71,9 +65,6 @@ fi
 if [[ -a ${STONIX_EXEC} ]]; then
     chmod 755 ${STONIX_EXEC}
 fi
-
-
-# sync
 
 
 #####
@@ -101,9 +92,6 @@ if [[ -a /usr/local/bin ]]; then
 fi
 
 
-# sync
-
-
 # Check if STONIX_LINK exists, if it does not, create the link. If it
 # does, check if it is a link to STONIX_LINK_SOURCE. If it isn't, move
 # it to a backup and create a link.
@@ -113,6 +101,7 @@ fi
 #
 STONIX_LINK=/usr/local/bin/stonix
 STONIX_LINK_SOURCE=/Applications/stonix4mac.app/Contents/Resources/stonix.app/Contents/MacOS/stonix
+
 if [[ ! -a ${STONIX_LINK} ]]; then
     #####
     # Symlink does not exist, creating the link
@@ -132,9 +121,6 @@ elif [[ ! -L ${STONIX_LINK } || ! -e ${STONIX_LINK} || ! ${STONIX_LINK} -ef ${ST
 fi
 
 
-# sync
-
-
 # Check if STONIX4MAC_LINK exists, if it does not, create the link. If it
 # does, check if it is a link to STONIX4MAC_LINK_SOURCE. If it isn't, move
 # it to a backup and create a link.
@@ -144,6 +130,7 @@ fi
 #
 STOINX4MAC_LINK=/usr/local/bin/stonix4mac
 STONIX4MAC_LINK_SOURCE=/Applications/stonix4mac.app/Contents/MacOS/stonix4mac
+
 if [[ ! -a ${STOINX4MAC_LINK} ]]; then
     #####
     # Symlink does not exist, creating the link
@@ -162,11 +149,5 @@ elif [[ ! -L ${STOINX4MAC_LINK } || ! -e ${STOINX4MAC_LINK} || ! ${STOINX4MAC_LI
     ln -s ${STONIX4MAC_LINK_SOURCE} ${STOINX4MAC_LINK}
 fi
 
-
-# sync
-
-
-/usr/libexec/makewhatis
-
-
-logger "Finished stonix4mac package postinstall..."
+echo "Finished stonix4mac package postinstall."
+logger "Finished stonix4mac package postinstall."
