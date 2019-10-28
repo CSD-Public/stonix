@@ -95,7 +95,7 @@ class zzzTestRuleSystemAccounting(RuleTest):
                 cmd = ["/usr/bin/apt-get", "update"]
                 self.ch.executeCommand(cmd)
             else:
-                path1 = "/etc/rc.conf"
+                path1 = "/etc/rc.common"
                 path2 = "/var/account/acct"
                 if os.path.exists(path1):
                     contentlines = open(path1, "r").readlines()

@@ -41,11 +41,8 @@ messaging to indicate to the user whether the method will run or not, based on c
 @change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
 """
 
-
-
 import traceback
 import os
-import re
 
 from rule import Rule
 from pkghelper import Pkghelper
@@ -75,7 +72,7 @@ class SystemAccounting(Rule):
                            'family': 'linux',
                            'os': {'Mac OS X': ['10.15', 'r', '10.15.10']}}
 
-        # set up configuration items for this rule
+        # set up configuration item for this rule
         datatype = 'bool'
         key = 'SYSTEMACCOUNTING'
         instructions = "This is an optional rule and is disabled by default, due to the significant load it can place on the system when enabled. To enable system accounting, set the value of SYSTEMACCOUNTING to True."
@@ -85,11 +82,63 @@ class SystemAccounting(Rule):
         self.ostype = self.environ.getostype()
         self.ph = Pkghelper(self.logger, self.environ)
         self.ch = CommandHelper(self.logger)
+        self._set_paths()
+
+    def _set_paths(self):
+        """
+
+        """
+
+        self.sysstat_package = "sysstat"
+        self.sysstat_service_file = "/usr/lib/systemd/system/sysstat.service"
+        self.accton = "/usr/sbin/accton"
+        self.acct_file = "/var/account/acct"
+        self.cron_file = "/etc/cron.d/sysstat"
+
+        self.sa1 = ""
+        sa1_locs = ["/usr/lib64/sa/sa1", "/usr/local/lib64/sa/sa1"]
+        for sl in sa1_locs:
+            if os.path.isfile(sl):
+                self.sa1 = sl
+                break
+
+        self.sa2 = ""
+        sa2_locs = ["/usr/lib64/sa/sa2", "/usr/local/lib64/sa/sa2"]
+        for sl in sa2_locs:
+            if os.path.isfile(sl):
+                self.sa2 = sl
+                break
+
+        self.sysstat_service_contents = """# /usr/lib/systemd/system/sysstat.service
+# (C) 2012 Peter Schiffer (pschiffe <at> redhat.com)
+#
+# sysstat-10.1.7 systemd unit file:
+#     Insert a dummy record in current daily data file.
+#     This indicates that the counters have restarted from 0.
+
+[Unit]
+Description=Resets System Activity Logs
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+User=root
+ExecStart=""" + self.sa1 + """ --boot
+
+[Install]
+WantedBy=multi-user.target
+"""
+
+        self.sysstat_cron_contents = """# Run system activity accounting tool every 60 minutes
+*/60 * * * * root """ + self.sa1 + """ 1 1
+# Generate a daily summary of process accounting at 23:53
+53 23 * * * root """ + self.sa2 + """ -A"""
 
     def _report_configuration(self):
         """
 
-        :return:
+        :return: compliant
+        :rtype: bool
         """
 
         compliant = True
@@ -109,39 +158,8 @@ class SystemAccounting(Rule):
             if not self.conf_editor.report():
                 compliant = False
         else:
-            sa1_locs = ["/usr/lib64/sa/sa1", "/usr/local/lib64/sa/sa1"]
-            self.sa1 = ""
-            for sl in sa1_locs:
-                if os.path.isfile(sl):
-                    self.sa1 = sl
-                    break
-            sa2_locs = ["/usr/lib64/sa/sa2", "/usr/local/lib64/sa/sa2"]
-            for sl in sa2_locs:
-                if os.path.isfile(sl):
-                    self.sa2 = sl
-                    break
 
-            self.sysstat_service_file = "/usr/lib/systemd/system/sysstat.service"
-            self.sysstat_service_contents = """
-# /usr/lib/systemd/system/sysstat.service
-# (C) 2012 Peter Schiffer (pschiffe <at> redhat.com)
-#
-# sysstat-10.1.7 systemd unit file:
-#     Insert a dummy record in current daily data file.
-#     This indicates that the counters have restarted from 0.
 
-[Unit]
-Description=Resets System Activity Logs
-
-[Service]
-Type=oneshot
-RemainAfterExit=yes
-User=root
-ExecStart=""" + self.sa1 + """ --boot
-
-[Install]
-WantedBy=multi-user.target
-"""
             if not os.path.isfile(self.sysstat_service_file):
                 compliant = False
                 self.detailedresults += "\nSystem accounting service file is missing"
@@ -158,12 +176,11 @@ WantedBy=multi-user.target
     def _report_installation(self):
         """
 
-        :return:
+        :return: compliant
+        :rtype: bool
         """
 
         compliant = True
-
-        self.sysstat_package = "sysstat"
 
         if self.ostype != "Mac OS X":
             if not self.ph.check(self.sysstat_package):
@@ -181,23 +198,20 @@ WantedBy=multi-user.target
 
         compliant = True
 
-        self.accton = "/usr/sbin/accton"
-        self.sysstat_cron_contents = """# Run system activity accounting tool every 60 minutes
-        */60 * * * * root """ + self.sa1 + """ 1 1
-        # Generate a daily summary of process accounting at 23:53
-        53 23 * * * root """ + self.sa2 + """ -A"""
-        self.acct_file = "/var/account/acct"
-
-        self.cron_file = "/etc/cron.d/sysstat"
-        if not os.path.isfile(self.cron_file):
-            compliant = False
+        if self.ostype == "Mac OS X":
+            if not os.path.isfile(self.acct_file):
+                compliant = False
+                self.detailedresults += "\nSystem accounting is not enabled on this system"
         else:
-            f = open(self.cron_file, "r")
-            contents = f.read()
-            f.close()
-            if contents != self.sysstat_cron_contents:
-                self.compliant = False
-                self.detailedresults += "System account cron job has incorrect contents"
+            if not os.path.isfile(self.cron_file):
+                compliant = False
+            else:
+                f = open(self.cron_file, "r")
+                contents = f.read()
+                f.close()
+                if contents != self.sysstat_cron_contents:
+                    self.compliant = False
+                    self.detailedresults += "\nSystem account cron job has incorrect contents"
 
         return compliant
 
@@ -215,10 +229,11 @@ WantedBy=multi-user.target
 
             if not self._report_installation():
                 self.compliant = False
-            if not self._report_configuration():
-                self.compliant = False
-            if not self._report_schedule():
-                self.compliant = False
+            else:
+                if not self._report_configuration():
+                    self.compliant = False
+                if not self._report_schedule():
+                    self.compliant = False
 
         except (KeyboardInterrupt, SystemExit):
             raise
@@ -282,7 +297,6 @@ WantedBy=multi-user.target
 
         success = True
 
-
         try:
 
             if self.ostype == "Mac OS X":
@@ -291,9 +305,11 @@ WantedBy=multi-user.target
                 open(self.acct_file, "a").close()
                 self.ch.executeCommand(self.accton + " " + self.acct_file)
             else:
-                f = open(cron_file, "w")
-                f.write(sysstat_cron_contents)
+                f = open(self.cron_file, "w")
+                f.write(self.sysstat_cron_contents)
                 f.close()
+                os.chown(self.cron_file, 0, 0)
+                os.chmod(self.cron_file, 0o644)
         except:
             success = False
 
@@ -302,7 +318,8 @@ WantedBy=multi-user.target
     def fix(self):
         """
 
-        :return:
+        :return: self.rulesuccess
+        :rtype: bool
         """
 
         self.detailedresults = ""
@@ -312,10 +329,10 @@ WantedBy=multi-user.target
 
             if not self._fix_installation():
                 self.rulesuccess = False
-
+            else:
+                self._set_paths()
             if not self._fix_configuration():
                 self.rulesuccess = False
-
             if not self._fix_schedule():
                 self.rulesuccess = False
 
