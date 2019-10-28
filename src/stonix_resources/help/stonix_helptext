@@ -526,7 +526,7 @@ This rule checks for the presence of certain files, such as: /root/.rhosts, /roo
 
 <9>        "***OPTIONAL RULE*** 
 
-This rule installs and configures 'System Accounting'. System Accounting is a process which gathers baseline system data (CPU utilization, disk I/O, etc.) every 10 minutes, by default. The data may be accessed with the 'sar' (System Activity Report) command, or by reviewing the nightly report files named '/var/log/sa/sar*'. Once a normal baseline for the system has been established, with frequent monitoring, unauthorized activity (password crackers and other CPU-intensive jobs, andactivity outside of normal usage hours) may be detected due to the changes these activities represent - from the normal system performance curve."
+This rule installs and configures 'System Accounting'. System Accounting is a process which gathers baseline system data (CPU utilization, disk I/O, etc.) periodically. The data may be accessed with the 'sar' (System Activity Report) command, or by reviewing the nightly report files named '/var/log/sa/sar*'. Once a normal baseline for the system has been established, with frequent monitoring, unauthorized activity (password crackers and other CPU-intensive jobs, andactivity outside of normal usage hours) may be detected due to the changes these activities represent - from the normal system performance curve."
 
 <6>        "***AUDIT-ONLY; NO FIX*** 
 
