@@ -229,7 +229,7 @@ This rule is optional and will install and configure AIDE when it is run."""
 
         """
 
-        compliant = False
+        compliant = True
 
         if not os.path.isfile(self.aide_cron_file):
             compliant = False
