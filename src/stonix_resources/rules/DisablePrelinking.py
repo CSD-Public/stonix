@@ -40,6 +40,7 @@ class DisablePrelinking(Rule):
         self.logger = logger
         self.rulenumber = 89
         self.rulename = "DisablePrelinking"
+        self.sethelptext()
         self.formatDetailedResults("initialize")
         self.mandatory = True
         self.applicable = {'type': 'white',
@@ -61,7 +62,6 @@ class DisablePrelinking(Rule):
             self.isDebian = True
         else:
             self.isDebian = False
-        self.sethelptext
 
     def report(self):
         try:
