@@ -26,6 +26,8 @@ this can be checked by ensuring that all repos have gpgcheck=1 set.
     to whitelist, removed redundant CentOS setup, changed KVEditor from
     openeq to closedeq
 @change: 2016/09/13 eball Added undo event to KVEditor, and clearing old events
+@chagne: 2019/10/31 - Brandon R. Gonzales - Fix traceback which caused the
+    rule to fail initialization
 '''
 
 
@@ -115,6 +117,37 @@ class LinuxPackageSigning(RuleKVEditor):
             self.logger.log(LogPriority.DEBUG, "Unable to determine OS type.")
 
         self.setup_yum()
+
+    def setRhel(self):
+        """
+
+        :return:
+        """
+        self.rhel = True - self.logger.log(LogPriority.DEBUG,
+                                           "Detected OS as: Red Hat")
+
+        self.repos = ["/etc/yum.conf"]
+        repos = os.listdir("/etc/yum.repos.d")
+        for repo in repos:
+            self.repos.append(
+            "/etc/yum.repos.d/" + repo)
+
+    def setFedora(self):
+        """
+
+        :return:
+        """
+        self.fedora = True
+        self.logger.log(LogPriority.DEBUG, "Detected OS as: Fedora")
+
+        path = "/etc/dnf/dnf.conf"
+        if not os.path.exists(path):
+            path = "/etc/yum.conf"
+
+        self.repos = [path]
+        repos = os.listdir("/etc/yum.repos.d")
+        for repo in repos:
+            self.repos.append("/etc/yum.repos.d/" + repo)
 
     def setOpensuse(self):
         """
