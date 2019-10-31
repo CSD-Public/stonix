@@ -136,8 +136,6 @@ class ConfigureLogging(RuleKVEditor):
 
         try:
 
-            self.daemon = self.set_logdaemon_name()
-
             if self.osfamily == "linux":
                 self.ph = Pkghelper(self.logger, self.environ)
                 self.compliant = self.report_Linux()
@@ -275,7 +273,7 @@ class ConfigureLogging(RuleKVEditor):
         # check if rsyslog is installed and turned on
         if self.ph.check("rsyslog"):
             self.logs["rsyslog"] = True
-            if not self.sh.isRunning(self.daemon):
+            if not self.sh.isRunning("rsyslog"):
                 self.detailedresults += "Rsyslog is installed but not on\n"
                 compliant = False
 
@@ -283,7 +281,13 @@ class ConfigureLogging(RuleKVEditor):
         elif self.ph.check("syslog"):
             self.logs["syslog"] = True
             specs.remove("/bin/kill -HUP `/bin/cat /var/run/rsyslogd.pid 2> /dev/null` 2> /dev/null || true',")
-            if not self.sh.isRunning(self.daemon):
+            syslogtypes = ["syslogd", "syslogD", "syslog", "sysklogd"]
+            syslogrunning = False
+            for item in syslogtypes:
+                if self.sh.isRunning(item):
+                    syslogrunning = True
+                    break
+            if not syslogrunning:
                 self.detailedresults += "Syslog is installed but not on\n"
                 compliant = False
 
