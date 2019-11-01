@@ -169,7 +169,7 @@ class LogDispatcher (Observable):
                         curl = p
 
                 # added -T option to curl command for large file uploads (sometimes log files are very large)
-                curlcommand = curl + ' -k -s -G -T ' + xmlreport + ' -F "file=@' + xmlreport + \
+                curlcommand = curl + ' -k -s -G -F "file=@' + xmlreport + \
                               ';type=text/xml" https://' + localize.REPORTSERVER + \
                               '/stonix/results.php'
                 if self.debug:
