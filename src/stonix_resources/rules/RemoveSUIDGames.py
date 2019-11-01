@@ -107,7 +107,8 @@ class RemoveSUIDGames(Rule):
                         'lskat',
                         'lskatproc',
                         'gnome-games',
-                        'kdegames']
+                        'kdegames',
+                        'gnome-taquin']
 
     def report(self):
         try:
