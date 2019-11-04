@@ -185,11 +185,8 @@ class ConfigurePasswordPolicy(Rule):
             '''Run the system_proflier command'''
             if not self.pweditor.report():
                 self.compliant = False
-                if self.pweditor.fixables:
-                    self.detailedresults += "The following configuration items need fixing:\n" + "\n".join(
-                        self.pweditor.fixables)
-                else:
-                    self.detailedresults += "Password profile not installed\n"
+                # if self.pweditor.fixables:
+                self.detailedresults += "Password profile not installed\n"
             else:
                 self.detailedresults += "All password profile configuration items are correct and profile is installed."
 
