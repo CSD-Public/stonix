@@ -121,6 +121,14 @@ installed at /usr/local/stonix/stonixdb.sql
 %attr(0750,root,apache) /var/www/html/stonix/results.php
 
 %changelog
+* Tue Nov 5 2019 Derek Walker <dwalker@lanl.gov> 0.9.36
+- 0.9.36 contains changes from 0.9.34 - 0.9.36
+- Code converted to python3
+- Support for Mac OS 10.15 Catalina and Redhat 8 added
+- ConfigureFirewall rule updated to allow apps in localize.py
+- ConfigureFirewall rule updated to handle application names with spaces and being in any location.
+- Catalina has a password profile
+
 * Thu Jun 27 2019 Derek Walker <dwalker@lanl.gov> - 0.9.32
 - Docstrings in multiple rules updated to python 3 REST format
 - New icons and splash screen for mac package
