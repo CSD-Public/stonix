@@ -123,7 +123,8 @@ class LinuxPackageSigning(RuleKVEditor):
 
         :return:
         """
-        self.rhel = True - self.logger.log(LogPriority.DEBUG,
+        self.rhel = True
+        self.logger.log(LogPriority.DEBUG,
                                            "Detected OS as: Red Hat")
 
         self.repos = ["/etc/yum.conf"]
