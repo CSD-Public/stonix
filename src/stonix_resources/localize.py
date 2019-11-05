@@ -156,7 +156,11 @@ PROXYDOMAINBYPASS = None
 # Domain Name Server (DNS) defaults
 # Variable Type: String
 DNS = "192.168.0.1 192.168.0.2"
+
+# Variable Type: List (strings)
+# Allow these applications through the macOS X firewall
 ALLOWEDAPPS = None
+
 # (for redhat 7 and later) Specify a subnet to allow services access to in /etc/hosts.allow
 # Variably Type: List (of strings)
 ALLOWNETS = ['192.168.0.1/24']
