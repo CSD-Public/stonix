@@ -132,13 +132,13 @@ class ConfigurePasswordPolicy(Rule):
             self.secompliant = False
             self.detailedresults = ""
             if not self.pwprofile:
-                self.detailedresults += "\nCould not determine the appropriate password policy profile for your system."
+                self.detailedresults += "Could not determine the appropriate password policy profile for your system.\n"
                 self.compliant = False
                 self.formatDetailedResults("report", self.compliant, self.detailedresults)
                 self.logdispatch.log(LogPriority.INFO, self.detailedresults)
                 return self.compliant
             if not self.secprofile:
-                self.detailedresults += "\nCould not determine the appropriate privacy and security policy profile for your system."
+                self.detailedresults += "Could not determine the appropriate privacy and security policy profile for your system.\n"
                 self.compliant = False
                 self.formatDetailedResults("report", self.compliant, self.detailedresults)
                 self.logdispatch.log(LogPriority.INFO, self.detailedresults)
@@ -156,7 +156,6 @@ class ConfigurePasswordPolicy(Rule):
                                        ["15", "int", "more"],
                                        "pinHistory": ["25", "int", "more"],
                                        "requireAlphanumeric": ["1", "bool"]}}
-                self.secdict = {"stonix4macSecurity&PrivacyConfigurationProfile.mobileconfig":""}
             else:
                 self.pwprofiledict = {"com.apple.mobiledevice.passwordpolicy":
                                       {"allowSimple": ["1", "bool"],
@@ -170,25 +169,25 @@ class ConfigurePasswordPolicy(Rule):
                                        ["15", "int", "more"],
                                        "pinHistory": ["5", "int", "more"],
                                        "requireAlphanumeric": ["1", "bool"]}}
-                self.secdict = {"com.apple.applicationaccess": {"allowAutoUnlock": ["0", "bool"]},
-                                "com.apple.security.firewall": {"Applications" : ["", "string"],
-                                                                "BlockAllIncoming": ["0", "bool"],
-                                                                "EnableFirewall": ["0", "bool"],
-                                                                "EnableStealthMode": ["0", "bool"]},
-                                "com.apple.systempolicy.control":{"AllowIdentifiedDevelopers": ["1", "bool"],
-                                                                  "EnableAssessment": ["0", "bool"]},
-                                "com.apple.screensaver":{"askForPassword": ["1", "bool"],
-                                                         "askForPasswordDelay": ["5", "int", "less"]},
-                                "com.apple.preference.security": {"dontAllowLockMessageUI": ["1", "bool"]},
-                                "com.apple.SubmitDiagInfo": {"AutoSubmit": ["0", "bool"]},
-                                "com.apple.MCX": {"DestroyFVKeyOnStandby": ["0", "bool"],
-                                                  "dontAllowFDEDisable":["0", "bool"]}}
+            self.secdict = {"com.apple.applicationaccess": {"allowAutoUnlock": ["0", "bool"]},
+                            "com.apple.security.firewall": {"Applications": (),
+                                                            "BlockAllIncoming": ["0", "bool"],
+                                                            "EnableFirewall": ["0", "bool"],
+                                                            "EnableStealthMode": ["0", "bool"]},
+                            "com.apple.systempolicy.control":{"AllowIdentifiedDevelopers": ["1", "bool"],
+                                                              "EnableAssessment": ["0", "bool"]},
+                            "com.apple.screensaver": {"askForPassword": ["1", "bool"],
+                                                      "askForPasswordDelay": ["5", "int", "less"]},
+                            "com.apple.preference.security": {"dontAllowLockMessageUI": ["1", "bool"]},
+                            "com.apple.SubmitDiagInfo": {"AutoSubmit": ["0", "bool"]},
+                            "com.apple.MCX": {"DestroyFVKeyOnStandby": ["0", "bool"],
+                                              "dontAllowFDEDisable":["0", "bool"]}}
             self.pweditor = KVEditorStonix(self.statechglogger, self.logger,
                                                "profiles", self.passprofile, "",
                                                self.pwprofiledict, "", "")
             '''Run the system_proflier command'''
             if not self.pweditor.report():
-                self.detailedresults += "Password profile not installed\n""
+                self.detailedresults += "Password profile not installed\n"
                 self.compliant = False
             else:
                 self.detailedresults += "All password profile configuration items are correct and profile is installed."
@@ -254,7 +253,7 @@ class ConfigurePasswordPolicy(Rule):
                         self.rulesuccess = False
                         self.logdispatch.log(LogPriority.DEBUG, "Kveditor fix failed")
                 else:
-                    self.detailedresults += "\nPassword policy profile was already installed. Nothing to do."
+                    self.detailedresults += "Password policy profile was already installed. Nothing to do.\n"
             else:
                 self.rulesuccess = False
                 self.detailedresults += "Password CI was not enabled.\n"
@@ -272,7 +271,7 @@ class ConfigurePasswordPolicy(Rule):
                         self.rulesuccess = False
                         self.logdispatch.log(LogPriority.DEBUG, "Kveditor fix failed")
                 else:
-                    self.detailedresults += "\nPassword policy profile was already installed. Nothing to do."
+                    self.detailedresults += "Security and privacy profile was already installed. Nothing to do."
             else:
                 self.rulesuccess = False
                 self.detailedresults += "Security and privacy CI was not enabled.\n"
