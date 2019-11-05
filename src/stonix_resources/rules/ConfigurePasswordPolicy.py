@@ -64,7 +64,7 @@ class ConfigurePasswordPolicy(Rule):
         key = "PWPOLICY"
         instructions = "To disable the installation of the password " + \
             "profile set the value of PWPOLICY to False"
-        default = True
+        default = False
         self.pwci = self.initCi(datatype, key, instructions, default)
         
         datatype = "bool"
@@ -74,25 +74,40 @@ class ConfigurePasswordPolicy(Rule):
         default = True
         self.sci = self.initCi(datatype, key, instructions, default)
         self.iditerator = 0
-        
+        self.setvars()
+
+    def setvars(self):
+        '''set class variables based on os version'''
+
+        self.passprofile = ""
+        self.secprofile = ""
+        baseconfigpath = "/Applications/stonix4mac.app/Contents/Resources/stonix.app/Contents/MacOS/stonix_resources/files/"
         if self.fismacat == "high":
-            self.passidentifier = "gov.lanl.stonix4mac.macOS.Sierra.10.12.fisma.high"
-#             self.pwprofile = "/Users/username/stonix/src/" + \
-#                              "stonix_resources/files/" + \
-#                              "stonix4macPasscodeProfileFormacOSSierra10.12FISMAHigh.mobileconfig"
-            self.pwprofile = "/Applications/stonix4mac.app/Contents/" + \
-                             "Resources/stonix.app/Contents/MacOS/" + \
-                             "stonix_resources/files/" + \
-                             "stonix4macPasscodeProfileFormacOSSierra10.12FISMAHigh.mobileconfig"
+            self.passprofile = baseconfigpath + "stonix4macPasscodeConfigurationProfile-high.mobileconfig"
+            self.secprofile = baseconfigpath + "stonix4macSecurity&PrivacyConfigurationProfile.mobileconfig"
         else:
-            self.passidentifier = "gov.lanl.stonix4mac.macOS.Sierra.10.12.fisma.low"
-#             self.pwprofile = "/Users/username/stonix/src/" + \
-#                              "stonix_resources/files/" + \
-#                              "stonix4macPasscodeProfileFormacOSSierra10.12FISMALow.mobileconfig"
-            self.pwprofile = "/Applications/stonix4mac.app/Contents/" + \
-                             "Resources/stonix.app/Contents/MacOS/" + \
-                             "stonix_resources/files/" + \
-                             "stonix4macPasscodeProfileFormacOSSierra10.12FISMALow.mobileconfig"
+            self.passprofile = baseconfigpath + "stonix4macPasscodeConfigurationProfile.mobileconfig"
+            self.secprofile = baseconfigpath + "stonix4macSecuritySecurity&PrivacyConfigurationProfile.mobileconfig"
+
+        # the following path and dictionaries are for testing on local vm's
+        # without installing stonix package each time.  DO NOT DELETE
+        # basetestpath = "/Users/username/stonix/src/stonix_resources/files/"
+        # if self.fismacat == "high":
+        #     self.passprofiledict = basetestpath + "stonix4macPasscodeConfigurationProfile-high.mobileconfig"
+        #     self.secprofiledict = basetestpath + "stonix4macSecuritySecurity&PrivacyConfigurationProfile.mobileconfig"
+        # else:
+        #     self.passprofiledict = basetestpath + "stonix4macPasscodeConfigurationProfile.mobileconfig"
+        #     self.secprofiledict = basetestpath + "stonix4macSecuritySecurity&PrivacyConfigurationProfile.mobileconfig"
+        if not os.path.exists(self.passprofile):
+            self.logger.log(LogPriority.DEBUG,
+                            "Could not locate appropriate password policy profile for macOS X version: " + str(
+                                self.os_major_ver) + "." + str(self.os_minor_ver))
+            self.passprofile = ""
+        if not os.path.exists(self.secprofile):
+            self.logger.log(LogPriority.DEBUG,
+                "Could not locate appropriate privacy and security policy profile for macOS X version: " + str(
+                 self.os_major_ver) + "." + str(self.os_minor_ver))
+            self.secprofile = ""
 ################################################################################################
 
     def report(self):
@@ -111,14 +126,23 @@ class ConfigurePasswordPolicy(Rule):
 
 
         '''
-
-        self.compliant = True
-        self.detailedresults = ""
-        self.pweditor, self.seceditor = "", ""
-        self.pwreport = True
-
         try:
-
+            self.compliant = True
+            self.pwcompliant = False
+            self.secompliant = False
+            self.detailedresults = ""
+            if not self.pwprofile:
+                self.detailedresults += "\nCould not determine the appropriate password policy profile for your system."
+                self.compliant = False
+                self.formatDetailedResults("report", self.compliant, self.detailedresults)
+                self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+                return self.compliant
+            if not self.secprofile:
+                self.detailedresults += "\nCould not determine the appropriate privacy and security policy profile for your system."
+                self.compliant = False
+                self.formatDetailedResults("report", self.compliant, self.detailedresults)
+                self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+                return self.compliant
             if self.fismacat == "high":
                 self.pwprofiledict = {"com.apple.mobiledevice.passwordpolicy":
                                       {"allowSimple": ["0", "bool"],
@@ -132,6 +156,7 @@ class ConfigurePasswordPolicy(Rule):
                                        ["15", "int", "more"],
                                        "pinHistory": ["25", "int", "more"],
                                        "requireAlphanumeric": ["1", "bool"]}}
+                self.secdict = {"stonix4macSecurity&PrivacyConfigurationProfile.mobileconfig":""}
             else:
                 self.pwprofiledict = {"com.apple.mobiledevice.passwordpolicy":
                                       {"allowSimple": ["1", "bool"],
@@ -145,17 +170,39 @@ class ConfigurePasswordPolicy(Rule):
                                        ["15", "int", "more"],
                                        "pinHistory": ["5", "int", "more"],
                                        "requireAlphanumeric": ["1", "bool"]}}
+                self.secdict = {"com.apple.applicationaccess": {"allowAutoUnlock": ["0", "bool"]},
+                                "com.apple.security.firewall": {"Applications" : ["", "string"],
+                                                                "BlockAllIncoming": ["0", "bool"],
+                                                                "EnableFirewall": ["0", "bool"],
+                                                                "EnableStealthMode": ["0", "bool"]},
+                                "com.apple.systempolicy.control":{"AllowIdentifiedDevelopers": ["1", "bool"],
+                                                                  "EnableAssessment": ["0", "bool"]},
+                                "com.apple.screensaver":{"askForPassword": ["1", "bool"],
+                                                         "askForPasswordDelay": ["5", "int", "less"]},
+                                "com.apple.preference.security": {"dontAllowLockMessageUI": ["1", "bool"]},
+                                "com.apple.SubmitDiagInfo": {"AutoSubmit": ["0", "bool"]},
+                                "com.apple.MCX": {"DestroyFVKeyOnStandby": ["0", "bool"],
+                                                  "dontAllowFDEDisable":["0", "bool"]}}
             self.pweditor = KVEditorStonix(self.statechglogger, self.logger,
-                                               "profiles", self.pwprofile, "",
+                                               "profiles", self.passprofile, "",
                                                self.pwprofiledict, "", "")
             '''Run the system_proflier command'''
-            self.pweditor.report()
-            if self.pweditor.fixables:
-                self.pwreport = False
-                self.detailedresults += "The following configuration items need fixing:\n" + "\n".join(self.pweditor.fixables)
+            if not self.pweditor.report():
+                self.detailedresults += "Password profile not installed\n""
                 self.compliant = False
             else:
                 self.detailedresults += "All password profile configuration items are correct and profile is installed."
+
+
+            self.seceditor = KVEditorStonix(self.statechglogger, self.logger,
+                                           "profiles", self.secprofile, "",
+                                           self.secdict, "", "", self.environ)
+            '''Run the system_proflier command'''
+            if not self.seceditor.report():
+                self.compliant = False
+                self.detailedresults += "Security and privacy profile not installed\n"
+            else:
+                self.detailedresults += "All security and privacy profile configuration items are correct and profile is installed."
 
         except (KeyboardInterrupt, SystemExit):
             raise
@@ -181,48 +228,55 @@ class ConfigurePasswordPolicy(Rule):
 
         '''
 
-        self.rulesuccess = True
-        self.detailedresults = ""
-        self.iditerator = 0
 
         try:
 
-            if not self.pwci.getcurrvalue():
-                self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
-                self.detailedresults += "\nFix was not enabled for this rule. Nothing will be done."
-                self.logdispatch.log(LogPriority.INFO, self.detailedresults)
-                return self.rulesuccess
+            self.detailedresults = ""
+            self.rulesuccess = True
 
-            # clear previous undo events
-            eventlist = self.statechglogger.findrulechanges(self.rulenumber)
-            self.logdispatch.log(LogPriority.DEBUG, "Removing previous stored undo events (if any)...")
-            for event in eventlist:
-                self.statechglogger.deleteentry(event)
+            if self.pwci.getcurrvalue():  # and self.sci.getcurrvalue():
+                self.iditerator = 0
+                eventlist = self.statechglogger.findrulechanges(self.rulenumber)
+                for event in eventlist:
+                    self.statechglogger.deleteentry(event)
 
             # if the primary rule CI is enabled, then run the fix actions for this rule
             if self.pwci.getcurrvalue():
-                self.logdispatch.log(LogPriority.DEBUG, "Fix enabled. Running fix...")
-                if not self.pwreport:
-                    if os.path.exists(self.pwprofile):
-                        self.logdispatch.log(LogPriority.DEBUG, "Found required password profile. Installing...")
-
-                        if not self.pweditor.fix():
-                            self.rulesuccess = False
-                            self.logdispatch.log(LogPriority.DEBUG, "Kveditor fix failed")
-                        elif not self.pweditor.commit():
+                if not self.pweditor.report():
+                    if self.pweditor.fix():
+                        self.iditerator += 1
+                        myid = iterate(self.iditerator, self.rulenumber)
+                        self.pweditor.setEventID(myid)
+                        if not self.pweditor.commit():
                             self.rulesuccess = False
                             self.logdispatch.log(LogPriority.DEBUG, "Kveditor commit failed")
-                        else:
-
-                            self.iditerator += 1
-                            myid = iterate(self.iditerator, self.rulenumber)
-                            undocmd = ["/usr/bin/profiles", "-R", "-p", self.passidentifier]
-                            event = {"eventtype": "comm",
-                                     "command": undocmd}
-                            self.statechglogger.recordchgevent(myid, event) 
                     else:
-                        self.detailedresults += "\nCould not locate required password profile: " + str(self.pwprofile)
                         self.rulesuccess = False
+                        self.logdispatch.log(LogPriority.DEBUG, "Kveditor fix failed")
+                else:
+                    self.detailedresults += "\nPassword policy profile was already installed. Nothing to do."
+            else:
+                self.rulesuccess = False
+                self.detailedresults += "Password CI was not enabled.\n"
+            # if the primary rule CI is enabled, then run the fix actions for this rule
+            if self.sci.getcurrvalue():
+                if not self.seceditor.report():
+                    if self.seceditor.fix():
+                        self.iditerator += 1
+                        myid = iterate(self.iditerator, self.rulenumber)
+                        self.seceditor.setEventID(myid)
+                        if not self.seceditor.commit():
+                            self.rulesuccess = False
+                            self.logdispatch.log(LogPriority.DEBUG, "Kveditor commit failed")
+                    else:
+                        self.rulesuccess = False
+                        self.logdispatch.log(LogPriority.DEBUG, "Kveditor fix failed")
+                else:
+                    self.detailedresults += "\nPassword policy profile was already installed. Nothing to do."
+            else:
+                self.rulesuccess = False
+                self.detailedresults += "Security and privacy CI was not enabled.\n"
+
 
         except (KeyboardInterrupt, SystemExit):
             raise
