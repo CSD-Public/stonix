@@ -64,7 +64,7 @@ class ConfigurePasswordPolicy(Rule):
         key = "PWPOLICY"
         instructions = "To disable the installation of the password " + \
             "profile set the value of PWPOLICY to False"
-        default = False
+        default = True
         self.pwci = self.initCi(datatype, key, instructions, default)
         
         datatype = "bool"
@@ -81,32 +81,28 @@ class ConfigurePasswordPolicy(Rule):
 
         self.passprofile = ""
         self.secprofile = ""
-        baseconfigpath = "/Applications/stonix4mac.app/Contents/Resources/stonix.app/Contents/MacOS/stonix_resources/files/"
-        if self.fismacat == "high":
-            self.passprofile = baseconfigpath + "stonix4macPasscodeConfigurationProfile-high.mobileconfig"
-            self.secprofile = baseconfigpath + "stonix4macSecurity&PrivacyConfigurationProfile.mobileconfig"
-        else:
-            self.passprofile = baseconfigpath + "stonix4macPasscodeConfigurationProfile.mobileconfig"
-            self.secprofile = baseconfigpath + "stonix4macSecuritySecurity&PrivacyConfigurationProfile.mobileconfig"
+        # baseconfigpath = "/Applications/stonix4mac.app/Contents/Resources/stonix.app/Contents/MacOS/stonix_resources/files/"
+        # if self.fismacat == "high":
+        #     self.passprofile = baseconfigpath + "stonix4macPasscodeConfigurationProfile-high.mobileconfig"
+        #     self.secprofile = baseconfigpath + "stonix4macSecurity&PrivacyConfigurationProfile.mobileconfig"
+        # else:
+        #     self.passprofile = baseconfigpath + "stonix4macPasscodeConfigurationProfile.mobileconfig"
+        #     self.secprofile = baseconfigpath + "stonix4macSecuritySecurity&PrivacyConfigurationProfile.mobileconfig"
 
         # the following path and dictionaries are for testing on local vm's
         # without installing stonix package each time.  DO NOT DELETE
-        # basetestpath = "/Users/username/stonix/src/stonix_resources/files/"
-        # if self.fismacat == "high":
-        #     self.passprofiledict = basetestpath + "stonix4macPasscodeConfigurationProfile-high.mobileconfig"
-        #     self.secprofiledict = basetestpath + "stonix4macSecuritySecurity&PrivacyConfigurationProfile.mobileconfig"
-        # else:
-        #     self.passprofiledict = basetestpath + "stonix4macPasscodeConfigurationProfile.mobileconfig"
-        #     self.secprofiledict = basetestpath + "stonix4macSecuritySecurity&PrivacyConfigurationProfile.mobileconfig"
+        basetestpath = "/Users/dwalker/stonix/src/stonix_resources/files/"
+        if self.fismacat == "high":
+            self.passprofile = basetestpath + "stonix4macPasscodeConfigurationProfile-high.mobileconfig"
+            self.secprofile = basetestpath + "stonix4macSecuritySecurity&PrivacyConfigurationProfile.mobileconfig"
+        else:
+            self.passprofile = basetestpath + "stonix4macPasscodeConfigurationProfile.mobileconfig"
+            self.secprofile = basetestpath + "stonix4macSecuritySecurity&PrivacyConfigurationProfile.mobileconfig"
         if not os.path.exists(self.passprofile):
-            self.logger.log(LogPriority.DEBUG,
-                            "Could not locate appropriate password policy profile for macOS X version: " + str(
-                                self.os_major_ver) + "." + str(self.os_minor_ver))
+            self.logger.log(LogPriority.DEBUG, "Could not locate appropriate password policy profile\n")
             self.passprofile = ""
         if not os.path.exists(self.secprofile):
-            self.logger.log(LogPriority.DEBUG,
-                "Could not locate appropriate privacy and security policy profile for macOS X version: " + str(
-                 self.os_major_ver) + "." + str(self.os_minor_ver))
+            self.logger.log(LogPriority.DEBUG, "Could not locate appropriate privacy and security policy profile\n")
             self.secprofile = ""
 ################################################################################################
 
@@ -131,7 +127,7 @@ class ConfigurePasswordPolicy(Rule):
             self.pwcompliant = False
             self.secompliant = False
             self.detailedresults = ""
-            if not self.pwprofile:
+            if not self.passprofile:
                 self.detailedresults += "Could not determine the appropriate password policy profile for your system.\n"
                 self.compliant = False
                 self.formatDetailedResults("report", self.compliant, self.detailedresults)
@@ -144,31 +140,27 @@ class ConfigurePasswordPolicy(Rule):
                 self.logdispatch.log(LogPriority.INFO, self.detailedresults)
                 return self.compliant
             if self.fismacat == "high":
-                self.pwprofiledict = {"com.apple.mobiledevice.passwordpolicy":
-                                      {"allowSimple": ["0", "bool"],
-                                       "forcePIN": ["1", "bool"],
-                                       "maxFailedAttempts": ["3", "int", "less"],
-                                       "maxGracePeriod":["0", "string"],
-                                       "maxPINAgeInDays": ["60", "int", "less"],
-                                       "minComplexChars": ["1", "int", "more"],
-                                       "minLength": ["15", "int", "more"],
-                                       "minutesUntilFailedLoginReset":
-                                       ["15", "int", "more"],
-                                       "pinHistory": ["25", "int", "more"],
-                                       "requireAlphanumeric": ["1", "bool"]}}
+                self.pwprofiledict = {"com.apple.mobiledevice.passwordpolicy": {"allowSimple": ["0", "bool"],
+                                                                                "forcePIN": ["1", "bool"],
+                                                                                "maxFailedAttempts": ["3", "int", "less"],
+                                                                                "maxGracePeriod":["0", "string"],
+                                                                                "maxPINAgeInDays": ["60", "int", "less"],
+                                                                                "minComplexChars": ["1", "int", "more"],
+                                                                                "minLength": ["15", "int", "more"],
+                                                                                "minutesUntilFailedLoginReset": ["15", "int", "more"],
+                                                                                "pinHistory": ["25", "int", "more"],
+                                                                                "requireAlphanumeric": ["1", "bool"]}}
             else:
-                self.pwprofiledict = {"com.apple.mobiledevice.passwordpolicy":
-                                      {"allowSimple": ["1", "bool"],
-                                       "forcePIN": ["1", "bool"],
-                                       "maxFailedAttempts": ["5", "int", "less"],
-                                       "maxGracePeriod":["15", "string"],
-                                       "maxPINAgeInDays": ["180", "int", "less"],
-                                       "minComplexChars": ["1", "int", "more"],
-                                       "minLength": ["8", "int", "more"],
-                                       "minutesUntilFailedLoginReset":
-                                       ["15", "int", "more"],
-                                       "pinHistory": ["5", "int", "more"],
-                                       "requireAlphanumeric": ["1", "bool"]}}
+                self.pwprofiledict = {"com.apple.mobiledevice.passwordpolicy": {"allowSimple": ["1", "bool"],
+                                                                                "forcePIN": ["1", "bool"],
+                                                                                "maxFailedAttempts": ["5", "int", "less"],
+                                                                                "maxGracePeriod":["15", "string"],
+                                                                                "maxPINAgeInDays": ["180", "int", "less"],
+                                                                                "minComplexChars": ["1", "int", "more"],
+                                                                                "minLength": ["8", "int", "more"],
+                                                                                "minutesUntilFailedLoginReset": ["15", "int", "more"],
+                                                                                "pinHistory": ["5", "int", "more"],
+                                                                                "requireAlphanumeric": ["1", "bool"]}}
             self.secdict = {"com.apple.applicationaccess": {"allowAutoUnlock": ["0", "bool"]},
                             "com.apple.security.firewall": {"Applications": (),
                                                             "BlockAllIncoming": ["0", "bool"],
