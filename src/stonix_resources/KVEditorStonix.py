@@ -81,6 +81,7 @@ class KVEditorStonix(KVEditor):
             return True
         else:
             debug = "KVEditorStonix report is returning False\n"
+            self.logger.log(LogPriority.DEBUG, debug)
             return False
 ###############################################################################
     def fix(self):
@@ -101,7 +102,7 @@ class KVEditorStonix(KVEditor):
                 debug = "KVEditorStonix commit is returning False\n"
                 self.logger.log(LogPriority.DEBUG, debug)
                 return False
-            if isinstance(self.editor.getundoCmd(),str):
+            if isinstance(self.editor.getundoCmd(), str):
                 eventtype = "commandstring"
             else:
                 eventtype = "comm"
@@ -121,7 +122,7 @@ class KVEditorStonix(KVEditor):
                 return False
             if self.getEventID():
                 event = {"eventtype": "comm",
-                         "command": self.editor.getundoCmd()}
+                         "command": self.editor.getUndoCmd()}
                 self.stchlgr.recordchgevent(self.getEventID(), event)
             debug = "KVEditorStonix commit is returning True\n"
             self.logger.log(LogPriority.DEBUG, debug)

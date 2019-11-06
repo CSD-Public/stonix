@@ -94,10 +94,10 @@ class ConfigurePasswordPolicy(Rule):
         basetestpath = "/Users/dwalker/stonix/src/stonix_resources/files/"
         if self.fismacat == "high":
             self.passprofile = basetestpath + "stonix4macPasscodeConfigurationProfile-high.mobileconfig"
-            self.secprofile = basetestpath + "stonix4macSecuritySecurity&PrivacyConfigurationProfile.mobileconfig"
+            self.secprofile = basetestpath + "stonix4macSecurity&PrivacyConfigurationProfile.mobileconfig"
         else:
             self.passprofile = basetestpath + "stonix4macPasscodeConfigurationProfile.mobileconfig"
-            self.secprofile = basetestpath + "stonix4macSecuritySecurity&PrivacyConfigurationProfile.mobileconfig"
+            self.secprofile = basetestpath + "stonix4macSecurity&PrivacyConfigurationProfile.mobileconfig"
         if not os.path.exists(self.passprofile):
             self.logger.log(LogPriority.DEBUG, "Could not locate appropriate password policy profile\n")
             self.passprofile = ""

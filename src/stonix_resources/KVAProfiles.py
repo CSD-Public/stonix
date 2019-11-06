@@ -199,6 +199,7 @@ class KVAProfiles():
         retval = True
         unsecure = False
         debug = ""
+        print "payload block: " + str(payloadblock) + "\n\n"
         for line in payloadblock:
             if re.search("^" + k + " = ", line.strip()):
                 founditem = True
