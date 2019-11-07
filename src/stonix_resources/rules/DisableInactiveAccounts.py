@@ -39,13 +39,13 @@ import re
 import traceback
 import time
 
-from ..localize import EXCLUDEACCOUNTS
+from localize import EXCLUDEACCOUNTS
 from datetime import datetime
 from decimal import Decimal
-from ..rule import Rule
-from ..stonixutilityfunctions import iterate
-from ..logdispatcher import LogPriority
-from ..CommandHelper import CommandHelper
+from rule import Rule
+from stonixutilityfunctions import iterate
+from logdispatcher import LogPriority
+from CommandHelper import CommandHelper
 
 
 class DisableInactiveAccounts(Rule):

@@ -25,11 +25,11 @@ Created on Apr 20, 2016
 '''
 
 
-from ..stonixutilityfunctions import iterate, checkPerms, setPerms, resetsecon
-from ..stonixutilityfunctions import readFile, writeFile, getUserGroupName
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..pkghelper import Pkghelper
+from stonixutilityfunctions import iterate, checkPerms, setPerms, resetsecon
+from stonixutilityfunctions import readFile, writeFile, getUserGroupName
+from rule import Rule
+from logdispatcher import LogPriority
+from pkghelper import Pkghelper
 import traceback
 import os
 import stat

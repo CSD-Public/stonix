@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """
 Created on Dec 5, 2013
@@ -274,8 +274,8 @@ def log_error(message):
         f.write(log_time + " - " + message + "\n\n")
         f.close()
     except Exception:
-        print "UNABLE TO LOG ERROR. LOG METHOD FAILURE"
-        print str(traceback.format_exc())
+        print("UNABLE TO LOG ERROR. LOG METHOD FAILURE")
+        print(str(traceback.format_exc()))
         sys.exit(1)
 
 def main():

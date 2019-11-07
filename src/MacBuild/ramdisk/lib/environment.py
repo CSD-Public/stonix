@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 ###############################################################################
 #                                                                             #
 # Copyright 2019. Triad National Security, LLC. All rights reserved.          #
@@ -824,7 +824,7 @@ class Environment:
             srcpath = script_path_one.split('/')[:-2]
             srcpath = '/'.join(srcpath)
             self.conf_path = os.path.join(srcpath, 'etc', 'stonix.conf')
-            print(self.conf_path)
+            print((self.conf_path))
         else:
             self.conf_path = "/etc/stonix.conf"
 

@@ -23,12 +23,12 @@ Created on Apr 22, 2015
     missing configuration file
 '''
 
-from ..stonixutilityfunctions import iterate, setPerms, checkPerms
-from ..stonixutilityfunctions import resetsecon, createFile, readFile, writeFile
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..KVEditorStonix import KVEditorStonix
-from ..pkghelper import Pkghelper
+from stonixutilityfunctions import iterate, setPerms, checkPerms
+from stonixutilityfunctions import resetsecon, createFile, readFile, writeFile
+from rule import Rule
+from logdispatcher import LogPriority
+from KVEditorStonix import KVEditorStonix
+from pkghelper import Pkghelper
 import traceback
 import os
 import re

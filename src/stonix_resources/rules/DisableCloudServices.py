@@ -34,11 +34,11 @@ dictionary
 @change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
 '''
 
-from ..ruleKVEditor import RuleKVEditor
-from ..CommandHelper import CommandHelper
-from ..pkghelper import Pkghelper
-from ..stonixutilityfunctions import iterate
-from ..logdispatcher import LogPriority
+from ruleKVEditor import RuleKVEditor
+from CommandHelper import CommandHelper
+from pkghelper import Pkghelper
+from stonixutilityfunctions import iterate
+from logdispatcher import LogPriority
 
 import re
 import traceback

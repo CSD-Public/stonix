@@ -26,9 +26,9 @@ All custom exceptions for STONIX should go in this module
 
 import re
 
-from .environment import Environment
-from .logdispatcher import LogDispatcher
-from .logdispatcher import LogPriority
+from stonix_resources.environment import Environment
+from stonix_resources.logdispatcher import LogDispatcher
+from stonix_resources.logdispatcher import LogPriority
 
 
 class repoError(Exception):
@@ -70,7 +70,7 @@ class repoError(Exception):
 
             if ptype == "zypper":
                 msg = self.zypperCodes(ecode)
-                successrange = [0, 100, 101, 102, 103, 106]
+                successrange = [0, 100, 101, 102, 103, 104, 106]
             elif ptype == "yum":
                 msg = self.yumCodes(ecode)
                 successrange = [0, 100]
@@ -106,14 +106,15 @@ class repoError(Exception):
                                 self.logger.log(LogPriority.WARNING, errmsg)
                             return
 
-            # If there is no error message passed, then we do our best
-            # To determine success or failure based off of what the exit 
-            # Code indicates
-            if ecode in successrange:
-                self.logger.log(LogPriority.INFO, msg)
             else:
-                self.success = False
-                self.logger.log(LogPriority.WARNING, msg)
+                # If there is no error message passed, then we do our best
+                # To determine success or failure based off of what the exit
+                # Code indicates
+                if ecode in successrange:
+                    self.logger.log(LogPriority.INFO, msg)
+                else:
+                    self.success = False
+                    self.logger.log(LogPriority.WARNING, msg)
 
         except IndexError as indexE:
             self.logger.log(LogPriority.WARNING, str(indexE))

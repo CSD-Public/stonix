@@ -28,10 +28,10 @@ This rule disables serial port logins
 import os
 import re
 import traceback
-from ..stonixutilityfunctions import writeFile, readFile, iterate, resetsecon
-from ..stonixutilityfunctions import checkPerms, setPerms
-from ..rule import Rule
-from ..logdispatcher import LogPriority
+from stonixutilityfunctions import writeFile, readFile, iterate, resetsecon
+from stonixutilityfunctions import checkPerms, setPerms
+from rule import Rule
+from logdispatcher import LogPriority
 
 
 class DisableSerialLoginPrompts(Rule):

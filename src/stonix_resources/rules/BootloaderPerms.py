@@ -33,9 +33,9 @@ root:root and 600
 
 
 
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..stonixutilityfunctions import getOctalPerms, resetsecon, iterate
+from rule import Rule
+from logdispatcher import LogPriority
+from stonixutilityfunctions import getOctalPerms, resetsecon, iterate
 import os
 import traceback
 import stat

@@ -26,6 +26,8 @@ this can be checked by ensuring that all repos have gpgcheck=1 set.
     to whitelist, removed redundant CentOS setup, changed KVEditor from
     openeq to closedeq
 @change: 2016/09/13 eball Added undo event to KVEditor, and clearing old events
+@chagne: 2019/10/31 - Brandon R. Gonzales - Fix traceback which caused the
+    rule to fail initialization
 '''
 
 
@@ -34,20 +36,26 @@ import re
 import os
 import traceback
 
-from ..ruleKVEditor import RuleKVEditor
-from ..KVEditorStonix import KVEditorStonix
-from ..logdispatcher import LogPriority
-from ..CommandHelper import CommandHelper
-from ..stonixutilityfunctions import iterate, readFile, writeFile, resetsecon
+from ruleKVEditor import RuleKVEditor
+from KVEditorStonix import KVEditorStonix
+from logdispatcher import LogPriority
+from CommandHelper import CommandHelper
 
 
 class LinuxPackageSigning(RuleKVEditor):
-    '''classdocs'''
+    """
+
+    """
 
     def __init__(self, config, environ, logger, statechglogger):
-        '''
-        Constructor
-        '''
+        """
+
+        :param config: 
+        :param environ: 
+        :param logger: 
+        :param statechglogger: 
+        """
+
         RuleKVEditor.__init__(self, config, environ, logger, statechglogger)
         self.logger = logger
         self.environ = environ
@@ -65,65 +73,71 @@ class LinuxPackageSigning(RuleKVEditor):
         instructions = 'If you wish to disable this rule, set the value ' + \
             'of LinuxPackageSigning to False.'
         default = True
-        self.applicable = self.isapplicable()
         self.ci = self.initCi(datatype, key, instructions, default)
+        self.ostype = self.environ.getostype()
+        self.applicable = self.isapplicable()
 
         self.localize()
 
     def isapplicable(self):
-        '''override of normal isapplicable()
+        """override of normal isapplicable()
 
 
-        :returns: retval
-
+        :return: retval
         :rtype: bool
-@author: Breen Malmberg
-@change: 2016/09/12 eball Changed from blacklist to whitelist
 
-        '''
+        """
+
         retval = False
-        ostype = self.environ.getostype()
 
-        if re.search('centos|fedora|red hat|suse', ostype, re.IGNORECASE):
+        if re.search('centos|fedora|red hat|suse', self.ostype.lower(), re.I):
             retval = True
 
         return retval
 
     def localize(self):
-        ''' '''
+        """
 
-        self.logger.log(LogPriority.DEBUG, "Running localize() method for " +
-                        "LinuxPackageSigning ...")
+        :return: 
+        """
 
         self.ch = CommandHelper(self.logger)
         self.rhel = False
         self.fedora = False
         self.suse = False
 
-        os = self.environ.getostype()
-
-        # rhel, fedora, centos, opensuse
-        if re.search('red hat|centos', os, re.IGNORECASE):
+        # rhel, fedora, centself.ostype, opensuse
+        if re.search('red hat|centos', self.ostype.lower(), re.I):
             self.setRhel()
-        elif re.search('fedora', os, re.IGNORECASE):
+        elif re.search('fedora', self.ostype.lower(), re.I):
             self.setFedora()
-        elif re.search('suse', os, re.IGNORECASE):
+        elif re.search('suse', self.ostype.lower(), re.I):
             self.setOpensuse()
         else:
             self.logger.log(LogPriority.DEBUG, "Unable to determine OS type.")
 
+        self.setup_yum()
+
     def setRhel(self):
-        ''' '''
+        """
+
+        :return:
+        """
         self.rhel = True
-        self.logger.log(LogPriority.DEBUG, "Detected OS as: Red Hat")
+        self.logger.log(LogPriority.DEBUG,
+                                           "Detected OS as: Red Hat")
 
         self.repos = ["/etc/yum.conf"]
         repos = os.listdir("/etc/yum.repos.d")
         for repo in repos:
-            self.repos.append("/etc/yum.repos.d/" + repo)
+            self.repos.append(
+            "/etc/yum.repos.d/" + repo)
 
     def setFedora(self):
-        ''' '''
+        """
+
+        :return:
+        """
         self.fedora = True
         self.logger.log(LogPriority.DEBUG, "Detected OS as: Fedora")
 
@@ -137,23 +151,19 @@ class LinuxPackageSigning(RuleKVEditor):
             self.repos.append("/etc/yum.repos.d/" + repo)
 
     def setOpensuse(self):
-        ''' '''
+        """
+
+        :return:
+        """
 
         self.suse = True
-        self.logger.log(LogPriority.DEBUG, "Detected OS as: OpenSuSE")
-        self.logger.log(LogPriority.DEBUG, "GPG Check is enabled by default " +
-                        "on SuSE and there is no specific ability to " +
-                        "enable it.")
-        self.logger.log(LogPriority.DEBUG, "As a result of this, STONIX " +
-                        "will only audit the status of the GPG check for " +
-                        "each repo.")
 
         self.repolist = []
         cmd1 = "/usr/bin/zypper lr -d"
 
         self.ch.executeCommand(cmd1)
-        excode = self.ch.getReturnCode()
-        if not excode:  # if excode == 0 which means everything went fine..
+        retcode = self.ch.getReturnCode()
+        if not retcode:  # if retcode == 0 which means everything went fine..
             output = self.ch.getOutput()
             for line in output:
                 sline = line.split("|")
@@ -165,34 +175,72 @@ class LinuxPackageSigning(RuleKVEditor):
                                         "repo number: " + sline[0].strip())
                         self.repolist.append(sline[0].strip())
 
+    def setup_yum(self):
+        """
+
+        :return:
+        """
+
+        self.yum_conf_dict = {"gpgcheck": "1",
+                              "localpckg_gpgcheck": "1"}
+        self.yum_conf_file = ""
+        yum_conf_files = ["/etc/yum.conf", "/etc/dnf/dnf.conf"]
+        for f in yum_conf_files:
+            if os.path.isfile(f):
+                self.yum_conf_file = f
+                break
+
+    def report_yum(self):
+        """
+
+        :return:
+        """
+
+        compliant = True
+
+        tmppath = self.yum_conf_file + ".stonixtmp"
+        self.yum_conf_editor = KVEditorStonix(self.statechglogger, self.logger, "conf", self.yum_conf_file, tmppath, self.yum_conf_dict, "present", "closedeq")
+        if not self.yum_conf_editor.report():
+            compliant = False
+            self.detailedresults += "\nThe following configuration options are incorrect in " + str(self.yum_conf_file) + ":\n" + "\n".join(self.yum_conf_editor.fixables)
+
+        return compliant
+
     def report(self):
-        ''' '''
+        """
+
+        :return:
+        """
+
         self.detailedresults = ""
         self.compliant = True
 
         try:
+
             if self.suse:
                 if not self.reportSUSE():
                     self.compliant = False
             else:
-                if not self.reportYumRepos():
+                if not self.report_yum():
                     self.compliant = False
-                if self.compliant:
-                    self.detailedresults += "All repositories have GPG " + \
-                        "checks enabled.\n"
+
+            if self.compliant:
+                self.detailedresults += "\nAll repositories have signing enabled"
 
         except (SystemExit, KeyboardInterrupt):
             raise
         except Exception:
             self.detailedresults += traceback.format_exc()
             self.logger.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("report", self.compliant,
-                                   self.detailedresults)
+        self.formatDetailedResults("report", self.compliant, self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
 
     def reportSUSE(self):
-        ''' '''
+        """
+
+        :return: 
+        """
 
         retval = True
         cmd2 = "/usr/bin/zypper lr"
@@ -211,10 +259,9 @@ class LinuxPackageSigning(RuleKVEditor):
                     if not excode:
                         outputlines = self.ch.getOutput()
                         for line in outputlines:
-                            if re.search("GPG\s*Check\s*\:.*(On|Yes)", line,
-                                         re.IGNORECASE):
+                            if re.search("GPG\s*Check\s*\:.*(On|Yes)", line, re.I):
                                 gpgenabled = True
-                            if re.search("Name\s*\:\s*", line, re.IGNORECASE):
+                            if re.search("Name\s*\:\s*", line, re.I):
                                 sline = line.split(":")
                                 reponame = str(sline[1]).strip()
                         if not gpgenabled:
@@ -233,78 +280,53 @@ class LinuxPackageSigning(RuleKVEditor):
             raise
         return retval
 
-    def reportYumRepos(self):
-        compliant = True
-        for repo in self.repos:
-            repoFile = readFile(repo, self.logger)
-            for line in repoFile:
-                if re.search("^gpgcheck=0", line):
-                    compliant = False
-                    self.detailedresults += "gpgcheck=0 found in repo file " + \
-                        repo + "\n"
-                    break
-        return compliant
+    def fix_yum(self):
+        """
+
+        :return:
+        """
+
+        success = True
+
+        if not self.yum_conf_editor.fix():
+            success = False
+            self.logger.log(LogPriority.DEBUG, "yum conf editor fix failed")
+        elif not self.yum_conf_editor.commit():
+            success = False
+            self.logger.log(LogPriority.DEBUG, "yum conf editor commit failed")
+
+        return success
 
     def fix(self):
-        ''' '''
+        """
+
+        :return: self.rulesuccess
+        :rtype: bool
+        """
 
         self.detailedresults = ""
-        success = True
+        self.rulesuccess = True
         self.iditerator = 0
 
         # Clear event history
-        self.iditerator = 0
         eventlist = self.statechglogger.findrulechanges(self.rulenumber)
         for event in eventlist:
             self.statechglogger.deleteentry(event)
 
         try:
             if self.ci.getcurrvalue():
+
                 if self.suse:
-                    self.detailedresults += "GPG Check is enabled by " + \
-                        "default on SuSE and there is no specific ability " + \
-                        "to enable it.\n"
-                    self.detailedresults += "As a result of this, " + \
-                        "STONIX will only audit the status of the GPG " + \
-                        "check for each repo.\n"
-                elif not self.fixYumRepos():
-                    success = False
-            self.rulesuccess = success
+                    self.logger.log(LogPriority.DEBUG, "Fix not applicable to this platform")
+                elif not self.fix_yum():
+                    self.rulesuccess = False
 
         except (SystemExit, KeyboardInterrupt):
             raise
         except Exception:
             self.detailedresults += traceback.format_exc()
             self.logger.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("fix", success, self.detailedresults)
+        self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
-        return self.rulesuccess
 
-    def fixYumRepos(self):
-        success = True
-        for repo in self.repos:
-            repoFile = readFile(repo, self.logger)
-            tmpFile = []
-            changed = False
-            for line in repoFile:
-                if re.search("^gpgcheck=0", line):
-                    gpgLine = re.sub("gpgcheck=0", "gpgcheck=1", line)
-                    tmpFile.append(gpgLine)
-                    changed = True
-                else:
-                    tmpFile.append(line)
-            if changed:
-                tmppath = repo + ".stonixtmp"
-                if not writeFile(tmppath, "".join(tmpFile), self.logger):
-                    success = False
-                    self.detailedresults += "Could not write to " + tmppath + \
-                        "\n"
-                else:
-                    self.iditerator += 1
-                    myid = iterate(self.iditerator, self.rulenumber)
-                    event = {"eventtype": "conf", "filepath": repo}
-                    self.statechglogger.recordchgevent(myid, event)
-                    self.statechglogger.recordfilechange(repo, tmppath, myid)
-                    os.rename(tmppath, repo)
-                    resetsecon(repo)
-        return success
+        return self.rulesuccess

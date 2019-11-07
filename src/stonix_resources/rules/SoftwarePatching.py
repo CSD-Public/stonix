@@ -38,12 +38,12 @@ import subprocess
 import traceback
 import random
 
-from ..rule import Rule
-from ..CommandHelper import CommandHelper
-from ..pkghelper import Pkghelper
-from ..stonixutilityfunctions import resetsecon
-from ..logdispatcher import LogPriority
-from ..localize import PROXY, UPDATESERVERS
+from rule import Rule
+from CommandHelper import CommandHelper
+from pkghelper import Pkghelper
+from stonixutilityfunctions import resetsecon
+from logdispatcher import LogPriority
+from localize import PROXY, UPDATESERVERS
 
 
 class SoftwarePatching(Rule):

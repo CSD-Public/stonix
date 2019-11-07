@@ -50,11 +50,11 @@ import os
 import traceback
 import re
 
-from ..CommandHelper import CommandHelper
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..stonixutilityfunctions import iterate, readFile, checkPerms, createFile, setPerms, writeFile, resetsecon
-from ..KVEditorStonix import KVEditorStonix
+from CommandHelper import CommandHelper
+from rule import Rule
+from logdispatcher import LogPriority
+from stonixutilityfunctions import iterate, readFile, checkPerms, createFile, setPerms, writeFile, resetsecon
+from KVEditorStonix import KVEditorStonix
 
 
 class NoCoreDumps(Rule):

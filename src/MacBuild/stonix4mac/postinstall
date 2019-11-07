@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/bin/zsh
 ###############################################################################
 #                                                                             #
 # Copyright 2019. Triad National Security, LLC. All rights reserved.          #
@@ -16,545 +16,138 @@
 #                                                                             #
 ###############################################################################
 
-"""
-Postflight script that is run during the install of the stonix4mac.pkg
-
-Primary purpose is to create a link from /etc/stonix ->
-/Applications/stonix4mac.app/Contents/Resources/stonix.app/Contents/Resources/stonix.conf
-
-@author: Roy Nielsen
-"""
-#--- Native python libraries
-import os
-import re
-import sys
-import time
-import errno
-import ctypes
-import shutil
-import random
-import inspect
-import traceback
-from subprocess import call, Popen, PIPE, STDOUT
-
-def getLibc():
-    """
-    Acquire a reference to the system libc, initially to access the
-    filesystem "sync" function.
-
-    @returns: python reference to the C libc object, or False, if it can't
-              find libc on the system.
-
-    @author: Roy Nielsen
-    """
-    try:
-        #temp_dir = sys._MEIPASS
-        #libc_path = os.path.join(temp_dir, "libc.dylib")
-        #libc = ctypes.CDLL("libSystem.dylib")
-        libc = ctypes.CDLL("/usr/lib/libc.dylib")
-    except:
-        log_message(traceback.format_exc())
-        raise Exception("DAMN IT JIM!!!")
-    else:
-        print "Loading Mac dylib......................................"
-
-    return libc
-
-def log_message(message="", level="normal", priority="debug",
-                syslog_level=None):
-    """
-    Logs a message to both stdout and to syslog via logger
-
-    message - the message to log
-
-    level - print the message if this value is less than or equal to
-            the "priority"
-
-    priority - defined value to used to compare with the "level".  If
-               the level is less than or equal to the priority value,
-               the message will be printed to stdout and via logger
-
-    syslog_level - the syslog level to log with
-
-    Author: Roy Nielsen
-    """
-    if syslog_level is None:
-        syslog_level = ""
-    else:
-        syslog_level = "-p " + syslog_level + " "
-
-    if not re.match("^normal$", level):
-        prog = sys.argv[0]
-        # message to be in the format:
-        # <calling_script_name> : <name_of_calling_function> (<line number
-        #              of calling function>) - <LEVEL>: <message to print>
-        message = str(prog) + " : " + inspect.stack()[1][3] + \
-            " (" + str(inspect.stack()[1][2]) + ") - " + \
-            level.upper() + ": " + str(message)
-    else:
-        prog = sys.argv[0]
-        message = str(prog) + " - " + inspect.stack()[1][3] + " (" + \
-            str(inspect.stack()[1][2]) + ") - " + " : " + str(message)
-
-    levels = ['quiet', 'normal', 'verbose', 'debug']
-
-    if levels.index(level) <= levels.index(priority):
-
-        print message
-        cmd_string = "/usr/bin/logger " + syslog_level + "\"" + message + "\""
-        retcode = ""
-        try:
-            retcode = call(cmd_string, shell=True)
-            if retcode < 0:
-                print >> sys.stderr, \
-                    "logger Child was terminated by signal", retcode
-            else:
-                pass
-
-        except OSError, err:
-            print >> sys.stderr, \
-                "Execution of " + str(cmd_string) + " failed: ", err
+# Postflight script that is run during the install of the stonix4mac.pkg
+#
+# This script sets the permissions for the stonix executables, creates the
+# /etc/stonix.conf file if it doesn't already exist, creates a symlink for
+# /usr/local/bin/stonix -> /Applications/stonix4mac.app/Contents/Resources/stonix.app/Contents/MacOS/stonix,
+# creates a symlink for /usr/local/bin/stonix4mac -> /Applications/stonix4mac.app/Contents/MacOS/stonix4mac
+#
+# Author: Roy Nielsen
+# Change: 25/10/2019 - Brandon R. Gonzales - Convert from python3 to zsh
 
 
-def touch(fname="", message_level="normal"):
-    """
-    Python implementation of the touch command..
-
-    inspiration:
-    http://stackoverflow.com/questions/1158076/implement-touch-using-python
-
-    @author: Roy Nielsen
-    """
-    if re.match("^\s*$", fname):
-        log_message("Cannot touch a file without a filename....", "normal",
-                    message_level)
-    else:
-        try:
-            os.utime(fname, None)
-        except:
-            try:
-                open(fname, 'a').close()
-            except Exception:
-                log_message("Cannot open to touch: " + str(fname), "normal",
-                            message_level)
+echo "Starting stonix4mac package postflight..."
+logger "Starting stonix4mac package postflight..."
 
 
-def checkSrcLink(targetStonixConf, message_level="normal"):
-    """
-    Checks the link in the stonix app to /etc/stonix.conf is correct.  Calls
-    fixSrcLink if it needs to be fixed.
-    """
-    success = True
-    if os.path.islink(targetStonixConf):
-        linkto = os.readlink(targetStonixConf)
-        if not re.match("/etc/stonix.conf", linkto):
-            success = False
-    else:
-        success = False
-    log_message("Check link is returning: " + str(success))
-    return success
+# If /etc/stonix.conf does not exist, "touch" the file
+# Remove old installation of stonix
+if [[ ! -a /etc/stonix.conf ]]; then
+    echo "Creating /etc/stonix.conf..."
+    logger "Creating /etc/stonix.conf..."
+    touch /etc/stonix.conf
+    chmod 644 /etc/stonix.conf
+fi
+
+# Make sure directories are 775, files and links are 664
+# Required on the Mac, especially for admins to be able to
+# update the app.
+#
+# pass in the directory you want to start from.
+APP_DIR=/Applications/stonix4mac.app
+
+if [[ -a ${APP_DIR} ]]; then
+    find ${APP_DIR} -type d -exec chmod 755 {} \;
+
+    find ${APP_DIR} -type f -exec chmod 644 {} \;
+fi
 
 
-def isvalidlink(path):
-    assert os.path.lexists(path)
-    try:
-        os.stat(path)
-    except os.error, err:
-        log_message(traceback.format_exc())
-        # errno.ENOENT: broken link - "No such file or directory"
-        # errno.ELOOP: circular link - "Too many levels of symlinks"
-        if err.errno == errno.ENOENT or err.errno == errno.ELOOP:
-            return 0
-        # something else occurred,
-        # assume it as invalid anyway
-        else:
-            raise
-    return 1
+# Make stonix4mac and stonix executable blobs executable.
+STONIX4MAC_EXEC=/Applications/stonix4mac.app/Contents/MacOS/stonix4mac
+STONIX_EXEC=/Applications/stonix4mac.app/Contents/Resources/stonix.app/Contents/MacOS/stonix
 
-def make_valid_link(my_link, my_link_source, message_level="normal"):
-    """ 
-    Check if mylink exists, if it does, check if it is a link.
-    If it isn't, move it and create a link.  Otherwise check
-    if it's pointing to the right place. Move the link if it
-    doesn't point to the right place.
+if [[ -a ${STONIX4MAC_EXEC} ]]; then
+    chmod 755 ${STONIX4MAC_EXEC}
+fi
 
-    mylink: the link we want to make
-    mylinksource: the place we want the link to point to
+if [[ -a ${STONIX_EXEC} ]]; then
+    chmod 755 ${STONIX_EXEC}
+fi
 
-    @author: Roy Nielsen
-    """
-    success = False
-    move_it = False
-    create_new_link = False
 
-    myDate = time.strftime("%C%y%m%d", time.localtime())
-    myTime = time.strftime("%I%M%S%p", time.localtime())
+#####
+# Create /usr/local/bin if it doesn't exist.  Also, if it's a file,
+# move it and create a directory
+if [[ ! -a /usr/local/bin ]]; then
+    mkdir /usr/local/bin
+elif [[ -f /usr/local/bin ]]; then
+    mv /usr/local/bin usr/local/bin.bak.$(date +%F.%R)
+    mkdir /usr/local/bin
+fi
 
-    #####
-    # create a name for a backup, if a backup is needed.
-    # append the bak.date to the filename
-    backup = my_link + "." + myDate + "." + myTime
-    binbackup = "/usr/local/bin" + myDate + "." + myTime
-
-    #####
-    # Create /usr/local/bin if it doesn't exist.  Also, if it's a file,
-    # move it and create a directory
-    if not os.path.exists("/usr/local/bin"):
-        os.makedirs("/usr/local/bin")
-    elif not os.path.isdir("/usr/local/bin"):
-        # move "/usr/local/bin" to "/usr/local/bin".myDate.myTime
-        try:
-            shutil.move("/usr/local/bin", binbackup)
-        except Exception, err:
-            log_message("Exception trying to move file: " + str(my_link))
-            log_message(traceback.format_exc())
-            log_message("Associated exception: " + str(err))
-        finally:
-            try:
-                os.makedirs("/usr/local/bin")
-            except Exception, err:
-                log_message("Exception trying to create link: " +
-                            str(my_link) + " -> " + str(my_link_source))
-                log_message(traceback.format_exc())
-                log_message("Associated exception: " + str(err))
-
+    # Change the owner for /usr/local/bin, leftover code from python
     # chown /usr/local/bin (both user and group)
-    try:
-        os.chown("/usr/local/bin", 0, 0)
-    except Exception, err:
-        log_message("Could not chown /usr/local/bin")
-        log_message(traceback.format_exc())
-        log_message("Associated exception: " + str(err))
+    #try:
+    #    os.chown("/usr/local/bin", 0, 0)
+    #except Exception as err:
+    #    log_message("Could not chown /usr/local/bin")
+    #    log_message(traceback.format_exc())
+    #    log_message("Associated exception: " + str(err))
 
-    # fix /usr/local/bin
-    try:
-        os.chmod("/usr/local/bin", 0755)
-    except Exception, err:
-        log_message("Cannot chmod /usr/local/bin")
-        log_message(traceback.format_exc())
-        log_message("Associated exception: " + str(err))
+# fix /usr/local/bin
+if [[ -a /usr/local/bin ]]; then
+    chmod 755 /usr/local/bin
+fi
 
+
+# Check if STONIX_LINK exists, if it does not, create the link. If it
+# does, check if it is a link to STONIX_LINK_SOURCE. If it isn't, move
+# it to a backup and create a link.
+#
+# stonix symlink:
+# /usr/local/bin/stonix -> /Applications/stonix4mac.app/Contents/Resources/stonix.app/Contents/MacOS/stonix
+#
+STONIX_LINK=/usr/local/bin/stonix
+STONIX_LINK_SOURCE=/Applications/stonix4mac.app/Contents/Resources/stonix.app/Contents/MacOS/stonix
+
+if [[ ! -a ${STONIX_LINK} ]]; then
     #####
-    # Logic to determine what do if something already resides
-    # in the link's path
-    if not os.path.exists(my_link):
-        create_new_link = True
-    elif os.path.islink(my_link):
-        # check if it is a valid link
-        validLink = isvalidlink(my_link)
-        # check if it is pointing where we want
-        pointsTo = os.path.realpath(my_link) == os.path.abspath(my_link_source)
+    # Symlink does not exist, creating the link
+    echo "Creating symlink: ${STONIX_LINK} -> ${STONIX_LINK_SOURCE}..."
+    logger "Creating symlink: ${STONIX_LINK} -> ${STONIX_LINK_SOURCE}..."
+    ln -s ${STONIX_LINK_SOURCE} ${STONIX_LINK}
 
-        if validLink and pointsTo:
-            move_it = False
-        else:
-            move_it = True
-    elif not os.path.exists(my_link):
-        create_new_link = True
-    elif os.path.isdir(my_link):
-        move_it = True
-    elif os.path.isfile(my_link):
-        move_it = True
-    else:
-        log_message("Uknown error condition in postflight...", "normal", message_level)
-
+elif [[ ! -L ${STONIX_LINK} || ! -e ${STONIX_LINK} || ! ${STONIX_LINK} -ef ${STONIX_LINK_SOURCE} ]]; then
     #####
-    # Run the logic appropriate to the decision made above.
-    if create_new_link:
-        try:
-            os.symlink(my_link_source, my_link)
-            success = True
-        except Exception, err:
-            log_message("Exception trying to create link: " +
-                        str(my_link) + " -> " + str(my_link_source))
-            log_message(traceback.format_exc())
-            log_message("Associated exception: " + str(err))
+    # File exists but is not a symlink to our source, moving the existing file to backup and creating the symlink
+    logger "${STONIX_LINK} already exists but is not a symlink to ${STONIX_LINK_SOURCE}. Moving ${STONIX_LINK} to ${STONIX_LINK}.bak.date.time"
+    mv ${STONIX_LINK} ${STONIX_LINK}.bak.$(date +%F.%R)
 
-    elif move_it:
-        # move "mylink" to mylink.myDate.myTime
-        try:
-            shutil.move(my_link, backup)
-        except Exception, err:
-            log_message("Exception trying to move file: " + str(my_link))
-            log_message(traceback.format_exc())
-            log_message("Associated exception: " + str(err))
-        finally:
-            try:
-                os.symlink(my_link_source, my_link)
-                success = True
-            except Exception, err:
-                log_message("Exception trying to create link: " +
-                            str(my_link) + " -> " + str(my_link_source))
-                log_message(traceback.format_exc())
-                log_message("Associated exception: " + str(err))
-    else:
-        log_message("Unknown error attempting to create link...", "normal", message_level)
-
-    return success
+    echo "Creating symlink: ${STONIX_LINK} -> ${STONIX_LINK_SOURCE}..."
+    logger "Creating symlink: ${STONIX_LINK} -> ${STONIX_LINK_SOURCE}..."
+    ln -s ${STONIX_LINK_SOURCE} ${STONIX_LINK}
+fi
 
 
-def etcMove(targetDir="", message_level="normal"):
-    """
-    Move configuration from
-    <path-to-stonix4mac.app>/stonix4mac.app/Contents/Resources/stonix.app/Contents/Resources/stonix.conf
-    to /etc/stonix.conf
+# Check if STONIX4MAC_LINK exists, if it does not, create the link. If it
+# does, check if it is a link to STONIX4MAC_LINK_SOURCE. If it isn't, move
+# it to a backup and create a link.
+#
+# stonix4mac symlink:
+# /usr/local/bin/stonix4mac -> /Applications/stonix4mac.app/Contents/MacOS/stonix4mac
+#
+STOINX4MAC_LINK=/usr/local/bin/stonix4mac
+STONIX4MAC_LINK_SOURCE=/Applications/stonix4mac.app/Contents/MacOS/stonix4mac
 
-    @author: Roy Nielsen, Eric Ball
-    """
-    if re.match("^\s*$", targetDir):
-        log_message("Cannot link to an empty destination...", "normal",
-                    message_level)
-    else:
-        confTarget = "/private/etc/stonix.conf"
-        if os.path.exists(confTarget):
-            confFile = open(confTarget, "r")
-            conf = confFile.read()
-            confFile.close()
-            if conf:  # stonix.conf is not empty
-                try:
-                    log_message("Moving " + targetDir + "/stonix.conf to " +
-                                confTarget + ".new", message_level)
-                    os.rename(targetDir + "/stonix.conf", confTarget + ".new")
-                except OSError:
-                    log_message(traceback.format_exc())
-                    log_message("Error occurred: " + str(OSError),
-                                message_level)
-                    pass
-            else:
-                try:
-                    log_message("Moving " + targetDir + "/stonix.conf to " +
-                                confTarget, message_level)
-                    os.rename(targetDir + "/stonix.conf", confTarget)
-                except OSError:
-                    log_message(traceback.format_exc())
-                    log_message("Error occurred: " + str(OSError),
-                                message_level)
-                    pass
-        else:
-            try:
-                log_message("Moving " + targetDir + "/stonix.conf to " +
-                            confTarget, message_level)
-                os.rename(targetDir + "/stonix.conf", confTarget)
-            except OSError:
-                log_message(traceback.format_exc())
-                log_message("Error occurred: " + str(OSError) +
-                            ", creating blank conf file at " + confTarget,
-                            message_level)
-                open(confTarget, "w")
+if [[ ! -a ${STOINX4MAC_LINK} ]]; then
+    #####
+    # Symlink does not exist, creating the link
+    echo "Creating symlink: ${STOINX4MAC_LINK} -> ${STONIX4MAC_LINK_SOURCE}..."
+    logger "Creating symlink: ${STOINX4MAC_LINK} -> ${STONIX4MAC_LINK_SOURCE}..."
+    ln -s ${STONIX4MAC_LINK_SOURCE} ${STOINX4MAC_LINK}
 
+elif [[ ! -L ${STOINX4MAC_LINK} || ! -e ${STOINX4MAC_LINK} || ! ${STOINX4MAC_LINK} -ef ${STONIX4MAC_LINK_SOURCE} ]]; then
+    #####
+    # File exists but is not a symlink to our source, moving the existing file to backup and creating the symlink
+    logger "${STOINX4MAC_LINK} already exists but is not a symlink to ${STONIX4MAC_LINK_SOURCE}. Moving ${STOINX4MAC_LINK} to ${STOINX4MAC_LINK}.bak.date.time"
+    mv ${STOINX4MAC_LINK} ${STOINX4MAC_LINK}.bak.$(date +%F.%R)
 
-def install_launchd_job(source_path="", targetDir="/", message_level="normal"):
-    """
-    Install the launchjob in the targetDir, so next time the system boots (if
-    this is being installed on another volume for another computer) the next
-    time the other computer boots, STONIX will run in fix mode on that computer
-    """
-    # generate random weekly time
-    randday = random.randrange(1, 7)
-    randhour = random.randrange(1, 23)
-    randminute = random.randrange(1, 59)
-    # define the weekly fix plist content
-    stonixplistfix = '''<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" \
-"http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-    <key>Label</key>
-    <string>gov.lanl.stonix.fix</string>
-    <key>ProgramArguments</key>
-    <array>
-        <string>/Applications/stonix4mac.app/Contents/Resources/stonix.app/Contents/MacOS/stonix</string>
-        <string>-c</string>
-        <string>-f</string>
-    </array>
-    <key>StartCalendarInterval</key>
-    <dict>
-        <key>Day</key>
-        <integer>''' + str(randday) + '''</integer>
-        <key>Hour</key>
-        <integer>''' + str(randhour) + '''</integer>
-        <key>Minute</key>
-        <integer>''' + str(randminute) + '''</integer>
-    </dict>
-</dict>
-</plist>'''
+    echo "Creating symlink: ${STOINX4MAC_LINK} -> ${STONIX4MAC_LINK_SOURCE}..."
+    logger "Creating symlink: ${STOINX4MAC_LINK} -> ${STONIX4MAC_LINK_SOURCE}..."
+    ln -s ${STONIX4MAC_LINK_SOURCE} ${STOINX4MAC_LINK}
+fi
 
-    path_end = "/Library/LaunchDaemons/gov.lanl.stonix.fix.plist"
-    plist_path = os.path.join(targetDir, path_end)
-
-    if not os.path.isfile(plist_path):
-        """
-        Currently unused code
-        #####
-        # Get the date
-        myDate = time.strftime("%C%y%m%d", time.localtime())
-        myTime = time.strftime("%I%M%S%p", time.localtime())
-
-        #####
-        # append the bak.date to the filename
-        backup = plist_path + "." + myDate + "." + myTime
-
-        #try:
-        #    shutil.move(plist_path, backup)
-        #except Exception, err:
-        #    log_message("Exception trying to move file: " + str(plist_path))
-        #    log_message("Associated exception: " + str(err))
-        """
-        try:
-            f = open(plist_path, 'w')
-            f.write(stonixplistfix)
-            f.close()
-        except Exception, err:
-            log_message("Problem trying to write plist for fix..")
-            log_message(traceback.format_exc())
-
-        # chown launchagent (both user and group)
-        try:
-            os.chown(plist_path, 0, 0)
-        except Exception, err:
-            log_message("Could not chown file: " + str(plist_path))
-            log_message(traceback.format_exc())
-            log_message("Associated exception: " + str(err))
-
-        # chmod launchagent
-        try:
-            os.chmod(plist_path, 0644)
-        except Exception, err:
-            log_message("Cannot chmod file: " + str(plist_path))
-            log_message(traceback.format_exc())
-            log_message("Associated exception: " + str(err))
-
-
-def fix_app_perms(rootDir="/Applications/stonix4mac.app",
-                  message_level="normal"):
-    """
-    Make sure directories are 775, files and links are 664
-    Required on the Mac, especially for admins to be able to
-    update the app.
-
-    pass in the directory you want to start from.
-    """
-    for dirName, _, fileList in os.walk(rootDir):
-        fullDirName = os.path.join(os.path.abspath(rootDir), dirName)
-        log_message('Found directory: %s' % fullDirName, "normal",
-                    message_level)
-        os.chmod(fullDirName, 0755)
-        os.chown(fullDirName, 0, 80)
-        for fname in fileList:
-            fullFName = os.path.join(os.path.abspath(rootDir), dirName, fname)
-            log_message('\t%s' % fullFName, "normal", message_level)
-            if os.path.isfile(fullFName):
-                os.chmod(fullFName, 0664)
-                os.chown(fullFName, 0, 80)
-
-
-def make_files_executable():
-    """
-    Purpose: to make stonix4mac and stonix executable blobs executable.
-    """
-    files = ["/Applications/stonix4mac.app/Contents/MacOS/stonix4mac",
-             "/Applications/stonix4mac.app/Contents/Resources/stonix.app/" +
-             "Contents/MacOS/stonix"]
-
-    for myfile in files:
-        os.chmod(myfile, 0775)
-
-
-def make_whatis(message_level):
-    """
-    reindex the man page database
-    """
-    out = ""
-    err = ""
-    try:
-        out, err = Popen("/usr/libexec/makewhatis", stdout=PIPE, stderr=PIPE).communicate()
-    except Exception, err:
-        log_message(traceback.format_exc())
-        log_message("error trying to re-index the man page database...", "normal", message_level)
-
-    log_message("output: " + str(out), "normal", message_level)
-    log_message("error: " + str(err), "normal", message_level)
-
-def touch_stonix_conf(message_level):
-    """
-    If the stonix.conf file doesn't exist, "touch" the file..
-    """
-    stonix_conf = "/etc/stonix.conf"
-    if not os.path.exists(stonix_conf):
-        touch(stonix_conf, message_level)
-        libc = getLibc()
-        libc.sync()
-        time.sleep(1)
-        libc.sync()
-        time.sleep(1)
-        libc.sync()
-        time.sleep(1)
-        try:
-            os.chmod(stonix_conf, 0o644)
-        except Exception, err:
-            log_message("Could not chmod file: " + str(stonix_conf))
-            log_message(traceback.format_exc())
-            log_message("Associated exception: " + str(err))
-        try:
-            os.chown(stonix_conf, 0, 0)
-        except Exception, err:
-            log_message("Could not chown file: " + str(stonix_conf))
-            log_message(traceback.format_exc())
-            log_message("Associated exception: " + str(err))
-
- 
-def main():
-    """
-    Main function...
-    """
-    message_level = "debug"
-    log_message("Starting stonix4mac package postflight...", "normal",
-                message_level)
-
-    libc = getLibc()
-    # etcMove("/Applications/stonix4mac.app/Contents/Resources", message_level)
-    # 
-    # libc.sync()
-    # time.sleep(3)
-    # libc.sync()
-    # time.sleep(3)
-    # libc.sync()
-
-    touch_stonix_conf(message_level)
-
-    libc.sync()
-
-    fix_app_perms()
-
-    libc.sync()
-
-    make_files_executable()
-
-    libc.sync()
-
-    stonix = "/usr/local/bin/stonix"
-    stonix4mac = "/usr/local/bin/stonix4mac"
-
-    make_valid_link(stonix, "/Applications/stonix4mac.app/Contents/Resources/stonix.app/Contents/MacOS/stonix")
-
-    libc.sync()
-
-    make_valid_link(stonix4mac, "/Applications/stonix4mac.app/Contents/MacOS/stonix4mac")
-
-    libc.sync()
-
-    make_whatis(message_level)
-
-    libc.sync()
-    time.sleep(3)
-    libc.sync()
-    time.sleep(3)
-    libc.sync()
-    time.sleep(3)
-
-    log_message("Finished stonix4mac package postflight...", "normal",
-                message_level)
-
-
-if __name__ == "__main__":
-    sys.exit(main())
+echo "Finished stonix4mac package postinstall."
+logger "Finished stonix4mac package postinstall."

@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 ###############################################################################
 #                                                                             #
 # Copyright 2019. Triad National Security, LLC. All rights reserved.          #
@@ -25,8 +25,8 @@
 import os
 import traceback
 import types
-from .CommandHelper import CommandHelper
-from .logdispatcher import LogPriority
+from stonix_resources.CommandHelper import CommandHelper
+from stonix_resources.logdispatcher import LogPriority
 
 
 class SystemIntegrityProtectionObject():
@@ -212,7 +212,7 @@ class SystemIntegrityProtectionObject():
 
         '''
         datatype = type(pMessage)
-        if datatype == bytes:
+        if datatype == str:
             if not (pMessage == ""):
                 msg = pMessage
                 if (self.msg == ""):
@@ -232,7 +232,7 @@ class SystemIntegrityProtectionObject():
         else:
             raise TypeError("pMessage with value" + str(pMessage) + \
                             "is of type " + str(datatype) + " not of " + \
-                            "type " + str(bytes) + \
+                            "type " + str(str) + \
                             " or type " + str(list) + \
                             " as expected!")
         return self.msg

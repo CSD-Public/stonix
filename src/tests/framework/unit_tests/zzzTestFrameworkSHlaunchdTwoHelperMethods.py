@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 ###############################################################################
 #                                                                             #
 # Copyright 2019. Triad National Security, LLC. All rights reserved.          #
@@ -67,7 +67,7 @@ if sys.platform == 'darwin':
 
         def test_isValidServicePath(self):
             ''' '''
-            for test_key, test_values in service_path_test_data.items():
+            for test_key, test_values in list(service_path_test_data.items()):
                 if re.match("^valid_service_paths", test_key):
                     for test_item in test_values:
                         self.assertTrue(self.sh.isValidServicePath(test_item),
@@ -81,7 +81,7 @@ if sys.platform == 'darwin':
 
         def test_getServiceNameFromService(self):
             ''' '''
-            for test_key, test_values in name_from_service_test_data.items():
+            for test_key, test_values in list(name_from_service_test_data.items()):
                 if re.match("^valid_service_plists", test_key):
                     for test_item in test_values:
                         self.assertTrue(self.sh.isValidServicePath(test_item),
@@ -95,7 +95,7 @@ if sys.platform == 'darwin':
 
         def test_targetValid(self):
             ''' '''
-            for test_key, test_values in target_valid_test_data.items():
+            for test_key, test_values in list(target_valid_test_data.items()):
                 if re.match("^valid_target_data", test_key):
                     for test_item in test_values:
                         params = {test_item[1]['serviceName'][0]:

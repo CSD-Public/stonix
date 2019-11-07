@@ -207,9 +207,9 @@ class RunWith(object):
 
 
         '''
-        print("Output: " + str(self.stdout))
-        print("Error: " + str(self.stderr))
-        print("Return code: " + str(self.retcode))
+        print(("Output: " + str(self.stdout)))
+        print(("Error: " + str(self.stderr)))
+        print(("Return code: " + str(self.retcode)))
         return self.stdout, self.stderr, self.retcode
 
     ###########################################################################
@@ -1127,8 +1127,8 @@ def runMyThreadCommand(cmd, logger, myshell=False):
     if not isinstance(logger, CyLogger):
         raise NotACyLoggerError("Passed in value for logger is "
                                 "invalid, try again.")
-    print(str(cmd))
-    print(str(logger))
+    print((str(cmd)))
+    print((str(logger)))
     if cmd and logger:
         run_thread = RunThread(cmd, logger, myshell)
         run_thread.start()

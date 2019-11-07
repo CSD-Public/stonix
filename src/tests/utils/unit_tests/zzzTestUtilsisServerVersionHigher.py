@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 ###############################################################################
 #                                                                             #
 # Copyright 2019. Triad National Security, LLC. All rights reserved.          #
@@ -103,7 +103,7 @@ class zzzTestUtilsisServerVersionHigher(unittest.TestCase) :
         self.assertEqual(expected_result, isServerVersionHigher(version, server_version))
 
 
-for behavior, test_cases in version_test_case_data.items():
+for behavior, test_cases in list(version_test_case_data.items()):
     for case in test_cases:
         (expected_result, version, server_version, comment) = case
         test_name = "test_{0}_{1}_{2}_{3}".format(behavior, version, server_version, comment)

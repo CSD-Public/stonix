@@ -32,10 +32,10 @@ Created on Dec 16, 2013
 @change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
 '''
 
-from ..stonixutilityfunctions import resetsecon, checkPerms, setPerms, iterate
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..KVEditorStonix import KVEditorStonix
+from stonixutilityfunctions import resetsecon, checkPerms, setPerms, iterate
+from rule import Rule
+from logdispatcher import LogPriority
+from KVEditorStonix import KVEditorStonix
 import os
 import traceback
 

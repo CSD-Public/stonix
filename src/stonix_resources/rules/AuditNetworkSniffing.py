@@ -38,9 +38,9 @@ import re
 import traceback
 import os
 
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..CommandHelper import CommandHelper
+from rule import Rule
+from logdispatcher import LogPriority
+from CommandHelper import CommandHelper
 
 
 class AuditNetworkSniffing(Rule):

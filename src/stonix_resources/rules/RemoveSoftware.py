@@ -30,10 +30,10 @@ Created on Apr 5, 2016
 
 import traceback
 
-from ..pkghelper import Pkghelper
-from ..logdispatcher import LogPriority
-from ..stonixutilityfunctions import iterate
-from ..rule import Rule
+from pkghelper import Pkghelper
+from logdispatcher import LogPriority
+from stonixutilityfunctions import iterate
+from rule import Rule
 
 
 class RemoveSoftware(Rule):

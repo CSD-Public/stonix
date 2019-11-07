@@ -48,12 +48,12 @@ import os
 import re
 import traceback
 
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..pkghelper import Pkghelper
-from ..CommandHelper import CommandHelper
-from ..ServiceHelper import ServiceHelper
-from ..stonixutilityfunctions import iterate
+from rule import Rule
+from logdispatcher import LogPriority
+from pkghelper import Pkghelper
+from CommandHelper import CommandHelper
+from ServiceHelper import ServiceHelper
+from stonixutilityfunctions import iterate
 
 
 class SecureFTP(Rule):

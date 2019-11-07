@@ -24,10 +24,10 @@ Created on Aug 06, 2012
 import re
 import time
 
-from .stonixutilityfunctions import psRunning
-from .logdispatcher import LogPriority
-from .CommandHelper import CommandHelper
-from .StonixExceptions import repoError
+from stonix_resources.stonixutilityfunctions import psRunning
+from stonix_resources.logdispatcher import LogPriority
+from stonix_resources.CommandHelper import CommandHelper
+from stonix_resources.StonixExceptions import repoError
 
 
 class AptGet(object):
@@ -70,11 +70,12 @@ class AptGet(object):
         self.aptinstall = "DEBIAN_FRONTEND=noninteractive " + self.aptgetloc + " -y --assume-yes install "
         self.aptremove = "DEBIAN_FRONTEND=noninteractive " + self.aptgetloc + " -y remove "
 
-        self.aptchkupdates = self.aptgetloc + " -u upgrade --assume-no "
+        self.aptchkupdates = self.aptgetloc + " list --upgradeable "
         self.aptupgrade = self.aptgetloc + " -u upgrade --assume-yes "
         self.checkinstalled = "/usr/bin/apt list --installed "
         self.checkavailable = "/usr/bin/apt-cache search --names-only "
         self.findpkgforfilename = "/usr/bin/dpkg -S "
+        self.pkgerrors = [1,100]
 
     def installpackage(self, package):
         """Install a package. Return a bool indicating success or failure.
@@ -96,6 +97,9 @@ class AptGet(object):
         trynum = 0
         pslist = ["apt", "apt-get", "dpkg"]
 
+        if type(package) is bytes:
+            package = package.decode('utf-8')
+
         for ps in pslist:
             while psRunning(ps):
                 trynum += 1
@@ -109,22 +113,17 @@ class AptGet(object):
 
         try:
 
-            try:
-                self.ch.executeCommand(self.aptinstall + package)
-                retcode = self.ch.getReturnCode()
-                errstr = self.ch.getErrorString()
-                # recursive call to this method if package manager is still locked
-                if re.search("Could not get lock", errstr, re.I):
-                    self.logger.log(LogPriority.DEBUG, "Apt package manager is in-use by another process. Waiting for it to be freed...")
-                    time.sleep(5)
-                    return self.installpackage(package)
-                elif retcode != 0:
-                    raise repoError('apt', retcode)
-
-            except repoError as repoerr:
-                if not repoerr.success:
-                    installed = False
-                    self.logger.log(LogPriority.WARNING, str(errstr))
+            self.ch.executeCommand(self.aptinstall + package)
+            retcode = self.ch.getReturnCode()
+            errstr = self.ch.getErrorString()
+            # recursive call to this method if package manager is still locked
+            if re.search("Could not get lock", errstr, re.I):
+                self.logger.log(LogPriority.DEBUG, "Apt package manager is in-use by another process. Waiting for it to be freed...")
+                time.sleep(5)
+                return self.installpackage(package)
+            elif retcode in self.pkgerrors:
+                installed = False
+                self.logger.log(LogPriority.DEBUG, str(errstr))
 
             if installed:
                 self.logger.log(LogPriority.DEBUG, "Successfully installed package " + str(package))
@@ -151,6 +150,9 @@ class AptGet(object):
         trynum = 0
         pslist = ["apt", "apt-get", "dpkg"]
 
+        if type(package) is bytes:
+            package = package.decode('utf-8')
+
         for ps in pslist:
             while psRunning(ps):
                 trynum += 1
@@ -164,16 +166,12 @@ class AptGet(object):
 
         try:
 
-            try:
-                self.ch.executeCommand(self.aptremove + package)
-                retcode = self.ch.getReturnCode()
+            self.ch.executeCommand(self.aptremove + package)
+            retcode = self.ch.getReturnCode()
+            if retcode in self.pkgerrors:
                 errstr = self.ch.getErrorString()
-                if retcode != 0:
-                    raise repoError('apt', retcode)
-            except repoError as repoerr:
-                if not repoerr.success:
-                    removed = False
-                    self.logger.log(LogPriority.WARNING, str(errstr))
+                removed = False
+                self.logger.log(LogPriority.DEBUG, str(errstr))
 
             if removed:
                 self.logger.log(LogPriority.DEBUG, "Successfully removed package " + str(package))
@@ -199,10 +197,12 @@ class AptGet(object):
         """
 
         installed = False
-        outputstr = ""
         maxtries = 12
         trynum = 0
         pslist = ["apt", "apt-get", "dpkg"]
+
+        if type(package) is bytes:
+            package = package.decode('utf-8')
 
         for ps in pslist:
             while psRunning(ps):
@@ -217,17 +217,12 @@ class AptGet(object):
 
         try:
 
-            try:
-                self.ch.executeCommand(self.checkinstalled + package)
-                retcode = self.ch.getReturnCode()
-                outputstr = self.ch.getOutputString()
+            self.ch.executeCommand(self.checkinstalled + package)
+            retcode = self.ch.getReturnCode()
+            outputstr = self.ch.getOutputString()
+            if retcode in self.pkgerrors:
                 errstr = self.ch.getErrorString()
-                if retcode != 0:
-                    raise repoError('apt', retcode, str(errstr))
-            except repoError as repoerr:
-                if not repoerr.success:
-                    self.logger.log(LogPriority.WARNING, str(repoerr))
-                    return False
+                self.logger.log(LogPriority.DEBUG, str(errstr))
 
             if re.search(package + ".*installed", outputstr, re.I):
                 installed = True
@@ -254,11 +249,13 @@ class AptGet(object):
         """
 
         found = False
-        repoerr = ""
         outputstr = ""
         maxtries = 12
         trynum = 0
         pslist = ["apt", "apt-get", "dpkg"]
+
+        if type(package) is bytes:
+            package = package.decode('utf-8')
 
         for ps in pslist:
             while psRunning(ps):
@@ -275,20 +272,15 @@ class AptGet(object):
 
         try:
 
-            try:
-                self.ch.executeCommand(self.checkavailable + "^" + package + "$")
-                retcode = self.ch.getReturnCode()
-                outputstr = self.ch.getOutputString()
+            self.ch.executeCommand(self.checkavailable + "^" + package + "$")
+            retcode = self.ch.getReturnCode()
+            if retcode in self.pkgerrors:
                 errstr = self.ch.getErrorString()
-                if retcode != 0:
-                    raise repoError('apt', retcode, str(errstr))
-            except repoError as repoerr:
-                if not repoerr.success:
-                    self.logger.log(LogPriority.WARNING, str(repoerr))
-                    return False
-
-            if re.search("^" + package, outputstr, re.I):
-                found = True
+                self.logger.log(LogPriority.DEBUG, errstr)
+            else:
+                outputstr = self.ch.getOutputString()
+                if re.search("^" + package, outputstr, re.I):
+                    found = True
 
             if found:
                 self.logger.log(LogPriority.DEBUG, "Package " + str(package) + " is available to install")
@@ -316,16 +308,15 @@ class AptGet(object):
 
         try:
 
-            try:
-                self.ch.executeCommand(self.aptupgrade + package)
-                retcode = self.ch.getReturnCode()
+            if type(package) is bytes:
+                package = package.decode('utf-8')
+
+            self.ch.executeCommand(self.aptupgrade + package)
+            retcode = self.ch.getReturnCode()
+            if retcode in self.pkgerrors:
                 errstr = self.ch.getErrorString()
-                if retcode != 0:
-                    raise repoError('apt', retcode, str(errstr))
-            except repoError as repoerr:
-                if not repoerr.success:
-                    self.logger.log(LogPriority.WARNING, str(errstr))
-                    updated = False
+                updated = False
+                self.logger.log(LogPriority.DEBUG, errstr)
 
             if package:
                 if updated:
@@ -358,17 +349,14 @@ class AptGet(object):
 
         try:
 
-            try:
-                self.ch.executeCommand(self.aptchkupdates + package)
-                retcode = self.ch.getReturnCode()
+            self.ch.executeCommand(self.aptchkupdates + package)
+            retcode = self.ch.getReturnCode()
+            if retcode in self.pkgerrors:
                 errstr = self.ch.getErrorString()
-                if retcode != 0:
-                    raise repoError('apt', retcode, str(errstr))
-            except repoError as repoerr:
-                if not repoerr.success:
-                    self.logger.log(LogPriority.WARNING, str(errstr))
-                    return False
-                else:
+                self.logger.log(LogPriority.DEBUG, errstr)
+            else:
+                outputstr = self.ch.getOutputString()
+                if re.search("upgradable", outputstr, re.I):
                     updatesavail = True
 
             if package:

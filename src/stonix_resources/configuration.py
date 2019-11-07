@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 ###############################################################################
 #                                                                             #
 # Copyright 2019. Triad National Security, LLC. All rights reserved.          #
@@ -58,7 +58,7 @@ import os
 import re
 import inspect
 
-from .localize import STONIXVERSION
+from stonix_resources.localize import STONIXVERSION
 
 
 class Configuration:
@@ -149,7 +149,7 @@ version = """ + str(STONIXVERSION) + """
                     if datatype == 'list':
                         newval = ''
                         for element in value:
-                            newval = newval + element + ' '
+                            newval = newval + str(element) + ' '
                         value = newval
                 except AttributeError:
                     continue
@@ -182,7 +182,7 @@ version = """ + str(STONIXVERSION) + """
             fhandle.close()
             os.chmod(self.configpath, 0o644)
         except IOError as err:
-            print("ERROR: " + __name__ + ": line number " + str(inspect.currentframe().f_lineno) + ": " + type(err).__name__ + ": " + str(err))
+            print(("ERROR: " + __name__ + ": line number " + str(inspect.currentframe().f_lineno) + ": " + type(err).__name__ + ": " + str(err)))
             sys.exit(1)
         except:
             raise
@@ -227,7 +227,7 @@ version = """ + str(STONIXVERSION) + """
                 os.chmod(self.configpath, 0o644)
             config.readfp(open(self.configpath))
         except IOError as err:
-            print("ERROR: " + __name__ + ": line number " + str(inspect.currentframe().f_lineno) + ": " + type(err).__name__ + ": " + str(err))
+            print(("ERROR: " + __name__ + ": line number " + str(inspect.currentframe().f_lineno) + ": " + type(err).__name__ + ": " + str(err)))
             sys.exit(1)
         # print config.sections()
         # print config.options('MAIN')

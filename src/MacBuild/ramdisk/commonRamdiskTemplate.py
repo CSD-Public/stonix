@@ -53,9 +53,9 @@ class RamDiskTemplate(object):
 
 
         '''
-        print("Success: " + str(self.success))
-        print("Mount point: " + str(self.mntPoint))
-        print("Device: " + str(self.myRamdiskDev))
+        print(("Success: " + str(self.success)))
+        print(("Mount point: " + str(self.mntPoint)))
+        print(("Device: " + str(self.myRamdiskDev)))
         return (self.success, str(self.mntPoint), str(self.myRamdiskDev))
 
     ###########################################################################

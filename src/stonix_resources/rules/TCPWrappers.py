@@ -41,11 +41,11 @@ import re
 import traceback
 import socket
 
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..stonixutilityfunctions import iterate
+from rule import Rule
+from logdispatcher import LogPriority
+from stonixutilityfunctions import iterate
 
-from ..localize import ALLOWNETS, HOSTSALLOWDEFAULT, HOSTSDENYDEFAULT
+from localize import ALLOWNETS, HOSTSALLOWDEFAULT, HOSTSDENYDEFAULT
 
 
 class TCPWrappers(Rule):
@@ -133,6 +133,8 @@ class TCPWrappers(Rule):
                 self.hosts_allow_contents.append(line)
             else:
                 for s in subnets:
+                    if type(s) is bytes:
+                        s = s.decode('utf-8')
                     self.hosts_allow_contents.append(re.sub("{allownet}", s, line))
 
     def convert_to_legacy(self, subnet):

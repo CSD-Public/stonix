@@ -46,10 +46,10 @@ import re
 import traceback
 import shutil
 
-from ..rule import Rule
-from ..stonixutilityfunctions import iterate
-from ..logdispatcher import LogPriority
-from ..CommandHelper import CommandHelper
+from rule import Rule
+from stonixutilityfunctions import iterate
+from logdispatcher import LogPriority
+from CommandHelper import CommandHelper
 
 
 class SetDefaultUserUmask(Rule):

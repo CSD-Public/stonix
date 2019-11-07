@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 ###############################################################################
 #                                                                             #
 # Copyright 2019. Triad National Security, LLC. All rights reserved.          #
@@ -77,7 +77,7 @@ from pwd import getpwuid
 from types import *
 from distutils.version import LooseVersion
 from subprocess import call, Popen, PIPE, STDOUT
-from .logdispatcher import LogPriority
+from stonix_resources.logdispatcher import LogPriority
 
 
 def resetsecon(filename):
@@ -138,6 +138,9 @@ def getlocalfs(logger, environ):
             proc.wait()
             mountdata = proc.stdout.readlines()
             for line in mountdata:
+                if type(line) is bytes:
+                    line = line.decode('utf-8')
+
                 logger.log(LogPriority.DEBUG,
                            ['GetLocalFs', 'OS X processing: ' + line])
                 if re.search('^/dev/disk', line):
@@ -678,7 +681,7 @@ def readFileString(filepath, logger):
     return contents
 
 def writeFile(tmpfile, contents, logger):
-    '''Write <contents> to <tmpfile>.
+    """Write <contents> to <tmpfile>.
     Return True if successful, False if not.
     
     @author: Derek Walker
@@ -693,21 +696,39 @@ def writeFile(tmpfile, contents, logger):
         to implementation in rules
 @change: Breen Malmberg - 7/12/2017 - minor doc string edit
 
-    '''
+    """
 
     success = True
 
     try:
 
-        w = open(tmpfile, 'w')
-        if isinstance(contents, str):
-            w.write(contents)
-        elif isinstance(contents, list):
-            w.writelines(contents)
-        else:
+        # python 3 safety check on string/bytes argument input
+        if type(tmpfile) is bytes:
+            tmpfile = tmpfile.decode('utf-8')
+        if type(contents) is bytes:
+            contents = contents.decode('utf-8')
+        if type(contents) is list:
+            for i in contents:
+                if type(i) is bytes:
+                    contents = [i.decode('utf-8') for i in contents]
+
+        # check if parent directory exists first
+        parentdir = os.path.abspath(os.path.join(tmpfile, os.pardir))
+        if not os.path.isdir(parentdir):
             success = False
-            logger.log(LogPriority.DEBUG, "Given contents was niether a string, nor a list! Could not write to file " + str(tmpfile))
-        w.close()
+            logger.log(LogPriority.DEBUG, "Parent directory for given path does not exist. Cannot write file.")
+        else:
+            w = open(tmpfile, 'w')
+
+            if type(contents) is str:
+                w.write(contents)
+            elif type(contents) is list:
+                w.writelines(contents)
+            else:
+                success = False
+                logger.log(LogPriority.DEBUG, "Given contents was niether a string, nor a list! Could not write to file " + str(tmpfile))
+            w.close()
+
     except Exception:
         raise
     return success
@@ -794,6 +815,7 @@ def checkUserGroupName(ownergrp, owner, group, actualmode, desiredmode, logger):
 
     except Exception:
         raise
+
     return retval
 
 def checkPerms(path, perm, logger):
@@ -805,6 +827,7 @@ def checkPerms(path, perm, logger):
     @author: Derek Walker
     @change: Breen Malmberg - 1/10/2017 - doc string edit; return val init;
             minor refactor; parameter validation; logging
+    @change: Breen Malmberg - 06/18/2018 - minor doc string edit
     :returns: retval
     :rtype: bool
 
@@ -1074,7 +1097,7 @@ def isServerVersionHigher(client_version="0.0.0", server_version="0.0.0", logger
                 logger.log(LogPriority.DEBUG, "isServerVersion: " + x)
         else:
             def logprint(x):
-                print(str(x))
+                print((str(x)))
 
         if re.match("^$", client_version) or re.match("^$", server_version):
             needToUpdate = False
@@ -1355,7 +1378,7 @@ def validateParam(logger, param, ptype, pname):
         if log:
             logger.log(LogPriority.ERROR, str(errmsg))
         else:
-            print(str(errmsg))
+            print((str(errmsg)))
     return valid
 
 def reportStack(level=1):

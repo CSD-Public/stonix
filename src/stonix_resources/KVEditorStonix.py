@@ -20,8 +20,8 @@ Created on Jun 12, 2013
 
 @author: dwalker
 '''
-from .KVEditor import KVEditor
-from .logdispatcher import LogPriority
+from stonix_resources.KVEditor import KVEditor
+from stonix_resources.logdispatcher import LogPriority
 import os
 
 
@@ -81,6 +81,7 @@ class KVEditorStonix(KVEditor):
             return True
         else:
             debug = "KVEditorStonix report is returning False\n"
+            self.logger.log(LogPriority.DEBUG, debug)
             return False
 ###############################################################################
     def fix(self):
@@ -121,7 +122,7 @@ class KVEditorStonix(KVEditor):
                 return False
             if self.getEventID():
                 event = {"eventtype": "comm",
-                         "command": self.editor.getundoCmd()}
+                         "command": self.editor.getUndoCmd()}
                 self.stchlgr.recordchgevent(self.getEventID(), event)
             debug = "KVEditorStonix commit is returning True\n"
             self.logger.log(LogPriority.DEBUG, debug)

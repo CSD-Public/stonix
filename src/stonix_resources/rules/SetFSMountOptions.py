@@ -42,10 +42,10 @@ order to help protect against malicious code being run on the system.
 
 
 
-from ..rule import Rule
-from ..stonixutilityfunctions import iterate
-from ..stonixutilityfunctions import validateParam
-from ..logdispatcher import LogPriority
+from rule import Rule
+from stonixutilityfunctions import iterate
+from stonixutilityfunctions import validateParam
+from logdispatcher import LogPriority
 
 import os
 import re

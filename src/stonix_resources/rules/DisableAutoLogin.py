@@ -40,10 +40,10 @@ import traceback
 
 # The period was making python complain. Adding the correct paths to PyDev
 # made this the working scenario.
-from ..ruleKVEditor import RuleKVEditor
-from ..filehelper import FileHelper
-from ..CommandHelper import CommandHelper
-from ..logdispatcher import LogPriority
+from ruleKVEditor import RuleKVEditor
+from filehelper import FileHelper
+from CommandHelper import CommandHelper
+from logdispatcher import LogPriority
 
 
 class DisableAutoLogin(RuleKVEditor):

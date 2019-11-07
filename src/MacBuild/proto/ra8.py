@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 
 from subprocess import Popen, PIPE
 from tempfile import SpooledTemporaryFile as tmp

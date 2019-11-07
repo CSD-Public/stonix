@@ -30,9 +30,9 @@ dictionary
 import re
 import types
 
-from ..ruleKVEditor import RuleKVEditor
-from ..CommandHelper import CommandHelper
-from ..localize import APPLESOFTUPDATESERVER
+from ruleKVEditor import RuleKVEditor
+from CommandHelper import CommandHelper
+from localize import APPLESOFTUPDATESERVER
 
 
 class ConfigureAppleAppStore(RuleKVEditor):
@@ -102,7 +102,7 @@ dictionary"""
 
         :param pValue: string; value to format
         :return: outputvalue - formatted string
-        :rtype: basestring
+        :rtype: str
         """
 
         outputvalue = pValue

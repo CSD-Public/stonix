@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 ###############################################################################
 #                                                                             #
 # Copyright 2019. Triad National Security, LLC. All rights reserved.          #
@@ -25,9 +25,9 @@ Created on Dec 14, 2017
 import os, re
 
 import unittest
-from . import environment
-from . import logdispatcher
-from .logdispatcher import LogPriority
+from stonix_resources import environment
+from stonix_resources import logdispatcher
+from stonix_resources.logdispatcher import LogPriority
 
 
 class zzzTestRuleProperties(unittest.TestCase):

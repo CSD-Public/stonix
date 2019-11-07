@@ -1,3 +1,5 @@
+#!/bin/env python3
+
 ###############################################################################
 #                                                                             #
 # Copyright 2019. Triad National Security, LLC. All rights reserved.          #
@@ -15,8 +17,7 @@
 #                                                                             #
 ###############################################################################
 
-#!/bin/env python
-'''
+"""
 Created on Feb 28, 2014
 
 build script for stonix package on debian systems
@@ -24,7 +25,7 @@ build script for stonix package on debian systems
 @author Breen Malmberg
 @change: Breen Malmberg - 3/14/2017 - updated controltext and
         changelog text
-'''
+"""
 
 import os
 import re
@@ -60,7 +61,7 @@ controltext = '''Package: stonix''' + color + '''
 Version: ''' + str(stonixversion) + '''
 Architecture: all
 Maintainer: STONIX Dev's <stonix-dev@lanl.gov>
-Depends: python2.7
+Depends: python3
 Section: python
 Priority: extra
 Description: ''' + str(stonixversion) + ''' release of STONIX hardening tool for Ubuntu

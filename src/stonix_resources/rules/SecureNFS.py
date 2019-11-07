@@ -38,13 +38,13 @@ return self.rulesuccess. self.rulesuccess will now return instead of success.
 '''
 
 
-from ..stonixutilityfunctions import iterate, setPerms, checkPerms
-from ..stonixutilityfunctions import createFile
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..KVEditorStonix import KVEditorStonix
-from ..pkghelper import Pkghelper
-from ..ServiceHelper import ServiceHelper
+from stonixutilityfunctions import iterate, setPerms, checkPerms
+from stonixutilityfunctions import createFile
+from rule import Rule
+from logdispatcher import LogPriority
+from KVEditorStonix import KVEditorStonix
+from pkghelper import Pkghelper
+from ServiceHelper import ServiceHelper
 import traceback
 import os
 import re

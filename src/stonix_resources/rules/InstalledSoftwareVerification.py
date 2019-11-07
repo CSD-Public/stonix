@@ -15,7 +15,7 @@
 #                                                                             #
 ###############################################################################
 
-'''
+"""
 Created on 2015/08/04
 Verify package integrity, correct permissions
 @author: Eric Ball
@@ -24,22 +24,22 @@ Verify package integrity, correct permissions
 @change: 2016/04/20 eball - Per RHEL 7 STIG, added a fix to automate correction
     of file permissions
 @change: 2018/07/30 Breen Malmberg - re-wrote the report and fix methods entirely
-'''
+"""
 
 
 
 import re
 import traceback
 
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..CommandHelper import CommandHelper
+from rule import Rule
+from logdispatcher import LogPriority
+from CommandHelper import CommandHelper
 
 
 class InstalledSoftwareVerification(Rule):
 
     def __init__(self, config, environ, logger, statechglogger):
-        '''Constructor'''
+        """Constructor"""
         Rule.__init__(self, config, environ, logger, statechglogger)
         self.config = config
         self.environ = environ
@@ -66,7 +66,7 @@ default.'
         self.sethelptext()
 
     def getInstalledPackages(self):
-        '''return a list of installed packages (as reported
+        """return a list of installed packages (as reported
         by rpm database)
 
 
@@ -75,7 +75,7 @@ default.'
         :rtype: list
 @author: Breen Malmberg
 
-        '''
+        """
 
         installedpackages = []
 
@@ -93,7 +93,7 @@ default.'
         return installedpackages
 
     def report(self):
-        '''Compile a list of files not conforming to rpm package database permissions (Mode)
+        """Compile a list of files not conforming to rpm package database permissions (Mode)
         report non-compliant if any are found
         else report compliant
 
@@ -105,7 +105,7 @@ default.'
 @author: Breen Malmberg
 @change: Breen Malmberg - 07/30/2018 - complete re-write of method
 
-        '''
+        """
 
         self.detailedresults = ""
         self.compliant = True
@@ -132,7 +132,7 @@ default.'
                     if re.search("^.*(\.+M|M\.+)", line, re.IGNORECASE):
                         sline = line.split()
                         self.badpermpkgs[pkg].append(sline[len(sline)-1])
-                        self.badpermfiles.append(sline[1])
+                        self.badpermfiles.append(sline[len(sline)-1])
                     # search for bad group ownership
                     if re.search("^.*(\.+G|G\.+)", line, re.IGNORECASE):
                         sline = line.split()
@@ -171,7 +171,7 @@ default.'
         return self.compliant
 
     def fix(self):
-        '''The fix method changes permissions to the package defaults.
+        """The fix method changes permissions to the package defaults.
 
 
         :returns: self.rulesuccess
@@ -181,11 +181,11 @@ default.'
 @author: Breen Malmberg
 @change: Breen Malmberg - 07/30/2018 - re-write of entire method
 
-        '''
+        """
 
         self.detailedresults = ""
         self.rulesuccess = True
-        fixcmd = "/usr/bin/rpm --setperms "
+        fixpermscmd = "/usr/bin/rpm --setperms "
 
         try:
 
@@ -194,12 +194,13 @@ default.'
 
             for pkg in self.badpermpkgs:
                 if self.badpermpkgs[pkg]:
-                    self.ch.executeCommand(fixcmd + pkg)
+                    self.ch.executeCommand(fixpermscmd + pkg)
                     retcode = self.ch.getReturnCode()
                     if retcode != 0:
                         self.rulesuccess = False
 
             self.detailedresults += "\n\nPlease note that we will not attempt to fix ownership, group ownership, or bad md5 checksums. For suggestions on what to do if files are found with these issues, please see the rule's help text."
+            self.detailedresults += "\nIt is expected that this rule will still be non-compliant after fix if files are found with incorrect ownership or group ownership."
 
         except (KeyboardInterrupt, SystemExit):
             raise

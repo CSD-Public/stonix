@@ -146,9 +146,9 @@ class RunWith(object):
 
 
         '''
-        print("Output: " + str(self.output))
-        print("Error: " + str(self.error))
-        print("Return code: " + str(self.returncode))
+        print(("Output: " + str(self.output)))
+        print(("Error: " + str(self.error)))
+        print(("Return code: " + str(self.returncode)))
         return self.output, self.error, self.returncode
 
     ############################################################################

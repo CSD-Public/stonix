@@ -1,4 +1,4 @@
-#!/usr/bin/python -u
+#!/usr/bin/env python3 -u
 """
 Create a "module" version stamp, sed a file with it.
 

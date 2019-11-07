@@ -1,9 +1,9 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 
 import os
 import getpass
 
-username = input("Username: ")
+username = eval(input("Username: "))
 passwd = getpass.getpass("Password: ")
 
 cmd = 'su ' + username + ' -c "/bin/top -l 1"'

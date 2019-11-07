@@ -26,10 +26,10 @@ and NX features, the kernel-PAE package should be installed to enable XD or NX s
 '''
 
 
-from ..rule import Rule
-from ..CommandHelper import CommandHelper
-from ..pkghelper import Pkghelper
-from ..logdispatcher import LogPriority
+from rule import Rule
+from CommandHelper import CommandHelper
+from pkghelper import Pkghelper
+from logdispatcher import LogPriority
 
 import re
 import os

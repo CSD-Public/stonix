@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 ###############################################################################
 #                                                                             #
 # Copyright 2019. Triad National Security, LLC. All rights reserved.          #
@@ -97,7 +97,7 @@ class zzzTestRuleConfigurePasswordPolicy(RuleTest):
         if self.ch.executeCommand(cmd):
             output = self.ch.getOutput()
             if output:
-                for item, values in goodprofiles.items():
+                for item, values in list(goodprofiles.items()):
                     self.editor = KVEditorStonix(self.statechglogger,
                                                   self.logdispatch, "profiles", "",
                                                   "", values, "", "", output)

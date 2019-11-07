@@ -28,10 +28,10 @@ Created on Jun 25, 2015
 '''
 
 import traceback
-from ..rule import Rule
-from ..CommandHelper import CommandHelper
-from ..stonixutilityfunctions import iterate
-from ..logdispatcher import LogPriority
+from rule import Rule
+from CommandHelper import CommandHelper
+from stonixutilityfunctions import iterate
+from logdispatcher import LogPriority
 import re
 
 

@@ -10,9 +10,9 @@ import sys
 import inspect
 import traceback
 
-from .. loggers import LogPriority as lp
-from .. loggers import CyLogger
-from .. libHelperExceptions import UnsupportedOSError, NotACyLoggerError
+from ..loggers import LogPriority as lp
+from ..loggers import CyLogger
+from ..libHelperExceptions import UnsupportedOSError, NotACyLoggerError
 
 
 class ManageUser(object):

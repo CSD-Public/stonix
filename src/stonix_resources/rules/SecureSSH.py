@@ -49,13 +49,13 @@ import os
 import traceback
 import re
 
-from ..rule import Rule
-from ..stonixutilityfunctions import iterate, checkPerms, setPerms, resetsecon
-from ..stonixutilityfunctions import createFile
-from ..KVEditorStonix import KVEditorStonix
-from ..logdispatcher import LogPriority
-from ..pkghelper import Pkghelper
-from ..ServiceHelper import ServiceHelper
+from rule import Rule
+from stonixutilityfunctions import iterate, checkPerms, setPerms, resetsecon
+from stonixutilityfunctions import createFile
+from KVEditorStonix import KVEditorStonix
+from logdispatcher import LogPriority
+from pkghelper import Pkghelper
+from ServiceHelper import ServiceHelper
 
 
 class SecureSSH(Rule):
@@ -118,7 +118,6 @@ class SecureSSH(Rule):
             self.sh = ServiceHelper(self.environ, self.logger)
             self.macloaded = False
             compliant = True
-            debug = ""
             self.client = {"Host": "*",
                            "Protocol": "2",
                            "GSSAPIAuthentication": "yes",
@@ -137,8 +136,13 @@ class SecureSSH(Rule):
                            "GSSAPIAuthentication": "yes",
                            "GSSAPICleanupCredentials": "yes",
                            "UsePAM": "yes",
-                           "Ciphers": "aes128-ctr,aes192-ctr,aes256-ctr,aes128-cbc,3des-cbc,aes192-cbc,aes256-cbc",
-                           "PermitUserEnvironment": "no"}
+                           "Ciphers": "aes128-ctr,aes192-ctr,aes256-ctr",
+                           "PermitUserEnvironment": "no",
+                           "PrintLastLog": "yes",
+                           "MACs": "hmac-sha2-256,hmac-sha2-512",
+                           "UsePrivilegeSeparation": "sandbox",
+                           "StrictModes": "yes",
+                           "Compression": "no"}
 
             if self.environ.getostype() == "Mac OS X":
                 self.serverfile = '/private/etc/ssh/sshd_config'

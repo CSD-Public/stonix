@@ -30,10 +30,10 @@ import tempfile
 import traceback
 import ctypes as C
 
-from .localize import MACREPOROOT
-from .logdispatcher import LogPriority
-from .CommandHelper import CommandHelper
-from .Connectivity import Connectivity
+from stonix_resources.localize import MACREPOROOT
+from stonix_resources.logdispatcher import LogPriority
+from stonix_resources.CommandHelper import CommandHelper
+from stonix_resources.Connectivity import Connectivity
 from ssl import SSLError
 
 
@@ -290,7 +290,7 @@ class MacPkgr(object):
                 count = 0
                 self.ch.executeCommand(cmd_one)
                 files2remove = self.ch.getOutputString().split("\n")
-                print("Files to remove: " + str(files2remove))
+                print(("Files to remove: " + str(files2remove)))
                 self.logger.log(LogPriority.DEBUG, files2remove)
                 if str(self.ch.getReturnCode()) == str(0):
                     for file in files2remove:
@@ -388,7 +388,7 @@ class MacPkgr(object):
                 self.libc.sync()
             except:
                 pass
-        print("Remove Package success: " + str(success))
+        print(("Remove Package success: " + str(success)))
         return success
 
     ###########################################################################
@@ -575,7 +575,7 @@ class MacPkgr(object):
                 #####
                 # Log the domain...
                 self.logger.log(LogPriority.DEBUG, "Domain: " + str(domain))
-            print("findDomain: " + str(domain))
+            print(("findDomain: " + str(domain)))
         except(KeyboardInterrupt, SystemExit):
             raise
         except Exception as err:
@@ -649,15 +649,16 @@ class MacPkgr(object):
                             while 1:
                                 try:
                                     if urlfile:
-                                        data = urlfile.read(chunk)
-                                        if not data:
+                                        databytes = urlfile.read(chunk)
+                                        if not databytes:
                                             message = "Done reading file: " + \
                                                       self.pkgUrl
                                             self.logger.log(LogPriority.DEBUG,
                                                             message)
                                             break
-                                        f.write(data)
-                                        message = "Read " + str(len(data)) + \
+                                        data = databytes
+                                        f.write(data.decode('utf-8', 'replace'))
+                                        message = "Read " + str(len(databytes)) + \
                                             " bytes"
                                         self.logger.log(LogPriority.DEBUG,
                                                         message)
@@ -791,7 +792,7 @@ class MacPkgr(object):
                 chunk = 16 * 1024 * 1024
                 m = hashlib.md5()
                 while True:
-                    data = fh.read(chunk)
+                    data = fh.read(chunk).encode('utf-8')
                     if not data:
                         break
                     m.update(data)

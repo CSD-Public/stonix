@@ -54,12 +54,12 @@ import traceback
 import glob
 import sys
 
-from ..CommandHelper import CommandHelper
-from ..rule import Rule
-from ..stonixutilityfunctions import readFile, setPerms, createFile
-from ..stonixutilityfunctions import checkPerms, iterate, writeFile, resetsecon
-from ..logdispatcher import LogPriority
-from ..pkghelper import Pkghelper
+from CommandHelper import CommandHelper
+from rule import Rule
+from stonixutilityfunctions import readFile, setPerms, createFile
+from stonixutilityfunctions import checkPerms, iterate, writeFile, resetsecon
+from logdispatcher import LogPriority
+from pkghelper import Pkghelper
 
 
 class DisableRemoveableStorage(Rule):

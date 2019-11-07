@@ -28,10 +28,10 @@ Created on Oct 26, 2016
 import traceback
 import os
 from re import search
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..stonixutilityfunctions import iterate
-from ..CommandHelper import CommandHelper
+from rule import Rule
+from logdispatcher import LogPriority
+from stonixutilityfunctions import iterate
+from CommandHelper import CommandHelper
 
 
 class STIGConfigureBluetoothPolicy(Rule):

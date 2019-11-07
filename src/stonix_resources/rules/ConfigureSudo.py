@@ -39,10 +39,10 @@ Created on Mar 7, 2013
 '''
 
 
-from ..stonixutilityfunctions import setPerms, checkPerms, iterate
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..pkghelper import Pkghelper
+from stonixutilityfunctions import setPerms, checkPerms, iterate
+from rule import Rule
+from logdispatcher import LogPriority
+from pkghelper import Pkghelper
 
 import traceback
 import os

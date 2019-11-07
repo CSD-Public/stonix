@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 ###############################################################################
 #                                                                             #
 # Copyright 2019. Triad National Security, LLC. All rights reserved.          #
@@ -17,14 +17,10 @@
 ###############################################################################
 
 
-'''
-This is a Unit Test for Rule ConfigureAppleSoftwareUpdate
+"""
+This is a Unit Test for Rule ConfigureNetworkTime
 
-@author: ekkehard j. koch
-@change: 03/18/2013 Original Implementation
-@change: 2016/02/10 roy Added sys.path.append for being able to unit test this
-                        file as well as with the test harness.
-'''
+"""
 
 import unittest
 import sys
@@ -33,14 +29,14 @@ sys.path.append("../../../..")
 from src.tests.lib.RuleTestTemplate import RuleTest
 from src.stonix_resources.CommandHelper import CommandHelper
 from src.tests.lib.logdispatcher_mock import LogPriority
-from src.stonix_resources.rules.SetNTP import SetNTP
+from src.stonix_resources.rules.ConfigureNetworkTime import ConfigureNetworkTime
 
 
-class zzzTestRuleSetNTP(RuleTest):
+class zzzTestRuleConfigureNetworkTime(RuleTest):
 
     def setUp(self):
         RuleTest.setUp(self)
-        self.rule = SetNTP(self.config,
+        self.rule = ConfigureNetworkTime(self.config,
                            self.environ,
                            self.logdispatch,
                            self.statechglogger)
@@ -56,13 +52,13 @@ class zzzTestRuleSetNTP(RuleTest):
         self.simpleRuleTest()
 
     def setConditionsForRule(self):
-        '''Configure system for the unit test
+        """Configure system for the unit test
 
         :param self: essential if you override this definition
         :returns: boolean - If successful True; If failure False
         @author: ekkehard j. koch
 
-        '''
+        """
         success = True
         if self.environ.getosfamily() == 'darwin':
             if success:
@@ -76,7 +72,7 @@ class zzzTestRuleSetNTP(RuleTest):
         return success
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
-        '''check on whether report was correct
+        """check on whether report was correct
 
         :param self: essential if you override this definition
         :param pCompliance: the self.iscompliant value of rule
@@ -84,7 +80,7 @@ class zzzTestRuleSetNTP(RuleTest):
         :returns: boolean - If successful True; If failure False
         @author: ekkehard j. koch
 
-        '''
+        """
         self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " + \
                              str(pCompliance) + ".")
         self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
@@ -93,28 +89,28 @@ class zzzTestRuleSetNTP(RuleTest):
         return success
 
     def checkFixForRule(self, pRuleSuccess):
-        '''check on whether fix was correct
+        """check on whether fix was correct
 
         :param self: essential if you override this definition
         :param pRuleSuccess: did report run successfully
         :returns: boolean - If successful True; If failure False
         @author: ekkehard j. koch
 
-        '''
+        """
         self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
                              str(pRuleSuccess) + ".")
         success = True
         return success
 
     def checkUndoForRule(self, pRuleSuccess):
-        '''check on whether undo was correct
+        """check on whether undo was correct
 
         :param self: essential if you override this definition
         :param pRuleSuccess: did report run successfully
         :returns: boolean - If successful True; If failure False
         @author: ekkehard j. koch
 
-        '''
+        """
         self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
                              str(pRuleSuccess) + ".")
         success = True

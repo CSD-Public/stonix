@@ -38,11 +38,11 @@ Check to see if all of the above operations have been done or not - report()
 
 import os
 import traceback
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..ServiceHelper import ServiceHelper
-from ..KVEditorStonix import KVEditorStonix
-from ..stonixutilityfunctions import iterate, setPerms, checkPerms, resetsecon
+from rule import Rule
+from logdispatcher import LogPriority
+from ServiceHelper import ServiceHelper
+from KVEditorStonix import KVEditorStonix
+from stonixutilityfunctions import iterate, setPerms, checkPerms, resetsecon
 
 
 class DisableBluetooth(Rule):

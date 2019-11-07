@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 '''
 Created on Sep 18, 2015
 Boot security program to turn off wifi, bluetooth, cameras and microphones.
@@ -10,7 +10,7 @@ This is most likely called from a job scheduled by the stonix program.
 
 import subprocess
 import os
-from . import networksetup
+from stonix_resources import networksetup
 
 
 class logmock:

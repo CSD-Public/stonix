@@ -39,11 +39,12 @@ import os
 import re
 import traceback
 
-from ..rule import Rule
-from ..stonixutilityfunctions import readFile, writeFile, iterate, resetsecon
-from ..logdispatcher import LogPriority
-from ..pkghelper import Pkghelper
-from ..CommandHelper import CommandHelper
+from rule import Rule
+from logdispatcher import LogPriority
+from pkghelper import Pkghelper
+from stonixutilityfunctions import iterate
+from CommandHelper import CommandHelper
+from KVEditorStonix import KVEditorStonix
 
 
 class ConfigureAIDE(Rule):
@@ -83,10 +84,10 @@ This rule is optional and will install and configure AIDE when it is run."""
         key2 = 'AIDEJOBTIME'
         instructions2 = """This string contains the time when the cron job for
         /usr/sbin/aide --check will run in /etc/crontab. The default value is
-        05 04 * * * (which means 4:05am daily)"""
-        default2 = "05 04 * * *"
+        00 18 * * 07 (which means weekly, on sundays at 6pm)"""
+        default2 = "00 18 * * 07"
         self.aidetime = self.initCi(datatype2, key2, instructions2, default2)
-        pattern = "^[0-5][0-9]\s*([0-2][0-3]|[0-1][0-9])\s*(\*|(0[1-9]|[12][0-9]|3[01]))\s*(\*|[0-1][0-2])\s*(\*|0[0-6])\s*$"
+        pattern = "^([0-9]{1,2})\s+([0-9]{1,2})\s+(\*|(3[0-1]|[0-2]?[0-9]))\s+(\*|(0[0-9]|[0-1]?[0-2]))\s+(\*|([0]?[0-7]))$"
         self.aidetime.setregexpattern(pattern)
 
     def report(self):
@@ -95,64 +96,31 @@ This rule is optional and will install and configure AIDE when it is run."""
         and self.currstate properties are updated to reflect the system status.
         self.rulesuccess will be updated if the rule does not succeed.
 
-        :return: self.compliant - True if compliant; False if not
+        :return: self.compliant
         :rtype: bool
 
         """
 
         try:
 
-            self.ph = Pkghelper(self.logger, self.environ)
-            self.ch = CommandHelper(self.logger)
             self.compliant = True
             self.detailedresults = ""
 
-            # is aide installed?
-            if self.ph.check('aide'):
+            self.init_objs()
 
-                # does aide exist in one of the expected paths?
-                if os.path.exists('/usr/sbin/aide'):
-                    aidepath = '/usr/sbin/aide'
-                elif os.path.exists('/usr/bin/aide'):
-                    aidepath = '/usr/bin/aide'
-                # if not, do not attempt to proceed
-                else:
-                    self.detailedresults += "Could not locate path to " + \
-                        "aide executable\n"
-                    self.compliant = False
+            try:
+                self.set_aide_paths()
+                self.set_aide_cron_job()
+            except:
+                pass
 
-                # does the system have a crontab?
-                if os.path.exists('/etc/crontab'):
-                    contents = readFile("/etc/crontab", self.logger)
-
-                    # is this system a debian distro?
-                    if self.ph.manager == 'apt-get':
-
-                        regex = self.aidetime.getcurrvalue() + " root " + \
-                            aidepath + " -c /etc/aide/aide.conf --check"
-                    else:
-                        regex = self.aidetime.getcurrvalue() + " root " + \
-                            aidepath + " --check"
-                    # is the aide cron job in the crontab?
-                    found = False
-                    for line in contents:
-                        if re.search(re.escape(regex), line.strip()):
-                            found = True
-                            break
-                    if not found:
-                        self.detailedresults += "Didn't find the aide job " + \
-                            "in the crontab\n"
-                        self.compliant = False
-                # if the system does not have a crontab, do not attempt to
-                # proceed
-                else:
-                    self.detailedresults += "Could not locate the system " + \
-                        "crontab"
-                    self.compliant = False
-            else:
-                self.detailedresults += "Aide is not installed\n"
+            if not self.report_aide_installed():
                 self.compliant = False
-            self.logger.log(LogPriority.DEBUG, self.detailedresults)
+            else:
+                if not self.report_aide_conf():
+                    self.compliant = False
+                if not self.report_aide_cronjob():
+                    self.compliant = False
 
         except (KeyboardInterrupt, SystemExit):
             raise
@@ -163,6 +131,111 @@ This rule is optional and will install and configure AIDE when it is run."""
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
 
         return self.compliant
+
+    def init_objs(self):
+        """
+
+        """
+
+        self.ph = Pkghelper(self.logger, self.environ)
+        self.ch = CommandHelper(self.logger)
+
+    def set_aide_paths(self):
+        """
+
+        """
+
+        self.aide_conf_file = ""
+        aide_conf_paths = ["/etc/aide/aide.conf", "/etc/aide.conf"]
+        for p in aide_conf_paths:
+            if os.path.isfile(p):
+                self.aide_conf_file = p
+                break
+        self.aide_package = "aide"
+        self.aide_cron_file = "/etc/cron.d/stonix_aide_check"
+        self.aide_bin_path = ""
+        aide_bin_paths = ["/usr/sbin/aide", "/usr/bin/aide"]
+        for p in aide_bin_paths:
+            if os.path.isfile(p):
+                self.aide_bin_path = p
+                break
+        self.crontab_bin = ""
+        crontab_bin_locs = ["/bin/crontab", "/sbin/crontab"]
+        for b in crontab_bin_locs:
+            if os.path.isfile(b):
+                self.crontab_bin = b
+                break
+
+    def set_aide_cron_job(self):
+        """
+
+        """
+
+        aidetime = self.aidetime.getcurrvalue()
+
+        if not aidetime:
+            self.aide_cron_job = ""
+        else:
+
+            if self.ph.manager == "apt-get":
+
+                self.aide_cron_job = str(self.aidetime.getcurrvalue()) + " root nice -n 19 " + self.aide_bin_path + " -c " + self.aide_conf_file + " --check"
+            else:
+                self.aide_cron_job = str(self.aidetime.getcurrvalue()) + " root nice -n 19 " + self.aide_bin_path + " --check"
+
+    def report_aide_installed(self):
+        """
+
+        :return: compliant
+        :rtype: bool
+        """
+
+        compliant = True
+
+        if not self.ph.check(self.aide_package):
+            compliant = False
+            self.detailedresults += "\naide is not installed"
+
+        return compliant
+
+    def report_aide_conf(self):
+        """
+
+        :return: compliant
+        :rtype: bool
+        """
+
+        compliant = True
+
+        aide_conf_dict = {"/boot": "R",
+                          "/etc": "R",
+                          "/lib": "R",
+                          "/lib64": "R",
+                          "/sbin$": "R"}
+
+        tmppath = self.aide_conf_file + ".stonixtmp"
+        self.aide_conf_editor = KVEditorStonix(self.statechglogger, self.logger, "conf", self.aide_conf_file, tmppath, aide_conf_dict, "present", "space")
+        if not self.aide_conf_editor.report():
+            compliant = False
+            self.detailedresults += "\nThe following aide conf file options are incorrect:\n" + "\n".join(self.aide_conf_editor.fixables)
+
+        return compliant
+
+    def report_aide_cronjob(self):
+        """
+
+        :return: compliant
+        :rtype: bool
+
+        """
+
+        compliant = True
+
+        if not os.path.isfile(self.aide_cron_file):
+            compliant = False
+            self.detailedresults += "\naide cron job not found"
+
+        return compliant
 
     def fix(self):
         """Attempt to install and configure AIDE.
@@ -175,105 +248,28 @@ This rule is optional and will install and configure AIDE when it is run."""
 
         self.detailedresults = ""
         self.rulesuccess = True
+        self.iditerator = 0
 
         try:
 
             if not self.ci.getcurrvalue():
-                self.detailedresults += '\nThis rule is currently not enabled, so nothing was done!'
-                self.formatDetailedResults("fix", self.rulesuccess,
-                                   self.detailedresults)
+                self.detailedresults += '\nThis rule is currently not enabled, so nothing was done'
+                self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
                 self.logdispatch.log(LogPriority.INFO, self.detailedresults)
                 return self.rulesuccess
 
-            self.iditerator = 0
             eventlist = self.statechglogger.findrulechanges(self.rulenumber)
             for event in eventlist:
                 self.statechglogger.deleteentry(event)
 
-            aidepath = ''
-            newaidedb = ''
-            aidedb = ''
-
-            if not self.ph.check("aide"):
-                if not self.ph.checkAvailable("aide"):
-                    self.detailedresults += "Unable to install Aide so this \
-rule is unable to complete\n"
-                    self.logger.log(LogPriority.DEBUG, self.detailedresults)
-                else:
-                    self.ph.install("aide")
-            if os.path.exists('/usr/sbin/aide'):
-                aidepath = '/usr/sbin/aide'
-            elif os.path.exists('/usr/bin/aide'):
-                aidepath = '/usr/bin/aide'
-            else:
-                self.detailedresults += "Could not locate path to aide \
-executable, rule cannot continue\n"
-                self.logger.log(LogPriority.DEBUG, self.detailedresults)
-                return False
-            if self.ph.manager == 'apt-get':
-
-                self.ch.executeCommand('aideinit')
-
-                if os.path.exists('/etc/aide/aide.conf'):
-
-                    self.ch.executeCommand(aidepath +
-                                           ' -c /etc/aide/aide.conf --check')
-                else:
-                    self.detailedresults += "Could not locate aide conf file\n"
-                    self.logger.log(LogPriority.DEBUG, self.detailedresults)
-                    return False
-            else:
-                self.ch.executeCommand(aidepath + ' --init')
-                self.ch.executeCommand(aidepath + ' --check')
-
-            if os.path.exists('/var/lib/aide/aide.db.new.gz'):
-                newaidedb = '/var/lib/aide/aide.db.new.gz'
-                aidedb = '/var/lib/aide/aide.db.gz'
-            elif os.path.exists('/var/lib/aide/aide.db.new'):
-                newaidedb = '/var/lib/aide/aide.db.new'
-                aidedb = '/var/lib/aide/aide.db'
-            else:
-                self.detailedresults += "Could not locate aide database\n"
-                self.logger.log(LogPriority.DEBUG, self.detailedresults)
-                return False
-
-            os.rename(newaidedb, aidedb)
-            os.chmod(aidedb, 0o600)
-            os.chown(aidedb, 0, 0)
-
-            # add the aide check job to cron
-            if os.path.exists('/etc/crontab'):
-                tempstring = ""
-                cronpath = '/etc/crontab'
-                tmppath = cronpath + '.stonixtmp'
-                contents = readFile(cronpath, self.logger)
-                if self.ph.manager == 'apt-get':
-                    regex = self.aidetime.getcurrvalue() + " root " + \
-                        aidepath + " -c /etc/aide/aide.conf --check"
-                else:
-                    regex = self.aidetime.getcurrvalue() + " root " + \
-                        aidepath + " --check"
-                found = False
-                for line in contents:
-                    if re.search(re.escape(regex), line.strip()):
-                        found = True
-                        tempstring += line
-                    else:
-                        tempstring += line
-                if not found:
-                    tempstring += regex + "\n"
-                if writeFile(tmppath, tempstring, self.logger):
-                    self.iditerator += 1
-                    myid = iterate(self.iditerator, self.rulenumber)
-                    event = {"eventtype": "conf",
-                             "filepath": cronpath}
-                    self.statechglogger.recordchgevent(myid, event)
-                    self.statechglogger.recordfilechange(cronpath, tmppath,
-                                                         myid)
-                    os.rename(tmppath, cronpath)
-                    os.chmod(cronpath, 384)
-                    os.chown(cronpath, 0, 0)
-                    resetsecon(cronpath)
+            if not self.fix_aide_installed():
+                self.rulesuccess = False
+            if not self.fix_aide_conf():
+                self.rulesuccess = False
+            if not self.fix_aide_init():
+                self.rulesuccess = False
+            if not self.fix_aide_cronjob():
+                self.rulesuccess = False
 
         except (KeyboardInterrupt, SystemExit):
             raise
@@ -285,3 +281,129 @@ executable, rule cannot continue\n"
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
 
         return self.rulesuccess
+
+    def fix_aide_conf(self):
+        """
+
+        :return: success
+        :rtype: bool
+        """
+
+        success = True
+
+        self.logger.log(LogPriority.DEBUG, "Fixing aide configuration file")
+
+        if not self.aide_conf_editor.fix():
+            success = False
+        elif not self.aide_conf_editor.commit():
+            success = False
+
+        if not success:
+            self.logger.log(LogPriority.DEBUG, "Failed to configure aide.conf")
+
+        return success
+
+    def fix_aide_cronjob(self):
+        """
+
+        :return: success
+        :rtype: bool
+        """
+
+        success = True
+
+        self.logger.log(LogPriority.DEBUG, "Creating aide cron job")
+
+        try:
+
+            f = open(self.aide_cron_file, "w")
+            f.write(self.aide_cron_job)
+            f.close()
+            self.iditerator += 1
+            myid = iterate(self.iditerator, self.rulenumber)
+            event = {"eventtype": "creation",
+                     "filepath": self.aide_cron_file}
+            self.statechglogger.recordchgevent(myid, event)
+
+        except:
+            success = False
+            self.logger.log(LogPriority.DEBUG, "Failed to create aide cron job")
+
+        return success
+
+    def fix_aide_installed(self):
+        """
+
+        :return: success
+        :rtype: bool
+        """
+
+        success = True
+
+        self.logger.log(LogPriority.DEBUG, "Installing aide package")
+
+        if not self.ph.install(self.aide_package):
+            success = False
+            self.logger.log(LogPriority.DEBUG, "Failed to install aide package")
+            if not self.ph.checkAvailable(self.aide_package):
+                self.logger.log(LogPriority.DEBUG, "aide package not available on this system")
+        else:
+            self.iditerator += 1
+            myid = iterate(self.iditerator, self.rulenumber)
+            event = {"eventtype": "pkghelper",
+                     "pkgname": self.aide_package,
+                     "startstate": "removed",
+                     "endstate": "installed"}
+            self.statechglogger.recordchgevent(myid, event)
+            self.set_aide_paths()
+            self.set_aide_cron_job()
+            self.report_aide_conf()
+            self.report_aide_cronjob()
+
+        return success
+
+    def fix_aide_init(self):
+        """
+
+        :return: success
+        :rtype: bool
+        """
+
+        success = True
+
+        self.logger.log(LogPriority.DEBUG, "Initializing aide database")
+
+        if self.ph.manager == "apt-get":
+            aide_init_cmd = "aideinit"
+        else:
+            aide_init_cmd = self.aide_bin_path + " --init"
+
+        self.ch.executeCommand(aide_init_cmd)
+        retcode = self.ch.getReturnCode()
+        if retcode != 0:
+            success = False
+            errmsg = self.ch.getErrorString()
+            self.logger.log(LogPriority.DEBUG, errmsg)
+        else:
+            # to start using the aide database created by aide init,
+            # remove the 'new' part of the aide database string
+            # this must be done before check can be run
+            # (https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/security_guide/sec-using-aide)
+            if os.path.isfile('/var/lib/aide/aide.db.new.gz'):
+                newaidedb = '/var/lib/aide/aide.db.new.gz'
+                aidedb = '/var/lib/aide/aide.db.gz'
+            elif os.path.isfile('/var/lib/aide/aide.db.new'):
+                newaidedb = '/var/lib/aide/aide.db.new'
+                aidedb = '/var/lib/aide/aide.db'
+            else:
+                newaidedb = ""
+                aidedb = ""
+            if bool(newaidedb and aidedb):
+                os.rename(newaidedb, aidedb)
+                os.chmod(aidedb, 0o600)
+                os.chown(aidedb, 0, 0)
+            else:
+                self.logger.log(LogPriority.DEBUG, "Failed to locate aide database")
+                success = False
+
+        return success

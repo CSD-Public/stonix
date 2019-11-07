@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 ###############################################################################
 #                                                                             #
 # Copyright 2019. Triad National Security, LLC. All rights reserved.          #
@@ -95,7 +95,7 @@ class zzzTestRuleSystemAccounting(RuleTest):
                 cmd = ["/usr/bin/apt-get", "update"]
                 self.ch.executeCommand(cmd)
             else:
-                path1 = "/etc/rc.conf"
+                path1 = "/etc/rc.common"
                 path2 = "/var/account/acct"
                 if os.path.exists(path1):
                     contentlines = open(path1, "r").readlines()

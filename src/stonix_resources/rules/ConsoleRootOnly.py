@@ -32,12 +32,12 @@ This class will restrict access to the root log on to console only
 
 
 
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..stonixutilityfunctions import setPerms, resetsecon
-from ..stonixutilityfunctions import readFile, writeFile, checkPerms, iterate
-from ..KVEditorStonix import KVEditorStonix
-from ..pkghelper import Pkghelper
+from rule import Rule
+from logdispatcher import LogPriority
+from stonixutilityfunctions import setPerms, resetsecon
+from stonixutilityfunctions import readFile, writeFile, checkPerms, iterate
+from KVEditorStonix import KVEditorStonix
+from pkghelper import Pkghelper
 import os
 import traceback
 import re

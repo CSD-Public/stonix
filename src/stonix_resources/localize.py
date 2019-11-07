@@ -28,8 +28,7 @@ run-time failures. Pay attention to comments documenting both the content and
 format of entries.
 
 @author: David Kennel
-@change: 2014/07/14 - Ekkehard - added eia-ecs-p-f5.lanl.gov = WIN.LANL.GOV to
-KERB5
+
 @change: 2014/08/20 - Added version variable to here and updated all locations
 that access the version variable to use this copy.
 @change: 2015/03/01 - Ekkehard - incremented STONIXVERSION to '0.8.15'
@@ -40,6 +39,9 @@ that access the version variable to use this copy.
 @change: 2016/01/13 - Roy Nielsen Added MACREPOROOT
 @change: 2016/02/03 - Ekkehard - incremented STONIXVERSION to '0.9.5'
 @change: 2016/05/05 - Eric Ball Add LOCALDOMAINS for AuditFirefoxUsage(84)
+@change: 2015/12/14 - Ekkehard update os x kerberos option & stonixversion
+@change: 2016/01/13 - Roy Nielsen Added MACREPOROOT
+@change: 2016/02/03 - Ekkehard - incremented STONIXVERSION to '0.9.5'
 @change: 2017/03/07 - David Kennel add FISMACAT for FISMA/FIPS 199 risk category
 @change: 2017/07/07 - Ekkehard - incremented STONIXVERSION to '0.9.10'
 @change: 2017/10/10 - Ekkehard - incremented STONIXVERSION to '0.9.13'
@@ -49,7 +51,6 @@ that access the version variable to use this copy.
 @change: 2018/04/11 - Ekkehard - incremented STONIXVERSION to '0.9.18' and krb5.conf
 @change: 2018/05/08 - Ekkehard - incremented STONIXVERSION to '0.9.19'
 @change: 2018/06/08 - Ekkehard - incremented STONIXVERSION to '0.9.20'
-@change: 2018/07/12 - Ekkehard - jfile001.lanl.gov update
 @change: 2018/08/21 - Brandon - changed CRACKLIB_HIGH_REGEX minlen and
                                 PWQUALITY_HIGH_REGEX minlen from 12 to 14
 @change: 2018/11/14 - Breen Malmberg - incremented STONIXVERSION to '0.9.26'
@@ -66,11 +67,10 @@ FISMACAT = 'med'
 # arbitrary values are fine. A recommended local version might look like this:
 # 1.2.2-local3 or just 1.2.2-3 or 1.2.2.3
 # Variable Type: String
-STONIXVERSION = '0.9.34'
+STONIXVERSION = '0.9.36'
 
 # The report server should be a string containing a valid FQDN or IP address
 # for the host that STONIX should upload it's run report XML data to.
-# Variable Type: String
 REPORTSERVER = None
 
 # If you are not using a central report server then set the value of
@@ -106,8 +106,6 @@ CENTRALLOGHOST = None
 # Warning Banners are site-specific
 # You may edit the text of the warning banner here to reflect your particular
 # site
-# Variable Type: String
-# Full warning banner text
 WARNINGBANNER = None
 
 GDMWARNINGBANNER = None
@@ -123,33 +121,36 @@ ALTWARNINGBANNER = None
 # Variable Type: String
 OSXSHORTWARNINGBANNER = None
 
+# Variable Type: String
 # Here you can specify the FQDN of your mail relay server
 # Use the convention: hostname.domain
-# Variable Type: String
 MAILRELAYSERVER = None
 
+# Variable Type: String
 # STONIX Error Message Source Address
 # Set this to the email address that STONIX error messages should appear to
 # come from.
-# Variable Type: String
 STONIXERR = None
 
+# Variable Type: String
 # STONIX Error Message Destination
 # Set the email address that STONIX error messages should be delivered to.
-# Variable Type: String
 STONIXDEVS = None
 
+# Variable Type: String
 # Set the URL and port of your proxy server if one is in use.
 # If you do not use a proxy server set this to None.
 # Note that STONIX will not work through authenticating proxies.
 # PROXY = 'http://my.proxy.com:3128'
 # PROXY = None
-# Variable Type: String
 PROXY = None
+
 # Variable Type: String
 PROXYCONFIGURATIONFILE = None
+
 # Variable Type: String
 PROXYDOMAIN = None
+
 # Variable Type: String
 PROXYDOMAINBYPASS = None
 
@@ -179,11 +180,11 @@ NTPSERVERSEXTERNAL = ["0.us.pool.ntp.org", "1.us.pool.ntp.org",
 # Variable Type: List (of strings)
 CORPORATENETWORKSERVERS = None
 
-# Content of the kerb5.conf file
+# Content of the krb5.conf file
 # Variable Type: String
 MACKRB5 = None
 
-# Content of the kerb5.conf file
+# Content of the krb5.conf file
 # Variable Type: String
 LINUXKRB5 = None
 
@@ -284,37 +285,28 @@ DRREPORTAVAILABLE = "This Rule does not support report."
 DRUNDOSUCCESSFUL = "Revert was completed successfully."
 DRUNDOFAILED = "The revert for this Rule failed."
 DRUNDONOTAVAILABLE = "No recoverable events are available for this Rule."
-GATEKEEPER = "4BF178C7-A564-46BA-8BD1-9C374043CC17"
-# EX: "logrotate.foo.bar"
+GATEKEEPER = None
 WINLOG = None
 
-# This is for LANL use only
-# included for code compatibility
-LANLLOGROTATE = None
+# Variable Type: List (strings)
+# The following should be system accounts which should not be disabled by DisableInactiveAccounts
+EXCLUDEACCOUNTS = []
 
-# These are accounts to exclude from DisableInactiveAccounts rule
-# Variable Type: List (of strings)
-EXCLUDEACCOUNTS = None
-
+# Variable Type: List (strings)
 # The following list is used by AuditFirefoxUsage(84). It lists domains that
 # are approved for browsing by the root user.
-# Variable Type: List (of strings)
-# ex: ["127.0.0.1", "localhost", "bar.com"]
-LOCALDOMAINS = None
+LOCALDOMAINS = ["127.0.0.1", "localhost"]
 
 # these options will be set in /etc/dhcp/dhclient.conf
 # a value of 'request' will cause the client to request that
 # option's configuration from the dhcp server. a value of
 # 'supersede' will cause the client to use the locally-defined
-# value in the dhclient.conf configuration file
-# Variable Type: Dictionary (of string keys and string values)
+# value in the DHCPSup dictionary, defined here in localize.py
 DHCPDict = {'subnet-mask': 'request',
-            'broadcast-address': 'supersede',
             'time-offset': 'supersede',
-            'routers': 'supersede',
+            'routers': 'request',
             'domain-name': 'supersede',
             'domain-name-servers': 'supersede',
-            'host-name': 'supersede',
             'nis-domain': 'supersede',
             'nis-servers': 'supersede',
             'ntp-servers': 'supersede'}
@@ -334,23 +326,41 @@ DHCPDict = {'subnet-mask': 'request',
 #            'nis-domain': 'foo.nis',
 #            'nis-servers': 'nis.foo.bar',
 #            'ntp-servers': 'ntp.foo.bar'}
-DHCPSup = None
+# change the 'changeme' values if you choose to supersede
+# them in the DHCPDict dictionary, above!
+DHCPSup = {}
+
+# Variable Type: String
+ROOTCERT = None
+
+# Variable Type: String
 PWQUALITY_HIGH_REGEX =  "^password[ \t]+requisite[ \t]+pam_pwquality.so[ \t]+" + \
     "minlen=14[ \t]+minclass=4[ \t]+difok=7[ \t]+dcredit=0[ \t]ucredit=0[ \t]" + \
     "lcredit=0[ \t]+ocredit=0[ \t]+retry=3[ \t]+maxrepeat=3"
+
+# Variable Type: String
 PWQUALITY_REGEX = regex = "^password[ \t]+requisite[ \t]+pam_pwquality.so[ \t]+" + \
     "minlen=8[ \t]+minclass=3[ \t]+difok=7[ \t]+dcredit=0[ \t]ucredit=0[ \t]" + \
     "lcredit=0[ \t]+ocredit=0[ \t]+retry=3[ \t]+maxrepeat=3"
+
+# Variable Type: String
 CRACKLIB_HIGH_REGEX = "^password[ \t]+requisite[ \t]+pam_cracklib.so[ \t]+" + \
     "minlen=14[ \t]+minclass=4[ \t]+difok=7[ \t]+dcredit=0[ \t]ucredit=0[ \t]" + \
     "lcredit=0[ \t]+ocredit=0[ \t]+retry=3[ \t]+maxrepeat=3"
+
+# Variable Type: String
 CRACKLIB_REGEX = "^password[ \t]+requisite[ \t]+pam_cracklib.so[ \t]+" + \
     "minlen=8[ \t]+minclass=3[ \t]+difok=7[ \t]+dcredit=0[ \t]ucredit=0[ \t]" + \
     "lcredit=0[ \t]+ocredit=0[ \t]+retry=3[ \t]+maxrepeat=3"
+
+# Variable Type: String
 PAMFAIL_REGEX = "^auth[ \t]+required[ \t]+pam_faillock.so preauth silent audit " + \
                         "deny=5 unlock_time=900 fail_interval=900"
+
+# Variable Type: String
 PAMTALLY_REGEX = "^auth[ \t]+required[ \t]+pam_tally2.so deny=5 " + \
                         "unlock_time=900 onerr=fail"
+
 # Variable Type: String
 AUTH_APT = '''auth        required      pam_env.so
 auth        required      pam_tally2.so deny=5 unlock_time=900 onerr=fail
@@ -366,6 +376,7 @@ account     required      pam_access.so
 account     required      pam_unix.so broken_shadow
 account     sufficient    pam_localuser.so
 account     sufficient    pam_succeed_if.so uid < 500 quiet
+account     sufficient    pam_ldap.so
 account     [default=bad success=ok user_unknown=ignore] pam_krb5.so
 account     required      pam_permit.so
 '''
@@ -459,12 +470,14 @@ auth        [default=die] pam_faillock.so authfail audit deny=5 \
 unlock_time=900 fail_interval=900
 auth        required      pam_deny.so
 '''
+
 # Variable Type: String
 ACCOUNT_NSLCD = '''account     required      pam_faillock.so
 account     required      pam_access.so
 account     required      pam_unix.so broken_shadow
 account     sufficient    pam_localuser.so
 account     sufficient    pam_succeed_if.so uid < 500 quiet
+account     sufficient    pam_ldap.so
 account     [default=bad success=ok user_unknown=ignore] pam_krb5.so
 account     required      pam_permit.so
 '''
@@ -516,6 +529,7 @@ account     required      pam_access.so
 account     required      pam_unix.so broken_shadow
 account     sufficient    pam_localuser.so
 account     sufficient    pam_succeed_if.so uid < 500 quiet
+account     sufficient    pam_ldap.so
 account     [default=bad success=ok user_unknown=ignore] pam_sss.so
 account     [default=bad success=ok user_unknown=ignore] pam_krb5.so
 account     required      pam_permit.so

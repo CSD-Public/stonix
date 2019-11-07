@@ -26,7 +26,7 @@ Contains class that gathers command line arguments for running in CLI mode
 
 """
 from optparse import OptionParser, SUPPRESS_HELP
-from .localize import STONIXVERSION
+from stonix_resources.localize import STONIXVERSION
 
 
 class ProgramArguments(object):
@@ -124,8 +124,8 @@ class ProgramArguments(object):
 
         if self.opts.debug:
             print("Selected options: ")
-            print(self.opts)
-            print(self.args)
+            print((self.opts))
+            print((self.args))
 
     def getBuildSelfUpdate(self):
         '''Getter for whether or not we use the test build for self updating

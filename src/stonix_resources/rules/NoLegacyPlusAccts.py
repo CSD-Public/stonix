@@ -31,11 +31,11 @@ Created on Aug 21, 2012
 @change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
 '''
 
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..stonixutilityfunctions import iterate, readFile, writeFile, checkPerms
-from ..stonixutilityfunctions import setPerms, resetsecon, getUserGroupName
-from ..pkghelper import Pkghelper
+from rule import Rule
+from logdispatcher import LogPriority
+from stonixutilityfunctions import iterate, readFile, writeFile, checkPerms
+from stonixutilityfunctions import setPerms, resetsecon, getUserGroupName
+from pkghelper import Pkghelper
 import os, re, pwd, grp, traceback #grp is a valid python package
 
 

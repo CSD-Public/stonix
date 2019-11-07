@@ -22,11 +22,11 @@ Created on Jul 7, 2015
 @change: 2016/04/26 ekkehard Results Formatting
 '''
 
-from ..stonixutilityfunctions import iterate, setPerms, checkPerms
-from ..stonixutilityfunctions import resetsecon, readFile, writeFile, createFile
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..pkghelper import Pkghelper
+from stonixutilityfunctions import iterate, setPerms, checkPerms
+from stonixutilityfunctions import resetsecon, readFile, writeFile, createFile
+from rule import Rule
+from logdispatcher import LogPriority
+from pkghelper import Pkghelper
 import traceback
 import os
 import re

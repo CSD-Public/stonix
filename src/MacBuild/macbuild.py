@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 ###############################################################################
 #                                                                             #
 # Copyright 2019. Triad National Security, LLC. All rights reserved.          #
@@ -136,13 +136,13 @@ class MacBuilder():
         print(" ")
         print("   ************************************************************")
         print("   ************************************************************")
-        print("   ***** App Version: " + self.APPVERSION)
+        print(("   ***** App Version: " + self.APPVERSION))
         print("   ************************************************************")
         print("   ************************************************************")
         print(" ")
         print(" ")
 
-        self.keyuser = input("Keychain User: ")
+        self.keyuser = eval(input("Keychain User: "))
         self.keypass = getpass.getpass("Keychain Password: ") 
 
         if not options.test:
@@ -165,7 +165,7 @@ class MacBuilder():
         os.mkdir("/tmp/the_luggage")
         luggage = self.setupRamdisk(self.ramdisk_size,
                                     "/tmp/the_luggage")
-        print("Device for tmp ramdisk is: " + ramdisk)
+        print(("Device for tmp ramdisk is: " + ramdisk))
 
         # After creation of the ramdisk, all further calls need to be wrapped
         # in a try/except block so that the ramdisk will be detached before
@@ -259,7 +259,7 @@ class MacBuilder():
         os.chdir(self.STONIX_ROOT)
         self.detachRamdisk(ramdisk)
         self.detachRamdisk(luggage)
-        print(traceback.format_exc())
+        print((traceback.format_exc()))
         exit(exitcode)
 
     def clean(self):
@@ -296,7 +296,7 @@ class MacBuilder():
             returnDir = os.getcwd()
             os.chdir(stonix4macDir)
 
-            print("Starting compileStonix4MacAppUiFiles in " + os.getcwd())
+            print(("Starting compileStonix4MacAppUiFiles in " + os.getcwd()))
 
             # to compile the .ui files to .py files:
             print("Compiling Qt ui files to python files for stonix4mac.app...")
@@ -380,8 +380,8 @@ class MacBuilder():
         :param appPath: Path to [stonixroot]/src/MacBuild/[appName]
 
         '''
-        print("Started compileApp with " + appName + ", " + appVersion + \
-            ", " + appIcon)
+        print(("Started compileApp with " + appName + ", " + appVersion + \
+            ", " + appIcon))
         try:
             returnDir = os.getcwd()
             os.chdir(appPath)
@@ -407,11 +407,11 @@ class MacBuilder():
 
             # to compile a pyinstaller spec file for app creation:
             print("Creating a pyinstaller spec file for the project...")
-            print(self.mbl.pyinstMakespec([appName + ".py"], True, True, False,
+            print((self.mbl.pyinstMakespec([appName + ".py"], True, True, False,
                                           "../" + appIcon + ".icns",
                                          pathex=["stonix_resources/rules",
                                                   "stonix_resources", "/usr/lib"] + self.PYPATHS,
-                                          specpath=os.getcwd(), hiddenimports=hdnimports))
+                                          specpath=os.getcwd(), hiddenimports=hdnimports)))
             '''
             if appName == "stonix":
                 fo = open(appName + ".spec", "r")
@@ -451,7 +451,7 @@ class MacBuilder():
         except Exception:
             raise
 
-        print("compileApp with " + appName + ", " + appVersion + " Finished...")
+        print(("compileApp with " + appName + ", " + appVersion + " Finished..."))
 
     def buildStonix4MacAppResources(self, appName, appPath, appPathParent):
         '''Copy and/or create all necessary files to the Resources directory
@@ -463,8 +463,8 @@ class MacBuilder():
         :param appPathParent: 
 
         '''
-        print("Started buildStonix4MacAppResources with \"" + appName + \
-            "\" in " + appPath + "...")
+        print(("Started buildStonix4MacAppResources with \"" + appName + \
+            "\" in " + appPath + "..."))
         try:
             returnDir = os.getcwd()
             os.chdir(appPath)
@@ -548,8 +548,8 @@ class MacBuilder():
                 os.rename(appPath + "/dmgs", tmpdir)
                 os.mkdir(appPath + "/dmgs")
 
-            print("Creating a .dmg file with a .pkg file inside for " + \
-                "installation purposes...")
+            print(("Creating a .dmg file with a .pkg file inside for " + \
+                "installation purposes..."))
             #call(["make", "dmg", "PACKAGE_VERSION=" + appVersion,
             #      "USE_PKGBUILD=1"])
             call(["make", "pkg", "PACKAGE_VERSION=" + appVersion,

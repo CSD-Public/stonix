@@ -31,11 +31,11 @@ Created on Feb 12, 2013
 @change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
 '''
 
-from ..stonixutilityfunctions import checkPerms, setPerms, readFile, writeFile
-from ..stonixutilityfunctions import iterate, resetsecon
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..KVEditorStonix import KVEditorStonix
+from stonixutilityfunctions import checkPerms, setPerms, readFile, writeFile
+from stonixutilityfunctions import iterate, resetsecon
+from rule import Rule
+from logdispatcher import LogPriority
+from KVEditorStonix import KVEditorStonix
 import traceback
 import re
 import os

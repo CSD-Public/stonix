@@ -40,17 +40,17 @@ installed.
 import os
 import re
 
-from . import SHchkconfig
-from . import SHrcupdate
-from . import SHupdaterc
-from . import SHsystemctl
-from . import SHsvcadm
-from . import SHrcconf
-from . import SHlaunchd
-from . import SHlaunchdTwo
+from stonix_resources import SHchkconfig
+from stonix_resources import SHrcupdate
+from stonix_resources import SHupdaterc
+from stonix_resources import SHsystemctl
+from stonix_resources import SHsvcadm
+from stonix_resources import SHrcconf
+from stonix_resources import SHlaunchd
+from stonix_resources import SHlaunchdTwo
 
-from .logdispatcher import LogPriority
-from .get_libc import getLibc
+from stonix_resources.logdispatcher import LogPriority
+from stonix_resources.get_libc import getLibc
 
 
 class ServiceHelper(object):

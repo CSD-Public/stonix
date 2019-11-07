@@ -37,16 +37,16 @@ dictionary
 import traceback
 import re
 
-from ..localize import DNS
-from ..localize import PROXY
-from ..localize import PROXYCONFIGURATIONFILE
-from ..localize import PROXYDOMAIN
-from ..ruleKVEditor import RuleKVEditor
-from ..CommandHelper import CommandHelper
-from ..ServiceHelper import ServiceHelper
-from ..logdispatcher import LogPriority
-from ..networksetup import networksetup
-from ..stonixutilityfunctions import iterate
+from localize import DNS
+from localize import PROXY
+from localize import PROXYCONFIGURATIONFILE
+from localize import PROXYDOMAIN
+from ruleKVEditor import RuleKVEditor
+from CommandHelper import CommandHelper
+from ServiceHelper import ServiceHelper
+from logdispatcher import LogPriority
+from networksetup import networksetup
+from stonixutilityfunctions import iterate
 
 
 class ConfigureNetworks(RuleKVEditor):

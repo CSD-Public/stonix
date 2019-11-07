@@ -493,7 +493,7 @@ class MacOSUser(ManageUser):
         success = False
         keychainpath = ""
 
-        if self.isSaneUserName(user) and isinstance(password, basestring):
+        if self.isSaneUserName(user) and isinstance(password, str):
             pass
 
         #####

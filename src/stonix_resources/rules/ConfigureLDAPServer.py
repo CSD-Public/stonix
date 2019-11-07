@@ -32,9 +32,9 @@ import stat
 import grp
 import pwd
 
-from ..stonixutilityfunctions import iterate, getUserGroupName, resetsecon
-from ..rule import Rule
-from ..logdispatcher import LogPriority
+from stonixutilityfunctions import iterate, getUserGroupName, resetsecon
+from rule import Rule
+from logdispatcher import LogPriority
 
 
 class ConfigureLDAPServer(Rule):

@@ -27,7 +27,7 @@ Created on May 20, 2013
 @change: 2015/10/07 eball Help text cleanup
 @change: 2016/01/22 eball Changed daemon log level from daemon.info to daemon.*
 @change: 2016/05/31 ekkehard Added OpenDirectory Logging
-@change: 2016/06/22 eball Improved report feedback for reportMac
+@change: 2016/06/22 eball Improved report feedback for report_Mac
 @change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
 @change: 2017/08/28 ekkehard - Added self.sethelptext()
 @change: 2017/10/23 rsn - change to new service helper interface
@@ -35,22 +35,25 @@ Created on May 20, 2013
 @change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
 @change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
+@change: 2019/09/30 Brandon R. Gonzales - Commented out the kveditor item for
+    opendirectoryd and added a TODO
 """
 
-from ..stonixutilityfunctions import iterate, resetsecon, createFile, getUserGroupName
-from ..stonixutilityfunctions import readFile, writeFile, checkPerms, setPerms, checkUserGroupName
-from ..ruleKVEditor import RuleKVEditor
-from ..pkghelper import Pkghelper
-from ..logdispatcher import LogPriority
-from ..ServiceHelper import ServiceHelper
-from ..CommandHelper import CommandHelper
-from ..localize import WINLOG, LANLLOGROTATE
-from subprocess import PIPE, Popen
 import os
 import traceback
 import re
 import grp
 import stat
+
+from stonixutilityfunctions import iterate, resetsecon, createFile, getUserGroupName
+from stonixutilityfunctions import readFile, writeFile, checkPerms, setPerms, checkUserGroupName
+from ruleKVEditor import RuleKVEditor
+from pkghelper import Pkghelper
+from logdispatcher import LogPriority
+from ServiceHelper import ServiceHelper
+from CommandHelper import CommandHelper
+from localize import WINLOG, LANLLOGROTATE
+
 
 
 class ConfigureLogging(RuleKVEditor):
@@ -76,7 +79,7 @@ class ConfigureLogging(RuleKVEditor):
         self.sethelptext()
         self.guidance = ["2.6.1.1", "2.6.1.2", "2.6.1.3"]
         self.applicable = {'type': 'white',
-                           'family': ['linux', 'freebsd'],
+                           'family': ['linux'],
                            'os': {'Mac OS X': ['10.15', 'r', '10.15.10']}}
 
         datatype = 'bool'
@@ -87,7 +90,6 @@ class ConfigureLogging(RuleKVEditor):
         self.rootrequired = True
         self.service = ""
         self.logd = ""
-        self.daemon = ""
         self.sh = ServiceHelper(self.environ, self.logger)
         self.ch = CommandHelper(self.logger)
         self.logs = {"rsyslog": False,
@@ -97,20 +99,23 @@ class ConfigureLogging(RuleKVEditor):
         self.ostype = self.environ.getostype()
         self.osfamily = self.environ.getosfamily()
         self.osver = self.environ.getosver()
-        if self.ostype == "Mac OS X":
-            self.addKVEditor("OpenDirectoryLogging",
-                             "defaults",
-                             "/Library/Preferences/OpenDirectory/opendirectoryd",
-                             "",
-                             {"Debug Logging Level": ["5", "5"]},
-                             "present",
-                             "",
-                             'Set OpenDirectory "Debug Logging Level" Level to 5 ' + \
-                             "This show user creation and deletion events " + \
-                             "in '/private/var/log/opendirectoryd.log'.",
-                             None,
-                             False,
-                             {})
+
+        # TODO: Research a better way to implement this setting [artf56995]
+        #if self.ostype == "Mac OS X":
+        #
+        #    self.addKVEditor("OpenDirectoryLogging",
+        #                     "defaults",
+        #                     "/Library/Preferences/OpenDirectory/opendirectoryd",
+        #                     "",
+        #                     {"Debug Logging Level": ["5", "5"]},
+        #                     "present",
+        #                     "",
+        #                     'Set OpenDirectory "Debug Logging Level" Level to 5 ' + \
+        #                     "This show user creation and deletion events " + \
+        #                     "in '/private/var/log/opendirectoryd.log'.",
+        #                     None,
+        #                     False,
+        #                     {})
 
     def report(self):
         """ConfigureLogging.report() Public method to report on the
@@ -119,7 +124,7 @@ class ConfigureLogging(RuleKVEditor):
         @author: Derek Walker
 
         :param self: essential if you override this definition
-        :returns: bool - True if system is compliant, False if it isn't
+        :return: bool - True if system is compliant, False if it isn't
 
         """
 
@@ -133,18 +138,10 @@ class ConfigureLogging(RuleKVEditor):
 
             if self.osfamily == "linux":
                 self.ph = Pkghelper(self.logger, self.environ)
-                self.compliant = self.reportSysRSyslog()
-
-#!FIXME self.path does not appear to be set to anything, anywhere
-# "Unresolved attribute reference 'path' for class ConfigureLogging"
-            elif self.osfamily == "freebsd":
-                if self.path:
-                    self.compliant = self.reportFreebsd(self.path[0], self.path[1])
-                else:
-                    self.detailedresults = "no log daemons exist\n"
+                self.compliant = self.report_Linux()
 
             elif self.ostype == "Mac OS X":
-                self.compliant = self.reportMac()
+                self.compliant = self.report_Mac()
 
         except(KeyboardInterrupt, SystemExit):
             raise
@@ -162,7 +159,7 @@ class ConfigureLogging(RuleKVEditor):
         @author: Derek Walker
 
         :param self: essential if you override this definition
-        :returns: bool - False if the method died during execution
+        :return: bool - False if the method died during execution
 
         """
 
@@ -180,28 +177,16 @@ class ConfigureLogging(RuleKVEditor):
                 self.statechglogger.deleteentry(event)
 
             if self.osfamily == "linux":
-                if not self.fixSysRsyslog():
-                    self.rulesuccess = False
-
-            elif self.osfamily == "freebsd":
-# !FIXME self.path does not appear to be set to anything, anywhere
-# "Unresolved attribute reference 'path' for class ConfigureLogging"
-                if not self.path:
-                    self.detailedresults += "report previously found no log daemon, will not attempt to install one, unable to proceed with fix\n"
-                    self.formatDetailedResults("fix", False, self.detailedresults)
-                    self.logger.log(LogPriority.DEBUG, self.detailedresults)
-                    self.rulesuccess = False
-
-                elif not self.fixFreebsd(self.path[0], self.path[1]):
+                if not self.fix_Linux():
                     self.rulesuccess = False
 
             elif self.ostype == "Mac OS X":
-                if not self.fixMac():
+                if not self.fix_Mac():
                     self.rulesuccess = False
 
             else:
-                self.logger.log(LogPriority.DEBUG, "Unrecognized system architecture: " + str(self.osfamily) + " " + str(self.ostype))
-                self.rulesuccess = False
+                self.detailedresults += "\nUnsupported platform detected. This should never happen because self.applicable should have filtered it out."
+                self.compliant = False
 
         except(KeyboardInterrupt, SystemExit):
             raise
@@ -213,15 +198,13 @@ class ConfigureLogging(RuleKVEditor):
 
         return self.rulesuccess
 
-    def reportSysRSyslog(self):
-        """ConfigureLogging.reporSysRsyslog reports on the logging facilities,
+    def report_Linux(self):
+        """
+        reports on the logging facilities,
         the log files, and the logging daemons of syslog and rsyslog
-        @author: Derek Walker
 
-
-        :returns: bool - True or False upon success
-        @change: bgonz12 - 2018/1/18 - reduced the debug output for an
-                 exception handled Traceback.
+        :return: compliant
+        :rtype: bool
 
         """
 
@@ -279,16 +262,18 @@ class ConfigureLogging(RuleKVEditor):
             self.logfiles.append("mark.* " + WINLOG)
             self.logfiles.append("authpriv.* " + WINLOG)
             self.logfiles.append("auth.* " + WINLOG)
+
         # opensuse 13 and later uses systemd-logger instead of rsyslog
         # this logging daemon doesn't have the functionality we need so
         # we remove it firsthand and install rsyslog in the fix.
         if re.search("opensuse", self.ostype, re.I):
             if self.ph.check("systemd-logger"):
                 compliant = False
+
         # check if rsyslog is installed and turned on
         if self.ph.check("rsyslog"):
             self.logs["rsyslog"] = True
-            if not self.checkSysRsyslogOn():
+            if not self.sh.isRunning("rsyslog"):
                 self.detailedresults += "Rsyslog is installed but not on\n"
                 compliant = False
 
@@ -296,7 +281,13 @@ class ConfigureLogging(RuleKVEditor):
         elif self.ph.check("syslog"):
             self.logs["syslog"] = True
             specs.remove("/bin/kill -HUP `/bin/cat /var/run/rsyslogd.pid 2> /dev/null` 2> /dev/null || true',")
-            if not self.checkSysRsyslogOn():
+            syslogtypes = ["syslogd", "syslogD", "syslog", "sysklogd"]
+            syslogrunning = False
+            for item in syslogtypes:
+                if self.sh.isRunning(item):
+                    syslogrunning = True
+                    break
+            if not syslogrunning:
                 self.detailedresults += "Syslog is installed but not on\n"
                 compliant = False
 
@@ -361,6 +352,7 @@ class ConfigureLogging(RuleKVEditor):
         else:
             self.logpath = "/etc/rsyslog.conf"
         self.logfilescopy = []
+
         # check if correct contents of rsyslog.conf file
         if os.path.exists(self.logpath):
             if not checkPerms(self.logpath, [0, 0, 420], self.logger):
@@ -397,35 +389,11 @@ class ConfigureLogging(RuleKVEditor):
         self.logger.log(LogPriority.DEBUG, debug)
 
         # check if correct contents of logrotate file exist
-        self.logrotpath = self.checkLogRotation()
+        self.logrotpath = self.set_logrotate_path()
         if self.logrotpath:
             if os.path.exists(self.logrotpath):
-                if re.search("Red Hat", self.ostype, re.I) and \
-                        re.search("^6", self.osver):
-                    statdata = os.stat(self.logrotpath)
-                    mode = stat.S_IMODE(statdata.st_mode)
-                    ownergrp = getUserGroupName(self.logrotpath)
-                    owner = ownergrp[0]
-                    group = ownergrp[1]
-                    if mode != 420:
-                        debug = "permissions on " + self.logrotpath + " aren't 644\n"
-                        self.detailedresults += debug
-                        self.logger.log(LogPriority.DEBUG, debug)
-                        compliant = False
 
-                    if owner != "root":
-                        debug = "Owner of " + self.logrotpath + " isn't root\n"
-                        self.detailedresults += debug
-                        self.logger.log(LogPriority.DEBUG, debug)
-                        compliant = False
-
-                    if group != "sys":
-                        debug = "Group owner of " + self.logrotpath + " isn't sys\n"
-                        self.detailedresults += debug
-                        self.logger.log(LogPriority.DEBUG, debug)
-                        compliant = False
-
-                elif not checkPerms(self.logrotpath, [0, 0, 420], self.logger):
+                if not checkPerms(self.logrotpath, [0, 0, 420], self.logger):
                     self.detailedresults += "permissions aren't correct on log rotation config file: " + self.logrotpath
                     compliant = False
                 
@@ -547,9 +515,10 @@ class ConfigureLogging(RuleKVEditor):
         if fixables:
             self.fixables = fixables
             compliant = False
+
         return compliant
 
-    def fixSysRsyslog(self):
+    def fix_Linux(self):
         """corrects the syslog/rsyslog files and also logrotation files.
         Some failed actions may result in a change of the success variable's
         value which is ultimately returned at the end of the method and some
@@ -559,7 +528,7 @@ class ConfigureLogging(RuleKVEditor):
         @author: Derek Walker
 
 
-        :returns: bool - True or False upon success
+        :return: bool - True or False upon success
 
         """
 
@@ -588,7 +557,7 @@ class ConfigureLogging(RuleKVEditor):
                     success = False
                 else:
                     self.logs["rsyslog"] = True
-                    self.logrotpath = self.checkLogRotation()
+                    self.logrotpath = self.set_logrotate_path()
                     self.logd = "rsyslog"
         # check if rsyslog package is installed
         if not self.ph.check("rsyslog"):
@@ -601,7 +570,7 @@ class ConfigureLogging(RuleKVEditor):
                     for directory in self.directories:
                         self.fixables.append(directory)
                     self.logs["rsyslog"] = True
-                    self.logrotpath = self.checkLogRotation()
+                    self.logrotpath = self.set_logrotate_path()
                     self.logd = "rsyslog"
             elif not self.ph.check("syslog"):
                 if self.ph.checkAvailable("syslog"):
@@ -611,7 +580,7 @@ class ConfigureLogging(RuleKVEditor):
                         success = False
                     else:
                         self.logs["syslog"] = True
-                        self.logrotpath = self.checkLogRotation()
+                        self.logrotpath = self.set_logrotate_path()
                         self.logd = "syslog"
                         specs.remove("/bin/kill -HUP `/bin/cat " + \
                         "/var/run/rsyslogd.pid 2> /dev/null` 2> " + \
@@ -626,6 +595,7 @@ class ConfigureLogging(RuleKVEditor):
             distroowner = "root"
         elif re.search("ubuntu", self.ostype, re.I):
             distroowner = "syslog"
+
         for item in self.directories:
             if os.path.exists(item):
                 if self.ph.manager == "apt-get":
@@ -656,7 +626,7 @@ class ConfigureLogging(RuleKVEditor):
                     myid = iterate(self.iditerator, self.rulenumber)
                     if not setPerms(item, [0, 0, 384], self.logger,
                                     self.statechglogger, myid):
-                        debug = "Unable to set " + "permissions on " + item + "\n"
+                        debug = "Unable to set permissions on " + item + "\n"
                         self.logger.log(LogPriority.DEBUG, debug)
                         success = False
             else:
@@ -687,7 +657,7 @@ class ConfigureLogging(RuleKVEditor):
                 myid = iterate(self.iditerator, self.rulenumber)
                 if not setPerms(self.bootlog, [0, 0, 420], self.logger,
                                 self.statechglogger, myid):
-                    debug = "Unable to set " + "permissions on " + self.bootlog + "\n"
+                    debug = "Unable to set permissions on " + self.bootlog + "\n"
                     self.logger.log(LogPriority.DEBUG, debug)
                     success = False
         elif not createFile(self.bootlog, self.logger):
@@ -768,66 +738,48 @@ rotation config file: " + self.logrotpath + "\n"
                          "filepath": self.logrotpath}
 #!FIXME myid can be referenced before beign assigned, here
                 self.statechglogger.recordchgevent(myid, event)
-        #if system is redhat 6 we need to make sure the group owner is sys
-        if re.search("^Red Hat*", self.ostype.strip()) and \
-                re.search("^6*", self.osver):
-            gid = grp.getgrnam("sys")[2]
-            statdata = os.stat(self.logrotpath)
-            mode = stat.S_IMODE(statdata.st_mode)
-            ownergrp = getUserGroupName(self.logrotpath)
-            owner = ownergrp[0]
-            group = ownergrp[1]
-            if mode != 420 or owner != "root" or group != "sys":
-                origuid = statdata.st_uid
-                origgid = statdata.st_gid
-                if grp.getgrnam("sys")[2]:
-                    if not self.created2:
-                        self.iditerator += 1
-                        myid = iterate(self.iditerator, self.rulenumber)
-                        event = {"eventtype": "perm",
-                                 "startstate": [origuid, origgid, mode],
-                                 "endstate": [0, gid, 420],
-                                 "filepath": self.logrotpath}
-                        self.statechglogger.recordchgevent(myid, event)
-                    os.chmod(self.logrotpath, 420)
-                    os.chown(self.logrotpath, 0, gid)
-                    resetsecon(self.logrotpath)
-                else:
-                    success = False
-                    debug = "Unable to determine the id number of sys group.  Will not change permissions on " + self.logrotpath + " file\n"
-                    self.logger.log(LogPriority.DEBUG, debug)
-        elif not checkPerms(self.logrotpath, [0, 0, 420], self.logger):
+
+        if not checkPerms(self.logrotpath, [0, 0, 420], self.logger):
             if not setPerms(self.logrotpath, [0, 0, 420], self.logger):
-                debug = "Unable to set " + "permissions on " + self.logrotpath + "\n"
+                debug = "Unable to set permissions on " + self.logrotpath + "\n"
                 self.logger.log(LogPriority.DEBUG, debug)
                 success = False
+
         if self.fixables:
             contents = readFile(self.logrotpath, self.logger)
             tempstring = ""
             tempcontents = []
+
             for line in contents:
                 templine = re.sub("[ \t\r\f\v]", " ", line)
                 tempcontents.append(templine)
+
             for directory in self.fixables:
                 tempcontents2 = []
                 for line in tempcontents:
-                    if re.search("(^|\s+)directory(\s)*({|\n)", line, re.I):
+                    if re.search("^|\s+" + directory + "\s*(\{{0,1}|\s*)", line, re.I):
                         templine = re.sub(directory, "", line)
                         tempcontents2.append(templine)
                     else:
                         tempcontents2.append(line)
                 tempcontents = tempcontents2
+
             for item in tempcontents:
                 tempstring += item
             for item in self.fixables:
                 tempstring += item + "\n"
+
             tempstring += "{\n"
+
             for spec in specs:
                 tempstring += spec + "\n"
+
             tempstring += "}\n"
             tmpfile = self.logrotpath + ".stonixtmp"
+
             if not writeFile(tmpfile, tempstring, self.logger):
                 return False
+
             if not self.created2:
                 self.iditerator += 1
                 myid = iterate(self.iditerator, self.rulenumber)
@@ -835,15 +787,12 @@ rotation config file: " + self.logrotpath + "\n"
                          "filepath": self.logrotpath}
                 self.statechglogger.recordchgevent(myid, event)
                 self.statechglogger.recordfilechange(self.logrotpath, tmpfile, myid)
+
             os.rename(tmpfile, self.logrotpath)
-            if re.search("^Red Hat", self.ostype.strip()) and \
-                    re.search("^6", self.osver):
-#!FIXME gid can be referenced before being assigned, here
-                os.chown(self.logrotpath, 0, gid)
-            else:
-                os.chown(self.logrotpath, 0, 0)
+            os.chown(self.logrotpath, 0, 0)
             os.chmod(self.logrotpath, 420)
             resetsecon(self.logrotpath)
+
         if not self.sh.reloadService("rsyslog", _="_"):
             debug = "Unable to restart the log daemon part 1\n"
             self.logger.log(LogPriority.DEBUG, debug)
@@ -853,325 +802,7 @@ rotation config file: " + self.logrotpath + "\n"
 
         return success
 
-    def reportFreebsd(self, logpath, logrotpath):
-        """
-
-        :param logpath:
-        :param logrotpath:
-        :return:
-        """
-
-        compliant = True
-        self.missinglogrot = False
-        debug = ""
-
-        # check if all necessary dirs are present and correct perms
-        for item in self.directories:
-            if not os.path.exists(item):
-                self.detailedresults += item + " doesn't exist\n"
-                compliant = False
-            else:
-                if not checkPerms(item, [0, 0, 384], self.logger):
-                    compliant = False
-
-        # check if correct contents of syslog.conf file
-        if os.path.exists(logpath):
-            if not checkPerms(logpath, [0, 0, 420], self.logger):
-                compliant = False
-            contents = readFile(logpath, self.logger)
-            if contents:
-                for key in self.logfiles:
-                    found = False
-                    for item in contents:
-                        if re.search("^#", item) or re.match('^\s*$', item):
-                            continue
-                        else:
-                            line = item.strip()
-                            line = re.sub('(\s)+', " ", line)
-                            temp = line.split()
-                            if temp[0].strip() == key:
-                                if self.logfiles[key] == temp[1].strip():
-                                    found = True
-                                    break
-                    if not found:
-                        self.config.append(key + "\t\t\t" + self.logfiles[key] + "\n")
-                        compliant = False
-        else:
-            self.detailedresults += logpath + "doesn\'t exist\n"
-            for key in self.logfiles:
-                self.config.append(key + "\t\t\t" + self.logfiles[key] + "\n")
-            compliant = False
-
-        # check /etc/newsyslog.conf file
-        if os.path.exists(logrotpath):
-            if not checkPerms(logrotpath, [0, 0, 420], self.logger):
-                compliant = False
-            contents = readFile(logrotpath, self.logger)
-            if contents:
-                for directory in self.directories:
-                    found = False
-                    for line in contents:
-                        if re.match('^#', line.strip()) or re.match('^\s*$', line):
-                            continue
-                        if re.search('^' + directory, line.strip()):
-                            found = True
-                            line = re.sub('(\s)+', " ", line)
-                            temp = line.split()
-                            temp.pop(0)
-                            try:
-                                if re.search(':', temp[0]):
-                                    temp.pop(0)
-                                # if re.match('[1-7][0-7]{2}', temp[0]):#for the mode
-                                if re.match("[0-7][0-7][0-7]", temp[0]):
-                                    if temp[0] != "600":
-                                        self.missinglogrot = True
-                                        compliant = False
-                                    temp.pop(0)
-                                else:
-                                    self.missinglogrot = True
-                                if re.match('[0-9]{1,4}', temp[0]):  # for the count
-                                    if temp[0] != "4":
-                                        self.missinglogrot = True
-                                        compliant = False
-                                    temp.pop(0)
-                                else:
-                                    self.missinglogrot = True
-                                if re.match('[*]{1}|[0-9]{1,4}', temp[0]):
-                                    if temp[0] != "*":
-                                        self.missinglogrot = True
-                                        compliant = False
-                                    temp.pop(0)
-                                else:
-                                    self.missinglogrot = True
-                                if re.match('^[@$*]{1}([A-Z]|[0-9])*', temp[0]):
-                                    if temp[0] != "$W0D23":
-                                        self.missinglogrot = True
-                                        compliant = False
-                                else:
-                                    self.missinglogrot = True
-                            except IndexError:
-                                raise
-                            except Exception:
-                                debug += traceback.format_exc() + "\n"
-                                debug += "Index out of range\n"
-                    if not found:
-                        self.missinglogrot = True
-                        compliant = False
-        else:
-            self.missinglogrot = True
-            self.detailedresults += logrotpath + " doesn't exist"
-            compliant = False
-
-        return compliant
-
-    def fixFreebsd(self, logpath, logrotpath):
-        """Assumptions: for logrotate file, we assume newsyslog.conf doesn't
-        contain duplicate entries for files to be logrotated and that the 5
-        mandatory fields are actually present(filename,mode,count,size,when)
-        If either of these cases apply to the system, the user must delete or
-        correct the line in question
-
-        :param logpath: 
-        :param logrotpath: 
-
-        """
-
-        universal = "\n# The following lines were added by stonix\n"
-        success = True
-        debug = ""
-
-        # create and/or correct perms on missing log files
-        for item in self.directories:
-            if os.path.exists(item):
-                if not checkPerms(item, [0, 0, 384], self.logger):
-                    self.iditerator += 1
-                    myid = iterate(self.iditerator, self.rulenumber)
-                    if not setPerms(item, [0, 0, 384], self.logger,
-                                    self.statechglogger, myid):
-                        success = False
-            else:
-                if not createFile(item, self.logger):
-                    self.detailedresults += "Unable to create necessary log file: " + item + "\n"
-                    success = False
-                else:
-                    self.detailedresults += "Successfully created log file: " + item + "\n"
-                    os.chown(item, 0, 0)
-                    os.chmod(item, 384)
-                    resetsecon(item)
-
-        if self.config:
-            tempstring = ""
-            tmpfile = logpath + '.stonixtmp'
-            if not os.path.exists(logpath):
-                if not createFile(logpath, self.logger):
-                    self.detailedresults += "unable to create the log file: " + logpath + "\n"
-                elif not checkPerms(logpath, [0, 0, 420], self.logger):
-                    self.iditerator += 1
-                    myid = iterate(self.iditerator, self.rulenumber)
-                    if not setPerms(logpath, [0, 0, 420], self.logger,
-                                    self.statechglogger, myid):
-                        success = False
-            else:
-                if not checkPerms(logpath, [0, 0, 420], self.logger):
-                    self.iditerator += 1
-                    myid = iterate(self.iditerator, self.rulenumber)
-                    if not setPerms(logpath, [0, 0, 420], self.logger,
-                                    self.statechglogger, myid):
-                        success = False
-            if os.path.exists(logpath):
-                contents = readFile(logpath, self.logger)
-                if contents:
-                    for item in contents:
-                        tempstring += item
-                    tempstring += universal
-                    for item in self.config:
-                        tempstring += item
-                    if not writeFile(tmpfile, tempstring, self.logger):
-                        return False
-                    self.iditerator += 1
-                    myid = iterate(self.iditerator, self.rulenumber)
-                    event = {"eventtype": "conf",
-                             "filepath": logpath}
-                    self.statechglogger.recordchgevent(myid, event)
-                    self.statechglogger.recordfilechange(logpath, tmpfile,
-                                                         myid)
-                    os.rename(tmpfile, logpath)
-                    os.chown(logpath, 0, 0)
-                    os.chmod(logpath, 420)
-                    resetsecon(logpath)
-
-        if self.missinglogrot:
-            tempstring = ""
-            tmpfile = logrotpath + '.stonixtmp'
-            if not os.path.exists(logrotpath):
-                if not createFile(logrotpath, self.logger):
-                    self.detailedresults += "unable to create log rotation file: " + logrotpath + "\n"
-                elif not checkPerms(logrotpath, [0, 0, 420], self.logger):
-                    if not setPerms(logrotpath, [0, 0, 420], self.logger):
-                        success = False
-            else:
-                if not checkPerms(logrotpath, [0, 0, 420], self.logger):
-                    self.iditerator += 1
-                    myid = iterate(self.iditerator, self.rulenumber)
-                    if not setPerms(logrotpath, [0, 0, 420], self.logger, self.statechglogger, myid):
-                        success = False
-            found = False
-            if os.path.exists(logrotpath):
-                contents = readFile(logrotpath, self.logger)
-                if contents:
-                    for line in contents:
-                        if re.match('^#', line.strip()) or re.match('^\s*$', line):
-                            tempstring += line
-                            continue
-                        for directory in self.directories:
-                            badformat = False
-                            found = False
-                            if re.match('^' + directory, line.strip()):
-                                found = True
-                                string = ""
-                                self.directories.remove(directory)
-                                line = re.sub('(\s)+', " ", line)
-                                temp = line.split()
-                                string += temp.pop(0) + " "
-                                try:
-                                    if re.search(':', temp[0]):
-                                        string += temp.pop(0) + " "
-                                    else:
-                                        string += '\t\t\t'
-                                    # if re.match('[1-7][0-7]{2}',temp[0]):
-                                    if re.match("[0-7][0-7][0-7]", temp[0]):
-                                        if temp[0] != "600":
-                                            string += "600  "
-                                            temp.pop(0)
-                                        else:
-                                            string += temp.pop(0) + "  "
-                                    else:
-                                        badformat = True
-                                        break
-                                    if re.match('[0-9]{1,3}', temp[0]):
-                                        if temp[0] != "4":
-                                            string += "4     "
-                                            temp.pop(0)
-                                        else:
-                                            string += temp.pop(0) + "    "
-
-                                    else:
-                                        badformat = True
-                                        break
-                                    if re.match('[*]{1}|[0-9]{1,3}', temp[0]):
-                                        if temp[0] != "*":
-                                            string += "*    "
-                                            temp.pop(0)
-                                        else:
-                                            string += temp.pop(0) + "    "
-                                    else:
-                                        badformat = True
-                                        break
-                                    if re.match('^[@$*]{1}([A-Z]|[0-9])*',
-                                                temp[0]):
-                                        if temp[0] != "$W0D23":
-                                            string += "$W0D23 "
-                                            temp.pop(0)
-                                        else:
-                                            string += temp.pop(0) + " "
-                                    else:
-                                        badformat = True
-                                        break
-                                except IndexError:
-                                    debug += traceback.format_exc() + "\n"
-                                    debug += " Index out of range\n"
-                                    self.logger.log(LogPriority.DEBUG, debug)
-                                    raise
-                                try:
-                                    if temp[0]:  # if flags value exists
-                                        string += temp.pop(0) + " "
-                                    if temp[0]:  # if /pid_file exists
-                                        string += temp.pop(0) + " "
-                                    if temp[0]:  # if sig_num exists
-                                        string += temp.pop(0) + " "
-                                except IndexError:
-                                    debug += traceback.format_exc() + "\n"
-                                    debug += "Index out of range but that's ok because these values are optional\n"
-                                    self.logger.log(LogPriority.DEBUG, debug)
-                                    break
-                                tempstring += string + "\n"
-                                badformat = False
-                                found = True
-#!FIXME badformat can be referenced before being assigned, here
-                        if badformat:
-#!FIXME directory can be referenced before being assigned, here
-                            tempstring += directory + "\t\t\t\t" + "600  " + "4     " + "*    " + "$W0D23" + "\n"
-                        elif not found:
-                            tempstring += line
-                if self.directories:
-                    for directory in self.directories:
-                        tempstring += directory + "\t\t\t\t" + "600  " + "4     " + "*    " + "$W0D23" + "\n"
-                if not writeFile(tmpfile, tempstring, self.logger):
-                    return False
-                self.iditerator += 1
-                myid = iterate(self.iditerator, self.rulenumber)
-                event = {"eventtype": "conf",
-                         "filepath": logrotpath}
-                self.statechglogger.recordchgevent(myid, event)
-                self.statechglogger.recordfilechange(logrotpath, tmpfile, myid)
-                os.rename(tmpfile, logrotpath)
-                os.chown(logrotpath, 0, 0)
-                os.chmod(logrotpath, 420)
-                resetsecon(logrotpath)
-        self.missinglogrot = {}
-
-        if not self.checkSysRsyslogOn():
-            message = Popen([self.service, "restart"], stdout=PIPE,
-                            stderr=PIPE, shell=False)
-            while message.poll() is None:
-                continue
-            if message.poll() != 0:
-                self.detailedresults += "Couldn't' restart syslog daemon\n"
-                success = False
-
-        return success
-
-    def reportMac(self):
+    def report_Mac(self):
         """
 
         :return:
@@ -1226,7 +857,7 @@ rotation config file: " + self.logrotpath + "\n"
             self.logfiles.append("auth.* " + WINLOG)
             # self.directories only gets instantiated if the system is linux
             # (line 133 -> line 157) so we can't reference it in code that
-            # only gets called if the system is mac (reportmac)
+            # only gets called if the system is mac (report_Mac)
             # this is why I commented out the following line
             ##self.directories.append(WINLOG)
 
@@ -1382,7 +1013,7 @@ rotation config file: " + self.logrotpath + "\n"
 
         return compliant
 
-    def fixMac(self):
+    def fix_Mac(self):
         """
 
         :return:
@@ -1601,52 +1232,50 @@ rotation config file: " + self.logrotpath + "\n"
 
         return success
 
-    def checkSysRsyslogOn(self):
-        """checks if rsyslog/syslog daemon is running
-        @author: Derek Walker
+    def set_logrotate_path(self):
+        """
+        determines the correct log rotate config file path
 
-
-        :returns: bool
+        :return: logrotate_path
+        :rtype: string
 
         """
 
-        if re.search("opensuse", self.ostype, re.I):
-            ps = "/usr/bin/ps"
-        else:
-            ps = "/bin/ps"
-        message = Popen([ps, '-elf'], stdout=PIPE, stderr=PIPE, shell=False)
-        info = message.stdout.readlines()
-        for line in info:
-            if re.search(self.daemon, line):
-                return True
+        logrotate_path = ""
 
-        return False
+        logrotate_paths = ["/etc/logrotate.d/syslog", "/etc/logrotate.d/syslog.conf",
+                           "/etc/logrotate.d/rsyslog", "/etc/logrotate.d/rsyslog.conf"]
+        for path in logrotate_paths:
+            if os.path.isfile(path):
+                logrotate_path = path
 
-    def checkLogRotation(self):
-        """checks the path of the log rotation
-        @author: Derek Walker
+        if not logrotate_path:
+            self.logger.log(LogPriority.DEBUG, "Unable to determine correct log rotate path")
 
+        return logrotate_path
 
-        :returns: string
-
+    def set_logdaemon_name(self):
         """
-        logrotpath = ""
-        if self.logs["rsyslog"]:
-            if os.path.exists("/etc/logrotate.d/syslog"):
-                logrotpath = "/etc/logrotate.d/syslog"
-            elif os.path.exists("/etc/logrotate.d/syslog.conf"):
-                logrotpath = "/etc/logrotate.d/syslog.conf"
-            elif os.path.exists("/etc/logrotate.d/rsyslog"):
-                logrotpath = "/etc/logrotate.d/rsyslog"
-            elif os.path.exists("/etc/logrotate.d/rsyslog.conf"):
-                logrotpath = "/etc/logrotate.d/rsyslog.conf"
-            else:
-                logrotpath = "/etc/logrotate.d/syslog"
-        elif self.logs["syslog"]:
-            if os.path.exists("/etc/logrotate.d/syslog"):
-                logrotpath = "/etc/logrotate.d/syslog"
-            elif os.path.exists("/etc/logrotate.d/syslog.conf"):
-                logrotpath = "/etc/logrotate.d/syslog.conf"
-            else:
-                logrotpath = "/etc/logrotate.d/syslog"
-        return logrotpath
+
+        :return:
+        """
+
+        logdaemon_name = ""
+        logdaemon_names = ["rsyslogd", "syslogd", "syslogD", "syslog", "sysklogd"]
+
+        try:
+            servicelist = self.sh.listServices()
+
+            for ldn in logdaemon_names:
+                if any(ldn in s for s in servicelist):
+                    logdaemon_name = ldn
+                    break
+        except:
+            pass
+
+        if not logdaemon_name:
+            # fall-back name if not found
+            logdaemon_name = "rsyslogd"
+            self.logger.log(LogPriority.DEBUG, "Unable to find log daemon name in existing services list. Using default name 'rsyslogd'")
+
+        return logdaemon_name

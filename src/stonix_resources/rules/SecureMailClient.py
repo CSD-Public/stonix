@@ -33,9 +33,9 @@ dictionary
 
 import os
 import re
-from ..ruleKVEditor import RuleKVEditor
-from ..localize import APPLEMAILDOMAINFORMATCHING
-from ..stonixutilityfunctions import setPerms, getOctalPerms, getOwnership
+from ruleKVEditor import RuleKVEditor
+from localize import APPLEMAILDOMAINFORMATCHING
+from stonixutilityfunctions import setPerms, getOctalPerms, getOwnership
 
 
 class SecureMailClient(RuleKVEditor):

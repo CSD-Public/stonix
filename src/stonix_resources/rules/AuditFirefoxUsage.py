@@ -28,11 +28,11 @@ should only use the browser for administration tasks.
 """
 
 
-from ..CommandHelper import CommandHelper
-from ..localize import LOCALDOMAINS
-from ..logdispatcher import LogPriority
-from ..pkghelper import Pkghelper
-from ..rule import Rule
+from CommandHelper import CommandHelper
+from localize import LOCALDOMAINS
+from logdispatcher import LogPriority
+from pkghelper import Pkghelper
+from rule import Rule
 from glob import glob
 import os
 import re

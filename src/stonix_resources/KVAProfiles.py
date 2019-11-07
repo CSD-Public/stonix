@@ -27,8 +27,9 @@ Created on Mar 9, 2016
         "*:" to ".*:"
 '''
 import re
-from .logdispatcher import LogPriority
-from .CommandHelper import CommandHelper
+from stonix_resources.logdispatcher import LogPriority
+from stonix_resources.CommandHelper import CommandHelper
+from stonix_resources.environment import Environment
 
 
 class KVAProfiles():
@@ -38,6 +39,10 @@ class KVAProfiles():
         self.path = path
         self.undocmd = ""
         self.installcmd = ""
+        self.osver = ""
+        enviro = Environment()
+        if enviro:
+            self.osver = enviro.getosminorver()
 
     def validate(self, output, key, val):
         '''@summary: Method checks if either profile is installed and/or contents of
@@ -112,8 +117,8 @@ class KVAProfiles():
             section stopping before the next identifier'''
             for line in keyoutput:
                 if not re.search(".*:", line):
-                    line = re.sub("\s+", "", line)
-                    payloadblocktemp.append(line)
+                    #line = re.sub("\s+", "", line)
+                    payloadblocktemp.append(line.strip())
                 else:
                     break
             payloadblock = []
@@ -158,7 +163,7 @@ class KVAProfiles():
                 i += 1
             '''k is the key inside val variable (e.g. allowsimple)
             and v is the value, in this example, a list (e.g. ["1", "bool"])'''
-            for k, v, in val.items():
+            for k, v, in list(val.items()):
                 if isinstance(v, list):
                     retval = self.checkSimple(k, v, payloadblock)
                 elif isinstance(v, tuple):
@@ -383,7 +388,7 @@ class KVAProfiles():
                     break
             else:
                 iterator += 1
-        for k2, v2 in v.items():
+        for k2, v2 in list(v.items()):
             if isinstance(v2, list):
                 retval = self.checkSimple(k2, v2, temp)
             elif isinstance(v2, tuple):
@@ -447,10 +452,15 @@ class KVAProfiles():
         :returns: bool - True
 
         '''
-        cmd = ["/usr/bin/profiles", "-I", "-F", self.path]
-        self.setInstallCmd(cmd)
-        cmd = ["/usr/bin/profiles", "-R", "-F", self.path]
-        self.setUndoCmd(cmd)
+        if int(self.osver) <= 12:
+            pinstall = "/usr/bin/profiles -I -F " + self.path
+            premove = "/usr/bin/profiles -R -F " + self.path
+            # else use newer profiles commands
+        else:
+            pinstall = "/usr/bin/profiles install -path=" + self.path
+            premove = "/usr/bin/profiles remove -path=" + self.path
+        self.setInstallCmd(pinstall)
+        self.setUndoCmd(premove)
         return True
     
     def commit(self):

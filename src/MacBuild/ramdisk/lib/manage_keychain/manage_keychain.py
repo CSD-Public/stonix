@@ -53,7 +53,7 @@ class ManageKeychain(object):
 
         if sys.platform.lower() == "darwin":
             self.logger.log(lp.DEBUG, "Loading Mac keychain manager...")
-            from ..manage_keychain.macos_keychain import MacOSKeychain
+            from .macos_keychain import MacOSKeychain
             self.keychainMgr = MacOSKeychain(logDispatcher=self.logger)
         else:
             raise UnsupportedOSError("This operating system is not supported...")

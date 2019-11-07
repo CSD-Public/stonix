@@ -42,13 +42,13 @@ import os
 import re
 import traceback
 
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..stonixutilityfunctions import getOctalPerms
-from ..ServiceHelper import ServiceHelper
-from ..CommandHelper import CommandHelper
-from ..pkghelper import Pkghelper
-from ..KVEditorStonix import KVEditorStonix
+from rule import Rule
+from logdispatcher import LogPriority
+from stonixutilityfunctions import getOctalPerms
+from ServiceHelper import ServiceHelper
+from CommandHelper import CommandHelper
+from pkghelper import Pkghelper
+from KVEditorStonix import KVEditorStonix
 
 
 class SecureSNMP(Rule):

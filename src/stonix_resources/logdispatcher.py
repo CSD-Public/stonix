@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 ###############################################################################
 #                                                                             #
 # Copyright 2019. Triad National Security, LLC. All rights reserved.          #
@@ -29,19 +29,19 @@
 #               Release           $Revision: 1.0 $
 #               Modified Date     $Date: 2013/10/3 14:00:00 $
 # ============================================================================#
-'''
+"""
 Created on Aug 24, 2010
 
 @author: dkennel
 @change: 2016/07/18 eball Added smtplib.SMTPRecipientsRefused to try/except for
     reporterr method, and added debug output for both exceptions.
-'''
+"""
 
-from .observable import Observable
+from stonix_resources.observable import Observable
 
 import re
 import logging
-from . import localize
+from stonix_resources import localize
 import logging.handlers
 import os.path
 import os
@@ -54,7 +54,6 @@ import subprocess
 
 from shutil import move
 
-
 def singleton_decorator(class_):
     instances = {}
     def getinstance(*args, **kwargs):
@@ -66,13 +65,13 @@ def singleton_decorator(class_):
 @singleton_decorator
 class LogDispatcher (Observable):
 
-    '''Responsible for taking any log data and formating both a human readable log
+    """Responsible for taking any log data and formating both a human readable log
     and an xml report containing machine info and run errors.
     :version: 1
     :author: scmcleni
 
 
-    '''
+    """
 
     def __init__(self, environment):
         Observable.__init__(self)
@@ -89,7 +88,7 @@ class LogDispatcher (Observable):
         self.reportlog = os.path.join(self.logpath, reportfile)
         self.xmllog = os.path.join(self.logpath, xmlfile)
         if self.debug:
-            print('LOGDISPATCHER: xml log path: ' + self.xmllog)
+            print(('LOGDISPATCHER: xml log path: ' + self.xmllog))
         if os.path.isfile(self.xmllog):
             try:
                 if os.path.exists(self.xmllog + '.old'):
@@ -100,7 +99,7 @@ class LogDispatcher (Observable):
                 raise
             except Exception as err:
                 print('logdispatcher: ')
-                print(traceback.format_exc())
+                print((traceback.format_exc()))
                 print(err)
         self.xmlreport = xmlReport(self.xmllog, self.debug)
         self.metadataopen = False
@@ -108,33 +107,19 @@ class LogDispatcher (Observable):
         self.last_message_received = ""
         self.last_prio = LogPriority.ERROR
 
-    def __del__(self):
-        """
-        This class has an explicit destructor to ensure that log data is not
-        lost in the event of an abnormal exit.
-        @author: D. Kennel
-        """
-        # self.xmlreport.closeReport()
-        # !FIXME This destructor is doing nothing. Evaluate for removal.
-        pass
-
     def postreport(self):
-        '''postreport()
-        
+        """
         Sends the XML formatted stor report file to the server
         responsible for gathering and processing them.
-        
-        @author: dkennel
 
-
-        '''
+        """
 
         constsmissing = False
 
         for const in self.constsrequired:
             if not const:
                 constsmissing = True
-            elif const == None:
+            elif const is None:
                 constsmissing = True
 
         if constsmissing:
@@ -144,7 +129,6 @@ class LogDispatcher (Observable):
         if self.environment.geteuid() != 0:
             return False
 
-        uploadstatus = True
         self.xmlreport.closeReport()
         xmlreport = self.xmllog
         resolvable = True
@@ -199,7 +183,7 @@ class LogDispatcher (Observable):
             self.log(LogPriority.ERROR, trace)
 
     def log(self, priority, msg_data):
-        '''Handles all writing of logger data to files. `msg_data` should be
+        """Handles all writing of logger data to files. `msg_data` should be
         passed as an array of [tag, message_details] where tag is a
         descriptive string for the detailed message and XML log. For example
         
@@ -219,108 +203,117 @@ class LogDispatcher (Observable):
         @author scmcleni
         @author: dkennel
 
-        '''
+        """
 
-        entry = self.format_message_data(msg_data)
+        try:
 
-        self.last_message_received = entry
-        self.last_prio = priority
-        if isinstance(msg_data, list):
-            msg = str(msg_data[0]).strip() + ':' + str(msg_data[1]).strip()
-        else:
-            # msg = 'none' + ':' + msg_data.strip()
-            msg = msg_data.strip()
-        if self.debug:
-            #####
-            # Set up inspect to use stack variables to log file and
-            # method/function that is being called. Message to be in the
-            # format:
-            # DEBUG:<name_of_module>:<name of function>(<line number>): <message to print>
-            stack1 = inspect.stack()[1]
-            mod = inspect.getmodule(stack1[0])
-            if mod:
-                prefix = mod.__name__ + \
-                      ":" + stack1[3] + \
-                      "(" + str(stack1[2]) + "): "
+            if type(msg_data) is list:
+                if type(msg_data[0]) is bytes:
+                    msg_data[0] = msg_data[0].decode('utf-8')
+                if type(msg_data[1]) is bytes:
+                    msg_data[1] = msg_data[1].decode('utf-8')
+                msg = str(msg_data[0]).strip() + ':' + str(msg_data[1]).strip()
             else:
-                prefix = stack1[3] + \
-                      "(" + str(stack1[2]) + "): "
-        else:
-            stack1 = inspect.stack()[1]
-            mod = inspect.getmodule(stack1[0])
-            if mod:
-                prefix = mod.__name__ + \
-                      ":" + stack1[3] + ":"
+                if type(msg_data) is bytes:
+                    msg_data = msg_data.decode('utf-8')
+                msg = msg_data.strip()
+
+            entry = self.format_message_data(msg_data)
+            self.last_message_received = entry
+            self.last_prio = priority
+
+            if self.debug:
+                #####
+                # Set up inspect to use stack variables to log file and
+                # method/function that is being called. Message to be in the
+                # format:
+                # DEBUG:<name_of_module>:<name of function>(<line number>): <message to print>
+                stack1 = inspect.stack()[1]
+                mod = inspect.getmodule(stack1[0])
+                if mod:
+                    prefix = mod.__name__ + \
+                          ":" + stack1[3] + \
+                          "(" + str(stack1[2]) + "): "
+                else:
+                    prefix = stack1[3] + \
+                          "(" + str(stack1[2]) + "): "
             else:
-                prefix = stack1[3] + ":"
+                stack1 = inspect.stack()[1]
+                mod = inspect.getmodule(stack1[0])
+                if mod:
+                    prefix = mod.__name__ + \
+                          ":" + stack1[3] + ":"
+                else:
+                    prefix = stack1[3] + ":"
 
-        if re.search('RULE START', msg):
-            prefix = ''
-            msg = msg + '\n\n'
-        if re.search('RULE END', msg):
-            prefix = ''
-            msg = msg + '\n\n'
-        if re.search('START REPORT', msg):
-            prefix = ''
-            msg = msg + '\n'
-        if re.search('END REPORT', msg):
-            prefix = ''
-            msg = msg + '\n'
-        if re.search('START FIX', msg):
-            prefix = ''
-            msg = msg + '\n'
-        if re.search('END FIX', msg):
-            prefix = ''
-            msg = msg + '\n'
+            if re.search('RULE START', msg):
+                prefix = ''
+                msg = msg + '\n\n'
+            if re.search('RULE END', msg):
+                prefix = ''
+                msg = msg + '\n\n'
+            if re.search('START REPORT', msg):
+                prefix = ''
+                msg = msg + '\n'
+            if re.search('END REPORT', msg):
+                prefix = ''
+                msg = msg + '\n'
+            if re.search('START FIX', msg):
+                prefix = ''
+                msg = msg + '\n'
+            if re.search('END FIX', msg):
+                prefix = ''
+                msg = msg + '\n'
 
-        if priority == LogPriority.INFO:
-            logging.info('INFO:' + prefix + msg)
-            # self.write_xml_log(priority, entry)
-        elif priority == LogPriority.WARNING:
-            logging.warning('WARNING:' + msg)
-            if self.metadataopen:
-                # self.writemetadataentry(entry)
-                self.xmlreport.writeMetadata(entry)
+            if priority == LogPriority.INFO:
+                logging.info('INFO:' + prefix + msg)
+                # self.write_xml_log(priority, entry)
+            elif priority == LogPriority.WARNING:
+                logging.warning('WARNING:' + msg)
+                if self.metadataopen:
+                    # self.writemetadataentry(entry)
+                    self.xmlreport.writeMetadata(entry)
+                else:
+                    # self.write_xml_log(entry)
+                    self.xmlreport.writeFinding(entry)
+            elif priority == LogPriority.ERROR:
+                logging.error('ERROR:' + prefix + msg)
+                # self.write_xml_log(priority, entry)
+                self.reporterr(msg, prefix)
+            elif priority == LogPriority.CRITICAL:
+                logging.critical('CRITICAL:' + prefix + msg)
+                # self.write_xml_log(priority, entry)
+                self.reporterr(msg, prefix)
+            elif priority == LogPriority.DEBUG:
+                logging.debug('DEBUG:' + prefix + msg)
+                # self.write_xml_log(priority, entry)
             else:
-                # self.write_xml_log(entry)
-                self.xmlreport.writeFinding(entry)
-        elif priority == LogPriority.ERROR:
-            logging.error('ERROR:' + prefix + msg)
-            # self.write_xml_log(priority, entry)
-            self.reporterr(msg, prefix)
-        elif priority == LogPriority.CRITICAL:
-            logging.critical('CRITICAL:' + prefix + msg)
-            # self.write_xml_log(priority, entry)
-            self.reporterr(msg, prefix)
-        elif priority == LogPriority.DEBUG:
-            logging.debug('DEBUG:' + prefix + msg)
-            # self.write_xml_log(priority, entry)
-        else:
-            # Invalid log priority
-            pass
+                # Invalid log priority
+                pass
 
-        self.set_dirty()
-        self.notify_check()
+            self.set_dirty()
+            self.notify_check()
+
+        except Exception as err:
+            print(str(err))
 
     def reporterr(self, errmsg, prefix):
-        '''reporterr(errmsg)
+        """reporterr(errmsg)
         
         reporterr sends error messages generated by STONIX to the unixeffort
         email address. Requires an error message string.
 
-        :param string: Error message
-        @author: dkennel
         :param errmsg: 
         :param prefix: 
 
-        '''
+        """
 
         constsmissing = False
 
         for const in self.constsrequired:
             if not const:
                 constsmissing = True
-            elif const == None:
+            elif const is None:
                 constsmissing = True
 
         if constsmissing:
@@ -356,7 +349,7 @@ Subject: STONIX Error Report: ''' + prefix + '''
                      "bad e-mail address in localize.STONIXDEVS")
 
     def format_message_data(self, msg_data):
-        '''If the expected 2 item array is passed then attach those items to
+        """If the expected 2 item array is passed then attach those items to
         a MessageData object. Index 0 is expected to be a tag, Index 1 is
         expected to be the detail. If an array is not passed then it is assumed
         that there is no tag (defaults to 'None') and the passed data is set
@@ -366,7 +359,7 @@ Subject: STONIX Error Report: ''' + prefix + '''
         :returns: MessageData
         @author: scmcleni
 
-        '''
+        """
         entry = MessageData()
         if isinstance(msg_data, list):
             entry.Tag = msg_data[0].strip()
@@ -378,27 +371,27 @@ Subject: STONIX Error Report: ''' + prefix + '''
         return entry
 
     def getconsolemessage(self):
-        '''Returns the current message if called while in a dirty state.
+        """Returns the current message if called while in a dirty state.
 
 
         :returns: MessageData
         @author: scmcleni
 
-        '''
+        """
         return self.last_message_received
 
     def getmessageprio(self):
-        '''Returns the message priority of the last message received.
+        """Returns the message priority of the last message received.
 
 
         :returns: LogPriority instance
         @author: dkennel
 
-        '''
+        """
         return self.last_prio
 
     def closereports(self):
-        '''This method is intended for use by the single rule and undo methods
+        """This method is intended for use by the single rule and undo methods
         which don't post a report as a part of their workflow. Failure to call
         this may result in the element tree dying in an exceedingly ugly
         manner when it goes out of scope.
@@ -406,20 +399,20 @@ Subject: STONIX Error Report: ''' + prefix + '''
         @author: dkennel
 
 
-        '''
+        """
         try:
             self.xmlreport.closeReport()
         except Exception:
             pass
 
     def displaylastrun(self):
-        '''Read through the entirety of the stonix_last.log file and return it.
+        """Read through the entirety of the stonix_last.log file and return it.
 
 
         :returns: string
         @author: scmcleni
 
-        '''
+        """
         # Make sure the file exists first
         if os.path.isfile(self.reportlog + '.old'):
             try:
@@ -433,18 +426,18 @@ Subject: STONIX Error Report: ''' + prefix + '''
                 raise
             except Exception as err:
                 print('logdispatcher: ')
-                print(traceback.format_exc())
+                print((traceback.format_exc()))
                 print(err)
                 return False
 
     def logRuleCount(self):
-        '''This method logs the rule count. This is part of the run metadata but
+        """This method logs the rule count. This is part of the run metadata but
         is processed seperately due to timing issues in the controller's init
         
         @author: dkennel
 
 
-        '''
+        """
 
         self.metadataopen = True
         self.log(LogPriority.DEBUG, ['RuleCount', self.environment.getnumrules()])
@@ -471,7 +464,7 @@ Subject: STONIX Error Report: ''' + prefix + '''
                 raise
             except Exception as err:
                 print('logdispatcher: ')
-                print(traceback.format_exc())
+                print((traceback.format_exc()))
                 print(err)
                 return False
         if os.path.isfile(self.reportlog):
@@ -484,7 +477,7 @@ Subject: STONIX Error Report: ''' + prefix + '''
                 raise
             except Exception as err:
                 print('logdispatcher: ')
-                print(traceback.format_exc())
+                print((traceback.format_exc()))
                 print(err)
                 return False
 
@@ -566,22 +559,22 @@ Subject: STONIX Error Report: ''' + prefix + '''
 
 
 class MessageData:
-    '''Simple object for handling Message Data in a concrete fashion.
+    """Simple object for handling Message Data in a concrete fashion.
     @author: scmcleni
 
 
-    '''
+    """
     Tag = "None"
     Detail = "None"
 
 
 class LogPriority:
-    '''Enum (python way) of log levels.
+    """Enum (python way) of log levels.
     
     @author: scmcleni
 
 
-    '''
+    """
 
     # I'm not really happy about doing it this way, but it's the shortest
     # way to be able to compare and get a string name back from an 'enum'
@@ -595,14 +588,14 @@ class LogPriority:
 
 
 class xmlReport:
-    '''Simple class to manage the STONIX XML report formatting.
+    """Simple class to manage the STONIX XML report formatting.
     
     @author: dkennel
 
 
-    '''
+    """
     def __init__(self, path, debug=False):
-        '''
+        """
         xmlReport.__init__(path): The xmlReport constructor. Requires a string
         version of the fully qualified path to the file where the XML version
         of the report will be written.
@@ -610,7 +603,7 @@ class xmlReport:
         @param path: string - fully qualified path to the report file
         @param debug: Bool - whether or not to run in debug mode
         @author: dkennel
-        '''
+        """
         self.path = path
         self.debug = debug
         self.root = ET.Element('run')
@@ -632,40 +625,39 @@ class xmlReport:
             #
 
     def writeMetadata(self, entry):
-        '''xmlReport.writeMetadata(entry): The xmlReport method to add a metadata
+        """xmlReport.writeMetadata(entry): The xmlReport method to add a metadata
         entry to the report. Requires a STONIX log entry which is a list of
         two elements; the tag and the detail. See the LogDispatcher log method.
 
         :param entry: Formatted version of the log data.
         @author: dkennel
 
-        '''
+        """
         ET.SubElement(self.meta, entry.Tag, val=entry.Detail)
         if self.debug:
-            print('xmlReport.writeMetadata: Added entry ' + entry.Tag + \
-            ' ' + entry.Detail)
+            print('xmlReport.writeMetadata: Added entry ' + entry.Tag + ' ' + entry.Detail)
 
     def writeFinding(self, entry):
-        '''xmlReport.writeFindings(entry): The xmlReport method to add a findings
+        """xmlReport.writeFindings(entry): The xmlReport method to add a findings
         entry to the report. Requires a STONIX log entry which is a list of
         two elements; the tag and the detail. See the LogDispatcher log method.
 
         :param entry: Formatted version of the log data.
         @author: dkennel
 
-        '''
+        """
         ET.SubElement(self.findings, entry.Tag, val=entry.Detail)
         #if self.debug:
             #print 'xmlReport.writeFinding: Added entry ' + entry.Tag + \
             #' ' + entry.Detail
 
     def closeReport(self):
-        '''xmlReport.closeReport(): This method will write the xmlReport to disk.
+        """xmlReport.closeReport(): This method will write the xmlReport to disk.
         
         @author: dkennel
 
 
-        '''
+        """
         try:
             if not self.closed:
                 f = open(self.path, 'w')

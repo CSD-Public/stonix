@@ -34,9 +34,9 @@ Created on Dec 2, 2013
 '''
 
 
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..CommandHelper import CommandHelper
+from rule import Rule
+from logdispatcher import LogPriority
+from CommandHelper import CommandHelper
 from re import search
 import traceback
 

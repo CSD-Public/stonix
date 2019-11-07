@@ -52,10 +52,10 @@ import re
 import pwd
 import grp
 
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..localize import SITELOCALWWWDIRS
-from ..stonixutilityfunctions import getlocalfs
+from rule import Rule
+from logdispatcher import LogPriority
+from localize import SITELOCALWWWDIRS
+from stonixutilityfunctions import getlocalfs
 
 
 class FilePermissions(Rule):
@@ -1315,10 +1315,22 @@ has been called a second time. The previous results are displayed. '''
                         try:
                             os.chmod(wwfile, 0o1777)
                         except (OSError):
-                            # catch OSError because we may be NFS or RO
-                            self.logger.log(LogPriority.DEBUG,
-                                            ['FilePermissions.fix',
-                                             str(traceback.format_exc())])
+                            if self.environ.getosfamily() == "darwin":
+                                # System volume on Mac OS Catalina
+                                self.logger.log(LogPriority.DEBUG,
+                                                ['FilePermissions.fix',
+                                                 '\nUnable to fix ' +
+                                                 'permissions for \'' +
+                                                 wwfile +
+                                                 '\'. If this file is under ' +
+                                                 'the System Volume, it is ' +
+                                                 'likely read-only/SIP ' +
+                                                 'protected.'])
+                            else:
+                                # catch OSError because we may be NFS or RO
+                                self.logger.log(LogPriority.DEBUG,
+                                                ['FilePermissions.fix',
+                                                str(traceback.format_exc())])
                             continue
                     elif os.path.isfile(wwfile) and re.match(pathre, wwfile):
                         # File is in the root users path, remove world write

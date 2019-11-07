@@ -134,7 +134,7 @@ class LaunchCtl(object):
             self.logger.log(lp.ERROR, "Command must be a dictionary...")
         else:
             commands = 0
-            for subCommand, args in command.items():
+            for subCommand, args in list(command.items()):
                 commands += 1
                 #####
                 # Check to make sure only one command is in the dictionary

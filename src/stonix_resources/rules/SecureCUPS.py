@@ -46,13 +46,13 @@ import os
 import traceback
 import re
 
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..ServiceHelper import ServiceHelper
-from ..pkghelper import Pkghelper
-from ..CommandHelper import CommandHelper
-from ..KVEditorStonix import KVEditorStonix
-from ..stonixutilityfunctions import iterate
+from rule import Rule
+from logdispatcher import LogPriority
+from ServiceHelper import ServiceHelper
+from pkghelper import Pkghelper
+from CommandHelper import CommandHelper
+from KVEditorStonix import KVEditorStonix
+from stonixutilityfunctions import iterate
 
 
 class SecureCUPS(Rule):

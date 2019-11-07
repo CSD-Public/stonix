@@ -43,24 +43,25 @@ dictionary
 @change: 2019/06/26 Brandon R. Gonzales - Stop user from reporting on
             ConfigureCatalogueURL as it can only be fixed by root
 @change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
+@change 2019/10/08 dwalker - updated rule to use softwareupdate command
+            when setting catalogurl.  Implemented proper event recording
+            for undo. Removed unecessary 10.9 code as no longer supported
 """
 
-
-
 import re
-import types
 import traceback
 
 from ..ruleKVEditor import RuleKVEditor
 from ..CommandHelper import CommandHelper
 from ..logdispatcher import LogPriority
 from ..localize import APPLESOFTUPDATESERVER
+from ..stonixutilityfunctions import iterate
 
 
 class ConfigureAppleSoftwareUpdate(RuleKVEditor):
     """This Mac Only rule does three things:
     To fix issue the following commands:
-    
+
     1. Set the default Apple Software Update Server for the organization server
     softwareupdate --set-catalog http://apple.foo.com:8088/
     2. Disables AutomaticDownload:
@@ -79,7 +80,7 @@ class ConfigureAppleSoftwareUpdate(RuleKVEditor):
     defaults -currentHost write /Library/Preferences/com.apple.SoftwareUpdate SkipLocalCDN -bool no
     9. Disables automatic macOS (OS X) updates
     defaults write /Library/Preferences/com.apple.commerce AutoUpdateRestartRequired -bool no
-    
+
     1. defaults -currentHost read /Library/Preferences/com.apple.SoftwareUpdate AppleCatalogURL
     2. defaults -currentHost read /Library/Preferences/com.apple.SoftwareUpdate AutomaticDownload
     3. defaults -currentHost read /Library/Preferences/com.apple.SoftwareUpdate AutomaticCheckEnabled
@@ -89,7 +90,7 @@ class ConfigureAppleSoftwareUpdate(RuleKVEditor):
     7. defaults -currentHost read /Library/Preferences/com.apple.SoftwareUpdate RecommendedUpdates
     8. defaults -currentHost read /Library/Preferences/com.apple.SoftwareUpdate SkipLocalCDN
     9. defaults -currentHost read /Library/Preferences/com.apple.commerce AutoUpdateRestartRequired
-    
+
     OS X Yosemite considerations:
     defaults write /Library/Preferences/com.apple.commerce AutoUpdate -bool [TRUE|FALSE]
 
@@ -140,161 +141,98 @@ class ConfigureAppleSoftwareUpdate(RuleKVEditor):
                                "compliant if you disable this option."
                 default = True
                 self.ccurlci = self.initCi(datatype, key, instructions, default)
-
-                if self.environ.geteuid() == 0:
-                    self.addKVEditor("ConfigureCatalogURL",
-                                     "defaults",
-                                     softwareupdate_path,
-                                     "",
-                                     {"AppleCatalogURL": [str(APPLESOFTUPDATESERVER),
-                                                          str(APPLESOFTUPDATESERVER)]},
-                                     "present",
-                                     "",
-                                     instructions,
-                                     None,
-                                     True,
-                                     {})
             else:
                 self.detailedresults += "\nThe Configure Catalogue URL portion of this rule requires that the constant: APPLESOFTWAREUPDATESERVER be defined and not None. Please ensure this constant is set properly in localize.py"
-            osxversion = str(self.environ.getosver())
-            if osxversion.startswith("10.9"):
-                self.addKVEditor("DisableAutomaticDownload",
-                                 "defaults",
-                                 softwareupdate_path,
-                                 "",
-                                 {"AutomaticDownload": ["0", "-bool no"]},
-                                 "present",
-                                 "",
-                                 "Disable Automatic Software Update Downloads. " +
-                                 "This should be enabled.",
-                                 None,
-                                 False,
-                                 {"AutomaticDownload": ["1", "-bool yes"]})
-                self.addKVEditor("DisableAutomaticCheckEnabled",
-                                 "defaults",
-                                 softwareupdate_path,
-                                 "",
-                                 {"AutomaticCheckEnabled": ["0", "-bool no"]},
-                                 "present",
-                                 "",
-                                 "Disable Automatic Checking For Downloads. " +
-                                 "This should be enabled.",
-                                 None,
-                                 False,
-                                 {"AutomaticCheckEnabled": ["1", "-bool yes"]})
-                self.addKVEditor("DisableConfigDataInstall",
-                                 "defaults",
-                                 softwareupdate_path,
-                                 "",
-                                 {"ConfigDataInstall": ["0", "-bool no"]},
-                                 "present",
-                                 "",
-                                 "Disable Installing of system data files.",
-                                 None,
-                                 False,
-                                 {"ConfigDataInstall": ["1", "-bool yes"]})
-                self.addKVEditor("DisableCriticalUpdateInstall",
-                                 "defaults",
-                                 softwareupdate_path,
-                                 "",
-                                 {"CriticalUpdateInstall": ["0", "-bool no"]},
-                                 "present",
-                                 "",
-                                 "Disable Installing of security updates.",
-                                 None,
-                                 False,
-                                 {"CriticalUpdateInstall": ["1", "-bool yes"]})
-            else:
-                self.addKVEditor("EnableAutomaticDownload",
-                                 "defaults",
-                                 softwareupdate_path,
-                                 "",
-                                 {"AutomaticDownload": ["1", "-bool yes"]},
-                                 "present",
-                                 "",
-                                 "Enable Automatic Software Update Downloads. " +
-                                 "This should be enabled.",
-                                 None,
-                                 False,
-                                 {"AutomaticDownload": ["0", "-bool no"]})
-                self.addKVEditor("EnableAutomaticCheckEnabled",
-                                 "defaults",
-                                 softwareupdate_path,
-                                 "",
-                                 {"AutomaticCheckEnabled": ["1", "-bool yes"]},
-                                 "present",
-                                 "",
-                                 "Enable Automatic Checking For Downloads. " +
-                                 "This should be enabled.",
-                                 None,
-                                 False,
-                                 {"AutomaticCheckEnabled": ["0", "-bool no"]})
-                self.addKVEditor("EnableConfigDataInstall",
-                                 "defaults",
-                                 softwareupdate_path,
-                                 "",
-                                 {"ConfigDataInstall": ["1", "-bool yes"]},
-                                 "present",
-                                 "",
-                                 "Enable Installing of system data files.",
-                                 None,
-                                 False,
-                                 {"ConfigDataInstall": ["0", "-bool no"]})
-                self.addKVEditor("EnableCriticalUpdateInstall",
-                                 "defaults",
-                                 softwareupdate_path,
-                                 "",
-                                 {"CriticalUpdateInstall": ["1", "-bool yes"]},
-                                 "present",
-                                 "",
-                                 "Enable Installing of security updates.",
-                                 None,
-                                 False,
-                                 {"CriticalUpdateInstall": ["0", "-bool no"]})
-            self.addKVEditor("DisableAllowPreReleaseInstallation",
-                             "defaults",
-                             softwareupdate_path,
-                             "",
-                             {"AllowPreReleaseInstallation": ["0", "-bool no"]},
-                             "present",
-                             "",
-                             "Disable Installation of Pre Release Software.",
-                             None,
-                             False,
-                             {"AllowPreReleaseInstallation": ["1", "-bool yes"]})
-            self.addKVEditor("RecommendedUpdates",
-                             "defaults",
-                             softwareupdate_path,
-                             "",
-                             {"RecommendedUpdates": [re.escape("(\n)\n"), None]},
-                             "present",
-                             "",
-                             "List of recommended updates.",
-                             None,
-                             True,
-                             {})
-            self.addKVEditor("SkipLocalCDN",
-                             "defaults",
-                             softwareupdate_path,
-                             "",
-                             {"SkipLocalCDN": ["1", "-bool yes"]},
-                             "present",
-                             "",
-                             "Require the machine to check with the update server rather than caching servers.",
-                             None,
-                             False,
-                             {"SkipLocalCDN": ["0", "-bool no"]})
-            self.addKVEditor("DisableAutomaticMacOSUpdates",
-                             "defaults",
-                             commerce_path,
-                             "",
-                             {"AutoUpdateRestartRequired": ["0", "-bool no"]},
-                             "present",
-                             "",
-                             "Disable automatic installation of macOS (OS X) upgrades.",
-                             None,
-                             False,
-                             {"AutoUpdateRestartRequired": ["1", "-bool yes"]})
+        self.addKVEditor("EnableAutomaticDownload",
+                         "defaults",
+                         softwareupdate_path,
+                         "",
+                         {"AutomaticDownload": ["1", "-bool yes"]},
+                         "present",
+                         "",
+                         "Enable Automatic Software Update Downloads. " +
+                         "This should be enabled.",
+                         None,
+                         False,
+                         {"AutomaticDownload": ["0", "-bool no"]})
+        self.addKVEditor("EnableAutomaticCheckEnabled",
+                         "defaults",
+                         softwareupdate_path,
+                         "",
+                         {"AutomaticCheckEnabled": ["1", "-bool yes"]},
+                         "present",
+                         "",
+                         "Enable Automatic Checking For Downloads. " +
+                         "This should be enabled.",
+                         None,
+                         False,
+                         {"AutomaticCheckEnabled": ["0", "-bool no"]})
+        self.addKVEditor("EnableConfigDataInstall",
+                         "defaults",
+                         softwareupdate_path,
+                         "",
+                         {"ConfigDataInstall": ["1", "-bool yes"]},
+                         "present",
+                         "",
+                         "Enable Installing of system data files.",
+                         None,
+                         False,
+                         {"ConfigDataInstall": ["0", "-bool no"]})
+        self.addKVEditor("EnableCriticalUpdateInstall",
+                         "defaults",
+                         softwareupdate_path,
+                         "",
+                         {"CriticalUpdateInstall": ["1", "-bool yes"]},
+                         "present",
+                         "",
+                         "Enable Installing of security updates.",
+                         None,
+                         False,
+                         {"CriticalUpdateInstall": ["0", "-bool no"]})
+        self.addKVEditor("DisableAllowPreReleaseInstallation",
+                         "defaults",
+                         softwareupdate_path,
+                         "",
+                         {"AllowPreReleaseInstallation": ["0", "-bool no"]},
+                         "present",
+                         "",
+                         "Disable Installation of Pre Release Software.",
+                         None,
+                         False,
+                         {"AllowPreReleaseInstallation": ["1", "-bool yes"]})
+        self.addKVEditor("RecommendedUpdates",
+                         "defaults",
+                         softwareupdate_path,
+                         "",
+                         {"RecommendedUpdates": [re.escape("(\n)\n"), None]},
+                         "present",
+                         "",
+                         "List of recommended updates.",
+                         None,
+                         True,
+                         {})
+        self.addKVEditor("SkipLocalCDN",
+                         "defaults",
+                         softwareupdate_path,
+                         "",
+                         {"SkipLocalCDN": ["1", "-bool yes"]},
+                         "present",
+                         "",
+                         "Require the machine to check with the update server rather than caching servers.",
+                         None,
+                         False,
+                         {"SkipLocalCDN": ["0", "-bool no"]})
+        self.addKVEditor("DisableAutomaticMacOSUpdates",
+                         "defaults",
+                         commerce_path,
+                         "",
+                         {"AutoUpdateRestartRequired": ["0", "-bool no"]},
+                         "present",
+                         "",
+                         "Disable automatic installation of macOS (OS X) upgrades.",
+                         None,
+                         False,
+                         {"AutoUpdateRestartRequired": ["1", "-bool yes"]})
         self.ch = CommandHelper(self.logdispatch)
         self.softwareupdatehasnotrun = True
 
@@ -307,8 +245,8 @@ class ConfigureAppleSoftwareUpdate(RuleKVEditor):
 
         success = True
         if self.softwareupdatehasnotrun:
-# FIXME this is way to slow
-            #success = self.ch.executeCommand("softwareupdate --list")
+            # FIXME this is way to slow
+            # success = self.ch.executeCommand("softwareupdate --list")
             self.softwareupdatehasnotrun = False
         else:
             success = True
@@ -316,7 +254,7 @@ class ConfigureAppleSoftwareUpdate(RuleKVEditor):
 
     def report(self):
         """Calls the inherited RuleKVEditor report method.
-        
+
         Additionally checks that the APPLESOFTWAREUPDATESERVER constant is
         set, the ConfigureCatalogueURL kveditor item is enabled, and gives
         instructions on how to manually fix the RecommendedUpdates kveditor
@@ -327,30 +265,62 @@ class ConfigureAppleSoftwareUpdate(RuleKVEditor):
 
         """
 
-        # Invoke super method
-        self.resultReset()
-        self.compliant = True
-        detailedresults = ""
-        if not RuleKVEditor.report(self, True):
-            self.compliant = False
-
         try:
-
+            # Invoke super method
+            self.resultReset()
+            compliant = True
+            detailedresults = ""
+            if not RuleKVEditor.report(self, True):
+                compliant = False
             if not self.checkConsts([APPLESOFTUPDATESERVER]):
-                self.compliant = False
-                detailedresults += "\nThe Configure Catalogue URL " + \
-                    "portion of this rule requires that the constant: " + \
-                    "APPLESOFTWAREUPDATESERVER be defined and not None. " + \
-                    "Please ensure this constant is set properly in " + \
-                    "localize.py"
-            elif not self.ccurlci.getcurrvalue():
-                self.compliant = False
-                detailedresults += "\nThe Configure Catalogue URL " + \
-                                   "portion of this rule requires that " + \
-                                   "the ci: CONFIGURECATALOGURL be " + \
-                                   "enabled. Please enable this " + \
-                                   "configuration item either in the " + \
-                                   "STONIX GUI or stonix.conf"
+                compliant = False
+                detailedresults += "The Configure Catalogue URL " + \
+                                   "portion of this rule requires that the constant: " + \
+                                   "APPLESOFTWAREUPDATESERVER be defined and not None. " + \
+                                   "Please ensure this constant is set properly in " + \
+                                   "localize.py\n"
+            else:
+                if self.environ.geteuid() == 0:
+                    if self.ccurlci is not None:
+                        cmd = "/usr/bin/defaults read /Library/Preferences/com.apple.SoftwareUpdate AppleCatalogURL"
+                        if self.ch.executeCommand(cmd):
+                            output = self.ch.getOutputString()
+                            # This condition checks if our output matches the catalogURL
+                            # we set in localize.py and if the ci was enabled.  complicancy
+                            # is False if ci was enabled but URL doesn't match that in
+                            # localize.py
+                            if self.ccurlci.getcurrvalue():
+                                if output.strip() != APPLESOFTUPDATESERVER:
+                                    self.detailedresults += "Apple catalog URL is not set to " + APPLESOFTUPDATESERVER + "\n"
+                                    self.originalserver = output.strip()
+                                    compliant = False
+                            # This condition checks if our ci wasn't enabled, this should
+                            # find the output to be cleared and contain the words does not
+                            # exist. If the words does not exist don't appear in the output
+                            # compliancy is False
+                            elif not self.ccurlci.getcurrvalue():
+                                if output.strip() != "":
+                                    self.detailedresults += "CI for apple catalog url is unchecked " + \
+                                                            "which means catalog url should not be set, but url is " + \
+                                                            "pointing to another location\n"
+                                    self.originalserver = output.strip()
+                                    compliant = False
+                                # However, because the rule requires the CI to be enabled, at
+                                # least for now, even if the words does not exist are found
+                                # in the output and the CI is not enabled, this is still
+                                # not compliant. We may eventually make this be compliant = True
+                                elif output.strip() == "":
+                                    compliant = False
+                                    detailedresults += "The Configure Catalogue URL " + \
+                                                       "portion of this rule requires that " + \
+                                                       "the ci: CONFIGURECATALOGURL be " + \
+                                                       "enabled. Please enable this " + \
+                                                       "configuration item either in the " + \
+                                                       "STONIX GUI or stonix.conf\n"
+                        else:
+                            self.detailedresults += "Unable to run defaults command " + \
+                                                    "to retrieve the Apple catalog URL\n"
+                            compliant = False
 
             # The KVEditor object for "RecommendedUpdates" may require a manual
             # fix (running apple software updates). Here is where we instruct the
@@ -358,10 +328,10 @@ class ConfigureAppleSoftwareUpdate(RuleKVEditor):
             self.getKVEditor("RecommendedUpdates")
             softwareupdated = self.kveditor.report()
             if not softwareupdated:
-                self.compliant = False
+                compliant = False
                 # OSX 10.14+ has a different way of updating software
                 if re.search("10\.12\.*", self.environ.getosver()) or \
-                   re.search("10\.13\.*", self.environ.getosver()):
+                        re.search("10\.13\.*", self.environ.getosver()):
                     detailedresults = "\nThe software on this system is " + \
                                       "not up-to-date. Please update " + \
                                       "your software by opening the App " + \
@@ -377,7 +347,7 @@ class ConfigureAppleSoftwareUpdate(RuleKVEditor):
                                       "'Software Update' menu, and " + \
                                       "running the necessary updates.\n\n" + \
                                       detailedresults
-
+            self.compliant = compliant
             self.resultAppend(detailedresults)
 
         except (KeyboardInterrupt, SystemExit):
@@ -393,7 +363,7 @@ class ConfigureAppleSoftwareUpdate(RuleKVEditor):
 
     def fix(self):
         """Calls the inherited RuleKVEditor fix method.
-        
+
         Additionally fixes the ConfigureCatalogURL kveditor item though
         command helper(instead of using RuleKVEditor).
 
@@ -401,32 +371,64 @@ class ConfigureAppleSoftwareUpdate(RuleKVEditor):
         :rtype: bool
         """
 
-        self.rulesuccess = True
+        success = True
         detailedresults = ""
-
+        self.iditerator = 0
+        eventlist = self.statechglogger.findrulechanges(self.rulenumber)
+        for event in eventlist:
+            self.statechglogger.deleteentry(event)
         if not RuleKVEditor.fix(self, True):
-            self.rulesuccess = False
-
+            success = False
         try:
-
             if self.environ.geteuid() == 0:
-
                 if self.checkConsts([APPLESOFTUPDATESERVER]) and self.ccurlci != None:
                     if self.ccurlci.getcurrvalue():
-                        cmd1 = ["softwareupdate", "--set-catalog",
-                                str(APPLESOFTUPDATESERVER)]
-                        self.ch.executeCommand(cmd1)
+                        cmd1 = "/usr/sbin/softwareupdate --set-catalog " + str(APPLESOFTUPDATESERVER)
+                        if not self.ch.executeCommand(cmd1):
+                            self.detailedresults += "Unable to set the " + \
+                                                    "catalogURL to " + APPLESOFTUPDATESERVER + "\n"
+                            success = False
+                        else:
+                            self.iditerator += 1
+                            myid = iterate(self.iditerator, self.rulenumber)
+                            if self.originalserver:
+                                undocmd = "/usr/sbin/softwareupdate --set-catalog " + self.originalserver
+                                event = {"eventtype": "comm",
+                                         "command": undocmd}
+                                self.statechglogger.recordchgevent(myid, event)
+                            else:
+                                undocmd = "/usr/sbin/softwareupdate --clear-catalog"
+                                event = {"eventtype": "comm",
+                                         "command": undocmd}
+                                self.statechglogger.recordchgevent(myid, event)
                     else:
-                        cmd2 = ["softwareupdate", "--clear-catalog"]
-                        self.ch.executeCommand(cmd2)
+                        cmd2 = ["/usr/sbin/softwareupdate", "--clear-catalog"]
+                        if not self.ch.executeCommand(cmd2):
+                            self.detailedresults += "Unable to clear the " + \
+                                                    "catalogURL setting\n"
+                            success = False
+                        else:
+                            if self.originalserver:
+                                self.iditerator += 1
+                                myid = iterate(self.iditerator, self.rulenumber)
+                                undocmd = "/usr/sbin/softwareupdate --set-catalog " + self.originalserver
+                                event = {"eventtype": "comm",
+                                         "command": undocmd}
+                                self.statechglogger.recordchgevent(myid, event)
+                            else:
+                                self.detailedresults += "Was able to clear " + \
+                                                        "the catalogURL setting however this is " + \
+                                                        "currently required to be set to a local " + \
+                                                        "server\n"
+                            success = False
                 else:
-                    self.rulesuccess = False
+                    success = False
                     detailedresults += "\nThe Configure Catalogue URL " + \
-                        "portion of this rule requires that the constant: " + \
-                        "APPLESOFTWAREUPDATESERVER be defined and not None. " + \
-                        "Please ensure this constant is set properly in " + \
-                        "localize.py"
-
+                                       "portion of this rule requires that the constant: " + \
+                                       "APPLESOFTWAREUPDATESERVER be defined and not None. " + \
+                                       "Please ensure this constant is set properly in " + \
+                                       "localize.py"
+            self.rulesuccess = success
             self.resultAppend(detailedresults)
 
         except (KeyboardInterrupt, SystemExit):
@@ -437,64 +439,4 @@ class ConfigureAppleSoftwareUpdate(RuleKVEditor):
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
-
         return self.rulesuccess
-
-    def undo(self):
-        """Calls the inherited RuleKVEditor undo method.
-        
-        Additionally reverts the ConfigureCatalogURL kveditor item though
-        command helper(instead of using RuleKVEditor).
-
-        :return: success - True if fix was successful, False otherwise
-        :rtype: bool
-
-        """
-
-        rulekvesuccess = RuleKVEditor.undo(self)
-
-        try:
-            success = True
-            detailedresults = ""
-
-            if self.environ.geteuid() == 0:
-                cmd = ["softwareupdate", "--clear-catalog"]
-                self.ch.executeCommand(cmd)
-
-                success = success and rulekvesuccess
-            self.resultAppend(detailedresults)
-        except (KeyboardInterrupt, SystemExit):
-            raise
-        except Exception as err:
-            success = False
-            self.detailedresults += "\n" + traceback.format_exc()
-            self.rulesuccess = False
-            self.logdispatch.log(LogPriority.ERROR,
-                                 [self.prefix(),
-                                  "exception - " + str(err) + \
-                                  " - " + self.detailedresults])
-        return success
-
-    def formatValue(self, pValue):
-        """format a given argument as a clean string
-
-        :param pValue: argument to format
-        :return: outputvalue
-        :rtype: basestring
-        """
-
-        outputvalue = pValue
-        datatype = type(outputvalue)
-        if datatype == bytes:
-            if not (outputvalue == ""):
-                outputvalue = re.sub("\\\\n|\(|\)|\,|\'", "", outputvalue)
-                outputvalue = re.sub("\s+", " ", outputvalue)
-        elif datatype == list:
-            for i, item in enumerate(outputvalue):
-                item = re.sub("\\\\n|\(|\)|\,|\'", "", item)
-                item = re.sub("\s+", " ", item)
-                outputvalue[i] = item
-        else:
-            outputvalue = outputvalue
-
-        return outputvalue

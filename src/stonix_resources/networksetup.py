@@ -37,13 +37,13 @@ macOS (OS X) for use with stonix4mac.
 '''
 import re
 import types
-from .localize import DNS
-from .localize import PROXY
-from .localize import PROXYCONFIGURATIONFILE
-from .localize import PROXYDOMAIN
-from .localize import PROXYDOMAINBYPASS
-from .CommandHelper import CommandHelper
-from .logdispatcher import LogPriority
+from stonix_resources.localize import DNS
+from stonix_resources.localize import PROXY
+from stonix_resources.localize import PROXYCONFIGURATIONFILE
+from stonix_resources.localize import PROXYDOMAIN
+from stonix_resources.localize import PROXYDOMAINBYPASS
+from stonix_resources.CommandHelper import CommandHelper
+from stonix_resources.logdispatcher import LogPriority
 
 
 class networksetup():
@@ -696,7 +696,7 @@ class networksetup():
 
         '''
         datatype = type(pMessage)
-        if datatype == bytes:
+        if datatype == str:
             if not (pMessage == ""):
                 messagestring = pMessage
                 if (self.detailedresults == ""):
@@ -716,7 +716,7 @@ class networksetup():
         else:
             raise TypeError("pMessage with value" + str(pMessage) + \
                             "is of type " + str(datatype) + " not of " + \
-                            "type " + str(bytes) + \
+                            "type " + str(str) + \
                             " or type " + str(list) + \
                             " as expected!")
 

@@ -281,8 +281,8 @@ class MacBuildLib(object):
             print("Error: Cannot chmodR target, must be a directory")
             raise
         except NameError:
-            print("Error: Invalid writemode specified. Please use [a]ppend " + \
-                "or [o]verwrite")
+            print(("Error: Invalid writemode specified. Please use [a]ppend " + \
+                "or [o]verwrite"))
             raise
         except Exception:
             raise
@@ -430,18 +430,18 @@ class MacBuildLib(object):
         CURRENT_USER = os.getlogin()
 
         RUNNING_ID = str(os.geteuid())
-        print("UID: " + RUNNING_ID)
+        print(("UID: " + RUNNING_ID))
 
         if RUNNING_ID != "0":
             print(" ")
             print("****************************************")
-            print("***** Current logged in user: " + CURRENT_USER)
+            print(("***** Current logged in user: " + CURRENT_USER))
             print("***** Please run with SUDO ")
             print("****************************************")
             print(" ")
             exit(1)
         else:
-            print("***** Current logged in user: " + CURRENT_USER)
+            print(("***** Current logged in user: " + CURRENT_USER))
 
         print("checkBuildUser Finished...")
         return CURRENT_USER, RUNNING_ID
@@ -718,7 +718,7 @@ class MacBuildLib(object):
         print('.')
         print('.')
         print('.')
-        print(str(cmd))
+        print((str(cmd)))
         print('.')
         print('.')
         print('.')
@@ -791,7 +791,7 @@ class MacBuildLib(object):
         
             for rule in allFilesList:
                 if re.search("\.py$", rule) and not re.match("__init__\.py", rule):
-                    ruleClass = re.sub("\.py$", "", rule)
+                    ruleClass = "stonix_resources.rules." + re.sub("\.py$", "", rule)
                     rulesList.append(ruleClass)
         
             try:

@@ -245,8 +245,8 @@ class macbuildlib(object):
             print("Error: Cannot chmodR target, must be a directory")
             raise
         except NameError:
-            print("Error: Invalid writemode specified. Please use [a]ppend " + \
-                "or [o]verwrite")
+            print(("Error: Invalid writemode specified. Please use [a]ppend " + \
+                "or [o]verwrite"))
             raise
         except Exception:
             raise
@@ -362,18 +362,18 @@ class macbuildlib(object):
         CURRENT_USER = os.getlogin()
 
         RUNNING_ID = str(os.geteuid())
-        print("UID: " + RUNNING_ID)
+        print(("UID: " + RUNNING_ID))
 
         if RUNNING_ID != "0":
             print(" ")
             print("****************************************")
-            print("***** Current logged in user: " + CURRENT_USER)
+            print(("***** Current logged in user: " + CURRENT_USER))
             print("***** Please run with SUDO ")
             print("****************************************")
             print(" ")
             exit(1)
         else:
-            print("***** Current logged in user: " + CURRENT_USER)
+            print(("***** Current logged in user: " + CURRENT_USER))
 
         print("checkBuildUser Finished...")
         return CURRENT_USER, RUNNING_ID

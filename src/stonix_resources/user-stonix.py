@@ -1,30 +1,12 @@
-###############################################################################
-#                                                                             #
-# Copyright 2019. Triad National Security, LLC. All rights reserved.          #
-# This program was produced under U.S. Government contract 89233218CNA000001  #
-# for Los Alamos National Laboratory (LANL), which is operated by Triad       #
-# National Security, LLC for the U.S. Department of Energy/National Nuclear   #
-# Security Administration.                                                    #
-#                                                                             #
-# All rights in the program are reserved by Triad National Security, LLC, and #
-# the U.S. Department of Energy/National Nuclear Security Administration. The #
-# Government is granted for itself and others acting on its behalf a          #
-# nonexclusive, paid-up, irrevocable worldwide license in this material to    #
-# reproduce, prepare derivative works, distribute copies to the public,       #
-# perform publicly and display publicly, and to permit others to do so.       #
-#                                                                             #
-###############################################################################
-
 #! /usr/bin/env python
 
-'''
-Created on Jan 13, 2014
+#Created on Jan 13, 2014
+#
+#This script is used by ScheduleStonix.py
+#This script will run stonix.py, in user context mode, once daily
+#
+#@author: Breen Malmberg
 
-This script is used by ScheduleStonix.py
-This script will run stonix.py, in user context mode, once daily
-
-@author: bemalmbe
-'''
 
 import os,time,getpass,pwd,re
 
@@ -68,11 +50,11 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
             
         except IOError:
             exitcode = IOError.errno
-            print(IOError.message)
+            print((IOError.message))
             scriptsuccess = False
         except OSError:
             exitcode = OSError.errno
-            print(OSError.message)
+            print((OSError.message))
             scriptsuccess = False
         
         if scriptsuccess:

@@ -34,9 +34,9 @@ import re
 import traceback
 import stat
 
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..stonixutilityfunctions import resetsecon
+from rule import Rule
+from logdispatcher import LogPriority
+from stonixutilityfunctions import resetsecon
 
 
 class DisableUnusedFs(Rule):
@@ -157,6 +157,8 @@ filesystem support modules are not disabled."""
                 else:
                     fdata = []
                 for fstype in self.fslist.getcurrvalue():
+                    if type(fstype) is bytes:
+                        fstype = fstype.decode('utf-8')
                     entry = 'install ' + fstype + ' /bin/true\n'
                     if entry not in fdata:
                         fdata.append(entry)

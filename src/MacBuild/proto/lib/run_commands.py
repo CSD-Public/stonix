@@ -158,9 +158,9 @@ class RunWith(object):
 
 
         '''
-        print("Output: " + str(self.output))
-        print("Error: " + str(self.error))
-        print("Return code: " + str(self.returncode))
+        print(("Output: " + str(self.output)))
+        print(("Error: " + str(self.error)))
+        print(("Return code: " + str(self.returncode)))
         return self.output, self.error, self.returncode
 
     ############################################################################
@@ -543,7 +543,7 @@ class RunWith(object):
             '''
                 internal_command.append(str("/usr/bin/sudo -v -u #0 -S -s '" + \
                                             " ".join(cmd) + "'"))
-            elif isinstance(self.command, basestring):
+            elif isinstance(self.command, str):
                 try:
                     internal_command.append(str("/usr/bin/sudo -v -u #0  -S -s " + \
                                                 "'" + \
@@ -833,8 +833,8 @@ def runMyThreadCommand(cmd=[], logger=False) :
     '''
     retval = None
     reterr = None
-    print(str(cmd))
-    print(str(logger))
+    print((str(cmd)))
+    print((str(logger)))
     if cmd and logger :
         run_thread = RunThread(cmd, logger)
         run_thread.start()

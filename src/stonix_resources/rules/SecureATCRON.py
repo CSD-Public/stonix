@@ -49,10 +49,10 @@ import re
 import traceback
 import stat
 
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..CommandHelper import CommandHelper
-from ..stonixutilityfunctions import iterate, setPerms, resetsecon
+from rule import Rule
+from logdispatcher import LogPriority
+from CommandHelper import CommandHelper
+from stonixutilityfunctions import iterate, setPerms, resetsecon
 from pwd import getpwuid
 from grp import getgrgid
 

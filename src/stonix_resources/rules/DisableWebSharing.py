@@ -41,11 +41,11 @@ import traceback
 import os
 import re
 
-from ..rule import Rule
-from ..ServiceHelper import ServiceHelper
-from ..stonixutilityfunctions import iterate
-from ..logdispatcher import LogPriority
-from ..CommandHelper import CommandHelper
+from rule import Rule
+from ServiceHelper import ServiceHelper
+from stonixutilityfunctions import iterate
+from logdispatcher import LogPriority
+from CommandHelper import CommandHelper
 
 
 class DisableWebSharing(Rule):

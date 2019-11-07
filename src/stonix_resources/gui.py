@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 ###############################################################################
 #                                                                             #
 # Copyright 2019. Triad National Security, LLC. All rights reserved.          #
@@ -52,7 +52,7 @@ import webbrowser
 from .view import View
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
-from . import main_window
+from stonix_resources import main_window
 from .stonix_log_viewer import Ui_log_viewer_window
 from .logdispatcher import LogPriority
 
@@ -312,7 +312,6 @@ class GUI (View, QMainWindow, main_window.Ui_MainWindow):
 
         foundin = []
         allrules = self.rule_list_widget.findItems('.*', Qt.MatchRegExp)
-        searchTerm = ''
         searchTerm = self.searchbox.text()
 
         # if a user clears the searchbox, show all rules
@@ -839,7 +838,7 @@ class CiFrame(QFrame):
                     self.ci_value_label.setText('')
                     self.ci_value = QCheckBox('&Enabled')
                     self.ci_value.setChecked(opt.getcurrvalue())
-                except(TypeError):
+                except TypeError:
                     logger.log(LogPriority.ERROR,
                                ['gui.CiFrame.init',
                                 'Bool check box received bad data from ' + str(rulenum)])
@@ -942,7 +941,10 @@ class CiFrame(QFrame):
                 rawlist = opt.getcurrvalue()
                 strlist = ''
                 for item in rawlist:
-                    strlist = strlist + item + ' '
+                    if type(item) is bytes:
+                        strlist += + item.decode('utf-8') + ' '
+                    else:
+                        strlist += item + ' '
                 mydata.setText(strlist)
             myuc.setPlainText(opt.getusercomment())
 
@@ -1033,7 +1035,7 @@ class runThread(QThread):
         self.ruleidlist = []
         self.logger = logger
         self.stopflag = False
-        if ruleid == None:
+        if ruleid is None:
             self.rule_data = self.controller.getallrulesdata()
             for rnum in self.rule_data:
                 ruleid = rnum

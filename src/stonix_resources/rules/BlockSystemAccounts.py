@@ -51,11 +51,11 @@ import os
 import re
 import traceback
 
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..CommandHelper import CommandHelper
-from ..stonixutilityfunctions import readFile, iterate
-from ..stonixutilityfunctions import resetsecon
+from rule import Rule
+from logdispatcher import LogPriority
+from CommandHelper import CommandHelper
+from stonixutilityfunctions import readFile, iterate
+from stonixutilityfunctions import resetsecon
 
 
 class BlockSystemAccounts(Rule):

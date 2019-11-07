@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 
 import os
 def getResourcesDir() :
@@ -35,4 +35,4 @@ def getResourcesDir() :
     return resource_dir
 
 
-print(getResourcesDir())
+print((getResourcesDir()))

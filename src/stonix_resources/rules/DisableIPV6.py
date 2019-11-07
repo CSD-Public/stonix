@@ -14,6 +14,7 @@
 # perform publicly and display publicly, and to permit others to do so.       #
 #                                                                             #
 ###############################################################################
+
 '''
 Created on Apr 9, 2013
 
@@ -42,14 +43,15 @@ Created on Apr 9, 2013
         Remove/cleanup unused lines of code
 '''
 
-from ..stonixutilityfunctions import iterate, setPerms, checkPerms, writeFile
-from ..stonixutilityfunctions import readFile, resetsecon, createFile
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..KVEditorStonix import KVEditorStonix
-from ..pkghelper import Pkghelper
-from ..CommandHelper import CommandHelper
-from ..ServiceHelper import ServiceHelper
+from stonixutilityfunctions import iterate, setPerms, checkPerms, writeFile
+from stonixutilityfunctions import readFile, resetsecon, createFile
+from rule import Rule
+from logdispatcher import LogPriority
+from KVEditorStonix import KVEditorStonix
+from pkghelper import Pkghelper
+from CommandHelper import CommandHelper
+from ServiceHelper import ServiceHelper
+
 import traceback
 import os
 import re

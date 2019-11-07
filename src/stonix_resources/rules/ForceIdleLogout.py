@@ -41,12 +41,12 @@ import traceback
 import re
 import subprocess
 
-from ..KVEditorStonix import KVEditorStonix
-from ..CommandHelper import CommandHelper
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..stonixutilityfunctions import resetsecon, setPerms, iterate, writeFile, readFile, checkPerms, createFile
-from ..pkghelper import Pkghelper
+from KVEditorStonix import KVEditorStonix
+from CommandHelper import CommandHelper
+from rule import Rule
+from logdispatcher import LogPriority
+from stonixutilityfunctions import resetsecon, setPerms, iterate, writeFile, readFile, checkPerms, createFile
+from pkghelper import Pkghelper
 from pwd import getpwnam
 
 
@@ -597,6 +597,7 @@ FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
                         success = False
                         self.detailedresults += "Unable to create " + self.gnomelockpath + " file\n"
                     else:
+
                         created2 = True
                         if not createddir:
                             self.iditerator += 1

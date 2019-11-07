@@ -31,9 +31,9 @@ import shutil
 import stat
 import traceback
 import types
-from .CommandHelper import CommandHelper
-from .logdispatcher import LogPriority
-from .stonixutilityfunctions import writeFile, resetsecon
+from stonix_resources.CommandHelper import CommandHelper
+from stonix_resources.logdispatcher import LogPriority
+from stonix_resources.stonixutilityfunctions import writeFile, resetsecon
 
 
 class FileHelper(object):

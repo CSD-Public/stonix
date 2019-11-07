@@ -26,11 +26,11 @@ Created on Apr 20, 2017
 
 import traceback
 import os
-from ..rule import Rule
+from rule import Rule
 from re import search, escape
-from ..logdispatcher import LogPriority
-from ..stonixutilityfunctions import iterate
-from ..CommandHelper import CommandHelper
+from logdispatcher import LogPriority
+from stonixutilityfunctions import iterate
+from CommandHelper import CommandHelper
 
 
 class DisableSIRIandContinuityFeatures(Rule):

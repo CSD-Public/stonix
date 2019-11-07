@@ -31,7 +31,7 @@ Created on Sep 5, 2013
 '''
 
 
-from ..ruleKVEditor import RuleKVEditor
+from ruleKVEditor import RuleKVEditor
 
 
 class DisableIRReceiver(RuleKVEditor):

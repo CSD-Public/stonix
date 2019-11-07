@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 '''
 Created on Jan 5, 2016
 @author: dwalker

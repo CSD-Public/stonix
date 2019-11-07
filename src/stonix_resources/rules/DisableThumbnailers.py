@@ -34,11 +34,11 @@ import os
 import re
 import traceback
 
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..CommandHelper import CommandHelper
-from ..pkghelper import Pkghelper
-from ..stonixutilityfunctions import iterate
+from rule import Rule
+from logdispatcher import LogPriority
+from CommandHelper import CommandHelper
+from pkghelper import Pkghelper
+from stonixutilityfunctions import iterate
 
 
 class DisableThumbnailers(Rule):
@@ -70,8 +70,6 @@ class DisableThumbnailers(Rule):
         instructions = "To disable this rule set the value of DISABLETHUMBNAILERS to False."
         default = True
         self.ci = self.initCi(datatype, key, instructions, default)
-
-        self.localize()
 
     def localize(self):
         """
@@ -122,7 +120,7 @@ class DisableThumbnailers(Rule):
         self.detailedresults = ""
 
         try:
-
+            self.localize()
             if self.gnome_installed:
                 # This portion of the code is relevant to user context
                 if self.environ.geteuid() != 0:

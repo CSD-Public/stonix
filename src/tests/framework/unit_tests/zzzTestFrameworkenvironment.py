@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 ###############################################################################
 #                                                                             #
 # Copyright 2019. Triad National Security, LLC. All rights reserved.          #
@@ -60,7 +60,7 @@ class zzzTestFrameworkenvironment(unittest.TestCase):
     def testGetostype(self):
         validtypes = 'Red Hat Enterprise Linux|Debian|Ubuntu|CentOS|Fedora|' + \
                      'openSUSE|Mac OS X'
-        print('OS Type: ' + self.to.getostype())
+        print(('OS Type: ' + self.to.getostype()))
         self.assertTrue(re.search(validtypes, self.to.getostype()))
 
     def testGetosfamily(self):
@@ -107,11 +107,11 @@ class zzzTestFrameworkenvironment(unittest.TestCase):
 
     def testGetPropNum(self):
         self.assertTrue(re.search('[0-9]{7}', self.to.get_property_number()))
-        print('PN: ' + self.to.get_property_number())
+        print(('PN: ' + self.to.get_property_number()))
 
     def testGetSysSerNo(self):
         self.assertTrue(self.to.get_system_serial_number())
-        print('SysSer: ' + self.to.get_system_serial_number())
+        print(('SysSer: ' + self.to.get_system_serial_number()))
 
     def testGetChassisSerNo(self):
         chassisserial = '0'
@@ -127,7 +127,7 @@ class zzzTestFrameworkenvironment(unittest.TestCase):
                 unittestchassisserial = chassisserial.strip()
                 envchassisserial = self.to.get_chassis_serial_number()
                 self.assertEqual(unittestchassisserial, envchassisserial)
-                print('Ser: ' + self.to.get_chassis_serial_number())
+                print(('Ser: ' + self.to.get_chassis_serial_number()))
             else:
                 msg =  "Not running as root, Chassis serial number " + \
                 "information not availble\n"
@@ -138,17 +138,17 @@ class zzzTestFrameworkenvironment(unittest.TestCase):
             self.skipTest(msg)
     def testGetSysMfg(self):
         mfg = self.to.get_system_manufacturer()
-        print('SysMFG: ' + mfg)
+        print(('SysMFG: ' + mfg))
         self.assertTrue(mfg)
 
     def testGetChassisMfg(self):
         mfg = self.to.get_chassis_manfacturer()
-        print('MFG: ' + mfg)
+        print(('MFG: ' + mfg))
         self.assertTrue(mfg)
 
     def testGetSysUUID(self):
         uuid = self.to.get_sys_uuid()
-        print('UUID: ' + uuid)
+        print(('UUID: ' + uuid))
         self.assertTrue(uuid)
 
     def testIsMobile(self):

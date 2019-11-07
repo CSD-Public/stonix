@@ -32,10 +32,10 @@ This object is designed to automate rules using the KV Editor paradigm
 '''
 import traceback
 import types
-from .rule import Rule
-from .KVEditorStonix import KVEditorStonix
-from .logdispatcher import LogPriority
-from .configurationitem import ConfigurationItem
+from stonix_resources.rule import Rule
+from stonix_resources.KVEditorStonix import KVEditorStonix
+from stonix_resources.logdispatcher import LogPriority
+from stonix_resources.configurationitem import ConfigurationItem
 
 
 class RuleKVEditor (Rule):
@@ -583,7 +583,7 @@ LANL-stonix."""
                 raise TypeError("pKVEditorName with value " + \
                                 str(pKVEditorName) + " is of type " + \
                                 str(datatype) + " not of " + "type " + \
-                                str(bytes) + " as expected!")
+                                str(str) + " as expected!")
             self.kveventid = str(self.rulenumber).zfill(4) + \
             str(self.kveditorName)
             self.kvindex = self.kvindex + 1
@@ -742,7 +742,7 @@ LANL-stonix."""
 
         '''
         datatype = type(pMessage)
-        if datatype == bytes:
+        if datatype == str:
             if not (pMessage == ""):
                 messagestring = pMessage
                 if (self.detailedresults == ""):
@@ -760,7 +760,7 @@ LANL-stonix."""
         else:
             raise TypeError("pMessage with value" + str(pMessage) + \
                             "is of type " + str(datatype) + " not of " + \
-                            "type " + str(bytes) + \
+                            "type " + str(str) + \
                             " or type " + str(list) + \
                             " as expected!")
 
@@ -787,13 +787,13 @@ LANL-stonix."""
     def getConfigurationByName(self, pCIName=""):
         configurationItemObject = None
         datatype = type(pCIName)
-        if datatype == bytes:
+        if datatype == str:
             ciName = pCIName
         else:
             ciName = ""
             raise TypeError("pCIName with value" + str(pCIName) + \
                             "is of type " + str(datatype) + " not of " + \
-                            "type " + str(bytes) + \
+                            "type " + str(str) + \
                             " as expected!")
         for ci in self.confitems:
             if ci.getkey() == ciName:

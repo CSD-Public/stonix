@@ -34,8 +34,8 @@ have been followed. The class is audit only.
 import re
 import traceback
 
-from ..rule import Rule
-from ..logdispatcher import LogPriority
+from rule import Rule
+from logdispatcher import LogPriority
 
 
 class CheckPartitioning(Rule):

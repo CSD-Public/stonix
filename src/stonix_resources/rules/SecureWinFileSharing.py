@@ -35,9 +35,9 @@ in report() method to self.compliant
 
 
 
-from ..ruleKVEditor import RuleKVEditor
-from ..logdispatcher import LogPriority
-from ..KVEditorStonix import KVEditorStonix
+from ruleKVEditor import RuleKVEditor
+from logdispatcher import LogPriority
+from KVEditorStonix import KVEditorStonix
 
 import os
 import traceback

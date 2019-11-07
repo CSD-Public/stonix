@@ -23,8 +23,8 @@ Created on Sep 19, 2012
 import subprocess
 import re
 import os
-from .logdispatcher import LogPriority
-from .ServiceHelperTemplate import ServiceHelperTemplate
+from stonix_resources.logdispatcher import LogPriority
+from stonix_resources.ServiceHelperTemplate import ServiceHelperTemplate
 
 
 class SHrcupdate(ServiceHelperTemplate):
