@@ -43,9 +43,10 @@ OS X Mavericks not Mountain Lion, Lion, etc.
     disablement of removable storage.  Cleaned up code
 @change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
+@change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
 '''
 
-from __future__ import absolute_import
+
 
 import os
 import re
@@ -53,12 +54,12 @@ import traceback
 import glob
 import sys
 
-from ..CommandHelper import CommandHelper
-from ..rule import Rule
-from ..stonixutilityfunctions import readFile, setPerms, createFile
-from ..stonixutilityfunctions import checkPerms, iterate, writeFile, resetsecon
-from ..logdispatcher import LogPriority
-from ..pkghelper import Pkghelper
+from CommandHelper import CommandHelper
+from rule import Rule
+from stonixutilityfunctions import readFile, setPerms, createFile
+from stonixutilityfunctions import checkPerms, iterate, writeFile, resetsecon
+from logdispatcher import LogPriority
+from pkghelper import Pkghelper
 
 
 class DisableRemoveableStorage(Rule):
@@ -86,7 +87,7 @@ class DisableRemoveableStorage(Rule):
         self.guidance = ['NSA 2.2.2.2, CIS, NSA(2.2.2.2), cce-4006-3,4173-1']
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.12', 'r', '10.14.10']},
+                           'os': {'Mac OS X': ['10.15', 'r', '10.15.10']},
                            'fisma': 'high'}
 
         # configuration item instantiation

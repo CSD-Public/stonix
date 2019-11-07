@@ -32,15 +32,16 @@ Created on Jan 14, 2014
 @change: 2019/06/05 dwalker - refactored linux portion of rule to be
     consistent with other rules that handle sysctl and to properly
     handle sysctl by writing to /etc/sysctl.conf and also using command
+@change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
 '''
-from __future__ import absolute_import
-from ..stonixutilityfunctions import iterate, setPerms, checkPerms, writeFile
-from ..stonixutilityfunctions import readFile, resetsecon, createFile
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..KVEditorStonix import KVEditorStonix
-from ..CommandHelper import CommandHelper
-from ..pkghelper import Pkghelper
+
+from stonixutilityfunctions import iterate, setPerms, checkPerms, writeFile
+from stonixutilityfunctions import readFile, resetsecon, createFile
+from rule import Rule
+from logdispatcher import LogPriority
+from KVEditorStonix import KVEditorStonix
+from CommandHelper import CommandHelper
+from pkghelper import Pkghelper
 import traceback
 import os
 import glob
@@ -70,7 +71,7 @@ False.'''
                          "CCE 4128-5"]
         self.applicable = {'type': 'white',
                            'family': ['linux'],
-                           'os': {'Mac OS X': ['10.12', 'r', '10.14.10']}}
+                           'os': {'Mac OS X': ['10.15', 'r', '10.15.10']}}
         self.iditerator = 0
         # self.editor1: sysctl file editor
         # self.editor2: network file editor

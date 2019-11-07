@@ -35,20 +35,21 @@ per day
         within ServiceHelper and SHlaunchd)
 @change: 2017/10/23 Roy Nielsen - change to new service helper interface
 @change: 2017/11/27 Breen Malmberg removed print statements
+@change: 2019/08/07 ekkehard - make rule for darwin family
 """
 
-from __future__ import absolute_import
+
 
 import random
 import os
 import re
 import traceback
 
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..stonixutilityfunctions import readFile, getOctalPerms
-from ..ServiceHelper import ServiceHelper
-from ..CommandHelper import CommandHelper
+from rule import Rule
+from logdispatcher import LogPriority
+from stonixutilityfunctions import readFile, getOctalPerms
+from ServiceHelper import ServiceHelper
+from CommandHelper import CommandHelper
 
 
 class ScheduleStonix(Rule):
@@ -88,8 +89,7 @@ class ScheduleStonix(Rule):
         self.rulesuccess = True
         self.guidance = ['']
         self.applicable = {'type': 'white',
-                           'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.9', '+']}}
+                           'family': ['darwin', 'linux', 'solaris', 'freebsd']}
 
         datatype = "int"
         keyfd = "FIXDAY"
@@ -482,28 +482,28 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
 
         # range input validation
         oor = []
-        if fixday not in range(1, 8):
+        if fixday not in list(range(1, 8)):
             rangevalid = False
             oor.append("fixday: " + str(fixday))
-        if reportday not in range(1, 8):
+        if reportday not in list(range(1, 8)):
             rangevalid = False
             oor.append("reportday: " + str(reportday))
-        if fixhour not in range(0, 24):
+        if fixhour not in list(range(0, 24)):
             rangevalid = False
             oor.append("fixhour: " + str(fixhour))
-        if reporthour not in range(0, 24):
+        if reporthour not in list(range(0, 24)):
             rangevalid = False
             oor.append("reporthour: " + str(reporthour))
-        if fixminute not in range(0, 60):
+        if fixminute not in list(range(0, 60)):
             rangevalid = False
             oor.append("fixminute: " + str(fixminute))
-        if reportminute not in range(0, 60):
+        if reportminute not in list(range(0, 60)):
             rangevalid = False
             oor.append("reportminute: " + str(reportminute))
-        if userfixhour not in range(0, 24):
+        if userfixhour not in list(range(0, 24)):
             rangevalid = False
             oor.append("userfixhour: " + str(userfixhour))
-        if userfixminute not in range(0, 60):
+        if userfixminute not in list(range(0, 60)):
             oor.append("userfixminute: " + str(userfixminute))
 
         if not rangevalid:
@@ -1026,7 +1026,7 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
             f.writelines(contents)
             f.close()
             os.chown(self.cronfilelocation, 0, 0)
-            os.chmod(self.cronfilelocation, 0600)
+            os.chmod(self.cronfilelocation, 0o600)
 
         if not self.userjob:
             self.logger.log(LogPriority.DEBUG, "Fixing the STONIX user script...")
@@ -1034,7 +1034,7 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
             if not os.path.exists(self.userscriptfile):
                 try:
                     if not os.path.exists('/etc/profile.d'):
-                        os.makedirs('/etc/profile.d', 0755)
+                        os.makedirs('/etc/profile.d', 0o755)
                         os.chown('/etc/profile.d', 0, 0)
 
                     self.logger.log(LogPriority.DEBUG, "Creating user script file and writing correct contents...")
@@ -1043,7 +1043,7 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
                     f.close()
 
                     os.chown(self.userscriptfile, 0, 0)
-                    os.chmod(self.userscriptfile, 0755)
+                    os.chmod(self.userscriptfile, 0o755)
                 except Exception:
                     retval = False
                     self.logger.log(LogPriority.DEBUG, "Failed to create user script file")
@@ -1059,7 +1059,7 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
                     f.close()
 
                     os.chown(self.userscriptfile, 0, 0)
-                    os.chmod(self.userscriptfile, 0755)
+                    os.chmod(self.userscriptfile, 0o755)
 
                 except Exception:
                     retval = False
@@ -1068,7 +1068,7 @@ if os.path.exists(stonixtempfolder + 'userstonix.log'):
         self.logger.log(LogPriority.DEBUG, "Setting Permissions and Ownership on crontab file...")
 
         os.chown(self.cronfilelocation, 0, 0)
-        os.chmod(self.cronfilelocation, 0600)
+        os.chmod(self.cronfilelocation, 0o600)
 
         return retval
 

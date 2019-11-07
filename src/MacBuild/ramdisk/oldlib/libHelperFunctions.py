@@ -3,7 +3,7 @@ Helper functions, OS agnostic
 
 @author: Roy Nielsen
 """
-from __future__ import absolute_import
+
 #--- Native python libraries
 import os
 import sys

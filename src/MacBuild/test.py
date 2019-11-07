@@ -1,14 +1,14 @@
-#!/usr/bin/python
-import ramdisk
-from ramdisk.lib.loggers import CyLogger
+#!/usr/bin/env python3
+from . import ramdisk
+from .ramdisk.lib.loggers import CyLogger
 
-import buildlib
+from . import buildlib
 
 logdispatch = ramdisk.lib.loggers.CyLogger(debug_mode=True)
 
 logdispatch.initializeLogs()
 
-print str(logdispatch)
+print((str(logdispatch)))
 
 testlib = buildlib.MacBuildLib(logdispatch)
 

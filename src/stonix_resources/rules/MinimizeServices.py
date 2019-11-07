@@ -37,17 +37,17 @@ Created on Aug 9, 2012
         systemd whitelist
 """
 
-from __future__ import absolute_import
+
 
 import traceback
 import re
 import os
 import sys # for testing
 
-from ..ServiceHelper import ServiceHelper
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..CommandHelper import CommandHelper
+from ServiceHelper import ServiceHelper
+from rule import Rule
+from logdispatcher import LogPriority
+from CommandHelper import CommandHelper
 
 
 class MinimizeServices(Rule):
@@ -149,6 +149,7 @@ class MinimizeServices(Rule):
                              'nscd', 'nslcd',
                              'ntpd',
                              'oddjobd',
+                             'osad',
                              'ondemand',
                              'portmap',
                              'postfix',
@@ -300,6 +301,7 @@ class MinimizeServices(Rule):
                                'debian-fixup.service',
                                'dbus.service', 'dbus',
                                'dbus-daemon.service',
+                               'dbus-broker.service',
                                'display-manager.service',
                                'dm-event.service',
                                'dmraid-activation.service',
@@ -357,7 +359,7 @@ class MinimizeServices(Rule):
                                'nfs-lock.service', 'nslcd.service',
                                'ntpd.service', 'ntpdate.service',
                                'ntp.service', 'ntp', 'ntpd',
-                               'ondemand.service',
+                               'ondemand.service', 'osad.service',
                                'pcscd', 'pcscd.service', 'postfix',
                                'polkit.service', 'purge-kernels.service',
                                'plymouth-quit-wait.service',

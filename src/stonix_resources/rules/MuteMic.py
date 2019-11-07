@@ -39,18 +39,19 @@ that occurs when system sound card(s) is missing firmware
     state change events, removed overriding of undo method, implemented pre-
     written methods for reading file, writing to file, and creating file.
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
+@change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
 '''
-from __future__ import absolute_import
+
 import traceback
 import os
 import re
 import subprocess
 
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..stonixutilityfunctions import resetsecon, readFile, writeFile, iterate
-from ..stonixutilityfunctions import checkPerms, setPerms, createFile
-from ..CommandHelper import CommandHelper
+from rule import Rule
+from logdispatcher import LogPriority
+from stonixutilityfunctions import resetsecon, readFile, writeFile, iterate
+from stonixutilityfunctions import checkPerms, setPerms, createFile
+from CommandHelper import CommandHelper
 
 
 class MuteMic(Rule):
@@ -81,7 +82,7 @@ class MuteMic(Rule):
         self.guidance = ['CIS']
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.12', 'r', '10.14.10']}}
+                           'os': {'Mac OS X': ['10.15', 'r', '10.15.10']}}
         self.root = True
         if self.environ.geteuid() != 0:
             self.root = False
@@ -794,7 +795,7 @@ added more debugging output
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
-        except Exception, err:
+        except Exception as err:
             self.rulesuccess = False
             self.detailedresults += "\n" + str(err) + \
                 " - " + str(traceback.format_exc())
@@ -892,7 +893,7 @@ param value, retval; made sure method always returns something
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
-        except Exception, err:
+        except Exception as err:
             self.rulesuccess = False
             retval = False
             self.detailedresults += "\n" + str(err) + \
@@ -1105,7 +1106,7 @@ param value, retval; made sure method always returns something
                 # make sure the base directory exists
                 # before we attempt to write a file to it
                 if not os.path.exists(self.systemdbase):
-                    os.makedirs(self.systemdbase, 0755)
+                    os.makedirs(self.systemdbase, 0o755)
                 #if file doesn't exist, create it and record creation event
                 if not os.path.exists(self.systemdscriptname):
                     if not createFile(self.systemdscriptname, self.logger):

@@ -1,15 +1,15 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 import os
 import getpass
 from subprocess import Popen, PIPE, check_call
 
-username = raw_input("Username: ")
+username = eval(input("Username: "))
 passwd = getpass.getpass("passwd: ")
 
 #cmdOne = '/usr/bin/su - ' + username + ' -c "/usr/bin/top -l 1"'
 #print cmdOne
 cmdTwo = ['/usr/bin/su', '-', username, '-c', '/usr/bin/top -l 1']
-print cmdTwo
+print(cmdTwo)
 
 read, write = os.pipe()
 

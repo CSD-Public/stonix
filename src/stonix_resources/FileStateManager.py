@@ -14,7 +14,7 @@ import traceback
 
 from distutils.version import LooseVersion
 
-from logdispatcher import LogPriority as lp
+from stonix_resources.logdispatcher import LogPriority as lp
 
 class FileStateManager(object):
     '''Handles state management of files based on directory path.
@@ -60,7 +60,7 @@ class FileStateManager(object):
 
         '''
         modes = ["unified", "ndiff", "filecmp"]
-        if isinstance(mode, basestring) and mode in modes:
+        if isinstance(mode, str) and mode in modes:
             self.mode = mode
 
     def getMode(self, mode=''):
@@ -78,7 +78,7 @@ class FileStateManager(object):
 
         '''
         success = False
-        if isinstance(prefix, basestring) and self.isSaneFilePath(prefix):
+        if isinstance(prefix, str) and self.isSaneFilePath(prefix):
             self.prefix = prefix
             #####
             # Move to a backup location if it isn't a directory and is a file.
@@ -126,7 +126,7 @@ class FileStateManager(object):
                                 "/" + stamp + \
                                 "/" + inspectFileName
 
-        elif isinstance(prefix, basestring) and self.isSaneFilePath(prefix):
+        elif isinstance(prefix, str) and self.isSaneFilePath(prefix):
             self.backupPrefix = prefix
 
         #####
@@ -158,7 +158,7 @@ class FileStateManager(object):
         '''
         success = False
         lv = LooseVersion()
-        if isinstance(version, basestring) and lv.component_re.match(version):
+        if isinstance(version, str) and lv.component_re.match(version):
             self.version = version
             success = True
         return success
@@ -176,7 +176,7 @@ class FileStateManager(object):
 
         '''
         sane = False
-        if isinstance(filepath, basestring):
+        if isinstance(filepath, str):
             if re.match("^[A-Za-z0-9/.][A-Za-z0-9/_.\-]*", filepath):
                 sane = True
         self.logger.log(lp.DEBUG, "sane: " + str(sane))
@@ -493,7 +493,7 @@ class FileStateManager(object):
         if not os.path.exists(fileName):
             try:
                 shutil.copy2(fromMetaState, fileName)
-            except shutil.Error, err:
+            except shutil.Error as err:
                 self.logger.log(lp.INFO, "Error copying file from reference state.")
                 self.logger.log(lp.DEBUG, traceback.format_exc(err))
             else:
@@ -502,7 +502,7 @@ class FileStateManager(object):
             self.backupFile(fileName)
             try:
                 shutil.copy2(fromMetaState, fileName)
-            except shutil.Error, err:
+            except shutil.Error as err:
                 self.logger.log(lp.INFO, "Error copying file from reference state.")
                 self.logger.log(lp.DEBUG, traceback.format_exc(err))
             else:
@@ -531,7 +531,7 @@ class FileStateManager(object):
             if not os.path.exists(item):
                 try:
                     shutil.copy2(fromMetaState + item, item)
-                except OSError, err:
+                except OSError as err:
                     self.logger.log(lp.INFO, "Error copying file from reference state.")
                     self.logger.log(lp.DEBUG, traceback.format_exc(err))
                     copyResults.append(False)
@@ -541,7 +541,7 @@ class FileStateManager(object):
             elif not filecmp.cmp(fromMetaState + item, item):
                 try:
                     shutil.copy2(fromMetaState + item, item)
-                except OSError, err:
+                except OSError as err:
                     self.logger.log(lp.INFO, "Error copying file from reference state.")
                     self.logger.log(lp.DEBUG, traceback.format_exc(err))
                     copyResults.append(False)
@@ -657,7 +657,7 @@ class FileStateManager(object):
         self.logger.log(lp.DEBUG, "data: " + str(data))
         self.logger.log(lp.DEBUG, "pivot: " + str(pivot))
         less, equal, greater = [], [], []
-        if isinstance(pivot, basestring) and isinstance(data, list):
+        if isinstance(pivot, str) and isinstance(data, list):
             for version in data:
                 if LooseVersion(version) < LooseVersion(pivot): less.append(version)
                 if LooseVersion(version) == LooseVersion(pivot): equal.append(version)

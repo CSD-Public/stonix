@@ -36,16 +36,16 @@ reference the CI before executing FIX.
 @change: 2015/10/07 eball Help text cleanup
 '''
 
-from __future__ import absolute_import
+
 import os
 import re
 import traceback
 
-from ..rule import Rule
-from ..stonixutilityfunctions import readFile, writeFile, createFile, iterate
-from ..stonixutilityfunctions import setPerms, checkPerms, resetsecon
-from ..logdispatcher import LogPriority
-from ..pkghelper import Pkghelper
+from rule import Rule
+from stonixutilityfunctions import readFile, writeFile, createFile, iterate
+from stonixutilityfunctions import setPerms, checkPerms, resetsecon
+from logdispatcher import LogPriority
+from pkghelper import Pkghelper
 
 
 class ReqAuthSingleUserMode(Rule):

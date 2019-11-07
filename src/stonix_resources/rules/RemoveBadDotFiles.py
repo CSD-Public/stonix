@@ -27,11 +27,12 @@ Created on Jul 13, 2012
 @change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
 @change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
+@change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
 '''
-from __future__ import absolute_import
+
 import pwd
-from ..rule import Rule
-from ..stonixutilityfunctions import *
+from rule import Rule
+from stonixutilityfunctions import *
 
 
 class RemoveBadDotFiles(Rule):
@@ -66,7 +67,7 @@ class RemoveBadDotFiles(Rule):
         self.guidance = ['NSA 2.3.4.5', 'cce-4578-1']
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.12', 'r', '10.14.10']}}
+                           'os': {'Mac OS X': ['10.15', 'r', '10.15.10']}}
         self.homelist = ['/', '/root']
         try:
             mypwd = pwd.getpwall()
@@ -120,7 +121,7 @@ class RemoveBadDotFiles(Rule):
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
-        except Exception, err:
+        except Exception as err:
             self.rulesuccess = False
             self.detailedresults = self.detailedresults + "\n" + str(err) + \
             " - " + str(traceback.format_exc())
@@ -163,7 +164,7 @@ class RemoveBadDotFiles(Rule):
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
-        except Exception, err:
+        except Exception as err:
             self.rulesuccess = False
             self.detailedresults = self.detailedresults + "\n" + str(err) + \
             " - " + str(traceback.format_exc())

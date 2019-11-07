@@ -25,10 +25,10 @@ import re
 import os
 import time
 
-from stonixutilityfunctions import psRunning
-from logdispatcher import LogPriority
-from CommandHelper import CommandHelper
-from StonixExceptions import repoError
+from stonix_resources.stonixutilityfunctions import psRunning
+from stonix_resources.logdispatcher import LogPriority
+from stonix_resources.CommandHelper import CommandHelper
+from stonix_resources.StonixExceptions import repoError
 
 
 class Dnf(object):

@@ -22,14 +22,14 @@ This rule disables support for several uncommon network protocols.
 @change: 2015/09/10 eball - Original implementation
 @change 2017/08/28 rsn Fixing to use new help text methods
 '''
-from __future__ import absolute_import
+
 import os
 import re
 import traceback
-from ..CommandHelper import CommandHelper
-from ..stonixutilityfunctions import iterate, createFile
-from ..rule import Rule
-from ..logdispatcher import LogPriority
+from CommandHelper import CommandHelper
+from stonixutilityfunctions import iterate, createFile
+from rule import Rule
+from logdispatcher import LogPriority
 
 
 class DisableUncommonProtocols(Rule):
@@ -73,6 +73,8 @@ class DisableUncommonProtocols(Rule):
             mpdir = "/etc/modprobe.d/"
 
             for proto in protocols:
+                if type(proto) is bytes:
+                    proto = proto.decode('utf-8')
                 cmd = ["grep", "-R", proto, mpdir]
                 self.ch.executeCommand(cmd)
                 if not re.search(":install " + proto + " /bin/true",

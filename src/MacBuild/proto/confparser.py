@@ -1,6 +1,6 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 
-from ConfigParser import SafeConfigParser
+from configparser import SafeConfigParser
 import os
 import re
 import sys
@@ -24,11 +24,11 @@ def getConfOptions():
 
     optionsDict = {}
     for section_name in parser.sections():
-        print 'Section : ' + str(section_name)
-        print '    opts: ' + str(parser.options(section_name))
+        print(('Section : ' + str(section_name)))
+        print(('    opts: ' + str(parser.options(section_name))))
         for name, value in parser.items(section_name):
-            print '          %s = %s'%(name, value)
-        print
+            print(('          %s = %s'%(name, value)))
+        print()
 
 getConfOptions()
 

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 ###############################################################################
 #                                                                             #
 # Copyright 2019. Triad National Security, LLC. All rights reserved.          #
@@ -28,7 +28,7 @@ This is a Unit Test for Rule SystemAccounting
 @change: 2016/02/10 roy Added sys.path.append for being able to unit test this
                         file as well as with the test harness.
 '''
-from __future__ import absolute_import
+
 import unittest
 import re
 import os
@@ -95,7 +95,7 @@ class zzzTestRuleSystemAccounting(RuleTest):
                 cmd = ["/usr/bin/apt-get", "update"]
                 self.ch.executeCommand(cmd)
             else:
-                path1 = "/etc/rc.conf"
+                path1 = "/etc/rc.common"
                 path2 = "/var/account/acct"
                 if os.path.exists(path1):
                     contentlines = open(path1, "r").readlines()

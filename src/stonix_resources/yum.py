@@ -15,33 +15,27 @@
 #                                                                             #
 ###############################################################################
 
-'''
+"""
 Created on Aug 06, 2012
 
-@author: Derek T. Walker
-'''
+
+"""
 
 import re
-import os
 import time
 
-from stonixutilityfunctions import psRunning
-from logdispatcher import LogPriority
-from CommandHelper import CommandHelper
-from StonixExceptions import repoError
-from environment import Environment
+from stonix_resources.stonixutilityfunctions import psRunning
+from stonix_resources.logdispatcher import LogPriority
+from stonix_resources.CommandHelper import CommandHelper
+from stonix_resources.StonixExceptions import repoError
+from stonix_resources.environment import Environment
 
 
 class Yum(object):
-    '''The template class that provides a framework that must be implemented by
+    """The template class that provides a framework that must be implemented by
     all platform specific pkgmgr classes.
-    
-    @author: Derek T Walker
-    @change: 2012/08/06 dwalker - Original Implementation
-    @change: 2015/08/20 eball - Added getPackageFromFile
 
-
-    '''
+    """
 
     def __init__(self, logger):
         self.environ = Environment()
@@ -65,18 +59,14 @@ class Yum(object):
         self.query = self.rpmloc + " -qa "
 
     def installpackage(self, package):
-        '''Install a package. Return a bool indicating success or failure.
+        """Install a package. Return a bool indicating success or failure.
 
         :param package: string; Name of the package to be installed, must be
                 recognizable to the underlying package manager.
-        :returns: installed
+        :return: installed
         :rtype: bool
-@author: Derek T. Walker
-@change: Breen Malmberg - 4/24/2017 - refactored method; added logging; replaced
-        detailedresults with logging
-@change: Breen Malmberg - 10/1/2018 - added check for package manager lock and retry loop
 
-        '''
+        """
 
         installed = True
         maxtries = 12
@@ -94,17 +84,13 @@ class Yum(object):
 
         try:
 
-            try:
+            self.ch.executeCommand(self.install + package)
+            retcode = self.ch.getReturnCode()
 
-                self.ch.executeCommand(self.install + package)
-                retcode = self.ch.getReturnCode()
+            if retcode != 0:
                 errstr = self.ch.getErrorString()
-                if retcode != 0:
-                    raise repoError('yum', retcode)
-            except repoError as repoerr:
-                if not repoerr.success:
-                    self.logger.log(LogPriority.WARNING, str(repoerr))
-                    installed = False
+                self.logger.log(LogPriority.DEBUG, "Yum command failed with: " + str(errstr))
+                installed = False
 
             if installed:
                 self.logger.log(LogPriority.DEBUG, "Package " + str(package) + " was installed successfully")
@@ -116,17 +102,14 @@ class Yum(object):
         return installed
 
     def removepackage(self, package):
-        '''Remove a package. Return a bool indicating success or failure.
+        """Remove a package. Return a bool indicating success or failure.
 
         :param package: string; Name of the package to be removed, must be
                 recognizable to the underlying package manager.
-        :returns: removed
+        :return: removed
         :rtype: bool
-@author: Derek T. Walker
-@change: Breen Malmberg - 4/24/2017 - refactored method; added logging; replaced
-        detailedresults with logging
 
-        '''
+        """
 
         removed = True
         maxtries = 12
@@ -144,16 +127,12 @@ class Yum(object):
 
         try:
 
-            try:
-                self.ch.executeCommand(self.remove + package)
-                retcode = self.ch.getReturnCode()
+            self.ch.executeCommand(self.remove + package)
+            retcode = self.ch.getReturnCode()
+            if retcode != 0:
                 errstr = self.ch.getErrorString()
-                if retcode != 0:
-                    raise repoError('yum', retcode)
-            except repoError as repoerr:
-                if not repoerr.success:
-                    self.logger.log(LogPriority.WARNING, str(repoerr))
-                    removed = False
+                self.logger.log(LogPriority.DEBUG, "Yum command failed with: " + str(errstr))
+                removed = False
 
             if removed:
                 self.logger.log(LogPriority.DEBUG, "Package " + str(package) + " was successfully removed")
@@ -165,24 +144,21 @@ class Yum(object):
         return removed
 
     def checkInstall(self, package):
-        '''Check the installation status of a package. Return a bool; True if
+        """Check the installation status of a package. Return a bool; True if
         the package is installed.
 
         :param package: string; Name of the package whose installation status
             is to be checked, must be recognizable to the underlying package
             manager.
-        :returns: found
+        :return: found
         :rtype: bool
-@author: Derek T. Walker
-@change: Breen Malmberg - 4/24/2017 - refactored method; added logging; replaced
-        detailedresults with logging
 
-        '''
+        """
 
         installed = True
-        errstr = ""
         maxtries = 12
         trynum = 0
+        acceptablecodes = [1,0]
 
         while psRunning("yum"):
             trynum += 1
@@ -196,16 +172,17 @@ class Yum(object):
 
         try:
 
-            try:
-                self.ch.executeCommand(self.listinstalled + package)
-                retcode = self.ch.getReturnCode()
-                errstr = self.ch.getErrorString()
-                if retcode != 0:
-                    raise repoError('yum', retcode, str(errstr))
-            except repoError as repoerr:
-                if not repoerr.success:
-                    self.logger.log(LogPriority.WARNING, str(repoerr))
-                    installed = False
+            self.ch.executeCommand(self.listinstalled + package)
+            retcode = self.ch.getReturnCode()
+            if retcode not in acceptablecodes:
+                installed = False
+                errmsg = self.ch.getErrorString()
+                self.logger.log(LogPriority.DEBUG, "Yum command failed with: " + str(errmsg))
+            else:
+                outputlines = self.ch.getAllList()
+                for line in outputlines:
+                    if re.search("No matching Packages", line, re.I):
+                        installed = False
 
             if installed:
                 self.logger.log(LogPriority.DEBUG, "Package " + str(package) + " is installed")
@@ -217,17 +194,16 @@ class Yum(object):
         return installed
 
     def Update(self, package=""):
-        '''update specified package if any updates
+        """update specified package if any updates
         are available for it
         if no package is specified, update all
         packages which can be updated on the system
 
         :param package: string; name of package to update (Default value = "")
-        :returns: updated
+        :return: updated
         :rtype: bool
-@author: Breen Malmberg
 
-        '''
+        """
 
         updated = True
 
@@ -238,6 +214,7 @@ class Yum(object):
                 retcode = self.ch.getReturnCode()
                 errstr = self.ch.getErrorString()
                 if retcode != 0:
+                    updated = False
                     raise repoError('yum', retcode, str(errstr))
             except repoError as repoerr:
                 if not repoerr.success:
@@ -260,17 +237,16 @@ class Yum(object):
         return updated
 
     def checkUpdate(self, package=""):
-        '''check if there are any updates available for
+        """check if there are any updates available for
         specified package
         if no package is specified, check if any updates
         are available for the current system
 
         :param package: string; name of package to check (Default value = "")
-        :returns: updatesavail
+        :return: updatesavail
         :rtype: bool
-@author: Breen Malmberg
 
-        '''
+        """
 
         updatesavail = False
 
@@ -309,16 +285,15 @@ class Yum(object):
         return updatesavail
 
     def checkAvailable(self, package):
-        '''check if specified package is available to install
+        """check if specified package is available to install
         return True if it is
         return False if not
 
         :param package: string; name of package to check
-        :returns: available
+        :return: available
         :rtype: bool
-@author: Breen Malmberg
 
-        '''
+        """
 
         available = True
         maxtries = 12
@@ -336,16 +311,17 @@ class Yum(object):
 
         try:
 
-            try:
-                self.ch.executeCommand(self.listavail + package)
-                retcode = self.ch.getReturnCode()
+            self.ch.executeCommand(self.listavail + package)
+            retcode = self.ch.getReturnCode()
+            if retcode in [0,1]:
+                output = self.ch.getAllList()
+                for line in output:
+                    if re.search("No matching Packages", line, re.I):
+                        available = False
+            else:
                 errstr = self.ch.getErrorString()
-                if retcode != 0:
-                    raise repoError('yum', retcode, str(errstr))
-            except repoError as repoerr:
-                if not repoerr.success:
-                    self.logger.log(LogPriority.DEBUG, str(repoerr))
-                    available = False
+                available = False
+                self.logger.log(LogPriority.DEBUG, errstr)
 
             if available:
                 self.logger.log(LogPriority.DEBUG, "Package " + str(package) + " is available to install")
@@ -357,17 +333,14 @@ class Yum(object):
         return available
 
     def getPackageFromFile(self, filename):
-        '''Returns the name of the package that provides the given
+        """Returns the name of the package that provides the given
         filename/path.
 
         :param filename: string; The name or path of the file to resolve
-        :returns: packagename
+        :return: packagename
         :rtype: string
-@author: Eric Ball
-@change: Breen Malmberg - 4/24/2017 - refactored method; added logging; replaced
-        detailedresults with logging
 
-        '''
+        """
 
         packagename = ""
 

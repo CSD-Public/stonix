@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 ###############################################################################
 #                                                                             #
 # Copyright 2019. Triad National Security, LLC. All rights reserved.          #
@@ -23,7 +23,7 @@ This is a Unit Test for Rule DisablePrelinking
 @author: Eric Ball
 @change: 2016/02/10 eball Original implementation
 '''
-from __future__ import absolute_import
+
 import os
 import re
 import unittest

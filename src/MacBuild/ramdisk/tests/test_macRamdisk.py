@@ -1,9 +1,9 @@
-#!/usr/bin/python -u
+#!/usr/bin/env python3 -u
 """
 
 @author: Roy Nielsen
 """
-from __future__ import absolute_import
+
 #--- Native python libraries
 import re
 import os

@@ -6,7 +6,7 @@ unionfs functionality.
 
 @author: Roy Nielsen
 """
-from __future__ import absolute_import
+
 import re
 import os
 import sys
@@ -147,19 +147,19 @@ class MacOSUser(ManageUser):
 
         #####
         # FIRST VALIDATE INPUT!!
-        if isinstance(directory, basestring) and re.match("^[/\.][A-Za-z0-9/]*", directory):
+        if isinstance(directory, str) and re.match("^[/\.][A-Za-z0-9/]*", directory):
             success = True
         else:
             success = False
-        if isinstance(action, basestring) and re.match("^[-]*[a-z]+", action) and success:
+        if isinstance(action, str) and re.match("^[-]*[a-z]+", action) and success:
             success = True
         else:
             success = False
-        if isinstance(dirobj, basestring) and re.match("^[A-Za-z0=9/]+", dirobj) and success:
+        if isinstance(dirobj, str) and re.match("^[A-Za-z0=9/]+", dirobj) and success:
             success = True
         else:
             success = False
-        if isinstance(property, basestring) and re.match("^[A-Za-z0-9]+", property) and success:
+        if isinstance(property, str) and re.match("^[A-Za-z0-9]+", property) and success:
             success = True
         else:
             success = False
@@ -245,7 +245,7 @@ class MacOSUser(ManageUser):
         '''
         success = False
         reterr = ""
-        if isinstance(userName, basestring)\
+        if isinstance(userName, str)\
            and re.match("^[A-Za-z][A-Za-z0-9]*$", userName):
             cmd = [self.dscl, ".", "-create", "/Users/" + str(userName)]
 
@@ -456,7 +456,7 @@ class MacOSUser(ManageUser):
         '''
         success = False
 
-        if self.isSaneUserName(user) and isinstance(password, basestring):
+        if self.isSaneUserName(user) and isinstance(password, str):
             isSetDSCL = self.setDscl("."", -passwd", "/Users/" + str(user),
                                      password)
 
@@ -493,7 +493,7 @@ class MacOSUser(ManageUser):
         success = False
         keychainpath = ""
 
-        if self.isSaneUserName(user) and isinstance(password, basestring):
+        if self.isSaneUserName(user) and isinstance(password, str):
             pass
 
         #####
@@ -572,7 +572,7 @@ class MacOSUser(ManageUser):
             #
             try:
                 shutil.rmtree("/Users/" + str(user))
-            except IOError or OSError, err:
+            except IOError or OSError as err:
                 self.logger.log(lp.INFO, "Exception trying to remove user home...")
                 self.logger.log(lp.INFO, "Exception: " + str(err))
                 raise err
@@ -658,7 +658,7 @@ class MacOSUser(ManageUser):
             output = self.getDscl(".", "read", "/Users/" + str(userName), "RecordName")
             try:
                 userInfo = output.split()[1]
-            except (KeyError, IndexError), err:
+            except (KeyError, IndexError) as err:
                 self.logger.log(lp.INFO, "Error attempting to find user" + \
                                          str(userName) + " in the " + \
                                          "directory service.")
@@ -680,7 +680,7 @@ class MacOSUser(ManageUser):
             output = self.getDscl(".", "read", "/Users/" + str(userName), "UserShell")
             try:
                 userShell = output.split()[1]
-            except (KeyError, IndexError), err:
+            except (KeyError, IndexError) as err:
                 self.logger.log(lp.INFO, "Error attempting to find user" + \
                                          str(userName) + " in the " + \
                                          "directory service.")
@@ -705,7 +705,7 @@ class MacOSUser(ManageUser):
             output = self.getDscl(".", "read", "/Users/" + str(userName), "RealName")
             try:
                 userComment = output[1]
-            except (KeyError, IndexError), err:
+            except (KeyError, IndexError) as err:
                 self.logger.log(lp.INFO, "Error attempting to find user" + \
                                          str(userName) + " in the " + \
                                          "directory service.")
@@ -729,7 +729,7 @@ class MacOSUser(ManageUser):
             # Process to get out the right information....
             try:
                 userUid = output.split()[1]
-            except (KeyError, IndexError), err:
+            except (KeyError, IndexError) as err:
                 self.logger.log(lp.INFO, "Error attempting to find user" + \
                                          str(userName) + " in the " + \
                                          "directory service.")
@@ -753,7 +753,7 @@ class MacOSUser(ManageUser):
             # Process to get out the right information....
             try:
                 userPriGid = output.split()[1]
-            except (KeyError, IndexError), err:
+            except (KeyError, IndexError) as err:
                 self.logger.log(lp.INFO, "Error attempting to find user" + \
                                          str(userName) + " in the " + \
                                          "directory service.")
@@ -777,7 +777,7 @@ class MacOSUser(ManageUser):
             # Process to get out the right information....
             try:
                 userHomeDir = output.split()[1]
-            except (KeyError, IndexError), err:
+            except (KeyError, IndexError) as err:
                 self.logger.log(lp.INFO, "Error attempting to find user" + \
                                          str(userName) + " in the " + \
                                          "directory service.")
@@ -847,7 +847,7 @@ class MacOSUser(ManageUser):
                 userUid = self.getUserUid(userName)
                 userPriGid = self.getUserPriGid(userName)
                 userHomeDir = self.getUserHomeDir(userName)
-            except BadUserInfoError, err:
+            except BadUserInfoError as err:
                 self.logger.log(lp.INFO, "Exception trying to find: \"" + \
                                          str(userName) + "\" user information")
                 self.logger.log(lp.INFO, "err: " + str(err))

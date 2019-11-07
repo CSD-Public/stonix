@@ -31,12 +31,12 @@ import shutil
 from subprocess import Popen, PIPE
 
 #--- non-native python libraries in this source tree
-from commonRamdiskTemplate import RamDiskTemplate
-from lib.run_commands import RunWith
-from lib.loggers import CyLogger
-from lib.loggers import LogPriority as lp
-from lib.libHelperFunctions import getOsFamily
-from lib.libHelperExceptions import NotValidForThisOS
+from .commonRamdiskTemplate import RamDiskTemplate
+from .lib.run_commands import RunWith
+from .lib.loggers import CyLogger
+from .lib.loggers import LogPriority as lp
+from .lib.libHelperFunctions import getOsFamily
+from .lib.libHelperExceptions import NotValidForThisOS
 
 ###############################################################################
 
@@ -66,7 +66,7 @@ class RamDisk(RamDiskTemplate) :
 
         #####
         # Calculating the size of ramdisk in 1Mb chunks
-        self.diskSize = str(int(size) * 1024 * 1024 / 512)
+        self.diskSize = str(int(float(size)) * 1024 * 1024 / 512)
 
         self.hdiutil = "/usr/bin/hdiutil"
         self.diskutil = "/usr/sbin/diskutil"
@@ -215,9 +215,9 @@ class RamDisk(RamDiskTemplate) :
 
     def getNprintData(self):
         '''Getter for mount data, and if the mounting of a ramdisk was successful'''
-        print "Success: " + str(self.success)
-        print "Mount point: " + str(self.mntPoint)
-        print "Device: " + str(self.myRamdiskDev)
+        print(("Success: " + str(self.success)))
+        print(("Mount point: " + str(self.mntPoint)))
+        print(("Device: " + str(self.myRamdiskDev)))
         return (self.success, str(self.mntPoint), str(self.myRamdiskDev))
 
     ###########################################################################
@@ -508,7 +508,7 @@ class RamDisk(RamDiskTemplate) :
         @author: Roy Nielsen
         """
         success=False
-        size = str(int(self.diskSize)/(2*1024))
+        size = str(int(float(self.diskSize))/(2*1024))
         cmd = [self.diskutil, "partitionDisk", self.myRamdiskDev, str(1),
                "MBR", "HFS+", "ramdisk", str(size) + "M"]
         self.runWith.setCommand(cmd)
@@ -569,7 +569,7 @@ class RamDisk(RamDiskTemplate) :
             # Get the last item in the list
             found = line[-1]
             almost_size = line[:-1]
-            size = almost_size[-1]
+            size = almost_size[-1].decode('utf-8')
 
             found = found.strip()
             #almost_size = almost_size.strip()
@@ -578,7 +578,7 @@ class RamDisk(RamDiskTemplate) :
             self.logger.log(lp.INFO, "size: " + str(size))
             self.logger.log(lp.INFO, "found: " + str(found))
 
-            if re.search("unused", found) or re.search("free", found):
+            if re.search("unused", found.decode('utf-8')) or re.search("free", found.decode('utf-8')):
                 #####
                 # Found the data we wanted, stop the search.
                 break
@@ -605,10 +605,10 @@ class RamDisk(RamDiskTemplate) :
                             self.free = freeNumber
         self.logger.log(lp.DEBUG, "free: " + str(self.free))
         self.logger.log(lp.DEBUG, "Size requested: " + str(self.diskSize))
-        if int(self.free) > int(self.diskSize)/(2*1024):
+        if int(self.free) > int(float(self.diskSize))/(2*1024):
             success = True
-        print str(self.free)
-        print str(success)
+        print((str(self.free)))
+        print((str(success)))
         return success
 
     ###########################################################################

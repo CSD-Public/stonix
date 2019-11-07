@@ -31,9 +31,9 @@ import shutil
 import stat
 import traceback
 import types
-from CommandHelper import CommandHelper
-from logdispatcher import LogPriority
-from stonixutilityfunctions import writeFile, resetsecon
+from stonix_resources.CommandHelper import CommandHelper
+from stonix_resources.logdispatcher import LogPriority
+from stonix_resources.stonixutilityfunctions import writeFile, resetsecon
 
 
 class FileHelper(object):
@@ -155,7 +155,7 @@ class FileHelper(object):
             self.logdispatcher.log(LogPriority.DEBUG, message)
         else:
             datatype = type(file_group)
-            if datatype == types.StringType:
+            if datatype == bytes:
                 try:
                     file_group_name = file_group
                     file_group_id = grp.getgrnam(file_group_name).gr_gid
@@ -165,7 +165,7 @@ class FileHelper(object):
                     str(datatype) + "' converted to gid '" + \
                     str(self.file_group) + "'!"
                     self.logdispatcher.log(LogPriority.DEBUG, message)
-                except Exception, err:
+                except Exception as err:
                     self.file_group = None
                     message = str(err) + \
                     " No valid gid could be found for file group of '" + \
@@ -173,7 +173,7 @@ class FileHelper(object):
                     "'! File group set to '" + str(self.file_group) + "'."
                     self.logdispatcher.log(LogPriority.DEBUG, message)
                     raise
-            elif datatype == types.IntType:
+            elif datatype == int:
                 try:
                     file_group_id = file_group
                     file_group_name = grp.getgrgid(file_group_id).gr_name
@@ -184,7 +184,7 @@ class FileHelper(object):
                     str(file_group_name) + "'! File group set to '" + \
                     str(self.file_owner) + "'."
                     self.logdispatcher.log(LogPriority.DEBUG, message)
-                except Exception, err:
+                except Exception as err:
                     self.file_group = None
                     message = str(err) + \
                     " No valid name could be found for file group of gid '" + \
@@ -215,7 +215,7 @@ class FileHelper(object):
             self.logdispatcher.log(LogPriority.DEBUG, message)
         else:
             datatype = type(file_owner)
-            if datatype == types.StringType:
+            if datatype == bytes:
                 try:
                     file_owner_name = file_owner
                     file_owner_id = pwd.getpwnam(file_owner_name).pw_uid
@@ -225,7 +225,7 @@ class FileHelper(object):
                     str(datatype) + "' converted to uid '" + \
                     str(self.file_owner) + "'!"
                     self.logdispatcher.log(LogPriority.DEBUG, message)
-                except Exception, err:
+                except Exception as err:
                     self.file_owner = None
                     message = str(err) + \
                     " No valid uid could be found for file owner of '" + \
@@ -233,7 +233,7 @@ class FileHelper(object):
                     "'! File owner set to '" + str(self.file_owner) + "'."
                     self.logdispatcher.log(LogPriority.DEBUG, message)
                     raise
-            elif datatype == types.IntType:
+            elif datatype == int:
                 try:
                     file_owner_id = file_owner
                     file_owner_name = pwd.getpwuid(file_owner_id).pw_name
@@ -244,7 +244,7 @@ class FileHelper(object):
                     str(file_owner_name) + "'! File owner set to '" + \
                     str(self.file_owner) + "'."
                     self.logdispatcher.log(LogPriority.DEBUG, message)
-                except Exception, err:
+                except Exception as err:
                     self.file_group = None
                     message = str(err) + \
                     " No valid name could be found for file owner with " + \
@@ -286,7 +286,7 @@ class FileHelper(object):
             self.logdispatcher.log(LogPriority.DEBUG, message)
         else:
             datatype = type(file_permissions)
-            if datatype == types.StringType:
+            if datatype == bytes:
                 try:
                     self.file_permissions = int(file_permissions, 8)
                     message = "File permission '" + str(file_permissions) + \
@@ -294,7 +294,7 @@ class FileHelper(object):
                     "' is and assumed to be octal string and where " + \
                     "changed to int " + str(self.file_permissions) + "'!"
                     self.logdispatcher.log(LogPriority.DEBUG, message)
-                except Exception, err:
+                except Exception as err:
                     self.file_permissions = None
                     message = str(err) + " No valid file permissions " + \
                     "couldbe found for file permissions with of '" + \
@@ -303,7 +303,7 @@ class FileHelper(object):
                     str(self.file_permissions) + "'."
                     self.logdispatcher.log(LogPriority.DEBUG, message)
                     raise
-            elif datatype == types.IntType:
+            elif datatype == int:
                 self.file_permissions = file_permissions
                 message = "File permission of '" + str(file_permissions) + \
                 "' were of type '" + str(datatype) + \
@@ -717,7 +717,7 @@ class FileHelper(object):
                 message = "removed " + file_path + " via " + removaltype + \
                 "(" + file_path + ")."
                 self.logdispatcher.log(LogPriority.DEBUG, message)
-            except Exception, err:
+            except Exception as err:
                 success = False
                 message = removaltype + "('" + file_path + \
                 "') failed with Error (" + str(err) + ") - " + \
@@ -739,7 +739,7 @@ class FileHelper(object):
                 message = "removed " + file_path + " via " + removaltype + \
                 "('" + file_path + "')."
                 self.logdispatcher.log(LogPriority.DEBUG, message)
-            except Exception, err:
+            except Exception as err:
                 success = False
                 message = removaltype + "('" + file_path + \
                 "') failed with Error (" + str(err) + ") - " + \
@@ -760,7 +760,7 @@ class FileHelper(object):
                     directory + ")."
                     self.logdispatcher.log(LogPriority.DEBUG, message)
                     directory = os.path.dirname(directory)
-            except Exception, err:
+            except Exception as err:
                 message = "os.rmdir('" + directory + \
                 "'). failed with Error (" + str(err) + ")."
                 self.logdispatcher.log(LogPriority.DEBUG, message)
@@ -812,7 +812,7 @@ class FileHelper(object):
                     str(directory) + "' via os.makedirs('" + directory + \
                     "'," + str(self.defaultDirectoryMode) + ")."
                 self.logdispatcher.log(LogPriority.DEBUG, message)
-            except Exception, err:
+            except Exception as err:
                 success = False
                 message = "os.makedirs('" + directory + "'," + \
                 str(self.defaultDirectoryMode) + "). failed with Error '" + \
@@ -850,7 +850,7 @@ class FileHelper(object):
                 message = "Successfully created file '" + file_path + \
                     "' via " + creationtype + "(" + file_path + ",'w').close."
                 self.logdispatcher.log(LogPriority.DEBUG, message)
-            except Exception, err:
+            except Exception as err:
                 success = False
                 message = creationtype + "(" + file_path + \
                 ", 'w').close failed with Error '" + str(err) + "' - " + \
@@ -863,7 +863,7 @@ class FileHelper(object):
                 message = "successfully created file '" + file_path + \
                 "' via " + creationtype + "(" + file_path + ", None)."
                 self.logdispatcher.log(LogPriority.DEBUG, message)
-            except Exception, err:
+            except Exception as err:
                 success = False
                 message = creationtype + "(" + str(file_path) + \
                 ", None) failed with Error '" + str(err) + "' - " + \
@@ -948,7 +948,7 @@ class FileHelper(object):
                     file_permissions_fixed = False
                 self.appendToFileMessage(message)
                 self.logdispatcher.log(LogPriority.DEBUG, message)
-            except Exception, err:
+            except Exception as err:
                 success = False
                 message = "os.chmod('" + file_path + "'," + \
                     str(file_permissions_masked) + "). failed with Error '" + \
@@ -1032,7 +1032,7 @@ class FileHelper(object):
                     file_group_fixed = False
                 self.appendToFileMessage(message)
                 self.logdispatcher.log(LogPriority.DEBUG, message)
-            except Exception, err:
+            except Exception as err:
                 success = False
                 file_owner_fixed = False
                 file_group_fixed = False
@@ -1103,7 +1103,7 @@ class FileHelper(object):
                     file_content_fixed = False
                 self.appendToFileMessage(message)
                 self.logdispatcher.log(LogPriority.DEBUG, message)
-            except Exception, err:
+            except Exception as err:
                 success = False
                 file_content_fixed = False
                 message = "Error writing new contents to " + str(file_path) + \

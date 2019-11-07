@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 ###############################################################################
 #                                                                             #
 # Copyright 2019. Triad National Security, LLC. All rights reserved.          #
@@ -25,7 +25,7 @@ This is a Unit Test for Rule SSHTimeout
 @change: 2016/02/10 roy Added sys.path.append for being able to unit test this
                         file as well as with the test harness.
 '''
-from __future__ import absolute_import
+
 import unittest
 import os
 import sys
@@ -89,7 +89,7 @@ class zzzTestRuleSSHTimeout(RuleTest):
                         self.logdispatch.log(LogPriority.DEBUG, debug)
             self.rule.iditerator = 0
             myid = iterate(self.rule.iditerator, self.rule.rulenumber)
-            if not setPerms(self.rule.path, [99, 99, 0770], self.logdispatch,
+            if not setPerms(self.rule.path, [99, 99, 0o770], self.logdispatch,
                             self.statechglogger, myid):
                 success = False
                 debug = "Could not set permissions"

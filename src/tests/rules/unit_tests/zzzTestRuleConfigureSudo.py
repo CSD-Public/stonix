@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 ###############################################################################
 #                                                                             #
 # Copyright 2019. Triad National Security, LLC. All rights reserved.          #
@@ -26,7 +26,7 @@ This is a Unit Test for Rule ConfigureSudo
                         file as well as with the test harness.
 @change: 2016/05/11 eball Replace original file once test is over
 '''
-from __future__ import absolute_import
+
 import unittest
 import re
 import os

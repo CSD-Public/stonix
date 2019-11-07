@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 ###############################################################################
 #                                                                             #
 # Copyright 2019. Triad National Security, LLC. All rights reserved.          #
@@ -25,7 +25,7 @@ This is a Unit Test for Rule EnableKernelAuditing
                         file as well as with the test harness.
 @change: 2017/10/23 rsn - removed unused service helper
 '''
-from __future__ import absolute_import
+
 import unittest
 import re
 import os
@@ -111,7 +111,7 @@ class zzzTestRuleEnableKernelAuditing(RuleTest):
 
         '''
 
-        allowable_freq_range = range(1,100)
+        allowable_freq_range = list(range(1,100))
         self.assertTrue(self.rule.freqci.getcurrvalue() in allowable_freq_range)
 
     def test_flushtype_valid(self):

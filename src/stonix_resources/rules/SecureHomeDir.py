@@ -30,9 +30,10 @@ Created on May 20, 2013
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
 @change: 2018/06/28 Breen Malmberg - re-wrote much of the rule; added doc strings
         to some existing methods
+@change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
 '''
 
-from __future__ import absolute_import
+
 
 import traceback
 import os
@@ -40,10 +41,10 @@ import stat
 import re
 import pwd
 
-from ..stonixutilityfunctions import readFile
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..CommandHelper import CommandHelper
+from stonixutilityfunctions import readFile
+from rule import Rule
+from logdispatcher import LogPriority
+from CommandHelper import CommandHelper
 
 
 class SecureHomeDir(Rule):
@@ -73,7 +74,7 @@ class SecureHomeDir(Rule):
         self.guidance = ['NSA 2.3.4.2']
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.12', 'r', '10.14.10']}}
+                           'os': {'Mac OS X': ['10.15', 'r', '10.15.10']}}
         self.sethelptext()
 
     def report(self):

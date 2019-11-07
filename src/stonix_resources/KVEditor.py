@@ -21,13 +21,13 @@ Created on Apr 5, 2013
 @author: dwalker
 '''
 
-import KVADefault
-import KVAConf
-import KVATaggedConf
-import KVAProfiles
+from stonix_resources import KVADefault
+from stonix_resources import KVAConf
+from stonix_resources import KVATaggedConf
+from stonix_resources import KVAProfiles
 import os
-from CommandHelper import CommandHelper
-from logdispatcher import LogPriority
+from stonix_resources.CommandHelper import CommandHelper
+from stonix_resources.logdispatcher import LogPriority
 
 
 class KVEditor(object):
@@ -234,7 +234,7 @@ class KVEditor(object):
             return False
 
     def checkDefaults(self, data):
-        for k, v in data.iteritems():
+        for k, v in list(data.items()):
             if isinstance(v, dict):
                 retval = self.checkDefaults(v)
                 return retval
@@ -254,7 +254,7 @@ class KVEditor(object):
         if not self.checkConf():
             return False
         if self.intent == "present":
-            for k, v in self.data.iteritems():
+            for k, v in list(self.data.items()):
                 retval = self.editor.validate(k, v)
                 if retval == "invalid":
                     validate = "invalid"
@@ -265,7 +265,7 @@ class KVEditor(object):
                     validate = False
                     self.fixables[k] = v
         if self.intent == "notpresent":
-            for k, v in self.data.iteritems():
+            for k, v in list(self.data.items()):
                 retval = self.editor.validate(k, v)
                 if retval == "invalid":
                     validate = "invalid"
@@ -399,7 +399,7 @@ class KVEditor(object):
             self.output = self.ch.getOutput()
             retval = True
             if self.output:
-                for k, v in self.data.iteritems():
+                for k, v in list(self.data.items()):
                     retval = self.editor.validate(self.output, k, v)
                     if not retval:
                         return False

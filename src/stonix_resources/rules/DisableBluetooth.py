@@ -35,14 +35,14 @@ Check to see if all of the above operations have been done or not - report()
 @change: 2017/10/23 rsn - change to new service helper interface
 '''
 
-from __future__ import absolute_import
+
 import os
 import traceback
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..ServiceHelper import ServiceHelper
-from ..KVEditorStonix import KVEditorStonix
-from ..stonixutilityfunctions import iterate, setPerms, checkPerms, resetsecon
+from rule import Rule
+from logdispatcher import LogPriority
+from ServiceHelper import ServiceHelper
+from KVEditorStonix import KVEditorStonix
+from stonixutilityfunctions import iterate, setPerms, checkPerms, resetsecon
 
 
 class DisableBluetooth(Rule):

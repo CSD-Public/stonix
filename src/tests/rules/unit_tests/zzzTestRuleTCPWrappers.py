@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 ###############################################################################
 #                                                                             #
 # Copyright 2019. Triad National Security, LLC. All rights reserved.          #
@@ -26,7 +26,7 @@ This is a Unit Test for Rule TCPWrappers
                         file as well as with the test harness.
 """
 
-from __future__ import absolute_import
+
 import unittest
 import sys
 
@@ -82,8 +82,8 @@ class zzzTestRuleTCPWrappers(RuleTest):
 
         self.assertIsNotNone(self.rule.osname)
         self.assertIsNotNone(self.rule.osmajorver)
-        self.assertTrue(isinstance(self.rule.osname, basestring))
-        self.assertTrue(isinstance(self.rule.osmajorver, basestring))
+        self.assertTrue(isinstance(self.rule.osname, str))
+        self.assertTrue(isinstance(self.rule.osmajorver, str))
         self.assertIsNotNone(self.rule.ci)
         self.assertIsNotNone(self.rule.ci.getcurrvalue())
         self.assertIsNotNone(self.rule.allownetCI)

@@ -23,8 +23,8 @@ Created on Sep 19, 2012
 '''
 import subprocess
 import re
-from logdispatcher import LogPriority
-from ServiceHelperTemplate import ServiceHelperTemplate
+from stonix_resources.logdispatcher import LogPriority
+from stonix_resources.ServiceHelperTemplate import ServiceHelperTemplate
 
 
 class SHsvcadm(ServiceHelperTemplate):
@@ -184,9 +184,9 @@ class SHsvcadm(ServiceHelperTemplate):
                                stderr = subprocess.PIPE, shell = True,
                                close_fds = True)
         if chk.poll() != 0:
-            raise RuntimeError, self.svc + \
+            raise RuntimeError(self.svc + \
                 '-a command failed: ' \
-                + chk.stderr.read() + ' ' + chk.stdout.read()
+                + chk.stderr.read() + ' ' + chk.stdout.read())
         proclist = chk.stdout.readlines()
         for line in proclist:
             if re.search('STIME', line):

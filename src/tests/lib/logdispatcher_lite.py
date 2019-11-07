@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 ###############################################################################
 #                                                                             #
 # Copyright 2019. Triad National Security, LLC. All rights reserved.          #
@@ -425,7 +425,7 @@ class LogDispatcher ():
                 self.reportlog = filename
                 
         elif re.match("^\s+$", filename) or re.match("^$", filename):
-            print " ... no filename given ..."
+            print(" ... no filename given ...")
         else:
             self.reportlog = filename
 

@@ -31,21 +31,22 @@ dictionary
 @change: 2018/02/06 ekkehard - Fix duplicate detailedresults display
 @change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
+@change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
 '''
-from __future__ import absolute_import
+
 import traceback
 import re
 
-from ..localize import DNS
-from ..localize import PROXY
-from ..localize import PROXYCONFIGURATIONFILE
-from ..localize import PROXYDOMAIN
-from ..ruleKVEditor import RuleKVEditor
-from ..CommandHelper import CommandHelper
-from ..ServiceHelper import ServiceHelper
-from ..logdispatcher import LogPriority
-from ..networksetup import networksetup
-from ..stonixutilityfunctions import iterate
+from localize import DNS
+from localize import PROXY
+from localize import PROXYCONFIGURATIONFILE
+from localize import PROXYDOMAIN
+from ruleKVEditor import RuleKVEditor
+from CommandHelper import CommandHelper
+from ServiceHelper import ServiceHelper
+from logdispatcher import LogPriority
+from networksetup import networksetup
+from stonixutilityfunctions import iterate
 
 
 class ConfigureNetworks(RuleKVEditor):
@@ -66,7 +67,7 @@ class ConfigureNetworks(RuleKVEditor):
         self.iditerator = 0
         self.statechglogger = statechglogger
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.12', 'r', '10.14.10']}}
+                           'os': {'Mac OS X': ['10.15', 'r', '10.15.10']}}
 
         ## this section added to prevent code, which relies on constants in localize.py,
         # from running if those constants are not defined or are set to 'None'
@@ -174,7 +175,7 @@ class ConfigureNetworks(RuleKVEditor):
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
-        except Exception, err:
+        except Exception as err:
             self.rulesuccess = False
             messagestring = str(err) + " - " + str(traceback.format_exc())
             self.resultAppend(messagestring)
@@ -248,7 +249,7 @@ class ConfigureNetworks(RuleKVEditor):
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
-        except Exception, err:
+        except Exception as err:
             self.rulesuccess = False
             fixed = False
             messagestring = str(err) + " - " + str(traceback.format_exc())

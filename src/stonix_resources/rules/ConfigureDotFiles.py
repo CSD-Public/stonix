@@ -38,17 +38,18 @@ checked in fix method.
 @change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
 @change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
+@change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
 '''
 
-from __future__ import absolute_import
+
 import os
 import re
 import traceback
 import pwd
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..stonixutilityfunctions import isWritable
-from ..CommandHelper import CommandHelper
+from rule import Rule
+from logdispatcher import LogPriority
+from stonixutilityfunctions import isWritable
+from CommandHelper import CommandHelper
 
 
 class ConfigureDotFiles(Rule):
@@ -88,7 +89,7 @@ being made non-world-writable, set the value of ConfigureDotFiles to False.'''
         self.guidance = ['CIS', 'NSA 2.3.4.3', 'CCE-4561-7']
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.12', 'r', '10.14.10']}}
+                           'os': {'Mac OS X': ['10.15', 'r', '10.15.10']}}
 
     def report(self):
         '''The report method examines the current configuration and determines

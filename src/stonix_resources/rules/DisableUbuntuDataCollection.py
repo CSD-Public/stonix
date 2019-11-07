@@ -24,14 +24,14 @@ Disable user and system statistics reporting on Ubuntu
 @author: Breen Malmberg
 '''
 
-from __future__ import absolute_import
+
 
 import traceback
 
-from ..rule import Rule
-from ..pkghelper import Pkghelper
-from ..logdispatcher import LogPriority
-from ..stonixutilityfunctions import iterate
+from rule import Rule
+from pkghelper import Pkghelper
+from logdispatcher import LogPriority
+from stonixutilityfunctions import iterate
 
 class DisableUbuntuDataCollection(Rule):
 

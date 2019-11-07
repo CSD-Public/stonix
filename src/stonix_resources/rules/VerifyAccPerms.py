@@ -30,15 +30,16 @@ have the correct (secure) permissions.
 @change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
 @change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
+@change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
 '''
 
-from __future__ import absolute_import
+
 import os
 import traceback
 
-from ..rule import Rule
-from ..stonixutilityfunctions import getOctalPerms
-from ..logdispatcher import LogPriority
+from rule import Rule
+from stonixutilityfunctions import getOctalPerms
+from logdispatcher import LogPriority
 
 
 class VerifyAccPerms(Rule):
@@ -76,7 +77,7 @@ class VerifyAccPerms(Rule):
                          'CCE 3958-6']
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.12', 'r', '10.14.10']}}
+                           'os': {'Mac OS X': ['10.15', 'r', '10.15.10']}}
         self.file644 = ['/etc/passwd', '/etc/group']
         self.file400 = ['/etc/shadow', '/etc/gshadow']
         self.fileall = ['/etc/passwd', '/etc/group', '/etc/shadow',
@@ -137,7 +138,7 @@ class VerifyAccPerms(Rule):
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
-        except Exception, err:
+        except Exception as err:
             self.rulesuccess = False
             self.detailedresults = self.detailedresults + "\n" + str(err) + \
                 " - " + str(traceback.format_exc())
@@ -163,11 +164,11 @@ class VerifyAccPerms(Rule):
 
                     for item in self.file644:
                         if os.path.exists(item):
-                            os.chmod(item, 0644)
+                            os.chmod(item, 0o644)
 
                     for item in self.file400:
                         if os.path.exists(item):
-                            os.chmod(item, 0400)
+                            os.chmod(item, 0o400)
 
                     for item in self.fileall:
                         if os.path.exists(item):
@@ -183,7 +184,7 @@ class VerifyAccPerms(Rule):
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
-        except Exception, err:
+        except Exception as err:
             self.rulesuccess = False
             self.detailedresults = self.detailedresults + "\n" + str(err) + \
             " - " + str(traceback.format_exc())

@@ -28,16 +28,17 @@ present.
 @change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
 @change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
+@change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
 '''
 
-from __future__ import absolute_import
 
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..localize import XINETDALLOW
-from ..stonixutilityfunctions import getOctalPerms
-from ..stonixutilityfunctions import getOwnership
-from ..stonixutilityfunctions import iterate
+
+from rule import Rule
+from logdispatcher import LogPriority
+from localize import XINETDALLOW
+from stonixutilityfunctions import getOctalPerms
+from stonixutilityfunctions import getOwnership
+from stonixutilityfunctions import iterate
 import traceback
 import os
 import re
@@ -64,7 +65,7 @@ class XinetdAccessControl(Rule):
         self.iditerator = 0
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.12', 'r', '10.14.10']}}
+                           'os': {'Mac OS X': ['10.15', 'r', '10.15.10']}}
         # init CIs
         datatype = 'bool'
         key = 'XINETDACCESSCONTROL'
@@ -161,7 +162,7 @@ class XinetdAccessControl(Rule):
         self.logger.log(LogPriority.DEBUG, "returning found=" + str(found))
         return found
 
-    def replaceopt(self, path, partialopt, fullopt, perms=[0600, 0, 0]):
+    def replaceopt(self, path, partialopt, fullopt, perms=[0o600, 0, 0]):
         '''search the specified file for the option partialopt and replace it with
         the option fullopt, if found.
 
@@ -255,7 +256,7 @@ class XinetdAccessControl(Rule):
                         "method; returning replaced=" + str(replaced))
         return replaced
 
-    def writeFile(self, path, opt, perms=[0600, 0, 0]):
+    def writeFile(self, path, opt, perms=[0o600, 0, 0]):
         '''append the option opt to the contents of the file specified by path,
         and write them out to the file path
 
@@ -457,7 +458,7 @@ class XinetdAccessControl(Rule):
                                     "found; writing it to " +
                                     str(self.confpath))
                     if not self.writeFile(self.confpath, self.fixopt,
-                                          [0600, 0, 0]):
+                                          [0o600, 0, 0]):
                         self.rulesuccess = False
                         self.detailedresults += 'failed to write ' + \
                             'configuration to ' + str(self.confpath) + '\n'

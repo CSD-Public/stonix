@@ -35,18 +35,19 @@ authorization after a successful sudo authorization is made.
 @change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
 @change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
+@change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
 '''
 
-from __future__ import absolute_import
+
 
 import re
 import os
 import traceback
 
-from ..rule import Rule
-from ..stonixutilityfunctions import iterate
-from ..stonixutilityfunctions import resetsecon
-from ..logdispatcher import LogPriority
+from rule import Rule
+from stonixutilityfunctions import iterate
+from stonixutilityfunctions import resetsecon
+from logdispatcher import LogPriority
 
 
 class ReduceSudoTimeout(Rule):
@@ -72,7 +73,7 @@ class ReduceSudoTimeout(Rule):
         self.guidance = ['N/A']
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.12', 'r', '10.14.10']}}
+                           'os': {'Mac OS X': ['10.15', 'r', '10.15.10']}}
         datatype = "bool"
         key = "REDUCESUDOTIMEOUT"
         instructions = "If set to true, the REDUCESUDOTIMEOUT " + \
@@ -179,7 +180,7 @@ class ReduceSudoTimeout(Rule):
                     self.statechglogger.recordfilechange(self.sudofile, tempfile, myid)
                     os.rename(tempfile, self.sudofile)
                     os.chown(self.sudofile, 0, 0)
-                    os.chmod(self.sudofile, 0440)
+                    os.chmod(self.sudofile, 0o440)
                     resetsecon(self.sudofile)
                     self.logger.log(LogPriority.DEBUG, "Added the configuration setting to " + str(self.sudofile))
 

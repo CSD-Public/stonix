@@ -48,20 +48,21 @@ configuration changes to the avahi service
 @change: 12/05/2017 Breen Malmberg - changed moniker to full name for author entries
 @change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
+@change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
 '''
 
-from __future__ import absolute_import
+
 import os
 import re
 import traceback
-import ConfigParser
-from ..logdispatcher import LogPriority
-from ..ServiceHelper import ServiceHelper
-from ..rule import Rule
-from ..stonixutilityfunctions import iterate, setPerms, resetsecon, createFile
-from ..KVEditorStonix import KVEditorStonix
-from ..pkghelper import Pkghelper
-from ..CommandHelper import CommandHelper
+import configparser
+from logdispatcher import LogPriority
+from ServiceHelper import ServiceHelper
+from rule import Rule
+from stonixutilityfunctions import iterate, setPerms, resetsecon, createFile
+from KVEditorStonix import KVEditorStonix
+from pkghelper import Pkghelper
+from CommandHelper import CommandHelper
 
 
 class SecureMDNS(Rule):
@@ -97,7 +98,7 @@ class SecureMDNS(Rule):
                          'CCE 4341-4', 'CCE 4358-8', 'CCE-RHEL7-CCE-TBD 2.5.2']
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.12', 'r', '10.14.10']}}
+                           'os': {'Mac OS X': ['10.15', 'r', '10.15.10']}}
 
 # set up command helper object
         self.ch = CommandHelper(self.logger)
@@ -174,7 +175,7 @@ class SecureMDNS(Rule):
             self.DisableAvahi = self.initCi(datatype, avahikey,
                                             avahiinstructions, avahidefault)
 
-            self.configparser = ConfigParser.SafeConfigParser()
+            self.configparser = configparser.SafeConfigParser()
 
             self.confavahidict = {'use-ipv6':
                                   {'section': 'server', 'val': 'no'},
@@ -525,7 +526,7 @@ class SecureMDNS(Rule):
 
                         self.iditerator += 1
                         myid = iterate(self.iditerator, self.rulenumber)
-                        setPerms(avahiconf, [0, 0, 0644], self.logger,
+                        setPerms(avahiconf, [0, 0, 0o644], self.logger,
                                  self.statechglogger, myid)
                         resetsecon(avahiconf)
 

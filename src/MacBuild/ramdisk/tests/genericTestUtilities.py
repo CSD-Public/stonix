@@ -4,7 +4,7 @@ Generic class based Yutilities for ramdisk testing...
 @author: Roy Nielsen
 """
 #--- Native python libraries
-from __future__ import absolute_import
+
 import os
 import re
 import sys
@@ -46,7 +46,7 @@ class GenericTestUtilities(object):
             except:
                 raise Exception("DAMN IT JIM!!!")
             else:
-                print "Loading Mac dylib......................................"
+                print("Loading Mac dylib......................................")
         elif self.osFamily and  self.osFamily.startswith("linux"):
             #####
             # For Linux
@@ -58,18 +58,18 @@ class GenericTestUtilities(object):
                 if os.path.exists(path):
                     self.libcPath = path
                     self.libc = ctypes.CDLL(self.libcPath)
-                    print "     Found libc!!!"
+                    print("     Found libc!!!")
                     break
         else:
             self.libc = self._pass()
 
         try:
             self.libc.sync()
-            print":::::Syncing..............."
+            print(":::::Syncing...............")
         except:
             raise Exception("..............................Cannot Sync.")
 
-        print "OS Family: " + str(self.osFamily)
+        print(("OS Family: " + str(self.osFamily)))
 
     ################################################
 
@@ -114,7 +114,7 @@ class GenericTestUtilities(object):
             except:
                 try:
                     open(fname, 'a').close()
-                except Exception, err:
+                except Exception as err:
                     self.logger.log(lp.WARNING, "Cannot open to touch: " + str(fname))
 
     ################################################
@@ -134,7 +134,7 @@ class GenericTestUtilities(object):
                 except OSError as err1:
                     self.logger.log(lp.WARNING, "OSError exception attempting to create directory: " + str(path))
                     self.logger.log(lp.WARNING, "Exception: " + str(err1))
-                except Exception, err2:
+                except Exception as err2:
                     self.logger.log(lp.WARNING, "Unexpected Exception trying to makedirs: " + str(err2))
 
     ################################################
@@ -191,7 +191,7 @@ class GenericTestUtilities(object):
 
                 # capture end time
                 end_time = datetime.now()
-            except Exception, err:
+            except Exception as err:
                 self.logger.log(lp.WARNING, "Exception trying to write temp file for "  + \
                                 "benchmarking...")
                 self.logger.log(lp.WARNING, "Exception thrown: " + str(err))

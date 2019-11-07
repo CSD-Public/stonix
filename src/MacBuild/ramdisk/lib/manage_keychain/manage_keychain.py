@@ -9,7 +9,7 @@ Factory object for acquiring the right keychain manager
 
 @author: Roy Nielsen
 """
-from __future__ import absolute_import
+
 import sys
 import inspect
 import traceback
@@ -53,7 +53,7 @@ class ManageKeychain(object):
 
         if sys.platform.lower() == "darwin":
             self.logger.log(lp.DEBUG, "Loading Mac keychain manager...")
-            from ..manage_keychain.macos_keychain import MacOSKeychain
+            from .macos_keychain import MacOSKeychain
             self.keychainMgr = MacOSKeychain(logDispatcher=self.logger)
         else:
             raise UnsupportedOSError("This operating system is not supported...")
@@ -78,7 +78,7 @@ class ManageKeychain(object):
             filename = inspect.stack()[2][1]
             functionName = str(inspect.stack()[2][3])
             lineNumber = str(inspect.stack()[2][2])
-        except Exception, err:
+        except Exception as err:
             self.logger.log(lp.WARNING, traceback.format_exc())
             self.logger.log(lp.WARNING, str(err))
             raise err

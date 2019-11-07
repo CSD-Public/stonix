@@ -28,11 +28,11 @@ Set default group and home directory for root.
 
 '''
 
-from __future__  import absolute_import
 
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..CommandHelper import CommandHelper
+
+from rule import Rule
+from logdispatcher import LogPriority
+from CommandHelper import CommandHelper
 
 import traceback
 import grp

@@ -24,14 +24,14 @@ This rule disables serial port logins
 @change: 2015/10/07 eball - Added check and set for permissions
 @change 2017/08/28 rsn Fixing to use new help text methods
 '''
-from __future__ import absolute_import
+
 import os
 import re
 import traceback
-from ..stonixutilityfunctions import writeFile, readFile, iterate, resetsecon
-from ..stonixutilityfunctions import checkPerms, setPerms
-from ..rule import Rule
-from ..logdispatcher import LogPriority
+from stonixutilityfunctions import writeFile, readFile, iterate, resetsecon
+from stonixutilityfunctions import checkPerms, setPerms
+from rule import Rule
+from logdispatcher import LogPriority
 
 
 class DisableSerialLoginPrompts(Rule):
@@ -70,9 +70,9 @@ virtual console interfaces.'''
             self.detailedresults = ""
 
             if re.search("red hat|centos|fedora", self.myos):
-                perms = [0, 0, 0600]
+                perms = [0, 0, 0o600]
             else:
-                perms = [0, 0, 0644]
+                perms = [0, 0, 0o644]
             self.perms = perms
 
             if os.path.exists(self.path):

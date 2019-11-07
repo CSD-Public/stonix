@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 import sys
 sys.path.append('..')
 import getpass
@@ -8,17 +8,17 @@ from ramdisk.lib.loggers import LogPriority as lp
 from ramdisk.lib.manage_keychain.manage_keychain import ManageKeychain
 
 passwd = getpass.getpass("Password: ")
-keychain = raw_input("Keychain: ")
+keychain = eval(input("Keychain: "))
 
 logger = CyLogger(debug_mode=True)
-print str(logger)
+print((str(logger)))
 logger.initializeLogs()
 mk = ManageKeychain(logger)
 success = False
 if (mk.lockKeychain(allKeychains=True)):
     success, _ = mk.unlockKeychain(passwd, keychain)
 
-print "Success: " + str(success)
+print(("Success: " + str(success)))
 
 
 

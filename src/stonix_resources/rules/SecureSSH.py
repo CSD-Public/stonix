@@ -40,21 +40,22 @@ Created on Feb 19, 2013
 @change: 2018/06/08 Ekkehard - make eligible for macOS Mojave 10.14
 @change: 2019/06/11 dwalker - updated rule to properly record events, created sub
     methods for linux and mac.
+@change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
 """
 
-from __future__ import absolute_import
+
 
 import os
 import traceback
 import re
 
-from ..rule import Rule
-from ..stonixutilityfunctions import iterate, checkPerms, setPerms, resetsecon
-from ..stonixutilityfunctions import createFile
-from ..KVEditorStonix import KVEditorStonix
-from ..logdispatcher import LogPriority
-from ..pkghelper import Pkghelper
-from ..ServiceHelper import ServiceHelper
+from rule import Rule
+from stonixutilityfunctions import iterate, checkPerms, setPerms, resetsecon
+from stonixutilityfunctions import createFile
+from KVEditorStonix import KVEditorStonix
+from logdispatcher import LogPriority
+from pkghelper import Pkghelper
+from ServiceHelper import ServiceHelper
 
 
 class SecureSSH(Rule):
@@ -78,7 +79,7 @@ class SecureSSH(Rule):
         self.sethelptext()
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.11', 'r', '10.14.10']}}
+                           'os': {'Mac OS X': ['10.15', 'r', '10.15.10']}}
         datatype = 'bool'
         key = 'SECURESSH'
         instructions = "To disable this rule set the value " + \
@@ -117,7 +118,6 @@ class SecureSSH(Rule):
             self.sh = ServiceHelper(self.environ, self.logger)
             self.macloaded = False
             compliant = True
-            debug = ""
             self.client = {"Host": "*",
                            "Protocol": "2",
                            "GSSAPIAuthentication": "yes",
@@ -136,8 +136,13 @@ class SecureSSH(Rule):
                            "GSSAPIAuthentication": "yes",
                            "GSSAPICleanupCredentials": "yes",
                            "UsePAM": "yes",
-                           "Ciphers": "aes128-ctr,aes192-ctr,aes256-ctr,aes128-cbc,3des-cbc,aes192-cbc,aes256-cbc",
-                           "PermitUserEnvironment": "no"}
+                           "Ciphers": "aes128-ctr,aes192-ctr,aes256-ctr",
+                           "PermitUserEnvironment": "no",
+                           "PrintLastLog": "yes",
+                           "MACs": "hmac-sha2-256,hmac-sha2-512",
+                           "UsePrivilegeSeparation": "sandbox",
+                           "StrictModes": "yes",
+                           "Compression": "no"}
 
             if self.environ.getostype() == "Mac OS X":
                 self.serverfile = '/private/etc/ssh/sshd_config'

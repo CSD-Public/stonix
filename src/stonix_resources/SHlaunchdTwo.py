@@ -28,10 +28,10 @@ import re
 import pwd
 
 from plistlib import readPlist
-from launchctl import LaunchCtl
-from logdispatcher import LogPriority as lp
-from ServiceHelperTemplate import ServiceHelperTemplate
-from stonixutilityfunctions import reportStack, findUserLoggedIn
+from stonix_resources.launchctl import LaunchCtl
+from stonix_resources.logdispatcher import LogPriority as lp
+from stonix_resources.ServiceHelperTemplate import ServiceHelperTemplate
+from stonix_resources.stonixutilityfunctions import reportStack, findUserLoggedIn
 
 
 class SHlaunchdTwo(ServiceHelperTemplate):
@@ -72,7 +72,7 @@ class SHlaunchdTwo(ServiceHelperTemplate):
         '''
         valid = False
 
-        if isinstance(service, basestring) and service and \
+        if isinstance(service, str) and service and \
            (re.search("LaunchAgent", service) or
             re.search("LaunchDaemon", service)) and \
            re.match("^/[A-Za-z]+[A-Za-z0-9_\-/\.]*$", service) and \
@@ -100,7 +100,7 @@ class SHlaunchdTwo(ServiceHelperTemplate):
         '''
         serviceName = None
 
-        if not isinstance(service, basestring) or not service or \
+        if not isinstance(service, str) or not service or \
            not self.isValidServicePath(service):
             return serviceName
 
@@ -145,7 +145,7 @@ class SHlaunchdTwo(ServiceHelperTemplate):
                             ", 'domainTarget', 'servicetarget', " +
                             "'domaintarget' are expected for this method.")
 
-        if not isinstance(serviceName, basestring) or not serviceName or \
+        if not isinstance(serviceName, str) or not serviceName or \
            not re.match("^[A-Za-z]+[A-Za-z0-9_\-\.]*$", serviceName):
             serviceName = self.getServiceNameFromService(service)
 

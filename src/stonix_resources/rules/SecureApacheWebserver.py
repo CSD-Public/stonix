@@ -51,8 +51,9 @@ This class is responsible for securing the Apache webserver configuration.
 @change: 2019/2/14 Brandon R. Gonzales - Set apache2 environment variables
                 at beginning of fix if they are not already set
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
+@change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
 '''
-from __future__ import absolute_import
+
 
 import os
 import re
@@ -60,12 +61,12 @@ import shutil
 import stat
 import traceback
 
-from ..configurationitem import ConfigurationItem
-from ..logdispatcher import LogPriority
-from ..CommandHelper import CommandHelper
-from ..pkghelper import Pkghelper
-from ..rule import Rule
-from ..stonixutilityfunctions import readFile, writeFile, resetsecon, getOctalPerms
+from configurationitem import ConfigurationItem
+from logdispatcher import LogPriority
+from CommandHelper import CommandHelper
+from pkghelper import Pkghelper
+from rule import Rule
+from stonixutilityfunctions import readFile, writeFile, resetsecon, getOctalPerms
 
 
 class SecureApacheWebserver(Rule):
@@ -75,7 +76,7 @@ class SecureApacheWebserver(Rule):
     Solaris 10 that insisted on shipping both Apache 1.3.4 and Apache 2.0 and
     making it possible to have both installed on the system at the same time.
     This affects all operations on the config file.
-    
+
     @author: dkennel
 
 
@@ -94,7 +95,7 @@ class SecureApacheWebserver(Rule):
         self.rootrequired = True
         self.applicable = {'type': 'white',
                            'family': ['linux', 'freebsd'],
-                           'os': {'Mac OS X': ['10.12', 'r', '10.14.10']}}
+                           'os': {'Mac OS X': ['10.15', 'r', '10.15.10']}}
         self.comment = re.compile('^#|^;')
         self.ch = CommandHelper(self.logdispatch)
         self.ph = Pkghelper(self.logdispatch, self.environ)
@@ -222,26 +223,13 @@ class SecureApacheWebserver(Rule):
         @return: configuration object instance
         @author: dkennel
         '''
-        conf = 'SECUREAPACHE'
-        confinst = '''If set to yes or true the SECUREAPACHE variable will set
-the basic security settings for the Apache Webserver. This should be safe for
-all systems.'''
-        confdefault = True
-        try:
-            confcurr = self.config.getconfvalue(self.rulename, conf)
-        except(KeyError):
-            confcurr = confdefault
-        conftype = 'bool'
-        try:
-            confuc = self.config.getusercomment(self.rulename, conf)
-        except(KeyError):
-            confuc = ''
-        myci = ConfigurationItem(conftype, conf, confdefault, confuc,
-                                 confinst, confcurr)
-        self.logdispatch.log(LogPriority.DEBUG,
-                             ['SecureApacheWebserver.__initializeSecureApache',
-                              'SECUREAPACHE val = ' + str(confcurr)])
-        self.confitems.append(myci)
+        datatype = "bool"
+        key = "SECUREAPACHE"
+        instructions = '''If set to yes or true the SECUREAPACHE variable will set
+    the basic security settings for the Apache Webserver. This should be safe for
+    all systems.'''
+        defaultvalue = True
+        myci = self.initCi(datatype, key, instructions, defaultvalue)
         return myci
 
     def __initializeSecureApacheMods(self):
@@ -251,35 +239,19 @@ all systems.'''
         @return: configuration object instance
         @author: dkennel
         '''
-        myci = ConfigurationItem('bool')
-        key = 'SECUREAPACHEMODS'
-        myci.setkey(key)
-        confinst = "If set to yes or true the SECUREAPACHEMODS variable " + \
-                   "will install security Apache modules on rpm based " + \
-                   "systems and minimize non-essetintial modules on all " + \
-                   "systems. Security modules provide protections " + \
-                   "against malicious attackers while non-essential " + \
-                   "Apache modules can increase a system's attack " + \
-                   "surface and information leakage. Users disabling " + \
-                   "this action should manually validate and minimize " + \
-                   "the installed modules."
-        myci.setinstructions(confinst)
-        default = True
-        myci.setdefvalue(default)
-        try:
-            confcurr = self.config.getconfvalue(self.rulename, key)
-        except(KeyError):
-            confcurr = default
-        myci.updatecurrvalue(confcurr)
-        try:
-            confuc = self.config.getusercomment(self.rulename, key)
-        except(KeyError):
-            confuc = ''
-        myci.setusercomment(confuc)
-        self.confitems.append(myci)
-        self.logdispatch.log(LogPriority.DEBUG,
-                             ['SecureApacheWebserver.__initializeSecureApacheMods',
-                              'SECUREAPACHEMODS val = ' + str(confcurr)])
+        datatype = "bool"
+        key = "SECUREAPACHEMODS"
+        instructions = "If set to yes or true the SECUREAPACHEMODS variable " + \
+                       "will install security Apache modules on rpm based " + \
+                       "systems and minimize non-essetintial modules on all " + \
+                       "systems. Security modules provide protections " + \
+                       "against malicious attackers while non-essential " + \
+                       "Apache modules can increase a system's attack " + \
+                       "surface and information leakage. Users disabling " + \
+                       "this action should manually validate and minimize " + \
+                       "the installed modules."
+        defaultvalue = True
+        myci = self.initCi(datatype, key, instructions, defaultvalue)
         return myci
 
     def __initializeSecureApacheSsl(self):
@@ -295,8 +267,8 @@ all systems.'''
 the Apache server from using weak crypto for SSL sessions. This should be safe
 unless the client population includes browsers restricted to US export level
 crypto.'''
-        default = True
-        myci = self.initCi(datatype, key, instructions, default)
+        defaultvalue = True
+        myci = self.initCi(datatype, key, instructions, defaultvalue)
         return myci
 
     def __initializeSecurePhp(self):
@@ -311,8 +283,8 @@ crypto.'''
         instructions = '''If set to yes or true the SECUREPHP action will secure the
 configuration in the php.ini file. This is generally safe for new PHP
 development but some existing applications may use insecure side effects.'''
-        default = True
-        myci = self.initCi(datatype, key, instructions, default)
+        defaultvalue = True
+        myci = self.initCi(datatype, key, instructions, defaultvalue)
         return myci
 
     def __initializeSecureWebDirs(self):
@@ -329,8 +301,8 @@ development but some existing applications may use insecure side effects.'''
                        "This includes requiring/restricting specific web " + \
                        "directory 'Options' and limiting the available " + \
                        "web server methods to GET and POST."
-        default = True
-        myci = self.initCi(datatype, key, instructions, default)
+        defaultvalue = True
+        myci = self.initCi(datatype, key, instructions, defaultvalue)
         return myci
 
     def locatesslfiles(self):
@@ -709,7 +681,7 @@ development but some existing applications may use insecure side effects.'''
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
-        except Exception, err:
+        except Exception as err:
             self.rulesuccess = False
             self.detailedresults += "\n" + str(err) + " - " + \
                                     str(traceback.format_exc())
@@ -1439,10 +1411,10 @@ development but some existing applications may use insecure side effects.'''
     def makeEventId(self, iditerator):
         '''Method to create event ID numbers for use with the state change
         logger. Modified from D.Walkers original for use by this rule.
-        
+
         @author: dkennel
 
-        :param iditerator: 
+        :param iditerator:
         :returns: string
 
         '''

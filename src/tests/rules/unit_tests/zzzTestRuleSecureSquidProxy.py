@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 ###############################################################################
 #                                                                             #
 # Copyright 2019. Triad National Security, LLC. All rights reserved.          #
@@ -24,7 +24,7 @@ Created on Jun 8, 2016
 @author: dwalker
 '''
 
-from __future__ import absolute_import
+
 import unittest
 import sys
 

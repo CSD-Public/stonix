@@ -28,13 +28,16 @@ This class will secure samba file sharing
 fixed several doc blocks; fixed typo with license block; added
 check for CI enabled/disabled in fix() method; changed the return value
 in report() method to self.compliant
+@change: 2019/07/17 Brandon R. Gonzales - Make applicable to MacOS 10.13-10.14
+    and all Linux
+@change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
 '''
 
-from __future__ import absolute_import
 
-from ..ruleKVEditor import RuleKVEditor
-from ..logdispatcher import LogPriority
-from ..KVEditorStonix import KVEditorStonix
+
+from ruleKVEditor import RuleKVEditor
+from logdispatcher import LogPriority
+from KVEditorStonix import KVEditorStonix
 
 import os
 import traceback
@@ -65,6 +68,9 @@ class SecureWinFileSharing(RuleKVEditor):
         self.sethelptext()
         self.rootrequired = True
         self.guidance = ['']
+        self.applicable = {'type': 'white',
+                           'os': {'Mac OS X': ['10.15', 'r', '10.15.10']},
+                           'family': ['linux']}
 
         # init CIs
         datatype = 'bool'

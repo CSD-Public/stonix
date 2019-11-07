@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 """
 Test harness creating a test suite, and running it.
 
@@ -14,8 +14,8 @@ from optparse import OptionParser, SUPPRESS_HELP, OptionValueError, Option
 
 testdir = "./tests"
 
-from lib.loggers import CyLogger
-from lib.loggers import LogPriority as lp
+from .lib.loggers import CyLogger
+from .lib.loggers import LogPriority as lp
 
 ###############################################################################
 
@@ -65,9 +65,9 @@ class BuildAndRunSuite(object):
                 if os.path.exists(pycfile):
                     os.unlink(pycfile)
                 elif re.match("^test_.+.py$", check_file):
-                    print "Loading test: " + str(check_file)
+                    print(("Loading test: " + str(check_file)))
                     test_list.append(os.path.join("./tests/", check_file))
-            print str(test_list)
+            print((str(test_list)))
 
         return test_list
 

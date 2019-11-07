@@ -29,13 +29,13 @@ have been followed. The class is audit only.
 @change: 2017/08/28 Ekkehard - Added self.sethelptext()
 """
 
-from __future__ import absolute_import
+
 
 import re
 import traceback
 
-from ..rule import Rule
-from ..logdispatcher import LogPriority
+from rule import Rule
+from logdispatcher import LogPriority
 
 
 class CheckPartitioning(Rule):

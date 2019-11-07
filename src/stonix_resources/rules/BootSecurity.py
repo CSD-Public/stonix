@@ -33,18 +33,21 @@ bluetooth, microphones, and cameras.
 @change: 2017/11/13 Ekkehard - make eligible for OS X El Capitan 10.11+
 @change: 2018/06/08 Ekkehard - make eligible for macOS Mojave 10.14
 @change: 2019/03/12 Ekkehard - make eligible for macOS Sierra 10.12+
+@change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
 """
 
-from __future__ import absolute_import
+
 
 import traceback
 import os
 import re
-import subprocess
 
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..ServiceHelper import ServiceHelper
+from rule import Rule
+from logdispatcher import LogPriority
+from ServiceHelper import ServiceHelper
+from CommandHelper import CommandHelper
+from stonixutilityfunctions import iterate
+from KVEditorStonix import KVEditorStonix
 
 
 class BootSecurity(Rule):
@@ -74,8 +77,9 @@ class BootSecurity(Rule):
         self.guidance = []
         self.applicable = {'type': 'white',
                            'family': ['linux'],
-                           'os': {'Mac OS X': ['10.12', 'r', '10.14.10']}}
+                           'os': {'Mac OS X': ['10.15', 'r', '10.15.10']}}
         self.servicehelper = ServiceHelper(environ, logger)
+        self.ch = CommandHelper(self.logdispatch)
         self.type = 'rclocal'
         self.rclocalpath = '/etc/rc.local'
         if os.path.islink(self.rclocalpath):
@@ -83,34 +87,46 @@ class BootSecurity(Rule):
                 for rcpath in paths:
                     if os.path.isfile(rcpath):
                         self.rclocalpath = rcpath
-        self.logdispatch.log(LogPriority.DEBUG,
-                             'Using rc.local file ' + self.rclocalpath)
+        self.logdispatch.log(LogPriority.DEBUG, 'Using rc.local file ' + self.rclocalpath)
         if os.path.exists('/bin/systemctl'):
             self.type = 'systemd'
         elif os.path.exists('/sbin/launchd'):
             self.type = 'mac'
-        self.launchdservice = '/Library/LaunchDaemons/gov.lanl.stonix.bootsecurity.plist'
-        self.launchdservicename = 'gov.lanl.stonix.bootsecurity'
-
-        self.plist = """<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-    <key>Label</key>
-    <string>gov.lanl.stonix.bootsecurity</string>
-    <key>Program</key>
-    <string>/Applications/stonix4mac.app/Contents/Resources/stonix.app/Contents/MacOS/stonix_resources/stonixBootSecurityMac</string>
-    <key>RunAtLoad</key>
-    <true/>
-</dict>
-</plist>"""
 
         datatype = 'bool'
         key = 'BOOTSECURITY'
-        instructions = """To disable this rule set the value of BOOTSECURITY \
-to False."""
+        instructions = """To disable this rule set the value of BOOTSECURITY to False."""
         default = True
         self.bootci = self.initCi(datatype, key, instructions, default)
+
+        self.set_paths()
+
+    def set_paths(self):
+        """
+
+        """
+
+        self.systemd_boot_service_file = "/etc/systemd/system/stonixBootSecurity.service"
+        self.rc_boot_script = "/usr/bin/stonix_resources/stonixBootSecurityLinux.py"
+        self.systemd_service_name = "stonixBootSecurity.service"
+        self.stonix_launchd_plist = "/Library/LaunchDaemons/gov.lanl.stonix.bootsecurity.plist"
+        self.stonix_launchd_name = "gov.lanl.stonix.bootsecurity"
+        self.grub_file = "/etc/default/grub"
+        self.grub_config_file = ""
+        grub_configs = ["/boot/grub2/grub.cfg", "/boot/efi/EFI/redhat/grub.cfg"]
+        for c in grub_configs:
+            if os.path.isfile(c):
+                self.grub_config_file = c
+                break
+        self.grub_updater_cmd = ""
+        grub_updater_locs = ["/sbin/grub2-mkconfig", "/usr/sbin/update-grub", "/sbin/update-grub"]
+        for l in grub_updater_locs:
+            if os.path.isfile(l):
+                self.grub_updater_cmd = l
+                break
+
+        if self.grub_updater_cmd == "/sbin/grub2-mkconfig":
+            self.grub_updater_cmd += " -o " + self.grub_config_file
 
     def auditsystemd(self):
         """
@@ -121,19 +137,43 @@ to False."""
         module is loaded, False if not
         """
 
+        compliant = True
+
+        self.stonix_boot_service_contents = """[Unit]
+        Description=Stonix Boot Security
+        After=network.target
+
+        [Service]
+        ExecStart=/usr/bin/stonix_resources/stonixBootSecurityLinux.py
+
+        [Install]
+        WantedBy=multi-user.target
+        """
+
         try:
-            if self.servicehelper.auditService('stonixBootSecurity.service', serviceTarget=self.launchdservicename):
-                return True
+
+            # check if service file exists
+            if not os.path.isfile(self.systemd_boot_service_file):
+                compliant = False
+                self.detailedresults += "\nstonix boot service unit does not exist"
             else:
-                return False
-        except (KeyboardInterrupt, SystemExit):
-            
+                # check contents of service file
+                f = open(self.systemd_boot_service_file, "r")
+                contents = f.read()
+                f.close()
+                if contents != self.stonix_boot_service_contents:
+                    compliant = False
+                    self.detailedresults += "\nstonix boot service unit contents incorrect"
+
+            # check if service is enabled
+            if not self.servicehelper.auditService(self.systemd_service_name):
+                compliant = False
+                self.detailedresults += "\nstonix boot service is not enabled"
+
+        except:
             raise
-        except Exception:
-            self.detailedresults = 'BootSecurity.auditsystemd: '
-            self.detailedresults = self.detailedresults + \
-            traceback.format_exc()
-            self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
+
+        return compliant
 
     def auditrclocal(self):
         """
@@ -143,24 +183,19 @@ to False."""
         :return: compliant - boolean; True if compliant, False if not
         """
 
-        try:
-            compliant = False
-            rhandle = open(self.rclocalpath, 'r')
-            rclocalcontents = rhandle.readlines()
-            rhandle.close()
-            for line in rclocalcontents:
-                self.logdispatch.log(LogPriority.DEBUG,
-                                     'Processing rc.local line ' + line)
-                if re.search('^#', line):
-                    continue
-                elif re.search('stonixBootSecurity', line):
-                    compliant = True
+        compliant = True
 
-        except (KeyboardInterrupt, SystemExit):
+        try:
+
+            tmppath = self.rc_boot_script + ".stonixtmp"
+            data = {"python": self.rc_boot_script}
+            self.rc_boot_security_editor = KVEditorStonix(self.statechglogger, self.logdispatch, "conf", self.rc_boot_script, tmppath, data, "present", "space")
+            if not self.rc_boot_security_editor.report():
+                self.detailedresults += "\nThe following config line is missing or incorrect from " + str(self.rc_boot_script) + "\n" + "\n".join(self.rc_boot_security_editor.fixables)
+                compliant = False
+
+        except:
             raise
-        except Exception:
-            self.detailedresults += "\n" + traceback.format_exc()
-            self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
 
         return compliant
 
@@ -168,22 +203,61 @@ to False."""
         """
         check whether the stonixbootsecurity launchd job exists
 
-        :return: boolean; True if the stonixbootsecurity launchd job exists, False if not
+        :return:
         """
 
+        compliant = True
+
+        self.logdispatch.log(LogPriority.DEBUG,  "Looking for macOS launchd job")
+
+        self.stonix_plist_contents = """<?xml version="1.0" encoding="UTF-8"?>
+        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+        <plist version="1.0">
+        <dict>
+            <key>Label</key>
+            <string>gov.lanl.stonix.bootsecurity</string>
+            <key>Program</key>
+            <string>/Applications/stonix4mac.app/Contents/Resources/stonix.app/Contents/MacOS/stonix_resources/stonixBootSecurityMac</string>
+            <key>RunAtLoad</key>
+            <true/>
+        </dict>
+        </plist>"""
+
         try:
-            if os.path.exists(self.launchdservice):
-                return True
-            else:
-                return False
-        except (KeyboardInterrupt, SystemExit):
-            
+            if not os.path.exists(self.stonix_launchd_plist):
+                compliant = False
+                self.detailedresults += "\nCould not locate stonix boot security launchd job"
+
+        except:
             raise
-        except Exception:
-            self.detailedresults = 'BootSecurity.auditmac: '
-            self.detailedresults = self.detailedresults + \
-            traceback.format_exc()
-            self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
+
+        return compliant
+
+    def report_boot_fips(self):
+        """
+
+        :return:
+        """
+
+        found_fips = False
+        compliant = True
+
+        if self.grub_file:
+            f = open(self.grub_file, "r")
+            contentlines = f.readlines()
+            f.close()
+
+#!FIXME find some way to check/add fips=1 without clobbering the option that configuremacpolicy adds (security=<whatever>)
+            for line in contentlines:
+                if re.search('^GRUB_CMDLINE_LINUX_DEFAULT=', line, re.I):
+                    if re.search("fips=1", line, re.I):
+                        found_fips = True
+
+        if not found_fips:
+            compliant = False
+            self.detailedresults += "\nfips not enabled in boot config"
+
+        return compliant
 
     def report(self):
         """
@@ -194,30 +268,45 @@ to False."""
         """
 
         self.detailedresults = ""
-        if self.type == 'mac':
-            self.logdispatch.log(LogPriority.DEBUG,
-                                 'Checking for Mac plist')
-            self.compliant = self.auditmac()
-            if not self.compliant:
-                self.detailedresults = 'Plist for stonixBootSecurity Launch Daemon not found.'
-        elif self.type == 'systemd':
-            self.logdispatch.log(LogPriority.DEBUG,
-                                 'Checking for systemd service')
-            self.compliant = self.auditsystemd()
-            if not self.compliant:
-                self.detailedresults = 'Service for stonixBootSecurity not active.'
-        elif self.type == 'rclocal':
-            self.logdispatch.log(LogPriority.DEBUG,
-                                 'Checking rc.local')
-            self.compliant = self.auditrclocal()
-            if not self.compliant:
-                self.detailedresults = 'stonixBootSecurity-Linux not scheduled in rc.local.'
-        else:
-            self.detailedresults = 'ERROR: Report could not determine where boot job should be scheduled!'
+        self.compliant = True
+
+        try:
+
+            if self.type == 'mac':
+                self.logdispatch.log(LogPriority.DEBUG, 'Checking for Mac plist')
+                if not self.auditmac():
+                    self.compliant = False
+                    self.detailedresults += '\nPlist for stonixBootSecurity Launch Daemon not found.'
+
+            elif self.type == 'systemd':
+                self.logdispatch.log(LogPriority.DEBUG, 'Checking for systemd service')
+                if not self.auditsystemd():
+                    self.compliant = False
+                    self.detailedresults += '\nService for stonixBootSecurity not active.'
+
+            elif self.type == 'rclocal':
+                self.logdispatch.log(LogPriority.DEBUG, 'Checking rc.local')
+                if not self.auditrclocal():
+                    self.compliant = False
+                    self.detailedresults += '\nstonixBootSecurity-Linux not scheduled in rc.local.'
+            else:
+                self.compliant = False
+                self.detailedresults += "\nThis platform is not supported by STONIX"
+
+            if os.path.isfile(self.grub_file):
+                if not self.report_boot_fips():
+                    self.compliant = False
+
+            if self.compliant:
+                self.detailedresults += '\nstonixBootSecurity correctly scheduled for execution at boot.'
+                self.currstate = 'configured'
+
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except:
+            self.detailedresults += "\n" + traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
-        if self.compliant:
-            self.detailedresults = 'stonixBootSecurity correctly scheduled for execution at boot.'
-            self.currstate = 'configured'
+
         self.formatDetailedResults("report", self.compliant, self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
 
@@ -230,39 +319,37 @@ to False."""
 
         """
 
+        self.logdispatch.log(LogPriority.DEBUG, "Creating stonix boot security service unit")
+
         try:
-            fmode = 436  # Integer representation of 664
-            unitFileContents = """[Unit]
-Description=Stonix Boot Security
-After=network.target
 
-[Service]
-ExecStart=/usr/bin/stonix_resources/stonixBootSecurityLinux.py
+            # create the new service unit
+            f = open(self.systemd_boot_service_file, "w")
+            f.write(self.stonix_boot_service_contents)
+            f.close()
+            myid = iterate(self.iditerator, self.rulenumber)
+            event = {"eventtype": "creation",
+                     "filepath": self.systemd_boot_service_file}
+            self.statechglogger.recordchgevent(myid, event)
+            os.chown(self.systemd_boot_service_file, 0, 0)
+            os.chmod(self.systemd_boot_service_file, 0o644)
 
-[Install]
-WantedBy=multi-user.target
-"""
-            unitFilePath = '/etc/systemd/system/stonixBootSecurity.service'
-            whandle = open(unitFilePath, 'w')
-            whandle.write(unitFileContents)
-            whandle.close()
-            os.chown(unitFilePath, 0, 0)
-            os.chmod(unitFilePath, fmode)
+            # make the service manager aware of the new service unit
             reloadcmd = '/bin/systemctl daemon-reload'
             try:
-                proc = subprocess.Popen(reloadcmd, stdout=subprocess.PIPE,
-                                        stderr=subprocess.PIPE, shell=True)
+                self.ch.executeCommand(reloadcmd)
             except Exception:
                 pass
-            self.servicehelper.enableService('stonixBootSecurity', serviceTarget=self.launchdservicename)
+
+            # ensure that the new service is enabled
+            self.servicehelper.enableService('stonixBootSecurity')
+
         except (KeyboardInterrupt, SystemExit):
-            
+
             raise
         except Exception:
-            self.detailedresults = 'BootSecurity.setsystemd: '
-            self.detailedresults = self.detailedresults + \
-            traceback.format_exc()
-            self.rulesuccess = False
+            self.detailedresults += "\n" + traceback.format_exc()
+            self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
 
     def setrclocal(self):
@@ -272,60 +359,21 @@ WantedBy=multi-user.target
 
         """
 
+        success = True
+
         try:
-            tempfile = self.rclocalpath + '.stonixtmp'
-            command = '/usr/bin/stonix_resources/stonixBootSecurityLinux.py'
-            fhandle = open(self.rclocalpath, 'r')
-            rcdata = fhandle.readlines()
-            fhandle.close()
-            newdata = []
-            inserted = False
-            for line in rcdata:
-                self.logdispatch.log(LogPriority.DEBUG,
-                                     'Processing rc.local line ' + line)
-                if re.search('^#', line):
-                    newdata.append(line)
-                elif re.search('^\n', line) and not inserted:
-                    newdata.append(command)
-                    newdata.append(line)
-                    inserted = True
-                elif re.search('exit 0', line) and not inserted:
-                    newdata.append(command)
-                    newdata.append(line)
-                    inserted = True
-                else:
-                    newdata.append(line)
-            if not inserted:
-                self.logdispatch.log(LogPriority.DEBUG,
-                                     'Insert not made, appending')
-                newdata.append(command)
-            whandle = open(tempfile, 'w')
-            for line in newdata:
-                whandle.write(line)
-            whandle.close()
-            mytype1 = 'conf'
-            mystart1 = 'not configured'
-            myend1 = 'configured'
-            myid1 = '0018001'
-            self.statechglogger.recordfilechange(self.rclocalpath, tempfile,
-                                                 myid1)
-            event1 = {'eventtype': mytype1,
-                      'startstate': mystart1,
-                      'endstate': myend1,
-                      'myfile': self.rclocalpath}
-            self.statechglogger.recordchgevent(myid1, event1)
-            os.rename(tempfile, self.rclocalpath)
-            os.chown(self.rclocalpath, 0, 0)
-            os.chmod(self.rclocalpath, 493)  # Integer of 0755
-        except (KeyboardInterrupt, SystemExit):
-            
+
+            if not self.rc_boot_security_editor.fix():
+                self.logger.log(LogPriority.DEBUG, "KVEditor failed to fix")
+                success = False
+            elif not self.rc_boot_security_editor.commit():
+                self.logger.log(LogPriority.DEBUG, "KVEditor failed to commit changes")
+                success = False
+
+        except:
             raise
-        except Exception:
-            self.detailedresults = 'BootSecurity.setrclocal: '
-            self.detailedresults = self.detailedresults + \
-            traceback.format_exc()
-            self.rulesuccess = False
-            self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
+
+        return success
 
     def setmac(self):
         """
@@ -334,31 +382,70 @@ WantedBy=multi-user.target
 
         """
 
+        success = True
+
         try:
-            self.removemacservices(True)
-            whandle = open(self.launchdservice, 'w')
-            whandle.write(self.plist)
+
+            whandle = open(self.stonix_launchd_plist, 'w')
+            whandle.write(self.stonix_plist_contents)
             whandle.close()
-            os.chown(self.launchdservice, 0, 0)
-            os.chmod(self.launchdservice, 420)  # Integer of 0644
-        except (KeyboardInterrupt, SystemExit):
-            
+            os.chown(self.stonix_launchd_plist, 0, 0)
+            os.chmod(self.stonix_launchd_plist, 0o644)
+
+        except:
             raise
-        except Exception:
-            self.detailedresults = 'BootSecurity.setmac: '
-            self.detailedresults = self.detailedresults + \
-            traceback.format_exc()
-            self.rulesuccess = False
-            self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
+
+        return success
+
+    def fix_boot_fips(self):
+        """
+
+        :return:
+        """
+
+        success = True
+        fixed_fips = False
+        tmpfile = self.grub_file + ".stonixtmp"
+
+        f = open(self.grub_file, "r")
+        contentlines = f.readlines()
+        f.close()
+
+        for line in contentlines:
+            if re.search("^GRUB_CMDLINE_LINUX_DEFAULT=", line, re.I):
+                contentlines = [c.replace(line, line.strip()[:-1] + ' fips=1"\n') for c in contentlines]
+                fixed_fips = True
+
+        if not fixed_fips:
+            contentlines.append('GRUB_CMDLINE_LINUX_DEFAULT="splash quiet audit=1 fips=1"\n')
+            fixed_fips = True
+
+        tf = open(tmpfile, "w")
+        tf.writelines(contentlines)
+        tf.close()
+
+        self.iditerator += 1
+        myid = iterate(self.iditerator, self.rulenumber)
+        event = {"eventtype": "conf",
+                 "filepath": self.grub_file}
+        self.statechglogger.recordchgevent(myid, event)
+        self.statechglogger.recordfilechange(tmpfile, self.grub_file, myid)
+        os.rename(tmpfile, self.grub_file)
+
+        self.ch.executeCommand(self.grub_updater_cmd)
+
+        return success
 
     def fix(self):
         """
-        perform actions to disable wifi, bluetooth and microphone at boot time
+        install system job which will run and disable bluetooth, microphone and wifi at boot
 
         """
 
         self.detailedresults = ""
-        fixed = False
+        self.rulesuccess = True
+        self.iditerator = 0
+
         if self.bootci.getcurrvalue():
             if self.type == 'mac':
                 self.logdispatch.log(LogPriority.DEBUG,
@@ -376,86 +463,22 @@ WantedBy=multi-user.target
                 self.detailedresults = 'ERROR: Fix could not determine where boot job should be scheduled!'
                 self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
                 self.rulesuccess = False
-                fixed = False
-            fixed = True
-            self.rulesuccess = True
-            self.currstate = 'configured'
-        self.formatDetailedResults("fix", fixed,
-                                   self.detailedresults)
+
+            if os.path.isfile(self.grub_file):
+                if not self.fix_boot_fips():
+                    self.rulesuccess = False
+
+            if self.rulesuccess:
+                self.currstate = 'configured'
+            else:
+                self.currstate = 'notconfigured'
+                self.detailedresults += "\nFailed to install boot security job"
+
+        else:
+            self.logdispatch.log(LogPriority.DEBUG, "Rule not enabled. Nothing was done.")
+            self.currstate = 'notconfigured'
+
+        self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
 
-    def removemacservices(self, oldServiceOnly=False):
-        """
-        remove the boot security plist installed by STONIX during fix()
-
-        :param boolean oldServiceOnly: specify format of service to target
-
-        """
-
-        try:
-            self.detailedresults = 'BootSecurity.removemacservices: '
-            oldservice = '/Library/LaunchDaemons/stonixBootSecurity.plist'
-            oldservicename = 'stonixBootSecurity'
-            if os.path.exists(oldservice):
-                self.logdispatch.log(LogPriority.DEBUG,
-                                     str(oldservice) + " exists!")
-                self.servicehelper.disableService(oldservice, servicename=oldservicename)
-                self.logdispatch.log(LogPriority.DEBUG,
-                                     str(oldservice) + " disabled!")
-                os.remove(oldservice)
-                self.logdispatch.log(LogPriority.DEBUG,
-                                     str(oldservice) + " removed!")
-                self.detailedresults = self.detailedresults + \
-                "\r- removed " + str(oldservice)
-            if not oldServiceOnly:
-                if os.path.exists(self.launchdservice):
-                    self.logdispatch.log(LogPriority.DEBUG,
-                                         str(self.launchdservice) + " exists!")
-                    self.servicehelper.disableService(self.launchdservice, serviceTarget=self.launchdservicename)
-                    self.logdispatch.log(LogPriority.DEBUG,
-                                         str(self.launchdservice) + " disabled!")
-                    os.remove(self.launchdservice)
-                    self.logdispatch.log(LogPriority.DEBUG,
-                                         str(self.launchdservice) + " removed!")
-                    self.detailedresults = self.detailedresults + \
-                    "\r- removed " + str(self.launchdservice)
-        except (KeyboardInterrupt, SystemExit):
-            
-            raise
-        except Exception:
-            self.detailedresults = 'BootSecurity.removemacservices: '
-            self.detailedresults = self.detailedresults + \
-            traceback.format_exc()
-            self.rulesuccess = False
-            self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
-
-    def undo(self):
-        """
-        undo all fix actions which were previously performed on
-        this system, by this rule
-
-        :return:
-        """
-
-        if self.type == 'mac':
-            self.removemacservices()
-        elif self.type == 'systemd':
-            os.remove('/etc/systemd/system/stonixBootSecurity.service')
-            reloadcmd = '/bin/systemctl daemon-reload'
-            try:
-                proc = subprocess.Popen(reloadcmd, stdout=subprocess.PIPE,
-                                        stderr=subprocess.PIPE, shell=True)
-            except Exception:
-                pass
-        elif self.type == 'rclocal':
-            try:
-                event = self.statechglogger.getchgevent('0018001')
-                if event['startstate'] != event['endstate']:
-                    self.statechglogger.revertfilechanges(self.rclocalpath,
-                                                          '0018001')
-            except(IndexError, KeyError):
-                self.logdispatch.log(LogPriority.DEBUG,
-                                     ['BootSecurity.undo',
-                                      "EventID 0018001 not found"])
-        self.detailedresults = 'The Boot Security scripts have been removed.'
-        self.currstate = 'notconfigured'
+        return self.rulesuccess

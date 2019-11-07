@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 ###############################################################################
 #                                                                             #
 # Copyright 2019. Triad National Security, LLC. All rights reserved.          #
@@ -23,7 +23,7 @@ Created on 2016/03/14
 
 @author: Eric Ball
 '''
-from __future__ import absolute_import
+
 import optparse
 import os
 import re
@@ -70,7 +70,7 @@ class zzzTestFrameworkmacbuild(unittest.TestCase):
             rmtree(path)
         os.mkdir(path)
         device = self.mb.setupRamdisk(512, path)
-        self.assertRegexpMatches(device, "/dev/disk\d+",
+        self.assertRegex(device, "/dev/disk\d+",
                                  "Unexpected return from setupRamdisk")
         self.assertTrue(self.mb.detachRamdisk(device),
                         "Did not successfully detach ramdisk")

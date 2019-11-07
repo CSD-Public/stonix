@@ -25,16 +25,16 @@ ExecShield overflow prevention and the randomize_va_space ASLR mechanism.
 @change: 2016/04/26 ekkehard Results Formatting
 @change 2017/08/28 rsn Fixing to use new help text methods
 '''
-from __future__ import absolute_import
+
 import os
 import re
 import traceback
 import subprocess
 
-from ..rule import Rule
-from ..stonixutilityfunctions import resetsecon
-from ..logdispatcher import LogPriority
-from ..KVEditorStonix import KVEditorStonix
+from rule import Rule
+from stonixutilityfunctions import resetsecon
+from logdispatcher import LogPriority
+from KVEditorStonix import KVEditorStonix
 
 
 class ExecShield(Rule):

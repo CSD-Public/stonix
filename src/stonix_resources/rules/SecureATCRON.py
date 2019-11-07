@@ -38,18 +38,21 @@ parts of the code as well
 @change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
 @change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
+@change: 2019/08/07 Brandon R. Gonzales - Improve logging; Change expected
+        permissions to be in octal format.
+@change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
 '''
 
-from __future__ import absolute_import
+
 import os
 import re
 import traceback
 import stat
 
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..CommandHelper import CommandHelper
-from ..stonixutilityfunctions import iterate, setPerms, resetsecon
+from rule import Rule
+from logdispatcher import LogPriority
+from CommandHelper import CommandHelper
+from stonixutilityfunctions import iterate, setPerms, resetsecon
 from pwd import getpwuid
 from grp import getgrgid
 
@@ -83,7 +86,7 @@ class SecureATCRON(Rule):
                          'CCE-4230-9', 'CCE-4445-3']
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.12', 'r', '10.14.10']}}
+                           'os': {'Mac OS X': ['10.15', 'r', '10.15.10']}}
 
         # init CIs
         datatype = 'bool'
@@ -214,18 +217,18 @@ CRON utilities, set the value of SECUREATCRON to False.'''
         # and when you try to type-cast these numbers,
         # python does not preserve data integrity
         # (the numbers change wildly)
-        self.reportcronchmodfiledict = {self.crontab: '0644',
-                                        self.anacrontab: '0600',
-                                        self.spoolcron: '0700',
-                                        self.cronlog: '0644',
-                                        self.cronallow: '0400',
-                                        self.atallow: '0400'}
-        self.fixcronchmodfiledict = {self.crontab: 0644,
-                                     self.anacrontab: 0600,
-                                     self.spoolcron: 0700,
-                                     self.cronlog: 0644,
-                                     self.cronallow: 0400,
-                                     self.atallow: 0400}
+        self.reportcronchmodfiledict = {self.crontab: '0o644',
+                                        self.anacrontab: '0o600',
+                                        self.spoolcron: '0o700',
+                                        self.cronlog: '0o644',
+                                        self.cronallow: '0o400',
+                                        self.atallow: '0o400'}
+        self.fixcronchmodfiledict = {self.crontab: 0o644,
+                                     self.anacrontab: 0o600,
+                                     self.spoolcron: 0o700,
+                                     self.cronlog: 0o644,
+                                     self.cronallow: 0o400,
+                                     self.atallow: 0o400}
         self.cronchownfilelist = [self.cronhourly, self.crondaily,
                                   self.cronweekly, self.cronmonthly,
                                   self.cronddir, self.crontab,
@@ -451,15 +454,16 @@ doc block
         retval = True
 
         try:
-
             # check permissions on cron/at files
             for item in self.reportcronchmodfiledict:
                 if os.path.exists(item):
                     perms = self.getPerms(item)
-                    if perms != self.reportcronchmodfiledict[item]:
+                    expectedperms = self.reportcronchmodfiledict[item]
+                    if perms != expectedperms:
                         retval = False
                         self.detailedresults += "\nPermissions for " + item + \
-                            " are not correct"
+                                                " are not correct: expected " + expectedperms + \
+                                                ", found " + perms
 
             # check ownership on cron/at files
             for item in self.cronchownfilelist:
@@ -591,14 +595,13 @@ doc block
         except Exception:
             self.rulesuccess = False
             self.detailedresults = traceback.format_exc()
-            self.logger.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("fix", self.rulesuccess,
                                    self.detailedresults)
+        self.logger.log(LogPriority.INFO, self.detailedresults)
         return self.rulesuccess
 
     def fixDarwin(self):
         '''run fix actions specific to darwin systems
-
 
         :returns: retval
 
@@ -606,7 +609,6 @@ doc block
 @author: Breen Malmberg
 @change: Breen Malmberg - 3/15/2017 - changed group id in os.chown
         calls (80=admin) from 0 (wheel)
-
         '''
 
         success = True

@@ -4,7 +4,7 @@ Generic ramdisk test, with helper functions. Inherited by other tests.
 @author: Roy Nielsen
 """
 #--- Native python libraries
-from __future__ import absolute_import
+
 import os
 import re
 import sys

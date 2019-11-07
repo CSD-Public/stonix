@@ -39,8 +39,9 @@ rule class
 @change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
 @change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
+@change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
 '''
-from __future__ import absolute_import
+
 import os
 import traceback
 import subprocess
@@ -51,10 +52,10 @@ import re
 import pwd
 import grp
 
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..localize import SITELOCALWWWDIRS
-from ..stonixutilityfunctions import getlocalfs
+from rule import Rule
+from logdispatcher import LogPriority
+from localize import SITELOCALWWWDIRS
+from stonixutilityfunctions import getlocalfs
 
 
 class FilePermissions(Rule):
@@ -94,7 +95,7 @@ class FilePermissions(Rule):
                          "CCE-RHEL7-CCE-TBD 2.2.3.9"]
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.12', 'r', '10.14.10']}}
+                           'os': {'Mac OS X': ['10.15', 'r', '10.15.10']}}
         # The vars below are local to this rule and are not overrides of the
         # base class
         self.infodir = '/var/local/info'
@@ -1191,7 +1192,7 @@ find / -xdev \( -nouser -o -nogroup \) -print
                         return 3
                 return 5
             for line in output:
-                if re.search('M', line):
+                if re.search('M', line.decode('utf-8')):
                     return 0
             return 1
         except (KeyboardInterrupt, SystemExit):
@@ -1312,12 +1313,24 @@ has been called a second time. The previous results are displayed. '''
                     wwfile = wwfile.strip()
                     if os.path.isdir(wwfile):
                         try:
-                            os.chmod(wwfile, 01777)
+                            os.chmod(wwfile, 0o1777)
                         except (OSError):
-                            # catch OSError because we may be NFS or RO
-                            self.logger.log(LogPriority.DEBUG,
-                                            ['FilePermissions.fix',
-                                             str(traceback.format_exc())])
+                            if self.environ.getosfamily() == "darwin":
+                                # System volume on Mac OS Catalina
+                                self.logger.log(LogPriority.DEBUG,
+                                                ['FilePermissions.fix',
+                                                 '\nUnable to fix ' +
+                                                 'permissions for \'' +
+                                                 wwfile +
+                                                 '\'. If this file is under ' +
+                                                 'the System Volume, it is ' +
+                                                 'likely read-only/SIP ' +
+                                                 'protected.'])
+                            else:
+                                # catch OSError because we may be NFS or RO
+                                self.logger.log(LogPriority.DEBUG,
+                                                ['FilePermissions.fix',
+                                                str(traceback.format_exc())])
                             continue
                     elif os.path.isfile(wwfile) and re.match(pathre, wwfile):
                         # File is in the root users path, remove world write
@@ -1384,7 +1397,7 @@ has been called a second time. The previous results are displayed. '''
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
-        except Exception, err:
+        except Exception as err:
             self.rulesuccess = False
             self.detailedresults = self.detailedresults + "\n" + str(err) + \
                 " - " + str(traceback.format_exc())

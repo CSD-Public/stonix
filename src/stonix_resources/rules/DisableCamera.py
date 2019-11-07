@@ -33,13 +33,14 @@ Created on Dec 10, 2013
 @change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
 @change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
+@change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
 '''
 
-from __future__ import absolute_import
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..KVEditorStonix import KVEditorStonix
-from ..stonixutilityfunctions import iterate
+
+from rule import Rule
+from logdispatcher import LogPriority
+from KVEditorStonix import KVEditorStonix
+from stonixutilityfunctions import iterate
 import os
 import traceback
 
@@ -65,7 +66,7 @@ class DisableCamera(Rule):
         self.rootrequired = True
         self.guidance = ["CIS 1.2.6"]
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.12', 'r', '10.14.10']}}
+                           'os': {'Mac OS X': ['10.15', 'r', '10.15.10']}}
         self.logger = logger
         self.iditerator = 0
         datatype = 'bool'

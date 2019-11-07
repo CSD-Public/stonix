@@ -20,15 +20,17 @@ Created on Apr 20, 2017
 
 @author: dwalker
 @change 2017/08/28 rsn Fixing to use new help text methods
+@change: 2019/07/17 Brandon R. Gonzales - Make applicable to MacOS 10.13-10.14
+@change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
 '''
-from __future__ import absolute_import
+
 import traceback
 import os
-from ..rule import Rule
+from rule import Rule
 from re import search, escape
-from ..logdispatcher import LogPriority
-from ..stonixutilityfunctions import iterate
-from ..CommandHelper import CommandHelper
+from logdispatcher import LogPriority
+from stonixutilityfunctions import iterate
+from CommandHelper import CommandHelper
 
 
 class DisableSIRIandContinuityFeatures(Rule):
@@ -42,7 +44,7 @@ class DisableSIRIandContinuityFeatures(Rule):
         self.formatDetailedResults("initialize")
         self.rootrequired = True
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.12', '+']},
+                           'os': {'Mac OS X': ['10.15', 'r', '10.15.10']},
                            'fisma': 'low'}
         datatype = "bool"
         key = "SIRICONTINUITY"

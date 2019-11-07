@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 ###############################################################################
 #                                                                             #
 # Copyright 2019. Triad National Security, LLC. All rights reserved.          #
@@ -24,7 +24,7 @@ This is a Unit Test for Rule AuditNetworkSniffing
 @change: Breen Malmberg - 03/21/2019 - updated unit tests to match updated rule code
 """
 
-from __future__ import absolute_import
+
 import sys
 import unittest
 
@@ -88,7 +88,7 @@ class zzzTestRuleAuditNetworkSniffing(RuleTest):
 
         self.assertTrue(self.rule.command, "The self.command variable was not properly initialized")
         self.assertTrue(self.rule.searchterm, "The self.searchterm variable was not properly initialized")
-        self.assertTrue(isinstance(self.rule.searchterm, basestring))
+        self.assertTrue(isinstance(self.rule.searchterm, str))
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
         '''check on whether report was correct

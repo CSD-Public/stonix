@@ -21,12 +21,12 @@ Created on Jul 7, 2015
 @author: dwalker
 @change: 2016/04/26 ekkehard Results Formatting
 '''
-from __future__ import absolute_import
-from ..stonixutilityfunctions import iterate, setPerms, checkPerms
-from ..stonixutilityfunctions import resetsecon, readFile, writeFile, createFile
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..pkghelper import Pkghelper
+
+from stonixutilityfunctions import iterate, setPerms, checkPerms
+from stonixutilityfunctions import resetsecon, readFile, writeFile, createFile
+from rule import Rule
+from logdispatcher import LogPriority
+from pkghelper import Pkghelper
 import traceback
 import os
 import re
@@ -354,7 +354,7 @@ class SecureSquidProxy(Rule):
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
-        except Exception, err:
+        except Exception as err:
             self.rulesuccess = False
             self.detailedresults = self.detailedresults + "\n" + str(err) + \
                 " - " + str(traceback.format_exc())

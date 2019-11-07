@@ -28,21 +28,21 @@
 #               Modified Date     $Date: 2013/1/9 15:18:00 $
 # ============================================================================ #
 
-import cli
-import configurationitem
-import environment
-import logdispatcher
-import observable
-import pkghelper
-import rule
+from stonix_resources import cli
+from stonix_resources import configurationitem
+from stonix_resources import environment
+from stonix_resources import logdispatcher
+from stonix_resources import observable
+from stonix_resources import pkghelper
+from stonix_resources import rule
 # import ServiceHelper
-import StateChgLogger
-import stonixutilityfunctions
-import view
-import stonixexp
-import program_arguments
-import rules
+from stonix_resources import StateChgLogger
+from stonix_resources import stonixutilityfunctions
+from stonix_resources import view
+from stonix_resources import stonixexp
+from stonix_resources import program_arguments
+from stonix_resources import rules
 try:
-    import gui
+    from stonix_resources import gui
 except(ImportError):
     pass

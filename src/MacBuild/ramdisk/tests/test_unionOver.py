@@ -1,4 +1,4 @@
-#!/usr/bin/python -u
+#!/usr/bin/env python3 -u
 """
 Test unionfs functionality. 
 
@@ -6,7 +6,7 @@ as of 3/15/2016, only the Mac OS X platform is supported.
 
 @author: Roy Nielsen
 """
-from __future__ import absolute_import
+
 #--- Native python libraries
 import re
 import os

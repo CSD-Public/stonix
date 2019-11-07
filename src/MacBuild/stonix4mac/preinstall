@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/bin/zsh
 ###############################################################################
 #                                                                             #
 # Copyright 2019. Triad National Security, LLC. All rights reserved.          #
@@ -16,34 +16,17 @@
 #                                                                             #
 ###############################################################################
 
-import os
-import shutil
-import sys
+set -e
 
-TARGET_LOCATION = sys.argv[2]
+TARGET_LOCATION=${1}Applications/stonix4mac.app
+CONF_FILE=${TARGET_LOCATION}/Contents/Resources/stonix.app/Contents/Resources/stonix.conf
 
+# Copy stonix.conf to etc
+if [[ -a ${CONF_FILE} ]]; then
+    cp ${CONF_FILE} /etc/stonix.conf
+fi
 
-def removeOldStonix(target):
-    try:
-        shutil.rmtree(target)
-    except OSError:
-        print "Could not find " + str(target)
-    return 0
-
-def backupOldStonixConf(target):
-    '''
-    If the target conf file exists, stonix will be using it to save the users
-    settings, regarless of whether or not /etc/stonix.conf exists. Newer
-    versions of stonix will no longer put a conf file in the application path,
-    so this should now be moved to /etc.
-    '''
-    conffile = target + "/Contents/Resources/stonix.app/Contents/" + \
-        "Resources/stonix.conf"
-    if os.path.exists(conffile) and not os.path.islink(conffile):
-        os.rename(conffile, "/etc/stonix.conf")
-
-
-if __name__ == "__main__":
-    target = os.path.join(TARGET_LOCATION + "Applications/stonix4mac.app")
-    backupOldStonixConf(target)
-    sys.exit(removeOldStonix(target))
+# Remove old installation of stonix
+if [[ -a ${TARGET_LOCATION} ]]; then
+    rm -rf ${TARGET_LOCATION}
+fi

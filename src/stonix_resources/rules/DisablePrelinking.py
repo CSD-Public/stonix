@@ -22,15 +22,15 @@ This rule disables the prelinking of executable binaries.
 @change: 2016/02/09 eball Original implementation
 @change 2017/08/28 rsn Fixing to use new help text methods
 '''
-from __future__ import absolute_import
+
 import os
 import re
 import traceback
-from ..CommandHelper import CommandHelper
-from ..stonixutilityfunctions import createFile, iterate, resetsecon, writeFile
-from ..KVEditorStonix import KVEditorStonix
-from ..rule import Rule
-from ..logdispatcher import LogPriority
+from CommandHelper import CommandHelper
+from stonixutilityfunctions import createFile, iterate, resetsecon, writeFile
+from KVEditorStonix import KVEditorStonix
+from rule import Rule
+from logdispatcher import LogPriority
 
 
 class DisablePrelinking(Rule):
@@ -40,6 +40,7 @@ class DisablePrelinking(Rule):
         self.logger = logger
         self.rulenumber = 89
         self.rulename = "DisablePrelinking"
+        self.sethelptext()
         self.formatDetailedResults("initialize")
         self.mandatory = True
         self.applicable = {'type': 'white',
@@ -61,7 +62,6 @@ class DisablePrelinking(Rule):
             self.isDebian = True
         else:
             self.isDebian = False
-        self.sethelptext
 
     def report(self):
         try:

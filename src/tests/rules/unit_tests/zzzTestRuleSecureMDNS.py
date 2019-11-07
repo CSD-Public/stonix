@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 ###############################################################################
 #                                                                             #
 # Copyright 2019. Triad National Security, LLC. All rights reserved.          #
@@ -29,7 +29,7 @@ This is a Unit Test for Rule SecureMDNS
     temporary location, and copied it back after test is complete.
 @change: 2017/10/23 rsn - change to new service helper interface
 '''
-from __future__ import absolute_import
+
 import os
 import re
 import sys

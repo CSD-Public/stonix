@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 ###############################################################################
 #                                                                             #
 # Copyright 2019. Triad National Security, LLC. All rights reserved.          #
@@ -29,7 +29,7 @@
 #               Release           $Revision: 1.0 $
 #               Modified Date     $Date: 2011/10/24 14:00:00 $
 #============================================================================ #
-'''
+"""
 Created Jun 20, 2012
 
 This is the GUI interface for STONIX (project Dylan). This file and its related
@@ -43,26 +43,28 @@ imports implement the STONIX GUI.
 @change: 2018-06-21 - Brandon Gonzales - Change tupdate and supdate to use
         status as a dictionary instead of a QString; Change runThread.run() to
         send dictionary to tupdate and supdate instead of a QString
-'''
+"""
 
 import os
 import sys
 import traceback
 import webbrowser
-from view import View
+from .view import View
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
-import main_window
-from logdispatcher import LogPriority
+from stonix_resources import main_window
+from .stonix_log_viewer import Ui_log_viewer_window
+from .logdispatcher import LogPriority
+
 
 class GUI (View, QMainWindow, main_window.Ui_MainWindow):
-    '''Main GUI class for the stonix GUI. This class inherits from
+    """Main GUI class for the stonix GUI. This class inherits from
     main_window.Ui_MainWindow which was created in QTDesigner.
     
     @author: David Kennel
 
 
-    '''
+    """
     def __init__(self, controller, environment, logger):
         """
         Constructor for the GUI class. The following __init__ statements pull
@@ -95,10 +97,8 @@ class GUI (View, QMainWindow, main_window.Ui_MainWindow):
             detailedresults = traceback.format_exc()
             self.logger.log(LogPriority.DEBUG, detailedresults)
         self.stonixversion = self.environ.getstonixversion()
-        userstr = ''
         if self.euid == 0:
-            # for macs we say admin instead of root
-            userstr = 'admin'
+            userstr = 'root'
         else:
             userstr = 'user'
         self.setWindowTitle("STONIX-" + str(self.stonixversion) + \
@@ -107,6 +107,7 @@ class GUI (View, QMainWindow, main_window.Ui_MainWindow):
         # Connect UI events to actions
         self.rule_list_widget.setSortingEnabled(True)
         self.rule_list_widget.itemSelectionChanged.connect(self.rulelistselchange)
+        self.rule_list_widget.itemDoubleClicked.connect(self.reportrule)
         self.actionQuit.triggered.connect(self.guiexit)
         self.actionRun_All.triggered.connect(self.runall)
         self.actionReport_All.triggered.connect(self.reportall)
@@ -125,7 +126,7 @@ class GUI (View, QMainWindow, main_window.Ui_MainWindow):
         self.searchbox = QLineEdit(self)
         self.searchbox.resize(250, 30)
         self.searchbox.move(self.width() - self.searchbox.width() - 2, 2)
-        self.searchbox.textEdited.connect(self.updateSearchResults)
+        QObject.connect(self.searchbox, SIGNAL('textEdited(QString)'), self.updateSearchResults)
         self.searchbox.setToolTip("Search rule names and descriptions")
         self.searchbox.setObjectName("SearchBox")
         self.searchbox.show()
@@ -138,6 +139,8 @@ class GUI (View, QMainWindow, main_window.Ui_MainWindow):
         revertallicon = os.path.join(self.icon_path, "warning_48.png")
         cancelrunicon = os.path.join(self.icon_path, "cancel.png")
         helpquestionmark = os.path.join(self.icon_path, "help.ico")
+        closelogwindowicon = os.path.join(self.icon_path, "cancel_48.png")
+
         # Commented out setStatusTip calls to keep them from stomping on run
         # messages
         self.actionLog.setIcon((QIcon(logicon)))
@@ -186,8 +189,11 @@ class GUI (View, QMainWindow, main_window.Ui_MainWindow):
         # Build rule list
         self.rule_data = self.controller.getallrulesdata()
         rnamelist = []
+        # empty rule set safety
+        if len(self.rule_data) == 0:
+            self.guiexit("********************\n\nSTONIX: No applicable rules for this system\n\n********************")
         for rnum in self.rule_data:
-            
+
             icon = QIcon()
             icon.addPixmap(QPixmap(os.path.join(self.icon_path,
                                                 self.questionmark)),
@@ -238,14 +244,14 @@ class GUI (View, QMainWindow, main_window.Ui_MainWindow):
         self.getSearchText()
 
     def getSearchText(self):
-        '''retrieve the list of text (both descriptions
+        """retrieve the list of text (both descriptions
         and rule names) once, to search through
 
 
         :returns: void
         @author: Breen Malmberg
 
-        '''
+        """
 
         self.logger.log(LogPriority.DEBUG, "\nBuilding Search database...\n")
 
@@ -263,19 +269,19 @@ class GUI (View, QMainWindow, main_window.Ui_MainWindow):
             self.search_text[rname] = self.rule_data[rnum][0] + ' ' + self.rule_data[rnum][1] + ' ' + cisearchtext
 
     def resizeEvent(self, event):
-        '''keep the searchbox in the same position -
+        """keep the searchbox in the same position -
         relative to the parent application window
 
         :param event: 
         :returns: void
         @author: Breen Malmberg
 
-        '''
+        """
 
         self.searchbox.move(self.width() - self.searchbox.width() - 2, 2)
 
     def clearText(self):
-        '''clear searchbox text if it has the
+        """clear searchbox text if it has the
         default 'Search' text in it when a user clicks
         inside it
 
@@ -283,7 +289,7 @@ class GUI (View, QMainWindow, main_window.Ui_MainWindow):
         :returns: void
         @author: Breen Malmberg
 
-        '''
+        """
 
         # self.logger.log(LogPriority.DEBUG, "\n\nclearText( method) called\n\n")
 
@@ -291,7 +297,7 @@ class GUI (View, QMainWindow, main_window.Ui_MainWindow):
             self.searchbox.clear()
 
     def updateSearchResults(self):
-        '''show only rules which match the search term
+        """show only rules which match the search term
         against either their rule name or their rule description;
         hide all rules which don't contain a match of the search term;
         show all rules if the search box is cleared
@@ -300,13 +306,12 @@ class GUI (View, QMainWindow, main_window.Ui_MainWindow):
         :returns: void
         @author: Breen Malmberg
 
-        '''
+        """
 
         # self.logger.log(LogPriority.DEBUG, "\n\nupdateSearchResults() method called\n\n")
 
         foundin = []
         allrules = self.rule_list_widget.findItems('.*', Qt.MatchRegExp)
-        searchTerm = ''
         searchTerm = self.searchbox.text()
 
         # if a user clears the searchbox, show all rules
@@ -329,13 +334,13 @@ class GUI (View, QMainWindow, main_window.Ui_MainWindow):
                     item.setHidden(False)
 
     def openHelpBrowser(self):
-        '''Open the html based gui help system
+        """Open the html based gui help system
         
         @author: Roy Nielsen
         @change: 2015/12/09 eball Changed to webbrowser
 
 
-        '''
+        """
         debug = "Opening help in browser"
         self.logger.log(LogPriority.DEBUG, ["GUI", debug])
         selfdir = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0])))
@@ -345,13 +350,13 @@ class GUI (View, QMainWindow, main_window.Ui_MainWindow):
         self.logger.log(LogPriority.DEBUG, ["GUI", debug])
 
     def update_progress(self, curr, total):
-        '''Progress updater for the progress bar.
+        """Progress updater for the progress bar.
 
         :param curr: int - current position in the total set
         :param total: int -  size of total set
         @author: David Kennel
 
-        '''
+        """
         if total == 1 and curr == 0:
             self.pbar.setRange(0, 0)
         else:
@@ -359,7 +364,7 @@ class GUI (View, QMainWindow, main_window.Ui_MainWindow):
             self.pbar.setValue(curr)
 
     def rulelistselchange(self):
-        '''Show frames containing the rule details and configuration items
+        """Show frames containing the rule details and configuration items
         appropriate to the selected rule.
         
         @author: David Kennel
@@ -367,7 +372,7 @@ class GUI (View, QMainWindow, main_window.Ui_MainWindow):
                 and set fix button enabled = False if it is audit only
 
 
-        '''
+        """
         if len(self.rule_list_widget.selectedItems()) > 0:
             if self.environ.geteuid() == 0:
                 self.revert_button.setEnabled(True)
@@ -394,12 +399,12 @@ class GUI (View, QMainWindow, main_window.Ui_MainWindow):
             self.rule_instructions_text.setText(QApplication.translate("MainWindow",
                                                                             self.rule_data[rule_num][1],
                                                                             None,
-                                                                            QApplication.UnicodeUTF8))
+                                                                            QCoreApplication.UnicodeUTF8))
             detailedresults = self.controller.getruledetailedresults(rule_num)
             self.rule_results_text.setPlainText(QApplication.translate("MainWindow",
                                                                        detailedresults,
                                                                        None,
-                                                                       QApplication.UnicodeUTF8))
+                                                                       QCoreApplication.UnicodeUTF8))
             for rulename in self.ruleci:
                 self.ruleci[rulename].hide()
             rulename = self.rule_list_widget.selectedItems()[0].text()
@@ -413,19 +418,19 @@ class GUI (View, QMainWindow, main_window.Ui_MainWindow):
             self.fix_button.setEnabled(False)
             self.report_button.setEnabled(False)
 
-    def guiexit(self):
-        '''Program quit from GUI called. Clean up lock files and post reports.
+    def guiexit(self, msg=None):
+        """Program quit from GUI called. Clean up lock files and post reports.
         
         @author: David Kennel
 
 
-        '''
+        """
         self.controller.releaselock()
         self.logger.postreport()
-        sys.exit()
+        sys.exit(msg)
 
     def set_listview_item_bgcolor(self, item_text, qcolor_rgb):
-        '''Changes the background color of a list view item based on it's
+        """Changes the background color of a list view item based on it's
         case-sensitive name. There should only ever be one, however if there
         is a duplicate it will be changed as well.
 
@@ -435,7 +440,7 @@ class GUI (View, QMainWindow, main_window.Ui_MainWindow):
         :returns: void
         @author: scmcleni
 
-        '''
+        """
 
         brush = QBrush(qcolor_rgb)
         brush.setStyle(Qt.SolidPattern)
@@ -444,18 +449,18 @@ class GUI (View, QMainWindow, main_window.Ui_MainWindow):
             item.setBackground(brush)
 
     def set_listview_item_icon(self, item_text, iconame):
-        '''Updates the icon associated with an entry in the list view.
+        """Updates the icon associated with an entry in the list view.
         The icon name (iconame) is a enum indicating one of the four possible
         icon types: grn, red, warn, quest. The item_text should be the rule
         name.
 
-        :param string: item_text (rule name)
-        :param string: icon name (grn, red, warn, quest)
+        :param string item_text: (rule name)
+        :param string iconame: (grn, red, warn, quest)
         @author: David Kennel
         :param item_text: 
         :param iconame: 
 
-        '''
+        """
         myicon = os.path.join(self.icon_path, self.questionmark)
         if iconame == 'grn':
             myicon = os.path.join(self.icon_path, self.compliant)
@@ -470,14 +475,14 @@ class GUI (View, QMainWindow, main_window.Ui_MainWindow):
             item.setIcon(icon)
 
     def tupdate(self, status):
-        '''This method is called by runThread objects. In response
+        """This method is called by runThread objects. In response
         we need to refresh all dynamic components of the UI.
 
         :param status: dictionary containing the string values for "rulename",
             "ruleid", "compliant", "completed", and "total"
         @author: David Kennel
 
-        '''
+        """
 
         try:
 
@@ -526,14 +531,14 @@ class GUI (View, QMainWindow, main_window.Ui_MainWindow):
                             ['GUI', "Problem in tupdate: " + trace])
 
     def supdate(self, status):
-        '''This method is called by the runThread objects. In response this method
+        """This method is called by the runThread objects. In response this method
         updates the statusBar and progress bars with updated info.
 
         :param status: dictionary containing the string values for "rulename",
             "completed", and "total"
         @author: David Kennel
 
-        '''
+        """
         try:
             self.logger.log(LogPriority.DEBUG,
                             ['GUI', "supdate: status " + str(status)])
@@ -551,27 +556,27 @@ class GUI (View, QMainWindow, main_window.Ui_MainWindow):
                             ['GUI', "Problem in supdate: " + trace])
 
     def abortrun(self):
-        '''This Method will abort a Fix all, Report all or Revert all run.
+        """This Method will abort a Fix all, Report all or Revert all run.
         It does this by clearing the self.threads property which allows the
         currently executing thread to finish.
         
         @author: David Kennel
 
 
-        '''
+        """
         for thread in self.threads:
             thread.stopflag = True
         self.statusBar().showMessage('Run Canceled')
         self.update_progress(1, 1)
 
     def runall(self):
-        '''Slot for the menu action Rule -> Run all. Passes through to the
+        """Slot for the menu action Rule -> Run all. Passes through to the
         controller's run all rules method.
         
         @author: David Kennel
 
 
-        '''
+        """
 
         self.update_progress(0, 0)
         self.threads = []
@@ -585,13 +590,13 @@ class GUI (View, QMainWindow, main_window.Ui_MainWindow):
         self.logger.log(LogPriority.DEBUG, ['GUI', "Run All Fix complete"])
 
     def reportall(self):
-        '''Slot for the menu action Rule -> Report All. Passes through to the
+        """Slot for the menu action Rule -> Report All. Passes through to the
         controller's report all rules method.
         
         @author: David Kennel
 
 
-        '''
+        """
 
         self.update_progress(0, 0)
         self.threads = []
@@ -605,17 +610,17 @@ class GUI (View, QMainWindow, main_window.Ui_MainWindow):
         self.logger.log(LogPriority.DEBUG, ['GUI', "Run All Report complete"])
 
     def revertall(self):
-        '''Slot for the menu action Rule -> Revert All. Passes through to the
+        """Slot for the menu action Rule -> Revert All. Passes through to the
         controller's revert all rules method.
         
         @author: David Kennel
 
 
-        '''
+        """
         self.update_progress(0, 0)
         self.threads = []
         if self.environ.geteuid() == 0:
-            reply = QMessageBox.warning(self, 'Revert Changes',
+            reply = QMessageBox.warning(self.parent(), 'Revert Changes',
                                         "Are you sure you want to revert the changes for all rules?",
                                         QMessageBox.Yes, QMessageBox.No)
             if reply == QMessageBox.Yes:
@@ -629,42 +634,41 @@ class GUI (View, QMainWindow, main_window.Ui_MainWindow):
                 self.logger.log(LogPriority.DEBUG,
                                 ['GUI', "Run All Revert complete"])
         else:
-            discard = QMessageBox.warning(self, 'Revert Changes',
+            discard = QMessageBox.warning(self.parent(), 'Revert Changes',
                                           'Root level privileges are required to undo changes!',
                                           QMessageBox.Ok)
 
     def helpabout(self):
-        '''Display the about Stonix window
+        """Display the about Stonix window
         
         @author: David Kennel
 
 
-        '''
+        """
         window = aboutStonix(self.stonixversion, self)
         window.show()
         window.raise_()
 
     def showlogbrowser(self):
-        '''Display the log browser window and load it with the log from the last
+        """Display the log browser window and load it with the log from the last
         run.
         
         @author: David Kennel
 
-
-        '''
-        window = Ui_logBrowser(self)
-        window.displaytext(self.controller.displaylastrun())
+        """
+        window = Ui_log_viewer_window(self)
+        window.display_log_text(self.controller.displaylastrun())
         window.show()
         window.raise_()
 
     def runrule(self):
-        '''Slot for the fix_button visible in the rule details pane. Calls in
+        """Slot for the fix_button visible in the rule details pane. Calls in
         turn the controller's method to run one rule.
         
         @author: David Kennel
 
 
-        '''
+        """
         self.logger.log(LogPriority.DEBUG,
                         ['GUI', "Run Rule Fix called."])
         threads = []
@@ -685,13 +689,13 @@ class GUI (View, QMainWindow, main_window.Ui_MainWindow):
                             ['GUI', "Exit Rule Fix."])
 
     def reportrule(self):
-        '''Slot for the report_button visible in the rule details pane. Calls in
+        """Slot for the report_button visible in the rule details pane. Calls in
         turn the controller's method to run one rule.
         
         @author: David Kennel
 
 
-        '''
+        """
         self.logger.log(LogPriority.DEBUG,
                         ['GUI', "Run Rule Report called."])
         self.threads = []
@@ -712,13 +716,13 @@ class GUI (View, QMainWindow, main_window.Ui_MainWindow):
                             ['GUI', "Exit Rule Report."])
 
     def revertrule(self):
-        '''Slot for the revert_button visible in the rule details pane. Calls in
+        """Slot for the revert_button visible in the rule details pane. Calls in
         turn the controller's method to revert one rule.
         
         @author: David Kennel
 
 
-        '''
+        """
         self.logger.log(LogPriority.DEBUG,
                         ['GUI', "Run Rule Revert called."])
         self.threads = []
@@ -730,7 +734,7 @@ class GUI (View, QMainWindow, main_window.Ui_MainWindow):
                             ['GUI', "Run Rule Revert running: " + rule_name])
             rule_num = self.controller.getrulenumbyname(rule_name)
             if self.environ.geteuid() == 0:
-                reply = QMessageBox.warning(self, 'Revert Changes',
+                reply = QMessageBox.warning(self.parent(), 'Revert Changes',
                                           "Are you sure you want to revert changes for rule " \
                                           + rule_name + " ?",
                                           QMessageBox.Yes, QMessageBox.No)
@@ -745,64 +749,64 @@ class GUI (View, QMainWindow, main_window.Ui_MainWindow):
                     for waitingthread in self.threads:
                         waitingthread.start()
             else:
-                discard = QMessageBox.warning(self, 'Revert Changes',
+                discard = QMessageBox.warning(self.parent(), 'Revert Changes',
                                               'Root level privileges are required to undo changes!',
                                               QMessageBox.Ok)
             self.logger.log(LogPriority.DEBUG,
                             ['GUI', "Exit Rule Revert."])
 
     def savechanges(self):
-        '''Slot for the save button visible in the ciFrame pane. Saves changes to
+        """Slot for the save button visible in the ciFrame pane. Saves changes to
         the stonix config file and updates the current values of the
         configuration items currently held by the rule objects.
         
         @author: David Kennel
 
 
-        '''
+        """
         for citem in self.ruleci:
             self.ruleci[citem].updatecivalues()
         self.controller.regenerateconfig(True)
 
     def clearchanges(self):
-        '''Slot for the cancel button visible in the ciFrame pane. Clears all
+        """Slot for the cancel button visible in the ciFrame pane. Clears all
         changes and resets the values to what is held in the currvalue of the
         ci objects.
         
         @author: David Kennel
 
 
-        '''
+        """
         for citem in self.ruleci:
             self.ruleci[citem].clearchanges()
 
     def closeEvent(self, event):
-        '''Capture the window closeEvent and clean up our lock file before
+        """Capture the window closeEvent and clean up our lock file before
         accepting the event.
         
         @author: David Kennel
 
         :param event: 
 
-        '''
+        """
         self.guiexit()
         event.accept()
 
 
 class CiFrame(QFrame):
-    '''The ciFrame manages the display for the config items for each rule. Each
+    """The ciFrame manages the display for the config items for each rule. Each
     rule is tied to it's ciFrame via the ruleci dictionary.
     
     @author: David Kennel
 
 
-    '''
+    """
     def __init__(self, parent, rulenum, controller, logger):
         """
         Constructor for the ciFrame. Expects to receive a rule number and a
         reference to the controller at time of instantiation.
 
-        @param int: rulenum - rule number that this ciFrame belongs to
+        @param int rulenum: - rule number that this ciFrame belongs to
         @param controller: the controller object
         @author: David Kennel
         """
@@ -834,7 +838,7 @@ class CiFrame(QFrame):
                     self.ci_value_label.setText('')
                     self.ci_value = QCheckBox('&Enabled')
                     self.ci_value.setChecked(opt.getcurrvalue())
-                except(TypeError):
+                except TypeError:
                     logger.log(LogPriority.ERROR,
                                ['gui.CiFrame.init',
                                 'Bool check box received bad data from ' + str(rulenum)])
@@ -865,17 +869,17 @@ class CiFrame(QFrame):
         self.setLayout(self.cframelayout)
 
     def updatecivalues(self):
-        '''This method will write the current values of the ci_value and the
+        """This method will write the current values of the ci_value and the
         ci_usercomment back to the configuration item object from which they
         came.
         @author: David Kennel
         @change: Breen Malmberg - 09/04/2018 - cannot str() typecast certain
-                unicode characters (for ex: 'ascii' codec can't encode character u'\u0301')
+                unicode characters (for ex: 'ascii' codec can't encode character u'\\u0301')
                 so str() was replaced with encode() method to handle
                 unreadable unicode characters
 
 
-        '''
+        """
 
         for opt in self.rule_config_opts:
 
@@ -901,7 +905,7 @@ class CiFrame(QFrame):
                 valid = opt.updatecurrvalue(CIobjval)
 
                 if not valid:
-                    QMessageBox.warning(self, "Validation Error", "Invalid value in CI: " + ciname + " for Rule: " + self.rulename)
+                    QMessageBox.warning(self.parent(), "Validation Error", "Invalid value in CI: " + ciname + " for Rule: " + self.rulename, QMessageBox.Ok)
                     CIobj.selectAll()
                     CIobj.setFocus()
                     return
@@ -910,18 +914,18 @@ class CiFrame(QFrame):
                 opt.setusercomment(usercommentval)
 
             except UnicodeEncodeError:
-                QMessageBox.warning(self, "Encoding Error", "Failed to save configuration changes to stonix.conf because there are 1 or more untranslatable unicode characters in the value for CI: " + ciname + " in the Rule: " + self.rulename)
+                QMessageBox.warning(self.parent(), "Encoding Error", "Failed to save configuration changes to stonix.conf because there are 1 or more untranslatable unicode characters in the value for CI: " + ciname + " in the Rule: " + self.rulename, QMessageBox.Ok)
                 return
             except:
                 raise
 
     def clearchanges(self):
-        '''This method will undo any changes that the user has made to any of the
+        """This method will undo any changes that the user has made to any of the
         ci feilds in the gui.
         @author: David Kennel
 
 
-        '''
+        """
         for opt in self.rule_config_opts:
             datatype = opt.getdatatype()
             name = opt.getkey()
@@ -937,18 +941,21 @@ class CiFrame(QFrame):
                 rawlist = opt.getcurrvalue()
                 strlist = ''
                 for item in rawlist:
-                    strlist = strlist + item + ' '
+                    if type(item) is bytes:
+                        strlist += + item.decode('utf-8') + ' '
+                    else:
+                        strlist += item + ' '
                 mydata.setText(strlist)
             myuc.setPlainText(opt.getusercomment())
 
 
 class aboutStonix(QDialog):
-    '''The aboutStonix class displays a simple popup dialog containing basic
+    """The aboutStonix class displays a simple popup dialog containing basic
     information about the stonix app.
     @author: David Kennel
 
 
-    '''
+    """
 
     def __init__(self, stonixversion, parent=None):
         """
@@ -963,7 +970,7 @@ class aboutStonix(QDialog):
         self.textLabel3.setGeometry(QRect(10, 10, 400, 201))
 
         self.closebutton = QPushButton('Close', self)
-        self.closebutton.clicked.connect(self.close)
+        QObject.connect(self.closebutton, SIGNAL('clicked()'), self.close)
 
         mainlayout = QVBoxLayout()
         mainlayout.addWidget(self.textLabel3)
@@ -977,91 +984,38 @@ class aboutStonix(QDialog):
         # self.clearWState(Qt.WState_Polished)
 
     def languageChange(self):
-        '''set window's title, stonix version and copyright text'''
+        """set window's title, stonix version and copyright text"""
 
         self.setWindowTitle("About LANL-STONIX")
 
-        copyrightText = '''Copyright 2015-2019.  Los Alamos National Security, LLC. This material was \n
-produced under U.S. Government contract DE-AC52-06NA25396 for Los Alamos \n
-National Laboratory (LANL), which is operated by Los Alamos National \n
-Security, LLC for the U.S. Department of Energy. The U.S. Government has \n
-rights to use, reproduce, and distribute this software.  NEITHER THE \n
-GOVERNMENT NOR LOS ALAMOS NATIONAL SECURITY, LLC MAKES ANY WARRANTY, \n
-EXPRESS OR IMPLIED, OR ASSUMES ANY LIABILITY FOR THE USE OF THIS SOFTWARE. \n
-If software is modified to produce derivative works, such modified software \n
-should be clearly marked, so as not to confuse it with the version \n
-available from LANL. \n
+        copyrightText = """Copyright 2019. Triad National Security, LLC. All rights reserved. 
+This program was produced under U.S. Government contract 89233218CNA000001 
+for Los Alamos National Laboratory (LANL), which is operated by Triad 
+National Security, LLC for the U.S. Department of Energy/National Nuclear 
+Security Administration.
 
-Additionally, this program is free software; you can redistribute it and/or \n
-modify it under the terms of the GNU General Public License as published by \n
-the Free Software Foundation; either version 2 of the License, or (at your \n
-option) any later version. Accordingly, this program is distributed in the \n
-hope that it will be useful, but WITHOUT ANY WARRANTY; without even the \n
-implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. \n
-See the GNU General Public License for more details.'''
+All rights in the program are reserved by Triad National Security, LLC, and 
+the U.S. Department of Energy/National Nuclear Security Administration. The 
+Government is granted for itself and others acting on its behalf a 
+nonexclusive, paid-up, irrevocable worldwide license in this material to 
+reproduce, prepare derivative works, distribute copies to the public, 
+perform publicly and display publicly, and to permit others to do so."""
 
-        self.textLabel3.setText(self.__tr("<p align=\"center\"><b><font size=\"+1\">LANL-stonix-" + str(self.stonixversion) + "</font></b></p><br><p align=\"center\">Los Alamos National Laboratory Security Tool On *NIX</p><br><p align=\"center\">" + copyrightText + "</p>"))
+        self.textLabel3.setText(self.__tr("<p align=\"center\"><b><font size=\"+1\">LANL-stonix-" + str(self.stonixversion) + "</font></b></p><br><p align=\"center\">Los Alamos National Laboratory Security Tool On *NIX</p><br><p align=\"center\"><pre>" + copyrightText + "</pre></p>"))
 
     def __tr(self, s, c=None):
-        '''
+        """
 
         @param s:
         @param c:
         @return:
-        '''
+        """
 
         return QApplication.translate("aboutStonix", s, c)
 
 
-class Ui_logBrowser(QDialog):
-    '''The Ui_logBrowser class displays a read only text browser which displays
-    the stonix logs.
-    
-    @author: David Kennel
-
-
-    '''
-    def __init__(self, parent=None):
-        QDialog.__init__(self, parent)
-        # self.sizeGripEnabled(True)
-        self.buttonBox = QDialogButtonBox(self)
-        # self.buttonBox.setGeometry(QRect(50, 260, 341, 32))
-        self.buttonBox.setOrientation(Qt.Horizontal)
-        self.buttonBox.setStandardButtons(QDialogButtonBox.Close)
-        self.textBrowser = QTextBrowser(self)
-        # self.textBrowser.setGeometry(QRect(0, 0, 401, 261))
-        layout = QVBoxLayout()
-        layout.addWidget(self.textBrowser)
-        layout.addWidget(self.buttonBox)
-        self.setLayout(layout)
-        self.retranslateUi()
-        QObject.connect(self.buttonBox, SIGNAL("clicked(QAbstractButton*)"),
-                        self.close)
-        QMetaObject.connectSlotsByName(self)
-        self.resize(QSize(800, 600).expandedTo(self.minimumSizeHint()))
-
-    def retranslateUi(self):
-        self.setWindowTitle("Log Viewer")
-
-    def displaytext(self, text):
-        '''Display the submitted text in the textBrowser.
-
-        :param string: or list:
-        @author David Kennel
-        :param text: 
-
-        '''
-        if type(text) is list:
-            temptext = ''
-            for line in text:
-                temptext = temptext + line
-            text = temptext
-        self.textBrowser.setPlainText(text)
-        self.textBrowser.setReadOnly(True)
-
-
 class runThread(QThread):
-    '''Thread to manage the running of the full Report, Fix and Undo runs. Running
+    """Thread to manage the running of the full Report, Fix and Undo runs. Running
     this in a thread keeps the main loop available to update the GUI. A
     reference to the controller object is required at class instantiation. An
     action to be performed is also required and must be one of 'report', 'fix',
@@ -1073,7 +1027,7 @@ class runThread(QThread):
     object which this class will interpret to mean run all rules.
     @author: David Kennel
 
-    '''
+    """
     def __init__(self, controller, action, logger, ruleid=None):
         super(runThread, self).__init__()
         self.controller = controller
@@ -1081,7 +1035,7 @@ class runThread(QThread):
         self.ruleidlist = []
         self.logger = logger
         self.stopflag = False
-        if ruleid == None:
+        if ruleid is None:
             self.rule_data = self.controller.getallrulesdata()
             for rnum in self.rule_data:
                 ruleid = rnum
@@ -1094,7 +1048,7 @@ class runThread(QThread):
         self.moveToThread(self)
 
     def run(self):
-        '''The run method will run the rules calling their fix, report or undo
+        """The run method will run the rules calling their fix, report or undo
         methods as directed by the action.
         
         @author: David Kennel
@@ -1110,7 +1064,7 @@ class runThread(QThread):
                 box message that pops up in the gui when a type validation error occurs
 
 
-        '''
+        """
 
         if self.stopflag:
             return

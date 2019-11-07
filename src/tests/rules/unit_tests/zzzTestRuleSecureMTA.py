@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 ###############################################################################
 #                                                                             #
 # Copyright 2019. Triad National Security, LLC. All rights reserved.          #
@@ -27,7 +27,7 @@ This is a Unit Test for Rule SecureMTA
                         file as well as with the test harness.
 @change: 2016/07/29 eball Changed pfTmp path to fix cross-device link errors
 '''
-from __future__ import absolute_import
+
 import os
 import unittest
 import sys
@@ -134,7 +134,7 @@ class zzzTestRuleSecureMTA(RuleTest):
                     pfdata, "notpresent", "openeq")
                 if not self.postfixed.report():
                     if self.postfixed.removeables:
-                        print "kveditor has removeables\n"
+                        print("kveditor has removeables\n")
                         if not self.postfixed.fix():
                             success = False
             if os.path.exists(self.smPath):

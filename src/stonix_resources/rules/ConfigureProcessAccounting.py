@@ -24,15 +24,15 @@ This rule will enable process accounting, using the acct/psacct service.
 @change: 2017/10/23 rsn - change to new service helper interface
 """
 
-from __future__ import absolute_import
+
 
 import traceback
 
-from ..stonixutilityfunctions import iterate
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..pkghelper import Pkghelper
-from ..ServiceHelper import ServiceHelper
+from stonixutilityfunctions import iterate
+from rule import Rule
+from logdispatcher import LogPriority
+from pkghelper import Pkghelper
+from ServiceHelper import ServiceHelper
 
 
 class ConfigureProcessAccounting(Rule):

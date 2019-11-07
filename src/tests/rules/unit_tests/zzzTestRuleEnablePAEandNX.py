@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 ###############################################################################
 #                                                                             #
 # Copyright 2019. Triad National Security, LLC. All rights reserved.          #
@@ -23,7 +23,7 @@ This is a Unit Test for Rule EnablePAEandNX
 @author: Breen Malmberg
 @change: 5/9/2016 Original Implementation
 '''
-from __future__ import absolute_import
+
 
 import sys
 import unittest

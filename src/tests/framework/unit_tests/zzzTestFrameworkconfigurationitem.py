@@ -1,4 +1,4 @@
-#!/usr/bin/python -d
+#!/usr/bin/env python3 -d
 ###############################################################################
 #                                                                             #
 # Copyright 2019. Triad National Security, LLC. All rights reserved.          #
@@ -142,217 +142,217 @@ class zzzTestFrameworkconfigurationitem(unittest.TestCase):
         pass
 
     def testStrGetKey(self):
-        self.failUnlessEqual(self.tostr.getkey(), 'stringkey')
+        self.assertEqual(self.tostr.getkey(), 'stringkey')
 
     def testStrGetDefValue(self):
-        self.failUnlessEqual(self.tostr.getdefvalue(), 'stringdefaultval')
+        self.assertEqual(self.tostr.getdefvalue(), 'stringdefaultval')
 
     def testStrGetDataType(self):
-        self.failUnlessEqual(self.tostr.getdatatype(), 'string')
+        self.assertEqual(self.tostr.getdatatype(), 'string')
 
     def testStrGetInstructions(self):
-        self.failUnlessEqual(self.tostr.getinstructions(),
+        self.assertEqual(self.tostr.getinstructions(),
                              'String instructions')
 
     def testStrInSimple(self):
-        self.failUnlessEqual(self.tostr.insimple(), True)
+        self.assertEqual(self.tostr.insimple(), True)
 
     def testStrGetSetUC(self):
-        self.failUnlessEqual(self.tostr.getusercomment(),
+        self.assertEqual(self.tostr.getusercomment(),
                              'String user comment')
         self.tostr.setusercomment('New user comment')
-        self.failUnlessEqual(self.tostr.getusercomment(),
+        self.assertEqual(self.tostr.getusercomment(),
                              'New user comment')
 
     def testStrGetSetCurVal(self):
-        self.failUnlessEqual(self.tostr.getcurrvalue(),
+        self.assertEqual(self.tostr.getcurrvalue(),
                              'strcurval')
         self.tostr.updatecurrvalue('wowza')
-        self.failUnlessEqual(self.tostr.getcurrvalue(),
+        self.assertEqual(self.tostr.getcurrvalue(),
                              'wowza')
 
     # Testing bools
     def testBoolGetKey(self):
-        self.failUnlessEqual(self.tobool.getkey(), 'boolkey')
+        self.assertEqual(self.tobool.getkey(), 'boolkey')
 
     def testBoolGetDefValue(self):
-        self.failUnlessEqual(self.tobool.getdefvalue(), True)
+        self.assertEqual(self.tobool.getdefvalue(), True)
 
     def testBoolGetDataType(self):
-        self.failUnlessEqual(self.tobool.getdatatype(), 'bool')
+        self.assertEqual(self.tobool.getdatatype(), 'bool')
 
     def testBoolGetInstructions(self):
-        self.failUnlessEqual(self.tobool.getinstructions(),
+        self.assertEqual(self.tobool.getinstructions(),
                              'bool instructions')
 
     def testBoolInSimple(self):
-        self.failUnlessEqual(self.tobool.insimple(), False)
+        self.assertEqual(self.tobool.insimple(), False)
 
     def testBoolGetSetUC(self):
-        self.failUnlessEqual(self.tobool.getusercomment(),
+        self.assertEqual(self.tobool.getusercomment(),
                              'bool user comment')
         self.tobool.setusercomment('New user comment')
-        self.failUnlessEqual(self.tobool.getusercomment(),
+        self.assertEqual(self.tobool.getusercomment(),
                              'New user comment')
 
     def testBoolGetSetCurVal(self):
-        self.failUnlessEqual(self.tobool.getcurrvalue(),
+        self.assertEqual(self.tobool.getcurrvalue(),
                              True)
         self.tobool.updatecurrvalue(False)
-        self.failUnlessEqual(self.tobool.getcurrvalue(),
+        self.assertEqual(self.tobool.getcurrvalue(),
                              False)
 
     # Testing ints
     def testIntGetKey(self):
-        self.failUnlessEqual(self.toint.getkey(), 'intkey')
+        self.assertEqual(self.toint.getkey(), 'intkey')
 
     def testIntGetDefValue(self):
-        self.failUnlessEqual(self.toint.getdefvalue(), 1)
+        self.assertEqual(self.toint.getdefvalue(), 1)
 
     def testIntGetDataType(self):
-        self.failUnlessEqual(self.toint.getdatatype(), 'int')
+        self.assertEqual(self.toint.getdatatype(), 'int')
 
     def testIntGetInstructions(self):
-        self.failUnlessEqual(self.toint.getinstructions(),
+        self.assertEqual(self.toint.getinstructions(),
                              'int instructions')
 
     def testIntInSimple(self):
-        self.failUnlessEqual(self.toint.insimple(), False)
+        self.assertEqual(self.toint.insimple(), False)
 
     def testIntGetSetUC(self):
-        self.failUnlessEqual(self.toint.getusercomment(),
+        self.assertEqual(self.toint.getusercomment(),
                              'int user comment')
         self.toint.setusercomment('New user comment')
-        self.failUnlessEqual(self.toint.getusercomment(),
+        self.assertEqual(self.toint.getusercomment(),
                              'New user comment')
 
     def testIntGetSetCurVal(self):
-        self.failUnlessEqual(self.toint.getcurrvalue(),
+        self.assertEqual(self.toint.getcurrvalue(),
                              2)
         self.toint.updatecurrvalue(3)
-        self.failUnlessEqual(self.toint.getcurrvalue(),
+        self.assertEqual(self.toint.getcurrvalue(),
                              3)
 
     # Testing Floats
     def testFloatGetKey(self):
-        self.failUnlessEqual(self.tofloat.getkey(), 'floatkey')
+        self.assertEqual(self.tofloat.getkey(), 'floatkey')
 
     def testFloatGetDefValue(self):
-        self.failUnlessEqual(self.tofloat.getdefvalue(), 3.5)
+        self.assertEqual(self.tofloat.getdefvalue(), 3.5)
 
     def testFloatGetDataType(self):
-        self.failUnlessEqual(self.tofloat.getdatatype(), 'float')
+        self.assertEqual(self.tofloat.getdatatype(), 'float')
 
     def testFloatGetInstructions(self):
-        self.failUnlessEqual(self.tofloat.getinstructions(),
+        self.assertEqual(self.tofloat.getinstructions(),
                              'float instructions')
 
     def testFloatInSimple(self):
-        self.failUnlessEqual(self.tofloat.insimple(), False)
+        self.assertEqual(self.tofloat.insimple(), False)
 
     def testFloatGetSetUC(self):
-        self.failUnlessEqual(self.tofloat.getusercomment(),
+        self.assertEqual(self.tofloat.getusercomment(),
                              'float user comment')
         self.tofloat.setusercomment('New user comment')
-        self.failUnlessEqual(self.tofloat.getusercomment(),
+        self.assertEqual(self.tofloat.getusercomment(),
                              'New user comment')
 
     def testFloatGetSetCurVal(self):
-        self.failUnlessEqual(self.tofloat.getcurrvalue(),
+        self.assertEqual(self.tofloat.getcurrvalue(),
                              4.2)
         self.tofloat.updatecurrvalue(42.1)
-        self.failUnlessEqual(self.tofloat.getcurrvalue(),
+        self.assertEqual(self.tofloat.getcurrvalue(),
                              42.1)
 
     # Testing Lists
     def testListGetKey(self):
-        self.failUnlessEqual(self.tolist.getkey(), 'listkey')
+        self.assertEqual(self.tolist.getkey(), 'listkey')
 
     def testListGetDefValue(self):
-        self.failUnlessEqual(self.tolist.getdefvalue(), self.lista)
+        self.assertEqual(self.tolist.getdefvalue(), self.lista)
 
     def testListGetDataType(self):
-        self.failUnlessEqual(self.tolist.getdatatype(), 'list')
+        self.assertEqual(self.tolist.getdatatype(), 'list')
 
     def testListGetInstructions(self):
-        self.failUnlessEqual(self.tolist.getinstructions(),
+        self.assertEqual(self.tolist.getinstructions(),
                              'list instructions')
 
     def testListInSimple(self):
-        self.failUnlessEqual(self.tolist.insimple(), False)
+        self.assertEqual(self.tolist.insimple(), False)
 
     def testListGetSetUC(self):
-        self.failUnlessEqual(self.tolist.getusercomment(),
+        self.assertEqual(self.tolist.getusercomment(),
                              'list user comment')
         self.tolist.setusercomment('New user comment')
-        self.failUnlessEqual(self.tolist.getusercomment(),
+        self.assertEqual(self.tolist.getusercomment(),
                              'New user comment')
 
     def testListGetSetCurVal(self):
-        self.failUnlessEqual(self.tolist.getcurrvalue(),
+        self.assertEqual(self.tolist.getcurrvalue(),
                              self.listb)
         listc = [1, 2, 3, 4]
         self.tolist.updatecurrvalue(listc, False)
-        self.failUnlessEqual(self.tolist.getcurrvalue(),
+        self.assertEqual(self.tolist.getcurrvalue(),
                              listc)
 
     # Testing Dicts
     def testDictGetKey(self):
-        self.failUnlessEqual(self.todict.getkey(), 'dictkey')
+        self.assertEqual(self.todict.getkey(), 'dictkey')
 
     def testDictGetDefValue(self):
-        self.failUnlessEqual(self.todict.getdefvalue(), self.dicta)
+        self.assertEqual(self.todict.getdefvalue(), self.dicta)
 
     def testDictGetDataType(self):
-        self.failUnlessEqual(self.todict.getdatatype(), 'dict')
+        self.assertEqual(self.todict.getdatatype(), 'dict')
 
     def testDictGetInstructions(self):
-        self.failUnlessEqual(self.todict.getinstructions(),
+        self.assertEqual(self.todict.getinstructions(),
                              'dict instructions')
 
     def testDictInSimple(self):
-        self.failUnlessEqual(self.todict.insimple(), False)
+        self.assertEqual(self.todict.insimple(), False)
 
     def testDictGetSetUC(self):
-        self.failUnlessEqual(self.todict.getusercomment(),
+        self.assertEqual(self.todict.getusercomment(),
                              'dict user comment')
         self.todict.setusercomment('New user comment')
-        self.failUnlessEqual(self.todict.getusercomment(),
+        self.assertEqual(self.todict.getusercomment(),
                              'New user comment')
 
     def testDictGetSetCurVal(self):
-        self.failUnlessEqual(self.todict.getcurrvalue(),
+        self.assertEqual(self.todict.getcurrvalue(),
                              self.dictb)
         mydict = self.todict.getcurrvalue()
         mydict['yellow'] = 9
         self.todict.updatecurrvalue(mydict)
-        self.failUnlessEqual(self.todict.getcurrvalue(),
+        self.assertEqual(self.todict.getcurrvalue(),
                              mydict)
 
 # Tests for new functionality with 4/14 revisions
     def testNewSetKey(self):
         self.tonew1.setkey('foo')
-        self.failUnlessEqual(self.tonew1.getkey(), 'foo')
+        self.assertEqual(self.tonew1.getkey(), 'foo')
 
     def testNewSetInstructions(self):
         self.tonew1.setinstructions('test instructions')
-        self.failUnlessEqual(self.tonew1.getinstructions(),
+        self.assertEqual(self.tonew1.getinstructions(),
                              'test instructions')
 
     def testNewSetDefault(self):
         self.tonew1.setdefvalue(True)
-        self.failUnlessEqual(self.tonew1.getdefvalue(), True)
+        self.assertEqual(self.tonew1.getdefvalue(), True)
 
     def testNewSetSimple(self):
         self.tonew1.setsimple(False)
-        self.failUnlessEqual(self.tonew1.insimple(), False)
+        self.assertEqual(self.tonew1.insimple(), False)
 
     def testRegExValidation(self):
         self.tonew2.setkey('foo')
         self.tonew2.setinstructions('test instructions')
         self.tonew2.setdefvalue('bar')
         self.tonew2.setregexpattern('baz')
-        self.failUnless(self.tonew2.updatecurrvalue('baz'))
+        self.assertTrue(self.tonew2.updatecurrvalue('baz'))
         self.assertFalse(self.tonew2.updatecurrvalue('bongo'))
 
     def testListValidation(self):
@@ -361,19 +361,19 @@ class zzzTestFrameworkconfigurationitem(unittest.TestCase):
         testlist = ['bar', 'baz', 'flumph', 'frob']
         self.tonew3.setvalidvalueset(testlist)
         self.tonew3.setdefvalue(['bar'])
-        self.failUnless(self.tonew3.updatecurrvalue(['flumph', 'frob'], False))
+        self.assertTrue(self.tonew3.updatecurrvalue(['flumph', 'frob'], False))
         self.assertFalse(self.tonew3.updatecurrvalue(['bongo'], False))
 
     def testStringInSetValidation(self):
         self.tonew2.setkey('foo')
         self.tonew2.setinstructions('test instructions')
         faillist = ['bar', 'baz', 'flumph', 2]
-        self.failUnlessRaises(TypeError,
+        self.assertRaises(TypeError,
                           self.tonew2.setvalidvalueset, faillist)
         testlist = ['bar', 'baz', 'flumph', 'frob']
         self.tonew2.setdefvalue('baz')
         self.tonew2.setvalidvalueset(testlist)
-        self.failUnless(self.tonew2.updatecurrvalue('bar'))
+        self.assertTrue(self.tonew2.updatecurrvalue('bar'))
         self.assertFalse(self.tonew2.updatecurrvalue('bongo'))
 
     def testDataCoercionList(self):
@@ -382,24 +382,24 @@ class zzzTestFrameworkconfigurationitem(unittest.TestCase):
         testlist = ['bar', 'baz', 'flumph', 'frob']
         self.tonew3.setvalidvalueset(testlist)
         self.tonew3.setdefvalue(['bar'])
-        self.failUnless(self.tonew3.updatecurrvalue('flumph frob'))
+        self.assertTrue(self.tonew3.updatecurrvalue('flumph frob'))
         self.assertFalse(self.tonew3.updatecurrvalue('bongo frob'))
 
     def testDataCoercionInt(self):
         self.tonew4.setkey('foo')
         self.tonew4.setinstructions('test instructions')
         self.tonew4.setdefvalue(15)
-        self.failUnlessRaises(TypeError,
+        self.assertRaises(TypeError,
                           self.tonew4.setregexpattern, 'fail')
-        self.failUnless(self.tonew4.updatecurrvalue('30'))
-        self.failUnlessEqual(30, self.tonew4.getcurrvalue())
+        self.assertTrue(self.tonew4.updatecurrvalue('30'))
+        self.assertEqual(30, self.tonew4.getcurrvalue())
 
     def testDataCoercionFloat(self):
         self.tonew5.setkey('foo')
         self.tonew5.setinstructions('test instructions')
         self.tonew5.setdefvalue(1.5)
-        self.failUnless(self.tonew5.updatecurrvalue('3.5'))
-        self.failUnlessEqual(3.5, self.tonew5.getcurrvalue())
+        self.assertTrue(self.tonew5.updatecurrvalue('3.5'))
+        self.assertEqual(3.5, self.tonew5.getcurrvalue())
 
 if __name__ == "__main__":
     # import sys;sys.argv = ['', 'Test.testName']

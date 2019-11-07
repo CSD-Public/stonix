@@ -24,18 +24,18 @@ Created on May 27, 2016
 @change: 2018/08/29 Brandon R. Gonzales - increased the sleep time in fixes to
     give iptables more time to restart
 '''
-from __future__ import absolute_import
+
 
 import os
 import traceback
 import re
 import time
 
-from ..ServiceHelper import ServiceHelper
-from ..CommandHelper import CommandHelper
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..stonixutilityfunctions import iterate, writeFile, readFile, createFile, checkPerms, setPerms, resetsecon
+from ServiceHelper import ServiceHelper
+from CommandHelper import CommandHelper
+from rule import Rule
+from logdispatcher import LogPriority
+from stonixutilityfunctions import iterate, writeFile, readFile, createFile, checkPerms, setPerms, resetsecon
 
 
 class ConfigureLinuxFirewall(Rule):
@@ -112,13 +112,11 @@ CONFIGURELINUXFIREWALL to False.'''
             catchall6 = False
             self.detailedresults = ""
             scriptExists = ""
+
             if self.checkFirewalld():
-                if self.servicehelper.auditService('firewalld.service', serviceTarget=self.serviceTarget):
-                    compliant = True
-                else:
+                if not self.servicehelper.auditService('firewalld.service', serviceTarget=self.serviceTarget):
                     compliant = False
-                    self.detailedresults = 'This system appears to have ' + \
-                        'firewalld but it is not running as required'
+                    self.detailedresults = 'This system appears to have firewalld but it is not running as required'
 
             elif self.checkUFW():
                 cmdufw = '/usr/sbin/ufw status'
@@ -196,19 +194,61 @@ CONFIGURELINUXFIREWALL to False.'''
                                 catchall = True
                                 break
 
-                if self.ip6tables:
-                    cmd6 = [self.ip6tables, "-L"]
-                    if not self.cmdhelper.executeCommand(cmd6):
-                        self.detailedresults += "Unable to run " + \
-                            "ip6tables -L command\n"
-                        compliant = False
+                # check to see if the kernel was compiled with ipv6 support first
+                lsmod_paths = ["/sbin/lsmod", "/usr/sbin/lsmod"]
+                lsmod_path = ""
+                for p in lsmod_paths:
+                    if os.path.exists(p):
+                        lsmod_path = p
+                if lsmod_path:
+                    check_ipv6_kernel = "/sbin/lsmod | grep -w 'ipv6'"
+                    self.cmdhelper.executeCommand(check_ipv6_kernel)
+                    retcode = self.cmdhelper.getReturnCode()
+                    if retcode == 0:
+                        # if system has kernel support for ipv6, then check for ip6tables bin, then do ip6tables rules check
+                        if self.ip6tables:
+                            cmd6 = [self.ip6tables, "-L"]
+                            if not self.cmdhelper.executeCommand(cmd6):
+                                self.detailedresults += "Unable to run " + \
+                                    "ip6tables -L command\n"
+                                compliant = False
+                            else:
+                                output6 = self.cmdhelper.getOutput()
+                                for line in output6:
+                                    if re.search('Chain INPUT \(policy REJECT\)|REJECT' +
+                                                 '\s+all\s+anywhere\s+anywhere', line):
+                                        catchall6 = True
+                                        break
+                        if not catchall6:
+                            compliant = False
+                            self.detailedresults += 'This system appears to use ' + \
+                                                    'ip6tables but does not contain the expected rules. ' + \
+                                                    'If the DisableIPV6 rule was run before this rule, this is ' + \
+                                                    'acceptable behavior.\n'
+                            self.logger.log(LogPriority.DEBUG,
+                                            ['ConfigureLinuxFirewall.report',
+                                             "Missing v6 deny all."])
+                        if not ip6tablesenabled:
+                            compliant = False
+                            self.detailedresults += "ip6tables not enabled " + \
+                                                    'If the DisableIPV6 rule was run before this rule, this is ' + \
+                                                    'acceptable behavior.\n'
+                        if not ip6tablesrunning:
+                            compliant = False
+                            self.detailedresults += 'This system appears to use ' + \
+                                                    'ip6tables but it is not running as required. ' + \
+                                                    'If the DisableIPV6 rule was run before this rule, this is ' + \
+                                                    'acceptable behavior.\n'
+                            self.logger.log(LogPriority.DEBUG,
+                                            ['ConfigureLinuxFirewall.report',
+                                             "RHEL 6 type system. IP6tables not running."])
                     else:
-                        output6 = self.cmdhelper.getOutput()
-                        for line in output6:
-                            if re.search('Chain INPUT \(policy REJECT\)|REJECT' +
-                                         '\s+all\s+anywhere\s+anywhere', line):
-                                catchall6 = True
-                                break
+                        self.logger.log(LogPriority.DEBUG, "This system's kernel was compiled without ipv6 support. Skipping ip6tables checks...")
+                        self.detailedresults += "\nThis system does not have support for ipv6. Skipping ip6tables checks..."
+
+                else:
+                    self.logger.log(LogPriority.DEBUG, "Unable to detect lsmod utility - which is required to perform a necessary pre-check before attempting to run ip6tables commands.")
+                    self.detailedresults += "\nUnable to determine if this system has support for ipv6. Skipping ip6tables checks..."
 
                 if not catchall:
                     compliant = False
@@ -217,15 +257,7 @@ CONFIGURELINUXFIREWALL to False.'''
                     self.logger.log(LogPriority.DEBUG,
                                     ['ConfigureLinuxFirewall.report',
                                      "Missing v4 deny all."])
-                if not catchall6:
-                    compliant = False
-                    self.detailedresults += 'This system appears to use ' + \
-                        'ip6tables but does not contain the expected rules. ' + \
-                        'If the DisableIPV6 rule was run before this rule, this is ' + \
-                        'acceptable behavior.\n'
-                    self.logger.log(LogPriority.DEBUG,
-                                    ['ConfigureLinuxFirewall.report',
-                                     "Missing v6 deny all."])
+
                 if not iptablesrunning:
                     compliant = False
                     self.detailedresults += 'This system appears to use ' + \
@@ -236,20 +268,7 @@ CONFIGURELINUXFIREWALL to False.'''
                 if not iptablesenabled:
                     compliant = False
                     self.detailedresults += "iptables not enabled\n"
-                if not ip6tablesenabled:
-                    compliant = False
-                    self.detailedresults += "ip6tables not enabled " + \
-                        'If the DisableIPV6 rule was run before this rule, this is ' + \
-                        'acceptable behavior.\n'
-                if not ip6tablesrunning:
-                    compliant = False
-                    self.detailedresults += 'This system appears to use ' + \
-                        'ip6tables but it is not running as required. ' + \
-                        'If the DisableIPV6 rule was run before this rule, this is ' + \
-                        'acceptable behavior.\n'
-                    self.logger.log(LogPriority.DEBUG,
-                                    ['ConfigureLinuxFirewall.report',
-                                     "RHEL 6 type system. IP6tables not running."])
+
                 if not scriptExists:
                     compliant = False
                     self.detailedresults += 'This system appears to use ' + \
@@ -271,7 +290,7 @@ CONFIGURELINUXFIREWALL to False.'''
 
     def fix(self):
         '''Enable the firewall services and establish basic rules if needed.
-        
+
         @author: D. Kennel
 
 
@@ -505,7 +524,7 @@ CONFIGURELINUXFIREWALL to False.'''
                                     self.detailedresults += "Unable to set permissions on " + fwpath + "\n"
                         contents = readFile(fwpath, self.logger)
                         if contents != systemconfigfirewall:
-                            print "contents don't equal systemconfigurefirewall contents\n"
+                            print("contents don't equal systemconfigurefirewall contents\n")
                             tempfile = fwpath + ".tmp"
                             if not writeFile(tempfile, systemconfigfirewall, self.logger):
                                 success = False
@@ -697,8 +716,15 @@ CONFIGURELINUXFIREWALL to False.'''
         return self.rulesuccess
 
     def checkFirewalld(self):
-        if os.path.exists('/bin/firewall-cmd') or os.path.exists('/usr/bin/firewall-cmd'):
-            return True
+        """
+
+        :return: bool; True if the firewall-cmd path exists, False if not
+        """
+
+        firewalld_paths = ["/bin/firewall-cmd", "/usr/bin/firewall-cmd"]
+        for p in firewalld_paths:
+            if os.path.exists(p):
+                return True
 
     def checkUFW(self):
         #for Ubuntu systems mostly

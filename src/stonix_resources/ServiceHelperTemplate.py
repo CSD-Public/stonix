@@ -23,10 +23,9 @@ Created on November 3, 2016
 Note: Each concrete helper will inherit this class, which will be the default 
       behavior of all service helpers.
 '''
-from __builtin__ import False
 import inspect
 
-from logdispatcher import LogPriority
+from stonix_resources.logdispatcher import LogPriority
 
 
 class MethodNotImplementedError(Exception):
@@ -85,7 +84,7 @@ class ServiceHelperTemplate(object):
             filename = inspect.stack()[2][1]
             functionName = str(inspect.stack()[2][3])
             lineNumber = str(inspect.stack()[2][2])
-        except Exception, err:
+        except Exception as err:
             raise err
         else:
             self.logdispatcher.log(LogPriority.DEBUG, "called by: " + \

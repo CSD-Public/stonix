@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import os
@@ -7,10 +7,10 @@ import time
 import getpass
 from subprocess import Popen, PIPE, STDOUT
 
-username = raw_input("Username: ")
+username = eval(input("Username: "))
 passwd = getpass.getpass('gPass: ')
 
-print passwd
+print(passwd)
 
 '''
 myenv = os.environ.copy()

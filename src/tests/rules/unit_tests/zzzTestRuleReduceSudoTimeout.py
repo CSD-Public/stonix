@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 ###############################################################################
 #                                                                             #
 # Copyright 2019. Triad National Security, LLC. All rights reserved.          #
@@ -25,7 +25,7 @@ This is a Unit Test for Rule ReduceSudoTimeout
 @change: 2016/02/10 roy Added sys.path.append for being able to unit test this
                         file as well as with the test harness.
 '''
-from __future__ import absolute_import
+
 import unittest
 import re
 import sys
@@ -67,7 +67,7 @@ class zzzTestRuleReduceSudoTimeout(RuleTest):
         self.rule.ci.updatecurrvalue(True)
         self.rule.iditerator = 0
         myid = iterate(self.rule.iditerator, self.rule.rulenumber)
-        setPerms(sudoers, [99, 99, 0770], self.logdispatch,
+        setPerms(sudoers, [99, 99, 0o770], self.logdispatch,
                  self.statechglogger, myid)
         contents = readFile(sudoers, self.logdispatch)
         for line in contents:

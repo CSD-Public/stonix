@@ -30,14 +30,15 @@ Created on Mar 12, 2013
 @change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
 @change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
+@change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
 '''
-from __future__ import absolute_import
-from ..stonixutilityfunctions import iterate, checkPerms, setPerms, resetsecon
-from ..stonixutilityfunctions import createFile
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..KVEditorStonix import KVEditorStonix
-from ..pkghelper import Pkghelper
+
+from stonixutilityfunctions import iterate, checkPerms, setPerms, resetsecon
+from stonixutilityfunctions import createFile
+from rule import Rule
+from logdispatcher import LogPriority
+from KVEditorStonix import KVEditorStonix
+from pkghelper import Pkghelper
 import traceback
 import os
 import re
@@ -75,7 +76,7 @@ class SSHTimeout(Rule):
         self.editor = ""
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.12', 'r', '10.14.10']}}
+                           'os': {'Mac OS X': ['10.15', 'r', '10.15.10']}}
         self.ph = Pkghelper(self.logger, self.environ)
 
     def report(self):
@@ -214,7 +215,7 @@ class SSHTimeout(Rule):
                 self.editor.report()
 
             if os.path.exists(self.path):
-                print "path exists\n"
+                print("path exists\n")
                 if not checkPerms(self.path, [0, 0, 0o644], self.logger):
                     if not created:
                         self.iditerator += 1
@@ -229,7 +230,7 @@ class SSHTimeout(Rule):
                             success = False
 
                 if self.editor.fixables:
-                    print "editor has fixables and they are " + str(self.editor.fixables) + "\n"
+                    print(("editor has fixables and they are " + str(self.editor.fixables) + "\n"))
                     if not created:
                         self.iditerator += 1
                         myid = iterate(self.iditerator, self.rulenumber)

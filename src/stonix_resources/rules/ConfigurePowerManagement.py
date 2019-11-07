@@ -31,15 +31,16 @@ dictionary
 @change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
 @change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
+@change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
 '''
 
-from __future__ import absolute_import
+
 
 import traceback
 import types
-from ..rule import Rule
-from ..CommandHelper import CommandHelper
-from ..logdispatcher import LogPriority
+from rule import Rule
+from CommandHelper import CommandHelper
+from logdispatcher import LogPriority
 
 
 class ConfigurePowerManagement(Rule):
@@ -71,7 +72,7 @@ class ConfigurePowerManagement(Rule):
         self.rootrequired = True
         self.guidance = []
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.12', 'r', '10.14.10']}}
+                           'os': {'Mac OS X': ['10.15', 'r', '10.15.10']}}
         self.psconfiguration = \
         {"ACDisableSystemSleep":
          {"HelpText": "Sets the Mac to stay awake if power is plugged-in. Default(AC Power, sleep, 0).",
@@ -154,7 +155,7 @@ class ConfigurePowerManagement(Rule):
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
-        except Exception, err:
+        except Exception as err:
             self.rulesuccess = False
             self.detailedresults = self.detailedresults + "\n" + str(err) + \
             " - " + str(traceback.format_exc())
@@ -204,7 +205,7 @@ class ConfigurePowerManagement(Rule):
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
-        except Exception, err:
+        except Exception as err:
             self.rulesuccess = False
             self.detailedresults = self.detailedresults + "\n" + str(err) + \
             " - " + str(traceback.format_exc())
@@ -339,7 +340,7 @@ class ConfigurePowerManagement(Rule):
 
         '''
         datatype = type(pMessage)
-        if datatype == types.StringType:
+        if datatype == str:
             if not (pMessage == ""):
                 messagestring = pMessage
                 if (self.detailedresults == ""):
@@ -347,7 +348,7 @@ class ConfigurePowerManagement(Rule):
                 else:
                     self.detailedresults = self.detailedresults + "\n" + \
                     messagestring
-        elif datatype == types.ListType:
+        elif datatype == list:
             if not (pMessage == []):
                 for item in pMessage:
                     messagestring = item
@@ -359,6 +360,6 @@ class ConfigurePowerManagement(Rule):
         else:
             raise TypeError("pMessage with value" + str(pMessage) + \
                             "is of type " + str(datatype) + " not of " + \
-                            "type " + str(types.StringType) + \
-                            " or type " + str(types.ListType) + \
+                            "type " + str(str) + \
+                            " or type " + str(list) + \
                             " as expected!")

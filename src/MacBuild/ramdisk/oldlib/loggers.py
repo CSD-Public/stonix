@@ -65,7 +65,7 @@ class CyLogger(object):
     def __init__(self, environ=False, debug_mode=False, verbose_mode=False, level=30):
         """
         """
-        print ".............Level: " + str(level)
+        print((".............Level: " + str(level)))
         self.lvl = int(level)
         if environ:
             self.environment = environ
@@ -142,7 +142,7 @@ class CyLogger(object):
         if self.rotate:
             try:
                 self.logr.handlers.RotatingFileHandler.doRollover()
-            except Exception, err:
+            except Exception as err:
                 self.logr.log(LogPriority.WARNING, "Exception: " + str(err))
 
     #############################################

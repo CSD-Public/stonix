@@ -6,7 +6,7 @@ unionfs functionality.
 
 @author: Roy Nielsen
 """
-from __future__ import absolute_import
+
 import os
 import re
 import inspect
@@ -143,7 +143,7 @@ class ManageUserTemplate(object):
 
         '''
         sane = False
-        if isinstance(filepath, basestring):
+        if isinstance(filepath, str):
             if re.match("^[A-Za-z/\.][A-Za-z0-9/\.]*", filepath):
                 sane = True
         return sane
@@ -160,7 +160,7 @@ class ManageUserTemplate(object):
 
         '''
         sane = False
-        if userName and isinstance(userName, basestring):
+        if userName and isinstance(userName, str):
             if re.match("^[A-Za-z][A-Za-z0-9]*", userName):
                 sane = True
         return sane
@@ -177,7 +177,7 @@ class ManageUserTemplate(object):
 
         '''
         sane = False
-        if groupName and isinstance(groupName, basestring):
+        if groupName and isinstance(groupName, str):
             if re.match("^[A-Za-z][A-Za-z0-9]*", groupName):
                 sane = True
         return sane
@@ -208,7 +208,7 @@ class ManageUserTemplate(object):
 
         '''
         sane = False
-        if userComment and isinstance(userComment, basestring):
+        if userComment and isinstance(userComment, str):
             if re.match("^[A-Za-z][A-Za-z0-9]*", userComment):
                 sane = True
         return sane
@@ -224,7 +224,7 @@ class ManageUserTemplate(object):
 
         '''
         sane = False
-        if userUid and isinstance(userUid, [basestring, int]):
+        if userUid and isinstance(userUid, [str, int]):
             if re.match("^\d+", str(userUid)):
                 sane = True
         return sane
@@ -240,7 +240,7 @@ class ManageUserTemplate(object):
 
         '''
         sane = False
-        if userPriGid and isinstance(userPriGid, [basestring, int]):
+        if userPriGid and isinstance(userPriGid, [str, int]):
             if re.match("^\d+", str(userPriGid)):
                 sane = True
         return sane
@@ -398,7 +398,7 @@ class ManageUserTemplate(object):
         try:
             sudoers = os.open("/etc/sudoers", "r")
         except OSError:
-            print "Problem trying to open the sudoers file for reading..."
+            print("Problem trying to open the sudoers file for reading...")
         else:
             lines = sudoers.readlines()
             #####

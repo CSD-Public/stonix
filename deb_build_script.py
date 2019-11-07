@@ -1,3 +1,5 @@
+#!/bin/env python3
+
 ###############################################################################
 #                                                                             #
 # Copyright 2019. Triad National Security, LLC. All rights reserved.          #
@@ -15,8 +17,7 @@
 #                                                                             #
 ###############################################################################
 
-#!/bin/env python
-'''
+"""
 Created on Feb 28, 2014
 
 build script for stonix package on debian systems
@@ -24,7 +25,7 @@ build script for stonix package on debian systems
 @author Breen Malmberg
 @change: Breen Malmberg - 3/14/2017 - updated controltext and
         changelog text
-'''
+"""
 
 import os
 import re
@@ -38,8 +39,8 @@ red = False
 color = ''
 
 # get user input for variables
-revision = raw_input("Which package revision is this?\n")
-red = raw_input("Is this a red package?\n")
+revision = input("Which package revision is this?\n")
+red = input("Is this a red package?\n")
 
 if red.lower() in ["y", "yes", "t", "true"]:
     color = '-red'
@@ -48,10 +49,10 @@ curruserid = os.geteuid()
 
 # make sure user is running script with elevated privileges
 if curruserid != 0:
-    print "This script must be run as root or with sudo"
+    print("This script must be run as root or with sudo")
     quit()
 
-print "\ncorrect uid detected\n"
+print("\ncorrect uid detected\n")
 
 stonixversion = STONIXVERSION
 
@@ -60,29 +61,29 @@ controltext = '''Package: stonix''' + color + '''
 Version: ''' + str(stonixversion) + '''
 Architecture: all
 Maintainer: STONIX Dev's <stonix-dev@lanl.gov>
-Depends: python2.7
+Depends: python3
 Section: python
 Priority: extra
 Description: ''' + str(stonixversion) + ''' release of STONIX hardening tool for Ubuntu
 '''
 
-print '\ncontroltext set\n'
+print('\ncontroltext set\n')
 
 changelogtext = str(stonixversion) + ''' BETA release notes:
 http://trac.lanl.gov/cgi-bin/external/trac.cgi/wiki/STONIXreleaseNotes
 '''
 
-print '\nchangelogtext set\n'
+print('\nchangelogtext set\n')
 
 # configuration file(s) which will be deployed by the package
 conffilestext = '''/etc/stonix.conf
 '''
 
-print '\nconffilestext set\n'
+print('\nconffilestext set\n')
 
 copyrighttext = ''''''
 
-print '\ncopyrighttext set\n'
+print('\ncopyrighttext set\n')
 
 # dynamically set path variables for build directory structure for STONIX
 sourcedir = os.path.dirname(os.path.realpath(__file__)) + "/src/"
@@ -92,7 +93,7 @@ debiandir = builddir + '/DEBIAN/'
 bindir = os.path.join(builddir, 'usr/bin/')
 etcdir = os.path.join(builddir, 'etc/')
 
-print '\ndirectory variables set\n'
+print('\ndirectory variables set\n')
 
 # specify dpkg build directory structure for STONIX
 filesneeded = {debiandir + 'control': controltext,
@@ -100,7 +101,7 @@ filesneeded = {debiandir + 'control': controltext,
                debiandir + 'copyright': copyrighttext,
                debiandir + 'conffiles' : conffilestext}
 
-print '\nfilesneeded set\n'
+print('\nfilesneeded set\n')
 
 try:
 
@@ -118,7 +119,7 @@ try:
 
     # verify source directory for stonix files exists
     if not os.path.exists(sourcedir):
-        print "Directory " + sourcedir + " not found"
+        print("Directory " + sourcedir + " not found")
         quit()
 
     # verify / create all files needed by dpkg to build the package
@@ -174,6 +175,6 @@ try:
     os.system('dpkg-deb -b ' + builddir)
 
 except OSError as err:
-    print traceback.format_exc()
+    print(traceback.format_exc())
     quit()
-print "\n\n ==== Finished building package. Located at: " + builddir + ".deb ====\n\n"
+print("\n\n ==== Finished building package. Located at: " + builddir + ".deb ====\n\n")

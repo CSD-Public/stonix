@@ -20,7 +20,7 @@ Created on Jul 23, 2013
 
 @author: dwalker
 '''
-from logdispatcher import LogPriority
+from stonix_resources.logdispatcher import LogPriority
 import traceback
 import re
 import os
@@ -117,7 +117,6 @@ class KVATaggedConf():
                 if re.search("^#", line) or re.match('^\s*$', line):
                     iter1 += 1
                 elif re.search("^\[" + re.escape(tag) + "\]", line.strip()):
-                    #print "FOUNDTAG: " + str(tag) + "\n"
                     foundtag = True
                     temp = contents[iter1 + 1:]
                     iter2 = 0
@@ -144,7 +143,10 @@ class KVATaggedConf():
                             if re.search("^#", line) or re.match('^\s*$', line):
                                 continue
                             elif re.search("=", line):
-                                temp = line.strip().split("=")
+                                if line.count("=") > 1:
+                                    temp = line.strip().split("=", 1)
+                                else:
+                                    temp = line.strip().split("=")
                                 if len(temp) != 2:
                                     return "invalid"
                                 if re.match("^" + key + "$", temp[0].strip()):
@@ -164,7 +166,6 @@ class KVATaggedConf():
                 if not foundtag:
                     return True
                 if contents2:
-                    #print "the contents under the tag: " + str(contents2) + "\n"
                     for key in dict1:
                         found = False
                         for line in contents2:
@@ -302,7 +303,7 @@ class KVATaggedConf():
             if not self.contents:
                 for tag in fixables:
                     self.contents.append("[" + tag + "]\n")
-                    for k, v in fixables[tag].iteritems():
+                    for k, v in list(fixables[tag].items()):
                         if self.configType == "openeq":
                             self.contents.append(k + " = " + v + "\n")
                         elif self.configType == "closedeq":
@@ -310,6 +311,7 @@ class KVATaggedConf():
             else:
                 #iterate through each tag value and key,value pair
                 for tag in fixables:
+
                     #variable to track whether we found the desired tag or not
                     tagfound = False
                     #list variable that holds contents of file
@@ -326,6 +328,7 @@ class KVATaggedConf():
                             iter1 += 1
                         #found the tag we're looking for
                         elif re.search("^\[" + re.escape(tag) + "\]", line.strip()):
+
                             #set tagfound to True
                             tagfound = True
                             #list variable that contains all lines in the file up to and
@@ -356,6 +359,7 @@ class KVATaggedConf():
                                     iter2 += 1
                         else:
                             iter1 += 1
+
                     #we found the desired tag
                     if tagfound:
                         #there were key value pairs underneath tag
@@ -388,7 +392,7 @@ class KVATaggedConf():
                     else:
                         #never found the desired tag so just add tag and key,value pairs
                         self.contents.append("[" + tag + "]\n")
-                        for k, v in fixables[tag].iteritems():
+                        for k, v in list(fixables[tag].items()):
                             if self.configType == "openeq":
                                 self.contents.append(k + " = " + v + "\n")
                             elif self.configType == "closedeq":
@@ -452,7 +456,7 @@ class KVATaggedConf():
             if not self.contents:
                 for tag in fixables:
                     self.contents.append("[" + tag + "]\n")
-                    for k, v in fixables[tag].iteritems():
+                    for k, v in list(fixables[tag].items()):
                         self.contents.append(k + " " + v + "\n")
             else:
                 for tag in fixables:
@@ -588,7 +592,7 @@ class KVATaggedConf():
                 fh = open(tmpfile, 'w')
                 if isinstance(contents, list):
                     fh.writelines(contents)
-                elif isinstance(contents, basestring):
+                elif isinstance(contents, str):
                     fh.write(contents)
                 else:
                     self.detailedresults += "\nUnable to write to file: " + str(tmpfile)

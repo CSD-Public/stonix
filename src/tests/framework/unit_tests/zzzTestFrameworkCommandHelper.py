@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 ###############################################################################
 #                                                                             #
 # Copyright 2019. Triad National Security, LLC. All rights reserved.          #
@@ -36,7 +36,7 @@ Perform tests on different parts of the functionality for framework CommandHelpe
         (tracebacks) there, before it can come back to the assertRaise() method call, here.
 '''
 
-from __future__ import absolute_import
+
 
 import unittest
 import sys

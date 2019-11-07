@@ -22,16 +22,17 @@ dictionary
 @author: Ekkehard J. Koch
 @change: 2018/08/08 Original Implementation
 @change: 2019/03/12 Updated
+@change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
 """
 
-from __future__ import absolute_import
+
 
 import re
 import types
 
-from ..ruleKVEditor import RuleKVEditor
-from ..CommandHelper import CommandHelper
-from ..localize import APPLESOFTUPDATESERVER
+from ruleKVEditor import RuleKVEditor
+from CommandHelper import CommandHelper
+from localize import APPLESOFTUPDATESERVER
 
 
 class ConfigureAppleAppStore(RuleKVEditor):
@@ -59,7 +60,7 @@ dictionary"""
         self.guidance = ['CCE 14813-0', 'CCE 14914-6', 'CCE 4218-4',
                          'CCE 14440-2']
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.14', 'r', '10.14.10']}}
+                           'os': {'Mac OS X': ['10.15', 'r', '10.15.10']}}
 
         if self.environ.getostype() == "Mac OS X":
             self.addKVEditor("EnableAutomaticAppUpdate",
@@ -101,16 +102,16 @@ dictionary"""
 
         :param pValue: string; value to format
         :return: outputvalue - formatted string
-        :rtype: basestring
+        :rtype: str
         """
 
         outputvalue = pValue
         datatype = type(outputvalue)
-        if datatype == types.StringType:
+        if datatype == bytes:
             if not (outputvalue == ""):
                 outputvalue = re.sub("\\\\n|\(|\)|\,|\'", "", outputvalue)
                 outputvalue = re.sub("\s+", " ", outputvalue)
-        elif datatype == types.ListType:
+        elif datatype == list:
             for i, item in enumerate(outputvalue):
                 item = re.sub("\\\\n|\(|\)|\,|\'", "", item)
                 item = re.sub("\s+", " ", item)

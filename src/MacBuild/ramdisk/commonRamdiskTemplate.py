@@ -7,8 +7,8 @@ Template for the ramdisk classes
 from tempfile import mkdtemp
 
 #--- non-native python libraries in this source tree
-from lib.loggers import LogPriority as lp
-from lib.loggers import CyLogger
+from .lib.loggers import LogPriority as lp
+from .lib.loggers import CyLogger
 
 ###############################################################################
 
@@ -53,9 +53,9 @@ class RamDiskTemplate(object):
 
 
         '''
-        print "Success: " + str(self.success)
-        print "Mount point: " + str(self.mntPoint)
-        print "Device: " + str(self.myRamdiskDev)
+        print(("Success: " + str(self.success)))
+        print(("Mount point: " + str(self.mntPoint)))
+        print(("Device: " + str(self.myRamdiskDev)))
         return (self.success, str(self.mntPoint), str(self.myRamdiskDev))
 
     ###########################################################################
@@ -84,7 +84,7 @@ class RamDiskTemplate(object):
         success = False
         try :
             self.mntPoint = mkdtemp()
-        except Exception, err :
+        except Exception as err :
             self.logger.log(lp.WARNING, "Exception trying to create temporary directory")
             raise err
         else :

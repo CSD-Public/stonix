@@ -37,13 +37,13 @@ macOS (OS X) for use with stonix4mac.
 '''
 import re
 import types
-from .localize import DNS
-from .localize import PROXY
-from .localize import PROXYCONFIGURATIONFILE
-from .localize import PROXYDOMAIN
-from .localize import PROXYDOMAINBYPASS
-from .CommandHelper import CommandHelper
-from .logdispatcher import LogPriority
+from stonix_resources.localize import DNS
+from stonix_resources.localize import PROXY
+from stonix_resources.localize import PROXYCONFIGURATIONFILE
+from stonix_resources.localize import PROXYDOMAIN
+from stonix_resources.localize import PROXYDOMAINBYPASS
+from stonix_resources.CommandHelper import CommandHelper
+from stonix_resources.logdispatcher import LogPriority
 
 
 class networksetup():
@@ -287,7 +287,7 @@ class networksetup():
 
         try:
 
-            if not isinstance(pNetworkName, basestring):
+            if not isinstance(pNetworkName, str):
                 self.logdispatch.log(LogPriority.DEBUG, "Specified parameter: pNetworkName must be of type: string. Got: " + str(type(pNetworkName)))
                 success = False
 
@@ -356,7 +356,7 @@ class networksetup():
 
         try:
 
-            if not isinstance(pNetworkName, basestring):
+            if not isinstance(pNetworkName, str):
                 self.logdispatch.log(LogPriority.DEBUG, "Specified parameter: pNetworkName must be of type: string. Got: " + str(type(pNetworkName)))
                 success = False
 
@@ -582,7 +582,7 @@ class networksetup():
                 for item in linearray:
                     lineprocessed = item.strip()
                     itemarray = lineprocessed.split(":")
-                    if servicename <> "":
+                    if servicename != "":
                         if len(itemarray) > 1:
                             self.ns[servicename][itemarray[0].strip().lower()] = itemarray[1].strip()
 # update dictionary entry for network
@@ -696,7 +696,7 @@ class networksetup():
 
         '''
         datatype = type(pMessage)
-        if datatype == types.StringType:
+        if datatype == str:
             if not (pMessage == ""):
                 messagestring = pMessage
                 if (self.detailedresults == ""):
@@ -704,7 +704,7 @@ class networksetup():
                 else:
                     self.detailedresults = self.detailedresults + "\n" + \
                                            messagestring
-        elif datatype == types.ListType:
+        elif datatype == list:
             if not (pMessage == []):
                 for item in pMessage:
                     messagestring = item
@@ -716,8 +716,8 @@ class networksetup():
         else:
             raise TypeError("pMessage with value" + str(pMessage) + \
                             "is of type " + str(datatype) + " not of " + \
-                            "type " + str(types.StringType) + \
-                            " or type " + str(types.ListType) + \
+                            "type " + str(str) + \
+                            " or type " + str(list) + \
                             " as expected!")
 
 ###############################################################################
@@ -847,7 +847,7 @@ class networksetup():
             try:
                 interface_match = re.match("\s+interface:\s+(\w+)", line)
                 defaultInterface = interface_match.group(1)
-            except (IndexError, KeyError, AttributeError), err:
+            except (IndexError, KeyError, AttributeError) as err:
                 self.logdispatch.log(LogPriority.DEBUG, str(line) + " : " + str(err))
             else:
                 self.logdispatch.log(LogPriority.DEBUG, "Found: " + str(line))
@@ -868,20 +868,20 @@ class networksetup():
                 hw_match = re.match("^Hardware Port:\s+(.*)\s*$", line)
                 hardwarePort = hw_match.group(1)
                 #print hardwarePort
-            except AttributeError, err:
+            except AttributeError as err:
                 pass
             try:
                 #print line
                 dev_match = re.match("^Device:\s+(.*)\s*$", line)
                 device = dev_match.group(1)
                 #print str(device)
-            except AttributeError, err:
+            except AttributeError as err:
                 pass
             try:
                 enet_match = re.match("^Ethernet Address:\s+(\w+:\w+:\w+:\w+:\w+:\w+)\s*$", line)
                 enet = enet_match.group(1)
                 self.logger.log(LogPriority.DEBUG, "enet: " + str(enet))
-            except AttributeError, err:
+            except AttributeError as err:
                 pass
 
             if re.match("^$", line) or re.match("^\s+$", line):
@@ -901,7 +901,7 @@ class networksetup():
         self.logdispatch.log(LogPriority.DEBUG, str(self.nso))
         self.logdispatch.log(LogPriority.DEBUG, "hardware port: " + hardwarePort)
 
-        for key, value in sorted(self.nso.iteritems()):
+        for key, value in sorted(self.nso.items()):
             #print str(key) + " : " + str(value)
             if re.match("^%s$"%hardwarePort.strip(), value.strip()):
                 key = re.sub("^\d\d\d\d$", "0000", key)
@@ -914,7 +914,7 @@ class networksetup():
         #print str(newnso)
         self.nso = newnso
         self.logdispatch.log(LogPriority.DEBUG, str(self.nso))
-        for key, value in sorted(self.nso.iteritems()):
+        for key, value in sorted(self.nso.items()):
             self.logdispatch.log(LogPriority.DEBUG, str(key) + " : " + str(value))
 
         for item in self.ns: 

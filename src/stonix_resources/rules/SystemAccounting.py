@@ -15,7 +15,7 @@
 #                                                                             #
 ###############################################################################
 
-'''
+"""
 Created on Apr 15, 2015
 
 System accounting is an optional process which gathers baseline system data
@@ -38,34 +38,31 @@ messaging to indicate to the user whether the method will run or not, based on c
 @change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
 @change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
-'''
-
-from __future__ import absolute_import
+@change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
+"""
 
 import traceback
 import os
-import re
 
-from ..rule import Rule
-from ..pkghelper import Pkghelper
-from ..CommandHelper import CommandHelper
-from ..logdispatcher import LogPriority
-from ..KVEditorStonix import KVEditorStonix
-from ..stonixutilityfunctions import createFile, writeFile, iterate, resetsecon
+from rule import Rule
+from pkghelper import Pkghelper
+from CommandHelper import CommandHelper
+from logdispatcher import LogPriority
+from KVEditorStonix import KVEditorStonix
 
 
 class SystemAccounting(Rule):
-    '''classdocs'''
+    """
+    """
 
     def __init__(self, config, environ, logger, statechglogger):
-        '''
+        """
         Constructor
-        '''
+        """
         Rule.__init__(self, config, environ, logger, statechglogger)
         self.logger = logger
         self.rulenumber = 9
         self.rulename = 'SystemAccounting'
-        self.compliant = True
         self.formatDetailedResults("initialize")
         self.mandatory = False
         self.rootrequired = True
@@ -73,511 +70,279 @@ class SystemAccounting(Rule):
         self.guidance = ['CIS 2.4', 'cce-3992-5']
         self.applicable = {'type': 'white',
                            'family': 'linux',
-                           'os': {'Mac OS X': ['10.12', 'r', '10.14.10']}}
+                           'os': {'Mac OS X': ['10.15', 'r', '10.15.10']}}
 
-        # set up configuration items for this rule
+        # set up configuration item for this rule
         datatype = 'bool'
         key = 'SYSTEMACCOUNTING'
-        instructions = 'This is an optional rule and it is disabled by default. To enable this rule, set the value of ' + \
-            'SYSTEMACCOUNTING to True.'
+        instructions = "This is an optional rule and is disabled by default, due to the significant load it can place on the system when enabled. To enable system accounting, set the value of SYSTEMACCOUNTING to True."
         default = False
         self.ci = self.initCi(datatype, key, instructions, default)
 
-    def islinux(self):
-        '''detect whether the current system is using linux
+        self.ostype = self.environ.getostype()
+        self.ph = Pkghelper(self.logger, self.environ)
+        self.ch = CommandHelper(self.logger)
+        self._set_paths()
 
+    def _set_paths(self):
+        """
 
-        :returns: retval
+        """
 
+        self.sysstat_package = "sysstat"
+        self.sysstat_service_file = "/usr/lib/systemd/system/sysstat.service"
+        self.accton = "/usr/sbin/accton"
+        self.acct_file = "/var/account/acct"
+        self.cron_file = "/etc/cron.d/sysstat"
+
+        self.sa1 = ""
+        sa1_locs = ["/usr/lib64/sa/sa1", "/usr/local/lib64/sa/sa1"]
+        for sl in sa1_locs:
+            if os.path.isfile(sl):
+                self.sa1 = sl
+                break
+
+        self.sa2 = ""
+        sa2_locs = ["/usr/lib64/sa/sa2", "/usr/local/lib64/sa/sa2"]
+        for sl in sa2_locs:
+            if os.path.isfile(sl):
+                self.sa2 = sl
+                break
+
+        self.sysstat_service_contents = """# /usr/lib/systemd/system/sysstat.service
+# (C) 2012 Peter Schiffer (pschiffe <at> redhat.com)
+#
+# sysstat-10.1.7 systemd unit file:
+#     Insert a dummy record in current daily data file.
+#     This indicates that the counters have restarted from 0.
+
+[Unit]
+Description=Resets System Activity Logs
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+User=root
+ExecStart=""" + self.sa1 + """ --boot
+
+[Install]
+WantedBy=multi-user.target
+"""
+
+        self.sysstat_cron_contents = """# Run system activity accounting tool every 60 minutes
+*/60 * * * * root """ + self.sa1 + """ 1 1
+# Generate a daily summary of process accounting at 23:53
+53 23 * * * root """ + self.sa2 + """ -A"""
+
+    def _report_configuration(self):
+        """
+
+        :return: compliant
         :rtype: bool
-@author: Breen Malmberg
+        """
 
-        '''
+        compliant = True
 
-        # defaults
-        retval = True
+        if self.ostype == "Mac OS X":
+            self.conf_file = ""
+            conf_files = ["/etc/rc.conf", "/etc/rc.common"]
+            for cf in conf_files:
+                if os.path.isfile(cf):
+                    self.conf_file = cf
+                    break
+            tmpfile = self.conf_file + ".stonixtmp"
 
-        ostype = self.environ.getostype()
-        if ostype == 'Mac OS X':
-            retval = False
+            config_data = {"accounting_enable": "YES"}
 
-        return retval
-
-    def setlinux(self):
-        '''set variables specific to linux systems
-        
-        @author: Breen Malmberg
-
-
-        '''
-
-        self.setCmds()
-        self.setPaths()
-        self.setOpts()
-        self.setObjs()
-
-    def setmac(self):
-        '''set variables specific to mac systems
-        
-        @author: Breen Malmberg
-
-
-        '''
-
-        self.setCmds('mac')
-        self.setPaths('mac')
-        self.setOpts('mac')
-        self.setObjs('mac')
-
-    def setCmds(self, ostype='linux'):
-        '''set command path according to which os type the current system is
-        
-        @author: Breen Malmberg
-
-        :param ostype:  (Default value = 'linux')
-
-        '''
-
-        if ostype == 'linux':
-            self.accon = '/usr/sbin/accton'
+            self.conf_editor = KVEditorStonix(self.statechglogger, self.logger, "conf", self.conf_file, tmpfile, config_data, "present", "closedeq")
+            if not self.conf_editor.report():
+                compliant = False
         else:
-            self.accon = '/usr/sbin/accton'
 
-    def setPaths(self, ostype='linux'):
-        '''set directory and file paths according to which os type the current system is
-        
-        @author: Breen Malmberg
 
-        :param ostype:  (Default value = 'linux')
-
-        '''
-
-        # defaults
-        self.accpath = ''
-        self.pkgname = ''
-        self.accbasedir = ''
-
-        if ostype == 'linux':
-            self.enableacc = '/etc/rc.conf'
-            self.accbasedir = '/var/account'
-            self.accpath = '/var/account/acct'
-            self.pkgname = 'sysstat'
-        else:
-            if os.path.exists("/etc/rc.common"):
-                self.enableacc = "/etc/rc.common"
+            if not os.path.isfile(self.sysstat_service_file):
+                compliant = False
+                self.detailedresults += "\nSystem accounting service file is missing"
             else:
-                self.enableacc = '/etc/rc.conf'
-            self.accbasedir = '/var/account'
-            self.accpath = '/var/account/acct'
+                f = open(self.sysstat_service_file, "r")
+                contents = f.read()
+                f.close()
+                if contents != self.sysstat_service_contents:
+                    compliant = False
+                    self.detailedresults += "\nSystem accounting service file has incorrect contents"
 
-    def setOpts(self, ostype='linux'):
-        '''set configuration options based on which os type the current system is
-        
-        @author: Breen Malmberg
+        return compliant
 
-        :param ostype:  (Default value = 'linux')
+    def _report_installation(self):
+        """
 
-        '''
+        :return: compliant
+        :rtype: bool
+        """
 
-        if ostype == 'linux':
-            self.accopt = 'accounting_enable=YES'
+        compliant = True
+
+        if self.ostype != "Mac OS X":
+            if not self.ph.check(self.sysstat_package):
+                compliant = False
+                self.detailedresults += "\nSystem accounting package is not installed"
+
+        return compliant
+
+    def _report_schedule(self):
+        """
+
+        :return: compliant
+        :rtype: bool
+        """
+
+        compliant = True
+
+        if self.ostype == "Mac OS X":
+            if not os.path.isfile(self.acct_file):
+                compliant = False
+                self.detailedresults += "\nSystem accounting is not enabled on this system"
         else:
-            self.accopt = 'accounting_enable=YES'
+            if not os.path.isfile(self.cron_file):
+                compliant = False
+            else:
+                f = open(self.cron_file, "r")
+                contents = f.read()
+                f.close()
+                if contents != self.sysstat_cron_contents:
+                    self.compliant = False
+                    self.detailedresults += "\nSystem account cron job has incorrect contents"
 
-    def setObjs(self, ostype='linux'):
-        '''initialize objects for use, based on which os type the current system is
-        
-        @author: Breen Malmberg
-
-        :param ostype:  (Default value = 'linux')
-
-        '''
-
-        if ostype == 'linux':
-            self.pkghelper = Pkghelper(self.logger, self.environ)
-            self.cmdhelper = CommandHelper(self.logger)
-        else:
-            self.cmdhelper = CommandHelper(self.logger)
+        return compliant
 
     def report(self):
-        '''decide which report actions to run, then call the corresponding methods and
-        set compliance based on the return value(s)
+        """
 
-
-        :returns: self.compliant
-
+        :return: compliant
         :rtype: bool
-@author: Breen Malmberg
+        """
 
-        '''
-
-        # defaults
-        self.compliant = True
         self.detailedresults = ""
+        self.compliant = True
 
         try:
 
-            if not self.ci.getcurrvalue():
-                self.detailedresults += "This is an optional rule and the CI for this rule is currently disabled. This rule will not run until the CI is enabled."
-                self.logger.log(LogPriority.DEBUG, "This is an optional rule and the CI for this rule is currently disabled. This rule will not run until the CI is enabled.")
-                return self.compliant
-
-            if self.islinux():
-                self.setlinux()
-                self.compliant = self.reportlinux()
+            if not self._report_installation():
+                self.compliant = False
             else:
-                self.setmac()
-                self.compliant = self.reportmac()
+                if not self._report_configuration():
+                    self.compliant = False
+                if not self._report_schedule():
+                    self.compliant = False
 
         except (KeyboardInterrupt, SystemExit):
             raise
-        except Exception:
-            self.detailedresults += traceback.format_exc()
-            self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("report", self.compliant,
-                                   self.detailedresults)
-        self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+        except:
+            self.compliant = False
+            self.detailedresults += "\n" + traceback.format_exc()
+            self.logger.log(LogPriority.ERROR, self.detailedresults)
+        self.formatDetailedResults("report", self.compliant, self.detailedresults)
+        self.logger.log(LogPriority.INFO, self.detailedresults)
+
         return self.compliant
 
-    def reportlinux(self):
-        '''run report actions specific to linux platforms
-        return configuration status boolean
+    def _fix_installation(self):
+        """
 
-
-        :returns: configured
-
+        :return: success
         :rtype: bool
-@author: Breen Malmberg
+        """
 
-        '''
+        success = True
 
-        # defaults
-        configured = True
+        if self.ostype != "Mac OS X":
+            if not self.ph.install(self.sysstat_package):
+                success = False
+                self.logger.log(LogPriority.DEBUG, "Failed to install sysstat package")
+
+        return success
+
+    def _fix_configuration(self):
+        """
+
+        :return: success
+        :rtype: bool
+        """
+
+        success = True
+
+        if self.ostype == "Mac OS X":
+            if not self.conf_editor.fix():
+                success = False
+                self.logger.log(LogPriority.DEBUG, "kveditor failed to fix()")
+            elif not self.conf_editor.commit():
+                success = False
+                self.logger.log(LogPriority.DEBUG, "kveditor failed to commit()")
+        else:
+            try:
+                f = open(self.sysstat_service_file, "w")
+                f.write(self.sysstat_service_contents)
+                f.close()
+            except:
+                success = False
+
+        return success
+
+    def _fix_schedule(self):
+        """
+
+        :return: success
+        :rtype: bool
+        """
+
+        success = True
 
         try:
 
-            if not self.pkghelper.check(self.pkgname):
-                self.detailedresults += 'Accounting package not installed: ' \
-                    + str(self.pkgname) + '\n'
-                return False
-            if self.pkghelper.determineMgr() == "apt-get":
-                sysstat = "/etc/default/sysstat"
-                if os.path.exists(sysstat):
-                    tmppath = sysstat + ".tmp"
-                    data = {"ENABLED": "true"}
-                    editor = KVEditorStonix(self.statechglogger, self.logger,
-                                            "conf", sysstat, tmppath, data,
-                                            "present", "closedeq")
-                    if not editor.report():
-                        self.detailedresults += "Accounting configuration " + \
-                            "file has incorrect settings: " + sysstat + "\n"
-                        return False
+            if self.ostype == "Mac OS X":
+                if not os.path.isdir("/var/account"):
+                    os.mkdir("/var/account", 0o755)
+                open(self.acct_file, "a").close()
+                self.ch.executeCommand(self.accton + " " + self.acct_file)
             else:
-                if not os.path.exists(self.enableacc):
-                    configured = False
-                    self.detailedresults += 'Accounting configuration file ' + \
-                        'not found: ' + str(self.enableacc) + '\n'
-                else:
-                    contentlines = self.getFileContents(self.enableacc)
+                f = open(self.cron_file, "w")
+                f.write(self.sysstat_cron_contents)
+                f.close()
+                os.chown(self.cron_file, 0, 0)
+                os.chmod(self.cron_file, 0o644)
+        except:
+            success = False
 
-                    if self.accopt + '\n' not in contentlines:
-                        configured = False
-                        self.detailedresults += 'Accounting not enabled. ' + \
-                            'missing directive: ' + str(self.accopt) + '\n'
-
-                if not os.path.exists(self.accpath):
-                    configured = False
-                    self.detailedresults += 'Accounting file not found: ' + \
-                        str(self.accpath) + '\n'
-
-        except Exception:
-            raise
-        return configured
-
-    def reportmac(self):
-        '''run report actions specific to mac platforms
-        return configuration status boolean
-
-
-        :returns: configured
-
-        :rtype: bool
-@author: Breen Malmberg
-
-        '''
-
-        # defaults
-        configured = True
-
-        try:
-
-            if not os.path.exists(self.accpath):
-                configured = False
-                self.detailedresults += 'Accounting file not found: ' + \
-                    str(self.accpath) + '\n'
-
-            if not os.path.exists(self.enableacc):
-                configured = False
-                self.detailedresults += 'Accounting configuration file ' + \
-                    'not found: ' + str(self.enableacc) + '\n'
-
-            else:
-                contentlines = self.getFileContents(self.enableacc)
-
-                if self.accopt + '\n' not in contentlines:
-                    configured = False
-                    self.detailedresults += 'Accounting not enabled. missing ' + \
-                        'directive: ' + str(self.accopt) + '\n'
-
-        except Exception:
-            raise
-        return configured
+        return success
 
     def fix(self):
-        '''decide which fix action to run based on os type of current system
-        then call the corresponding method
-        return success status of fix actions
+        """
 
-
-        :returns: success
-
+        :return: self.rulesuccess
         :rtype: bool
-@author: Breen Malmberg
+        """
 
-        '''
-
-        # defaults
         self.detailedresults = ""
-        success = True
-        self.iditerator = 0
+        self.rulesuccess = True
 
         try:
 
-            if self.ci.getcurrvalue():
-                if self.islinux():
-                    success = self.fixlinux()
-                else:
-                    success = self.fixmac()
+            if not self._fix_installation():
+                self.rulesuccess = False
             else:
-                self.detailedresults += 'Configuration item ' + \
-                    'SYSTEMACCOUNTING was not enabled, so nothing was done\n'
+                self._set_paths()
+            if not self._fix_configuration():
+                self.rulesuccess = False
+            if not self._fix_schedule():
+                self.rulesuccess = False
 
         except (KeyboardInterrupt, SystemExit):
             raise
-        except Exception:
-            self.detailedresults += traceback.format_exc()
-            self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("fix", success,
-                                   self.detailedresults)
-        self.logdispatch.log(LogPriority.INFO, self.detailedresults)
-        return success
+        except:
+            self.rulesuccess = False
+            self.detailedresults += "\n" + traceback.format_exc()
+            self.logger.log(LogPriority.ERROR, self.detailedresults)
+        self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
+        self.logger.log(LogPriority.INFO, self.detailedresults)
 
-    def fixlinux(self):
-        '''run fix actions specific to linux platforms
-        record undo actions for each fix action performed
-        return success status of any fix actions run
-
-
-        :returns: success
-
-        :rtype: bool
-@author: Breen Malmberg
-
-        '''
-
-        # defaults
-        success = True
-        found = False
-
-        try:
-            if not self.pkghelper.check(self.pkgname):
-                if not self.pkghelper.install(self.pkgname):
-                    success = False
-                    self.detailedresults += 'Unable to install package: ' + \
-                        self.pkgname + '\n'
-                else:
-                    self.iditerator += 1
-                    myid = iterate(self.iditerator, self.rulenumber)
-                    event = {"eventtype": "pkghelper",
-                             "pkgname": self.pkgname,
-                             "startstate": "removed",
-                             "endstate": "installed"}
-                    self.statechglogger.recordchgevent(myid, event)
-            if self.pkghelper.determineMgr() == "apt-get":
-                sysstat = "/etc/default/sysstat"
-                tmppath = sysstat + ".tmp"
-                if os.path.exists(sysstat):
-                    data = {"ENABLED": "true"}
-                    editor = KVEditorStonix(self.statechglogger, self.logger,
-                                            "conf", sysstat, tmppath, data,
-                                            "present", "closedeq")
-                    if not editor.report():
-                        if editor.fixables:
-                            if editor.fix():
-                                self.iditerator += 1
-                                myid = iterate(self.iditerator, self.rulenumber)
-                                editor.setEventID(myid)
-                                if not editor.commit():
-                                    success = False
-                                    self.detailedresults += "KVEditor " + \
-                                        "failed to commit fixes\n"
-                            else:
-                                success = False
-                                self.detailedresults += "KVEditor fix failed\n"
-                else:
-                    if createFile(sysstat, self.logger):
-                        self.iditerator += 1
-                        myid = iterate(self.iditerator, self.rulenumber)
-                        event = {"eventtype": "creation", "filepath": sysstat}
-                        self.statechglogger.recordchgevent(myid, event)
-                    else:
-                        success = False
-                        self.detailedresults += "Failed to create file: " + \
-                            sysstat + "\n"
-
-                    if writeFile(tmppath, "ENABLED=true", self.logger):
-                        os.rename(tmppath, sysstat)
-                        resetsecon(sysstat)
-                    else:
-                        success = False
-                        self.detailedresults += "Failed to write settings " + \
-                            "to file: " + sysstat + "\n"
-            else:
-                if not os.path.exists(self.accbasedir):
-                    os.makedirs(self.accbasedir, 0755)
-                if not os.path.exists(self.accpath):
-                    createFile(self.accpath, self.logger)
-                    self.iditerator += 1
-                    myid = iterate(self.iditerator, self.rulenumber)
-                    event = {"eventtype": "creation", "filepath": self.accpath}
-                    self.statechglogger.recordchgevent(myid, event)
-                if not os.path.exists(self.enableacc):
-                    createFile(self.enableacc, self.logger)
-                    self.iditerator += 1
-                    myid = iterate(self.iditerator, self.rulenumber)
-                    event = {"eventtype": "creation",
-                             "filepath": self.enableacc}
-                    self.statechglogger.recordchgevent(myid, event)
-                    writeFile(self.enableacc, self.accopt + '\n', self.logger)
-                else:
-                    contentlines = self.getFileContents(self.enableacc)
-                    if contentlines:
-                        for line in contentlines:
-                            if re.search('^accounting_enable=', line):
-                                contentlines = [c.replace(line,
-                                                          self.accopt + '\n')
-                                                for c in contentlines]
-                                found = True
-
-                    if not found:
-                        contentlines.append(self.accopt + '\n')
-
-                    writeFile(self.enableacc, "".join(contentlines),
-                              self.logger)
-
-                cmd = self.accon + ' ' + self.accpath
-                self.cmdhelper.executeCommand(cmd)
-                if self.cmdhelper.getErrorString():
-                    success = False
-                    self.detailedresults += 'Execution of "' + cmd + '' + \
-                        '" failed with error: ' + \
-                        self.cmdhelper.getErrorString() + '\n'
-                else:
-                    self.iditerator += 1
-                    myid = iterate(self.iditerator, self.rulenumber)
-                    event = {"eventtype": "comm",
-                             "command": self.accon + " off"}
-                    self.statechglogger.recordchgevent(myid, event)
-
-        except Exception:
-            raise
-        return success
-
-    def fixmac(self):
-        '''run fix actions specific to mac platforms
-        record undo actions for any fix actions performed
-        return success status of fix actions run
-
-
-        :returns: success
-
-        :rtype: bool
-@author: Breen Malmberg
-
-        '''
-
-        success = True
-        found = False
-
-        try:
-            if not os.path.exists(self.accbasedir):
-                os.makedirs(self.accbasedir, 0755)
-            if not os.path.exists(self.accpath):
-                createFile(self.accpath, self.logger)
-                self.iditerator += 1
-                myid = iterate(self.iditerator, self.rulenumber)
-                event = {"eventtype": "creation", "filepath": self.accpath}
-                self.statechglogger.recordchgevent(myid, event)
-            if not os.path.exists(self.enableacc):
-                createFile(self.enableacc, self.logger)
-                self.iditerator += 1
-                myid = iterate(self.iditerator, self.rulenumber)
-                event = {"eventtype": "creation",
-                         "filepath": self.enableacc}
-                self.statechglogger.recordchgevent(myid, event)
-                writeFile(self.enableacc, self.accopt + '\n', self.logger)
-            else:
-                contentlines = self.getFileContents(self.enableacc)
-                if contentlines:
-                    for line in contentlines:
-                        if re.search('^accounting_enable=', line):
-                            contentlines = [c.replace(line,
-                                                      self.accopt + '\n')
-                                            for c in contentlines]
-                            found = True
-
-                if not found:
-                    contentlines.append(self.accopt + '\n')
-
-                writeFile(self.enableacc, "".join(contentlines),
-                          self.logger)
-
-            cmd = self.accon + ' ' + self.accpath
-            self.cmdhelper.executeCommand(cmd)
-            if self.cmdhelper.getErrorString():
-                success = False
-                self.detailedresults += 'Execution of "' + cmd + '' + \
-                    '" failed with error: ' + \
-                    self.cmdhelper.getErrorString() + '\n'
-            else:
-                self.iditerator += 1
-                myid = iterate(self.iditerator, self.rulenumber)
-                event = {"eventtype": "comm",
-                         "command": self.accon + " off"}
-                self.statechglogger.recordchgevent(myid, event)
-
-        except Exception:
-            raise
-        return success
-
-    def getFileContents(self, filepath):
-        '''retrieve and return the file contents of the file at location: filepath
-
-        :param filepath: string full path to the file, for which contents are to be read/returned
-        :returns: contentlines
-        :rtype: list
-@author: Breen Malmberg
-
-        '''
-
-        contentlines = []
-
-        try:
-            f = open(filepath, 'r')
-            contentlines = f.readlines()
-            f.close()
-
-        except IOError:
-            self.detailedresults += 'Could not find specified filepath: ' + \
-                str(filepath) + ': Returning empty list\n'
-        return contentlines
+        return self.rulesuccess

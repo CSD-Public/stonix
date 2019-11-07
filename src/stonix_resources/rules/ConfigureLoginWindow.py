@@ -30,12 +30,13 @@ This is a rule for Verifying and/or setting the state of the LoginWindow.
 @change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
 @change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
+@change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
 '''
-from __future__ import absolute_import
+
 
 # The period was making python complain. Adding the correct paths to PyDev
 # made this the working scenario.
-from ..ruleKVEditor import RuleKVEditor
+from ruleKVEditor import RuleKVEditor
 
 
 class ConfigureLoginWindow(RuleKVEditor):
@@ -54,7 +55,7 @@ class ConfigureLoginWindow(RuleKVEditor):
         self.rootrequired = True
         self.guidance = ['CCE-28310-1']
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.12', 'r', '10.14.10']}}
+                           'os': {'Mac OS X': ['10.15', 'r', '10.15.10']}}
         self.addKVEditor("LoginNamePassword",
                          "defaults",
                          "/Library/Preferences/com.apple.loginwindow",

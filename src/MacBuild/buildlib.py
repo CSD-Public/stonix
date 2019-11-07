@@ -45,7 +45,6 @@ site.addsitedir('/opt/tools/Library/Python/2.7/site-packages')
 from PyInstaller.building import makespec, build_main
 
 sys.path.append('./ramdisk')
-
 from ramdisk.lib.loggers import LogPriority as lp
 from ramdisk.lib.manage_user.manage_user import ManageUser
 from ramdisk.lib.manage_keychain.manage_keychain import ManageKeychain
@@ -225,7 +224,7 @@ class MacBuildLib(object):
                     for myfile in files:
                         os.chown(os.path.join(root, myfile), uid, -1)
         except TypeError:
-            print "Error: Cannot chownR, target must be a directory"
+            print("Error: Cannot chownR, target must be a directory")
             raise
         except Exception:
             raise
@@ -279,11 +278,11 @@ class MacBuildLib(object):
                 except NameError:
                     raise
         except TypeError:
-            print "Error: Cannot chmodR target, must be a directory"
+            print("Error: Cannot chmodR target, must be a directory")
             raise
         except NameError:
-            print "Error: Invalid writemode specified. Please use [a]ppend " + \
-                "or [o]verwrite"
+            print(("Error: Invalid writemode specified. Please use [a]ppend " + \
+                "or [o]verwrite"))
             raise
         except Exception:
             raise
@@ -327,7 +326,7 @@ class MacBuildLib(object):
                 for line in newFileContent:
                     viewController.write(line)
                 viewController.close()
-        except Exception, err:
+        except Exception as err:
             message = "error attempting to fix title..." + traceback.format_exc()
             self.logger.log(lp.DEBUG, message)
 
@@ -426,25 +425,25 @@ class MacBuildLib(object):
         '''
         # This method is called before ramdisk creation, so it does not use the
         # try/except block that most methods do
-        print "Starting checkBuildUser..."
+        print("Starting checkBuildUser...")
 
         CURRENT_USER = os.getlogin()
 
         RUNNING_ID = str(os.geteuid())
-        print "UID: " + RUNNING_ID
+        print(("UID: " + RUNNING_ID))
 
         if RUNNING_ID != "0":
-            print " "
-            print "****************************************"
-            print "***** Current logged in user: " + CURRENT_USER
-            print "***** Please run with SUDO "
-            print "****************************************"
-            print " "
+            print(" ")
+            print("****************************************")
+            print(("***** Current logged in user: " + CURRENT_USER))
+            print("***** Please run with SUDO ")
+            print("****************************************")
+            print(" ")
             exit(1)
         else:
-            print "***** Current logged in user: " + CURRENT_USER
+            print(("***** Current logged in user: " + CURRENT_USER))
 
-        print "checkBuildUser Finished..."
+        print("checkBuildUser Finished...")
         return CURRENT_USER, RUNNING_ID
 
     def codeSignTarget(self, parentDirOfItemToSign, username, password, sig='', verbose='', deep='', itemName='', keychain=''):
@@ -625,7 +624,7 @@ class MacBuildLib(object):
             #####
             # Unlock the keychain so we can sign
             success, output = self.manage_keychain.unlockKeychain(password, keychain=keychain)
-        except Exception, err:
+        except Exception as err:
             self.logger.log(lp.DEBUG, traceback.format_exc())
             raise err
         return success
@@ -716,13 +715,13 @@ class MacBuildLib(object):
         self.logger.log(lp.DEBUG, ".")
         self.logger.log(lp.DEBUG, ".")
 
-        print '.'
-        print '.'
-        print '.'
-        print str(cmd)
-        print '.'
-        print '.'
-        print '.'
+        print('.')
+        print('.')
+        print('.')
+        print((str(cmd)))
+        print('.')
+        print('.')
+        print('.')
         
         os.chdir(buildDir)
         self.logger.log(lp.DEBUG, str(cmd))
@@ -741,7 +740,7 @@ class MacBuildLib(object):
         for line in error.split("\n"):
             self.logger.log(lp.DEBUG, str(line))
 
-        print "Done building stonix4mac..."
+        print("Done building stonix4mac...")
 
         #####
         # Return to the working directory
@@ -763,7 +762,7 @@ class MacBuildLib(object):
         try:
             cmd = [builderScpt, "-d", "-r", rulesLocation]
             stdout, stderr = Popen(cmd, stdout=PIPE, stderr=PIPE).communicate()
-        except Exception, err:
+        except Exception as err:
             trace = traceback.format_exc()
             self.logger.log(lp.DEBUG, str(trace))
             raise err
@@ -782,6 +781,7 @@ class MacBuildLib(object):
 
         '''
         success = False
+
         header = ''''''
 
         if self.isSaneFilePath(pathToDir):
@@ -791,7 +791,7 @@ class MacBuildLib(object):
         
             for rule in allFilesList:
                 if re.search("\.py$", rule) and not re.match("__init__\.py", rule):
-                    ruleClass = re.sub("\.py$", "", rule)
+                    ruleClass = "stonix_resources.rules." + re.sub("\.py$", "", rule)
                     rulesList.append(ruleClass)
         
             try:
@@ -802,7 +802,7 @@ class MacBuildLib(object):
                 for rule in rulesList:
                     fp.write("import " + rule + "\n")
                 fp.write("\n")
-            except OSError, err:
+            except OSError as err:
                 trace = traceback.format_exc() 
                 self.logger.log(lp.DEBUG, "Traceback: " + trace)
                 raise err
@@ -826,7 +826,7 @@ class MacBuildLib(object):
 
         '''
         sane = False
-        if isinstance(filepath, basestring):
+        if isinstance(filepath, str):
             if re.match("^[A-Za-z/][A-Za-z0-9\.\-_/]*", filepath):
                 sane = True
         return sane

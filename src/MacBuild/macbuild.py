@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 ###############################################################################
 #                                                                             #
 # Copyright 2019. Triad National Security, LLC. All rights reserved.          #
@@ -55,15 +55,15 @@ from tempfile import mkdtemp
 from time import time
 from subprocess import call
 from shutil import rmtree, copy2
-from ConfigParser import SafeConfigParser
+from configparser import SafeConfigParser
 
 
 # For setupRamdisk() and detachRamdisk()
 sys.path.append("./ramdisk/")
-from ramdisk.macRamdisk import RamDisk, detach
-from ramdisk.lib.loggers import CyLogger
-from ramdisk.lib.loggers import LogPriority as lp
-from ramdisk.lib.get_libc import getLibc
+from .ramdisk.macRamdisk import RamDisk, detach
+from .ramdisk.lib.loggers import CyLogger
+from .ramdisk.lib.loggers import LogPriority as lp
+from .ramdisk.lib.get_libc import getLibc
 
 
 class ConfusingConfigurationError(Exception):
@@ -107,7 +107,7 @@ class MacBuilder():
         # that is our current operating location
         cwd = os.getcwd()
         if not re.search("src/MacBuild$", cwd):
-            print "This script needs to be run from src/MacBuild. Exiting..."
+            print("This script needs to be run from src/MacBuild. Exiting...")
             exit(1)
 
         try:
@@ -132,17 +132,17 @@ class MacBuilder():
 
         self.RSYNC = "/usr/bin/rsync"
 
-        print " "
-        print " "
-        print "   ************************************************************"
-        print "   ************************************************************"
-        print "   ***** App Version: " + self.APPVERSION
-        print "   ************************************************************"
-        print "   ************************************************************"
-        print " "
-        print " "
+        print(" ")
+        print(" ")
+        print("   ************************************************************")
+        print("   ************************************************************")
+        print(("   ***** App Version: " + self.APPVERSION))
+        print("   ************************************************************")
+        print("   ************************************************************")
+        print(" ")
+        print(" ")
 
-        self.keyuser = raw_input("Keychain User: ")
+        self.keyuser = eval(input("Keychain User: "))
         self.keypass = getpass.getpass("Keychain Password: ") 
 
         if not options.test:
@@ -158,14 +158,14 @@ class MacBuilder():
         directory = os.environ["HOME"]
         tmphome = mkdtemp(prefix=current_user + ".")
         os.environ["HOME"] = tmphome
-        os.chmod(tmphome, 0755)
+        os.chmod(tmphome, 0o755)
 
         # Create a ramdisk and mount it to the tmphome
         ramdisk = self.setupRamdisk(self.ramdisk_size, tmphome)
         os.mkdir("/tmp/the_luggage")
         luggage = self.setupRamdisk(self.ramdisk_size,
                                     "/tmp/the_luggage")
-        print "Device for tmp ramdisk is: " + ramdisk
+        print(("Device for tmp ramdisk is: " + ramdisk))
 
         # After creation of the ramdisk, all further calls need to be wrapped
         # in a try/except block so that the ramdisk will be detached before
@@ -232,11 +232,11 @@ class MacBuilder():
         self.detachRamdisk(ramdisk)
         self.detachRamdisk(luggage)
 
-        print " "
-        print " "
-        print "    Done building stonix4mac.app..."
-        print " "
-        print " "
+        print(" ")
+        print(" ")
+        print("    Done building stonix4mac.app...")
+        print(" ")
+        print(" ")
 
     def setupRamdisk(self, size, mntpnt=""):
         ramdisk = RamDisk(str(size), mntpnt)
@@ -249,17 +249,17 @@ class MacBuilder():
 
     def detachRamdisk(self, device):
         if detach(device):
-            print("Successfully detached disk: " + str(device).strip())
+            print(("Successfully detached disk: " + str(device).strip()))
             return True
         else:
-            print("Couldn't detach disk: " + str(device).strip())
+            print(("Couldn't detach disk: " + str(device).strip()))
             raise Exception("Cannot eject disk: " + str(device).strip())
 
     def exit(self, ramdisk, luggage, exitcode=0):
         os.chdir(self.STONIX_ROOT)
         self.detachRamdisk(ramdisk)
         self.detachRamdisk(luggage)
-        print traceback.format_exc()
+        print((traceback.format_exc()))
         exit(exitcode)
 
     def clean(self):
@@ -296,10 +296,10 @@ class MacBuilder():
             returnDir = os.getcwd()
             os.chdir(stonix4macDir)
 
-            print "Starting compileStonix4MacAppUiFiles in " + os.getcwd()
+            print(("Starting compileStonix4MacAppUiFiles in " + os.getcwd()))
 
             # to compile the .ui files to .py files:
-            print "Compiling Qt ui files to python files for stonix4mac.app..."
+            print("Compiling Qt ui files to python files for stonix4mac.app...")
             call([self.PYUIC, "admin_credentials.ui"],
                  stdout=open("admin_credentials_ui.py", "w"))
             call([self.PYUIC, "stonix_wrapper.ui"],
@@ -311,7 +311,7 @@ class MacBuilder():
         except Exception:
             raise
 
-        print "compileStonix4MacAppUiFiles Finished..."
+        print("compileStonix4MacAppUiFiles Finished...")
 
     def setProgramArgumentsVersion(self, localizePath):
         '''Change the STONIX version to the version specified within the build
@@ -322,7 +322,7 @@ class MacBuilder():
             localize.py file that this method should modify
 
         '''
-        print "Changing versions in localize.py..."
+        print("Changing versions in localize.py...")
         try:
             self.mbl.regexReplace(localizePath,
                                   r"^STONIXVERSION =.*$",
@@ -331,7 +331,7 @@ class MacBuilder():
         except Exception:
             raise
 
-        print "Finished changing versions in localize.py..."
+        print("Finished changing versions in localize.py...")
 
     def prepStonixBuild(self, MacBuildDir):
         '''Copy stonix source to app build directory
@@ -341,7 +341,7 @@ class MacBuilder():
             where this method should work
 
         '''
-        print "Starting prepStonixBuild..."
+        print("Starting prepStonixBuild...")
         try:
             returnDir = os.getcwd()
             os.chdir(MacBuildDir)
@@ -368,7 +368,7 @@ class MacBuilder():
             os.chdir(returnDir)
         except Exception:
             raise
-        print "prepStonixBuild Finished..."
+        print("prepStonixBuild Finished...")
 
     def compileApp(self, appName, appVersion, appIcon, appPath):
         '''Compiles stonix4mac.app
@@ -380,8 +380,8 @@ class MacBuilder():
         :param appPath: Path to [stonixroot]/src/MacBuild/[appName]
 
         '''
-        print "Started compileApp with " + appName + ", " + appVersion + \
-            ", " + appIcon
+        print(("Started compileApp with " + appName + ", " + appVersion + \
+            ", " + appIcon))
         try:
             returnDir = os.getcwd()
             os.chdir(appPath)
@@ -406,12 +406,12 @@ class MacBuilder():
             hdnimports = self.hiddenimports + ['ctypes', '_ctypes', 'ctypes._endian', 'decimal', 'numbers']
 
             # to compile a pyinstaller spec file for app creation:
-            print "Creating a pyinstaller spec file for the project..."
-            print self.mbl.pyinstMakespec([appName + ".py"], True, True, False,
+            print("Creating a pyinstaller spec file for the project...")
+            print((self.mbl.pyinstMakespec([appName + ".py"], True, True, False,
                                           "../" + appIcon + ".icns",
                                          pathex=["stonix_resources/rules",
                                                   "stonix_resources", "/usr/lib"] + self.PYPATHS,
-                                          specpath=os.getcwd(), hiddenimports=hdnimports)
+                                          specpath=os.getcwd(), hiddenimports=hdnimports)))
             '''
             if appName == "stonix":
                 fo = open(appName + ".spec", "r")
@@ -426,18 +426,18 @@ class MacBuilder():
                 fo.close()
             '''
             # to build:
-            print "Building the app..."
+            print("Building the app...")
             self.mbl.pyinstBuild(appName + ".spec", "private/tmp",
                                  appPath + "/dist", True, True)
 
             plist = appPath + "/dist/" + appName + ".app/Contents/Info.plist"
 
             # Change version string of the app
-            print "Changing .app version string..."
+            print("Changing .app version string...")
             self.mbl.modplist(plist, "CFBundleShortVersionString", appVersion)
 
             # Change icon name in the app
-            print "Changing .app icon..."
+            print("Changing .app icon...")
             self.mbl.modplist(plist, "CFBundleIconFile", appIcon + ".icns")
 
             # Copy icons to the resources directory
@@ -445,13 +445,13 @@ class MacBuilder():
                   "./dist/" + appName + ".app/Contents/Resources")
 
             # Change mode of Info.plist to 0755
-            os.chmod(plist, 0755)
+            os.chmod(plist, 0o755)
             os.chdir('dist')
 
         except Exception:
             raise
 
-        print "compileApp with " + appName + ", " + appVersion + " Finished..."
+        print(("compileApp with " + appName + ", " + appVersion + " Finished..."))
 
     def buildStonix4MacAppResources(self, appName, appPath, appPathParent):
         '''Copy and/or create all necessary files to the Resources directory
@@ -463,8 +463,8 @@ class MacBuilder():
         :param appPathParent: 
 
         '''
-        print "Started buildStonix4MacAppResources with \"" + appName + \
-            "\" in " + appPath + "..."
+        print(("Started buildStonix4MacAppResources with \"" + appName + \
+            "\" in " + appPath + "..."))
         try:
             returnDir = os.getcwd()
             os.chdir(appPath)
@@ -517,7 +517,7 @@ class MacBuilder():
             os.chdir(returnDir)
         except Exception:
             raise
-        print "buildStonix4MacAppResources Finished..."
+        print("buildStonix4MacAppResources Finished...")
 
     def buildStonix4MacAppPkg(self, appName, appVersion, appPath):
         '''Build installer package and wrap into a dmg
@@ -529,12 +529,12 @@ class MacBuilder():
 
         '''
 
-        print "Started buildStonix4MacAppPkg..."
+        print("Started buildStonix4MacAppPkg...")
         try:
             returnDir = os.getcwd()
             os.chdir(appPath + "/" + appName)
 
-            print "Putting new version into Makefile..."
+            print("Putting new version into Makefile...")
             self.mbl.regexReplace("Makefile", r"PACKAGE_VERSION=",
                                   "PACKAGE_VERSION=" + appVersion)
 
@@ -548,14 +548,14 @@ class MacBuilder():
                 os.rename(appPath + "/dmgs", tmpdir)
                 os.mkdir(appPath + "/dmgs")
 
-            print "Creating a .dmg file with a .pkg file inside for " + \
-                "installation purposes..."
+            print(("Creating a .dmg file with a .pkg file inside for " + \
+                "installation purposes..."))
             #call(["make", "dmg", "PACKAGE_VERSION=" + appVersion,
             #      "USE_PKGBUILD=1"])
             call(["make", "pkg", "PACKAGE_VERSION=" + appVersion,
                   "USE_PKGBUILD=1"])
 
-            print "Moving dmg and pkg to the dmgs directory."
+            print("Moving dmg and pkg to the dmgs directory.")
             #dmgname = appName + "-" + appVersion + ".dmg"
             pkgname = appName + "-" + appVersion + ".pkg"
             #os.rename(dmgname, appPath + "/dmgs/" + dmgname)
@@ -564,7 +564,7 @@ class MacBuilder():
             os.chdir(returnDir)
         except Exception:
             raise
-        print "buildStonix4MacAppPkg... Finished"
+        print("buildStonix4MacAppPkg... Finished")
 
     def configSectionMap(self, section):
         '''Acquire values from the config file and store in a dictionary.
@@ -582,9 +582,9 @@ class MacBuilder():
                 if dict1[option] == -1:
                     self.logger.log(lp.DEBUG, "skip: %s" % option)
             except:
-                print("exception on %s!" % option)
+                print(("exception on %s!" % option))
                 dict1[option] = None
-        print dict1
+        print(dict1)
         return dict1
 
     def confParser(self):
@@ -601,7 +601,7 @@ class MacBuilder():
         os.chdir("src/MacBuild")
         macbuild_root = os.getcwd()
         myconf = os.path.join(macbuild_root, 'macbuild.conf')
-        print myconf
+        print(myconf)
         if os.path.isfile(myconf):
             self.parser = SafeConfigParser()
             candidates =  [myconf, 'not_a_real_conf.conf']
@@ -612,7 +612,7 @@ class MacBuilder():
                 dict1 = {}
                 for section in self.parser.sections():
                     dict1[section] = self.configSectionMap(section)
-                print dict1
+                print(dict1)
             except:
                 #####
                 # happens if there was a problem attempting to read the config
@@ -624,7 +624,7 @@ class MacBuilder():
                 self.STONIX4MACICON = "stonix_icon"
                 self.STONIX4MACVERSION = self.APPVERSION                
                 #-- Internal libraries
-                from macbuildlib import macbuildlib
+                from .macbuildlib import macbuildlib
                 self.mbl = macbuildlib(self.logger)
                 self.PYUIC = self.mbl.getpyuicpath()
                 self.codesignVerbose = 'vvvv'
@@ -651,9 +651,9 @@ class MacBuilder():
                     sys.path.append(path)
                 #-- Internal libraries
                 try:
-                    from macbuildlib import macbuildlib
+                    from .macbuildlib import macbuildlib
                     self.mbl = macbuildlib(self.logger, self.PYPATHS)
-                except Exception, err:
+                except Exception as err:
                     raise
                 self.logger.log(lp.INFO, "... macbuildlib loaded ...")
             finally:

@@ -1,9 +1,9 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 """
 @author: Roy Nielsen
 
 """
-from __future__ import absolute_import
+
 #--- Native python libraries
 import sys
 from optparse import OptionParser, SUPPRESS_HELP
@@ -23,7 +23,7 @@ elif sys.platform.startswith("linux"):
     # For Linux
     from linuxTmpfsRamdisk import RamDisk, unmount
 else:
-    print "'" + str(sys.platform) + "' platform not supported..."
+    print(("'" + str(sys.platform) + "' platform not supported..."))
 
 parser = OptionParser(usage="\n\n%prog [options]\n\n", version="0.7.2")
 
@@ -63,5 +63,5 @@ ramdisk.printData()
 if not ramdisk.success:
     raise Exception("Ramdisk setup failed..")
 
-print ramdisk.getDevice()
+print((ramdisk.getDevice()))
 

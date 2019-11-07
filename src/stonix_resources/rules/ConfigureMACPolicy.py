@@ -32,19 +32,19 @@ platforms.
 @change: 2016/10/20 Eric Ball Improve feedback, PEP8 fixes
 """
 
-from __future__ import absolute_import
+
 
 import traceback
 import re
 import os
 
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..pkghelper import Pkghelper
-from ..CommandHelper import CommandHelper
-from ..ServiceHelper import ServiceHelper
-from ..KVEditorStonix import KVEditorStonix
-from ..stonixutilityfunctions import iterate
+from rule import Rule
+from logdispatcher import LogPriority
+from pkghelper import Pkghelper
+from CommandHelper import CommandHelper
+from ServiceHelper import ServiceHelper
+from KVEditorStonix import KVEditorStonix
+from stonixutilityfunctions import iterate
 
 
 class ConfigureMACPolicy(Rule):
@@ -153,6 +153,20 @@ class ConfigureMACPolicy(Rule):
 
         return self.compliant
 
+    def set_selinux_conf_path(self):
+        """
+
+        :return:
+        """
+
+        # discover correct location of selinux config file
+        self.selinux_config_file = "/etc/sysconfig/selinux"
+        selinux_config_files = ["/etc/selinux/config", "/etc/sysconfig/selinux"]
+        for p in selinux_config_files:
+            if os.path.exists(p):
+                self.selinux_config_file = p
+                break
+
     def reportSelinux(self):
         """
 
@@ -177,13 +191,7 @@ class ConfigureMACPolicy(Rule):
                 compliant = False
                 self.detailedresults += "\nSELinux " + conf_option_dict[co] + " is not configured properly"
 
-        # discover correct location of selinux config file
-        self.selinux_config_file = "/etc/sysconfig/selinux"
-        selinux_config_files = ["/etc/selinux/config", "/etc/sysconfig/selinux"]
-        for p in selinux_config_files:
-            if os.path.exists(p):
-                self.selinux_config_file = p
-                break
+        self.set_selinux_conf_path()
 
         # check selinux config file for correct configuration so setting is
         # persistent after reboot
@@ -285,6 +293,9 @@ class ConfigureMACPolicy(Rule):
                 success = False
                 self.detailedresults += "\nFailed to install selinux package"
             else:
+                # if we just installed selinux, then we need to discover the correct conf path
+                self.set_selinux_conf_path()
+
                 self.iditerator += 1
                 myid = iterate(self.iditerator, self.rulenumber)
                 event = {"eventtype":"pkghelper",
@@ -307,7 +318,6 @@ class ConfigureMACPolicy(Rule):
         self.iditerator += 1
         myid = iterate(self.iditerator, self.rulenumber)
         self.selinux_config_editor.setEventID(myid)
-
         # configure the selinux config file for persistence through reboot
         if not self.selinux_config_editor.fix():
             success = False

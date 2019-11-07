@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 ###############################################################################
 #                                                                             #
 # Copyright 2019. Triad National Security, LLC. All rights reserved.          #
@@ -70,14 +70,14 @@ import subprocess
 import traceback
 import socket
 import stat
-import urllib2
+import urllib.request, urllib.error, urllib.parse
 
 from grp import getgrgid
 from pwd import getpwuid
 from types import *
 from distutils.version import LooseVersion
 from subprocess import call, Popen, PIPE, STDOUT
-from logdispatcher import LogPriority
+from stonix_resources.logdispatcher import LogPriority
 
 
 def resetsecon(filename):
@@ -138,6 +138,9 @@ def getlocalfs(logger, environ):
             proc.wait()
             mountdata = proc.stdout.readlines()
             for line in mountdata:
+                if type(line) is bytes:
+                    line = line.decode('utf-8')
+
                 logger.log(LogPriority.DEBUG,
                            ['GetLocalFs', 'OS X processing: ' + line])
                 if re.search('^/dev/disk', line):
@@ -295,9 +298,9 @@ def set_no_proxy():
 
     try:
 
-        proxy_handler = urllib2.ProxyHandler({})
-        opener = urllib2.build_opener(proxy_handler)
-        urllib2.install_opener(opener)
+        proxy_handler = urllib.request.ProxyHandler({})
+        opener = urllib.request.build_opener(proxy_handler)
+        urllib.request.install_opener(opener)
 
     except Exception:
         raise
@@ -498,8 +501,8 @@ def getOctalPerms(filepath):
 
         if stat.S_ISREG(rawresult) or stat.S_ISDIR(rawresult):
             octperms = oct(stat.S_IMODE(rawresult))
-            while len(octperms) > 3:
-                    octperms = octperms[1:]
+            if len(octperms) > 2:
+                    octperms = octperms[2:]
 
     except Exception:
         raise
@@ -678,7 +681,7 @@ def readFileString(filepath, logger):
     return contents
 
 def writeFile(tmpfile, contents, logger):
-    '''Write <contents> to <tmpfile>.
+    """Write <contents> to <tmpfile>.
     Return True if successful, False if not.
     
     @author: Derek Walker
@@ -693,21 +696,39 @@ def writeFile(tmpfile, contents, logger):
         to implementation in rules
 @change: Breen Malmberg - 7/12/2017 - minor doc string edit
 
-    '''
+    """
 
     success = True
 
     try:
 
-        w = open(tmpfile, 'w')
-        if isinstance(contents, basestring):
-            w.write(contents)
-        elif isinstance(contents, list):
-            w.writelines(contents)
-        else:
+        # python 3 safety check on string/bytes argument input
+        if type(tmpfile) is bytes:
+            tmpfile = tmpfile.decode('utf-8')
+        if type(contents) is bytes:
+            contents = contents.decode('utf-8')
+        if type(contents) is list:
+            for i in contents:
+                if type(i) is bytes:
+                    contents = [i.decode('utf-8') for i in contents]
+
+        # check if parent directory exists first
+        parentdir = os.path.abspath(os.path.join(tmpfile, os.pardir))
+        if not os.path.isdir(parentdir):
             success = False
-            logger.log(LogPriority.DEBUG, "Given contents was niether a string, nor a list! Could not write to file " + str(tmpfile))
-        w.close()
+            logger.log(LogPriority.DEBUG, "Parent directory for given path does not exist. Cannot write file.")
+        else:
+            w = open(tmpfile, 'w')
+
+            if type(contents) is str:
+                w.write(contents)
+            elif type(contents) is list:
+                w.writelines(contents)
+            else:
+                success = False
+                logger.log(LogPriority.DEBUG, "Given contents was niether a string, nor a list! Could not write to file " + str(tmpfile))
+            w.close()
+
     except Exception:
         raise
     return success
@@ -794,6 +815,7 @@ def checkUserGroupName(ownergrp, owner, group, actualmode, desiredmode, logger):
 
     except Exception:
         raise
+
     return retval
 
 def checkPerms(path, perm, logger):
@@ -805,6 +827,7 @@ def checkPerms(path, perm, logger):
     @author: Derek Walker
     @change: Breen Malmberg - 1/10/2017 - doc string edit; return val init;
             minor refactor; parameter validation; logging
+    @change: Breen Malmberg - 06/18/2018 - minor doc string edit
     :returns: retval
     :rtype: bool
 
@@ -814,7 +837,7 @@ def checkPerms(path, perm, logger):
 
     try:
 
-        if not isinstance(path, basestring):
+        if not isinstance(path, str):
             logger.log(LogPriority.DEBUG, "Specified parameter: path must be of type: string. Got: " + str(type(path)) + "\n")
         if not isinstance(perm, list):
             logger.log(LogPriority.DEBUG, "Specified parameter: perm must be of type: list. Got: " + str(type(perm)) + "\n")
@@ -869,7 +892,7 @@ def setPerms(path, perm, logger, stchlogger="", myid=""):
 
     try:
 
-        if not isinstance(path, basestring):
+        if not isinstance(path, str):
             logger.log(LogPriority.DEBUG, "Specified parameter: path must be of type: string. Got: " + str(type(path)) + "\n")
         if not isinstance(perm, list):
             logger.log(LogPriority.DEBUG, "Specified parameter: perm must be of type: list. Got: " + str(type(perm)) + "\n")
@@ -967,19 +990,37 @@ def createFile(path, logger):
 
     try:
 
-        pathdir, _ = os.path.split(path)
-        if not os.path.exists(pathdir):
-            logger.log(LogPriority.DEBUG, "Parent directory of file does not exist. Creating parent directory(ies)...")
-            os.makedirs(pathdir, 0755)
+        if not path:
+            logger.log(LogPriority.DEBUG, "Given path is blank. Nothing to create.")
+            retval = False
+            return retval
+
         if os.path.exists(path):
             logger.log(LogPriority.DEBUG, "Path already exists. Will not overwrite it.")
             retval = False
-        else:
+            return retval
+
+        parentdir, _ = os.path.split(path)
+
+        if not parentdir:
+            logger.log(LogPriority.DEBUG, "Got blank path for parent directory!")
+            retval = False
+            return retval
+        elif not os.path.isdir(parentdir):
+            logger.log(LogPriority.DEBUG, "Parent directory of file does not exist. Creating parent directory(ies)...")
+            os.makedirs(parentdir, 0o755)
+
+        try:
             open(path, 'a').close()
+        except Exception as err:
+            logger.log(LogPriority.DEBUG, str(err))
+            retval = False
 
     except IOError as errmsg:
-        logger.log(LogPriority.WARNING, errmsg)
+        logger.log(LogPriority.DEBUG, errmsg)
         retval = False
+    except:
+        raise
     return retval
 
 def findUserLoggedIn(logger):
@@ -1056,7 +1097,7 @@ def isServerVersionHigher(client_version="0.0.0", server_version="0.0.0", logger
                 logger.log(LogPriority.DEBUG, "isServerVersion: " + x)
         else:
             def logprint(x):
-                print str(x)
+                print((str(x)))
 
         if re.match("^$", client_version) or re.match("^$", server_version):
             needToUpdate = False
@@ -1194,8 +1235,8 @@ def fixInflation(filepath, logger, perms, owner):
 
         # validate all parameters; log and return if not valid
         if not logger:
-            print "\nDEBUG:stonixutilityfunctions.fixInflation(): No logging parameter was passed. Cannot log.\n"
-            print "DEBUG:stonixutilityfunctions.fixInflation(): Exiting method fixInflation()... Nothing was done.\n"
+            print("\nDEBUG:stonixutilityfunctions.fixInflation(): No logging parameter was passed. Cannot log.\n")
+            print("DEBUG:stonixutilityfunctions.fixInflation(): Exiting method fixInflation()... Nothing was done.\n")
             retval = False
             return retval
 
@@ -1235,7 +1276,7 @@ def fixInflation(filepath, logger, perms, owner):
             retval = False
             return retval
 
-        if not isinstance(filepath, basestring):
+        if not isinstance(filepath, str):
             paramtype = type(filepath)
             logger.log(LogPriority.DEBUG, "Specified filepath parameter was of type: " + str(paramtype))
             logger.log(LogPriority.DEBUG, "filepath parameter must be a string! Cannot proceed.")
@@ -1311,7 +1352,7 @@ def validateParam(logger, param, ptype, pname):
     try:
 
         if not logger:
-            print "No logging object was passed to method validateParam. Printing to console instead..."
+            print("No logging object was passed to method validateParam. Printing to console instead...")
             log = False
 
         if not pname:
@@ -1319,7 +1360,7 @@ def validateParam(logger, param, ptype, pname):
             if log:
                 logger.log(LogPriority.DEBUG, "Parameter pname was blank or None!")
             else:
-                print "Parameter pname was blank or None!"
+                print("Parameter pname was blank or None!")
             return valid
         if not param:
             log = False
@@ -1331,13 +1372,13 @@ def validateParam(logger, param, ptype, pname):
             if log:
                 logger.log(LogPriority.DEBUG, "Parameter: " + str(pname) + " needs to be of type " + str(ptype) + ". Got: " + str(type(param)))
             else:
-                print "One or more passed parameters was not specified or was an invalid type!"
+                print("One or more passed parameters was not specified or was an invalid type!")
 
-    except Exception, errmsg:
+    except Exception as errmsg:
         if log:
             logger.log(LogPriority.ERROR, str(errmsg))
         else:
-            print str(errmsg)
+            print((str(errmsg)))
     return valid
 
 def reportStack(level=1):
@@ -1373,7 +1414,7 @@ def psRunning(ps):
     elif os.path.exists("/usr/sbin/lsof"):
         cmd = "/usr/sbin/lsof"
     else:
-        print("Could not determine status of process: " + str(ps))
+        print(("Could not determine status of process: " + str(ps)))
         return isrunning
 
     output, errmsg = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=False).communicate()

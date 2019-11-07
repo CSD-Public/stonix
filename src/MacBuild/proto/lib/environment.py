@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 ###############################################################################
 #                                                                             #
 # Copyright 2019. Triad National Security, LLC. All rights reserved.          #
@@ -41,7 +41,7 @@ Created on Aug 24, 2010
         updated copyright date
 '''
 
-from __future__ import absolute_import
+
 
 import os
 import re
@@ -96,7 +96,7 @@ class Environment:
         '''
 
         try:
-            if type(installmode) is types.BooleanType:
+            if type(installmode) is bool:
                 self.installmode = installmode
         except (NameError):
             # installmode was undefined
@@ -126,7 +126,7 @@ class Environment:
         '''
 
         try:
-            if type(verbosemode) is types.BooleanType:
+            if type(verbosemode) is bool:
                 self.verbosemode = verbosemode
         except (NameError):
             # verbosemode was undefined
@@ -156,7 +156,7 @@ class Environment:
         '''
 
         try:
-            if type(debugmode) is types.BooleanType:
+            if type(debugmode) is bool:
                 self.debugmode = debugmode
         except (NameError):
             # debugmode was undefined
@@ -417,7 +417,7 @@ class Environment:
         ipaddress = ""
 
         if not netutil:
-            print "environment::getmacaddr():WARNING: Could not detect any net utility type/location"
+            print("environment::getmacaddr():WARNING: Could not detect any net utility type/location")
             return macaddr
         elif "nmcli" in netutil:
             netcmd = netutil +  " -t device show"
@@ -426,7 +426,7 @@ class Environment:
         elif "ip" in netutil:
             netcmd = netutil + " -o link"
         else:
-            print "environment::getmacaddr():WARNING: Could not identify unknown net utility type"
+            print("environment::getmacaddr():WARNING: Could not identify unknown net utility type")
             return macaddr
 
         try:
@@ -932,10 +932,10 @@ class Environment:
                                     stdout=subprocess.PIPE, close_fds=True)
             netdata = proc.stdout.readlines()
             for line in netdata:
-                print "processing: " + line
+                print(("processing: " + line))
                 match = re.search(littlesnitch, line)
                 if match is not None:
-                    print 'LittleSnitch Is Running'
+                    print('LittleSnitch Is Running')
                     issnitchactive = True
                     break
 
@@ -986,7 +986,7 @@ class Environment:
                     self.test_mode = True
                     self.script_path = os.path.dirname(os.path.realpath(sys.argv[1]))
                 else:
-                    print "ERROR: Cannot run using this method"
+                    print("ERROR: Cannot run using this method")
             else:
                 #print "DEBUG: Cannot find appropriate path, building paths for current directory"
                 self.script_path = os.getcwd()
@@ -1041,11 +1041,11 @@ class Environment:
         elif os.path.exists(os.path.join(self.script_path, "etc", "stonix.conf")):
             self.conf_path = os.path.join(self.script_path, "etc", "stonix.conf")
         elif re.search('pydev', script_path_zero) and re.search('stonix_resources', script_path_one):
-            print "INFO: Called by unit test"
+            print("INFO: Called by unit test")
             srcpath = script_path_one.split('/')[:-2]
             srcpath = '/'.join(srcpath)
             self.conf_path = os.path.join(srcpath, 'etc', 'stonix.conf')
-            print self.conf_path
+            print((self.conf_path))
         else:
             self.conf_path = "/etc/stonix.conf"
 

@@ -30,21 +30,22 @@ password, will be disabled.
 @change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
 @change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
+@change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
 '''
 
-from __future__ import absolute_import
+
 
 import re
 import traceback
 import time
 
-from ..localize import EXCLUDEACCOUNTS
+from localize import EXCLUDEACCOUNTS
 from datetime import datetime
 from decimal import Decimal
-from ..rule import Rule
-from ..stonixutilityfunctions import iterate
-from ..logdispatcher import LogPriority
-from ..CommandHelper import CommandHelper
+from rule import Rule
+from stonixutilityfunctions import iterate
+from logdispatcher import LogPriority
+from CommandHelper import CommandHelper
 
 
 class DisableInactiveAccounts(Rule):
@@ -77,7 +78,7 @@ class DisableInactiveAccounts(Rule):
         self.ci = self.initCi(datatype, key, instructions, default)
 
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.12', 'r', '10.14.10']},
+                           'os': {'Mac OS X': ['10.15', 'r', '10.15.10']},
                            'fisma': 'high'}
 
         self.initobjs()
@@ -234,7 +235,7 @@ class DisableInactiveAccounts(Rule):
                                 "parameter user was None, or blank!")
                 return inactivedays
 
-            if not isinstance(user, basestring):
+            if not isinstance(user, str):
                 self.logger.log(LogPriority.DEBUG,
                                 "The given value for parameter user was not " +
                                 "of the correct type (int)!")

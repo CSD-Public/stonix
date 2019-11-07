@@ -40,9 +40,9 @@ from PyInstaller.building import makespec, build_main
 
 sys.path.append('./ramdisk')
 
-from ramdisk.lib.loggers import LogPriority as lp
-from ramdisk.lib.manage_user.manage_user import ManageUser
-from ramdisk.lib.manage_keychain.manage_keychain import ManageKeychain
+from .ramdisk.lib.loggers import LogPriority as lp
+from .ramdisk.lib.manage_user.manage_user import ManageUser
+from .ramdisk.lib.manage_keychain.manage_keychain import ManageKeychain
 
 
 class macbuildlib(object):
@@ -188,7 +188,7 @@ class macbuildlib(object):
                     for myfile in files:
                         os.chown(os.path.join(root, myfile), uid, -1)
         except TypeError:
-            print "Error: Cannot chownR, target must be a directory"
+            print("Error: Cannot chownR, target must be a directory")
             raise
         except Exception:
             raise
@@ -242,11 +242,11 @@ class macbuildlib(object):
                 except NameError:
                     raise
         except TypeError:
-            print "Error: Cannot chmodR target, must be a directory"
+            print("Error: Cannot chmodR target, must be a directory")
             raise
         except NameError:
-            print "Error: Invalid writemode specified. Please use [a]ppend " + \
-                "or [o]verwrite"
+            print(("Error: Invalid writemode specified. Please use [a]ppend " + \
+                "or [o]verwrite"))
             raise
         except Exception:
             raise
@@ -343,7 +343,7 @@ class macbuildlib(object):
                         if os.path.exists(fullpath):
                             os.chdir(cwd)
                             return fullpath
-        print "PyQt4 path not found. Exiting."
+        print("PyQt4 path not found. Exiting.")
         exit(1)
 
     def checkBuildUser(self):
@@ -357,25 +357,25 @@ class macbuildlib(object):
         '''
         # This method is called before ramdisk creation, so it does not use the
         # try/except block that most methods do
-        print "Starting checkBuildUser..."
+        print("Starting checkBuildUser...")
 
         CURRENT_USER = os.getlogin()
 
         RUNNING_ID = str(os.geteuid())
-        print "UID: " + RUNNING_ID
+        print(("UID: " + RUNNING_ID))
 
         if RUNNING_ID != "0":
-            print " "
-            print "****************************************"
-            print "***** Current logged in user: " + CURRENT_USER
-            print "***** Please run with SUDO "
-            print "****************************************"
-            print " "
+            print(" ")
+            print("****************************************")
+            print(("***** Current logged in user: " + CURRENT_USER))
+            print("***** Please run with SUDO ")
+            print("****************************************")
+            print(" ")
             exit(1)
         else:
-            print "***** Current logged in user: " + CURRENT_USER
+            print(("***** Current logged in user: " + CURRENT_USER))
 
-        print "checkBuildUser Finished..."
+        print("checkBuildUser Finished...")
         return CURRENT_USER, RUNNING_ID
 
     def codeSign(self, username, password, sig='', verbose='', deep='', appName=''):

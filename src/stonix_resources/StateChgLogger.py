@@ -40,7 +40,7 @@ import time
 import difflib
 import weakref
 import subprocess
-from logdispatcher import LogPriority
+from stonix_resources.logdispatcher import LogPriority
 
 
 class StateChgLogger(object):
@@ -90,7 +90,7 @@ class StateChgLogger(object):
         try:
             if not os.path.exists('/var/db/stonix') and \
                self.environment.geteuid() == 0:
-                os.makedirs('/var/db/stonix', 0700)
+                os.makedirs('/var/db/stonix', 0o700)
             if self.environment.geteuid() == 0:
                 self.eventlog = shelve.open('/var/db/stonix/eventlog', 'c',
                                             None, True)
@@ -98,7 +98,7 @@ class StateChgLogger(object):
                 self.privmode = False
             for node in [self.diffdir, self.archive]:
                 if not os.path.exists(node) and self.environment.geteuid() == 0:
-                    os.makedirs(node, 0700)
+                    os.makedirs(node, 0o700)
         except(OSError):
             raise
 

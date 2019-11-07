@@ -1,5 +1,5 @@
-#!/usr/bin/python
-from Queue import Queue, Empty
+#!/usr/bin/env python3
+from queue import Queue, Empty
 import threading
 import subprocess
 import getpass
@@ -23,7 +23,7 @@ def getOutput(outQueue):
         return outStr
 
 
-username = raw_input("Username: " )
+username = eval(input("Username: " ))
 passwd = getpass.getpass("Password: ")
 
 cmd = ["/usr/bin/su", "-", username.strip(), "-c", "/bin/top -l 1"]
@@ -50,7 +50,7 @@ p.stdin.flush()
 errors = getOutput(errQueue)
 output = getOutput(outQueue)
 
-print "---"
-print output
-print "---"
-print errors
+print("---")
+print(output)
+print("---")
+print(errors)

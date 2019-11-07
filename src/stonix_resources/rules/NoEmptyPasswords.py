@@ -25,12 +25,12 @@ Created on Oct 29, 2012
 @change: 2015/10/07 eball Help text/PEP8 cleanup
 '''
 
-from __future__ import absolute_import
-from ..stonixutilityfunctions import setPerms, checkPerms, readFile, writeFile
-from ..stonixutilityfunctions import getUserGroupName
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..pkghelper import Pkghelper
+
+from stonixutilityfunctions import setPerms, checkPerms, readFile, writeFile
+from stonixutilityfunctions import getUserGroupName
+from rule import Rule
+from logdispatcher import LogPriority
+from pkghelper import Pkghelper
 from subprocess import call
 import os
 import traceback

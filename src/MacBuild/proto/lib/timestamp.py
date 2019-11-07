@@ -1,4 +1,4 @@
-#!/usr/bin/python -u
+#!/usr/bin/env python3 -u
 """
 Create a "module" version stamp, sed a file with it.
 
@@ -6,7 +6,7 @@ To maintain module versions.
 
 @author: Roy Nielsen
 """
-from __future__ import absolute_import
+
 
 import os
 import re

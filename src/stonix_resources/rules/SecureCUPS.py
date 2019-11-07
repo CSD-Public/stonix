@@ -36,21 +36,23 @@ With this rule, you can:
 @change: 2017/10/23 rsn - change to new service helper interface
 @change: Brandon R. Gonzales - 6/19/2019 - Set up cupsd configurations to be
         handled by a single kveditor object rather than two
+@change: 2019/07/17 Brandon R. Gonzales - Make applicable to MacOS 10.13-10.14
+@change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
 '''
 
-from __future__ import absolute_import
+
 
 import os
 import traceback
 import re
 
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..ServiceHelper import ServiceHelper
-from ..pkghelper import Pkghelper
-from ..CommandHelper import CommandHelper
-from ..KVEditorStonix import KVEditorStonix
-from ..stonixutilityfunctions import iterate
+from rule import Rule
+from logdispatcher import LogPriority
+from ServiceHelper import ServiceHelper
+from pkghelper import Pkghelper
+from CommandHelper import CommandHelper
+from KVEditorStonix import KVEditorStonix
+from stonixutilityfunctions import iterate
 
 
 class SecureCUPS(Rule):
@@ -84,7 +86,8 @@ class SecureCUPS(Rule):
         self.rootrequired = True
         self.guidance = ['CCE 4420-6', 'CCE 4407-3']
         self.applicable = {'type': 'white',
-                           'family': ['darwin', 'linux']}
+                           'os': {'Mac OS X': ['10.15', 'r', '10.15.10']},
+                           'family': ['linux']}
 
         # init CIs
         datatype1 = 'bool'
@@ -695,7 +698,7 @@ class SecureCUPS(Rule):
                     fn = open(f, 'w')
                     fn.writelines(contentlines)
                     fn.close()
-                    os.chmod(f, 0644)
+                    os.chmod(f, 0o644)
             if foundbadopts:
                 # do not continue with rest of fix because that would save state for this fix run
                 self.logger.log(LogPriority.DEBUG, "Reloading cups service to read configuration changes...")
@@ -844,9 +847,9 @@ class SecureCUPS(Rule):
                     self.logger.log(LogPriority.DEBUG, "\n\nsetting permissions and ownership for " + str(self.cupsdconf) + " file...\n\n")
                     os.chown(self.cupsdconf, 0, 0)
                     if self.linux:
-                        os.chmod(self.cupsdconf, 0640)
+                        os.chmod(self.cupsdconf, 0o640)
                     elif self.darwin:
-                        os.chmod(self.cupsdconf, 0644)
+                        os.chmod(self.cupsdconf, 0o644)
 
             if not self.reloadCUPS():
                 retval = False

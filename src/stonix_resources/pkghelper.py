@@ -17,9 +17,10 @@
 
 
 import re
-import yum, aptGet, portage, zypper, freebsd, solaris, dnf
+#import yum, aptGet, portage, zypper, freebsd, solaris, dnf
+from stonix_resources import yum, aptGet, portage, zypper, freebsd, solaris, dnf
 import traceback
-from logdispatcher import LogPriority
+from stonix_resources.logdispatcher import LogPriority
 
 
 class Pkghelper(object):
@@ -254,7 +255,7 @@ remove command"
 
             # parameter validation
             if package:
-                if not isinstance(package, basestring):
+                if not isinstance(package, str):
                     self.logger.log(LogPriority.DEBUG, "Parameter: package must be of type string. Got: " + str(type(package)))
                     return updatesavail
 
@@ -320,7 +321,7 @@ remove command"
         except Exception:
             self.detailedresults = traceback.format_exc()
             self.logger.log(LogPriority.ERROR, self.detailedresults)
-            raise(self.detailedresults)
+            raise self
 
     def getInstall(self):
         """return the commandline command for installing a package

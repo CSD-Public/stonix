@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 ###############################################################################
 #                                                                             #
 # Copyright 2019. Triad National Security, LLC. All rights reserved.          #
@@ -26,7 +26,7 @@ This is a Unit Test for Rule DisableUbuntuDataCollection
 @author: ekkehard j. koch, Breen Malmberg
 '''
 
-from __future__ import absolute_import
+
 
 import sys
 import unittest

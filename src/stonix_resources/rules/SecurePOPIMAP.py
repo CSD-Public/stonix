@@ -22,14 +22,14 @@ Created on Nov 9, 2015
 @change: 2017/10/23 rsn - change to new service helper interface
 '''
 
-from __future__ import absolute_import
 
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..pkghelper import Pkghelper
-from ..ServiceHelper import ServiceHelper
-from ..CommandHelper import CommandHelper
-from ..stonixutilityfunctions import iterate
+
+from rule import Rule
+from logdispatcher import LogPriority
+from pkghelper import Pkghelper
+from ServiceHelper import ServiceHelper
+from CommandHelper import CommandHelper
+from stonixutilityfunctions import iterate
 
 import os
 import re
@@ -237,8 +237,8 @@ class SecurePOPIMAP(Rule):
 
         try:
 
-            if not isinstance(filepath, basestring):
-                self.logger.log(LogPriority.DEBUG, "Parameter filepath must be of type: basestring")
+            if not isinstance(filepath, str):
+                self.logger.log(LogPriority.DEBUG, "Parameter filepath must be of type: str")
             if not filepath:
                 self.logger.log(LogPriority.DEBUG, "Parameter filepath must not be blank")
 
@@ -268,8 +268,8 @@ class SecurePOPIMAP(Rule):
 
         try:
 
-            if not isinstance(regex, basestring):
-                self.logger.log(LogPriority.DEBUG, "Parameter regex must be of type: basestring")
+            if not isinstance(regex, str):
+                self.logger.log(LogPriority.DEBUG, "Parameter regex must be of type: str")
                 retval = False
                 return retval
             if not isinstance(contents, list):
@@ -309,8 +309,8 @@ class SecurePOPIMAP(Rule):
             self.logger.log(LogPriority.DEBUG, "Parameter fixdict must be of type: dict")
             retval = False
             return retval
-        if not isinstance(filepath, basestring):
-            self.logger.log(LogPriority.DEBUG, "Parameter filepath must be of type: basestring")
+        if not isinstance(filepath, str):
+            self.logger.log(LogPriority.DEBUG, "Parameter filepath must be of type: str")
             retval = False
             return retval
         if not isinstance(contents, list):

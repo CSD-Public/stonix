@@ -34,18 +34,18 @@ built to make use of the libwrap library.
 @change: 2016/06/14 Eric Ball Rewrote most code
 """
 
-from __future__ import absolute_import
+
 
 import os
 import re
 import traceback
 import socket
 
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..stonixutilityfunctions import iterate
+from rule import Rule
+from logdispatcher import LogPriority
+from stonixutilityfunctions import iterate
 
-from ..localize import ALLOWNETS, HOSTSALLOWDEFAULT, HOSTSDENYDEFAULT
+from localize import ALLOWNETS, HOSTSALLOWDEFAULT, HOSTSDENYDEFAULT
 
 
 class TCPWrappers(Rule):
@@ -133,6 +133,8 @@ class TCPWrappers(Rule):
                 self.hosts_allow_contents.append(line)
             else:
                 for s in subnets:
+                    if type(s) is bytes:
+                        s = s.decode('utf-8')
                     self.hosts_allow_contents.append(re.sub("{allownet}", s, line))
 
     def convert_to_legacy(self, subnet):
@@ -353,7 +355,7 @@ class TCPWrappers(Rule):
             self.statechglogger.recordfilechange(allowfile, allowtmp, myid)
 
             os.rename(allowtmp, allowfile)
-            os.chmod(allowfile, 0644)
+            os.chmod(allowfile, 0o644)
             os.chown(allowfile, 0, 0)
 
         except Exception:
@@ -391,7 +393,7 @@ class TCPWrappers(Rule):
             self.statechglogger.recordfilechange(denyfile, denytmp, myid)
 
             os.rename(denytmp, denyfile)
-            os.chmod(denyfile, 0644)
+            os.chmod(denyfile, 0o644)
             os.chown(denyfile, 0, 0)
 
         except Exception:

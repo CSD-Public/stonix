@@ -12,7 +12,7 @@ https://docs.python.org/2/library/multiprocessing.html?highlight=logging#logging
 
 @author: Roy Nielsen
 """
-from __future__ import absolute_import
+
 import os
 import re
 import sys
@@ -74,14 +74,13 @@ class SingletonCyLogger(type):
 ###############################################################################
 # Main class
 
-class CyLogger(object):
+class CyLogger(object, metaclass=SingletonCyLogger):
     """
     Class to set up logging, with easy string referencing loggers and their
     handlers.
     
     @author: Roy Nielsen
     """
-    __metaclass__ = SingletonCyLogger
     
     instanciatedLoggers = {}
 
@@ -167,7 +166,7 @@ class CyLogger(object):
         if self.rotate:
             try:
                 self.logr.handlers.RotatingFileHandler.doRollover()
-            except Exception, err:
+            except Exception as err:
                 self.logr.log(LogPriority.WARNING, "Exception: " + str(err))
 
     #############################################
@@ -392,12 +391,12 @@ class CyLogger(object):
         msg_list = []
         if isinstance(msg, list):
             msg_list = msg
-        elif isinstance(msg, basestring):
+        elif isinstance(msg, str):
             first_msg_list = msg.split("\n")
             for mymsg in first_msg_list:
                 msg_list.append(mymsg + "\n")
         elif isinstance(msg, dict):
-            for key, value in msg.iteritems():
+            for key, value in list(msg.items()):
                 msg_list.append(str(key) + " : " + str(value))
         else:
             msg_list = msg
@@ -422,7 +421,7 @@ class CyLogger(object):
                 # Warning
                 try:
                     self.logr.log(validatedLvl, longPrefix + "DEBUG: (" + str(pri) + ") " + str(line))
-                except Exception, err:
+                except Exception as err:
                     self.logr.log(LogPriority.DEBUG, str(traceback.format_exc()))
                     self.logr.log(LogPriority.DEBUG, str(err))
             elif int(self.lvl) >= 40 and int(self.lvl) < 50:

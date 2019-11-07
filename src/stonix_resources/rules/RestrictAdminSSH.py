@@ -29,12 +29,13 @@ Created on Dec 16, 2013
 @change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
 @change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
+@change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
 '''
-from __future__ import absolute_import
-from ..stonixutilityfunctions import resetsecon, checkPerms, setPerms, iterate
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..KVEditorStonix import KVEditorStonix
+
+from stonixutilityfunctions import resetsecon, checkPerms, setPerms, iterate
+from rule import Rule
+from logdispatcher import LogPriority
+from KVEditorStonix import KVEditorStonix
 import os
 import traceback
 
@@ -59,7 +60,7 @@ RESTRICTADMINSSH to False.'''
         self.ssh = {"DenyGroups": "admin"}
         self.iditerator = 0
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.12', 'r', '10.14.10']}}
+                           'os': {'Mac OS X': ['10.15', 'r', '10.15.10']}}
 
     def usesSip(self):
         '''Determines whether this is Mac OS X >= v10.11
@@ -109,7 +110,7 @@ RESTRICTADMINSSH to False.'''
                     compliant = False
                     results += "Settings in " + self.path + " are not " + \
                         "correct\n"
-                if not checkPerms(self.path, [0, 0, 0644], self.logger):
+                if not checkPerms(self.path, [0, 0, 0o644], self.logger):
                     compliant = False
                     results += self.path + " permissions are incorrect\n"
             self.detailedresults = results
@@ -141,10 +142,10 @@ RESTRICTADMINSSH to False.'''
                 self.statechglogger.deleteentry(event)
 
             if os.path.exists(self.path):
-                if not checkPerms(self.path, [0, 0, 0644], self.logger):
+                if not checkPerms(self.path, [0, 0, 0o644], self.logger):
                     self.iditerator += 1
                     myid = iterate(self.iditerator, self.rulenumber)
-                    if not setPerms(self.path, [0, 0, 0644], self.logger,
+                    if not setPerms(self.path, [0, 0, 0o644], self.logger,
                                     self.statechglogger, myid):
                         success = False
                         results += "Could not set permissions on " + \
@@ -162,7 +163,7 @@ RESTRICTADMINSSH to False.'''
                         self.logger.log(LogPriority.DEBUG, debug)
                         success = False
                     os.chown(self.path, 0, 0)
-                    os.chmod(self.path, 0644)
+                    os.chmod(self.path, 0o644)
                     resetsecon(self.path)
             else:
                 success = False

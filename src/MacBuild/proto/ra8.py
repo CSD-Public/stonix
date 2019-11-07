@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 
 from subprocess import Popen, PIPE
 from tempfile import SpooledTemporaryFile as tmp
@@ -16,5 +16,5 @@ pipe.stdout.read()
 output = pipe.stdout.readlines()
 f.close()
 
-print output
+print(output)
 

@@ -1,4 +1,4 @@
-#!/usr/bin/python -u
+#!/usr/bin/env python3 -u
 
 import re
 import os
@@ -144,7 +144,7 @@ class zzzTestFrameworkRamdisk(unittest.TestCase):
             except:
                 try :
                     open(fname, 'a').close()
-                except Exception, err:
+                except Exception as err:
                     self.logger.log(LogPriority.INFO,"Cannot open to touch: " + str(fname))
 
 
@@ -163,7 +163,7 @@ class zzzTestFrameworkRamdisk(unittest.TestCase):
                 except OSError as err1:
                     self.logger.log(LogPriority.INFO,"OSError exception attempting to create directory: " + str(path))
                     self.logger.log(LogPriority.INFO,"Exception: " + str(err1))
-                except Exception, err2 :
+                except Exception as err2 :
                     self.logger.log(LogPriority.INFO,"Unexpected Exception trying to makedirs: " + str(err2))
 
 
@@ -219,7 +219,7 @@ class zzzTestFrameworkRamdisk(unittest.TestCase):
 
                 # capture end time
                 end_time = datetime.now()
-            except Exception, err:
+            except Exception as err:
                 self.logger.log(LogPriority.INFO,"Exception trying to write temp file for benchmarking...")
                 self.logger.log(LogPriority.INFO,"Exception thrown: " + str(err))
                 total_time = 0

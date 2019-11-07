@@ -34,20 +34,21 @@ dictionary
 @change: 2017/11/13 Ekkehard - make eligible for OS X El Capitan 10.11+
 @change: 2018/06/08 Ekkehard - make eligible for macOS Mojave 10.14
 @change: 2019/03/12 Ekkehard - make eligible for macOS Sierra 10.12+
+@change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
 """
 
-from __future__ import absolute_import
+
 
 import os
 import traceback
 
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..filehelper import FileHelper
-from ..CommandHelper import CommandHelper
-from ..pkghelper import Pkghelper
-from ..stonixutilityfunctions import iterate
-from ..localize import MACKRB5, LINUXKRB5
+from rule import Rule
+from logdispatcher import LogPriority
+from filehelper import FileHelper
+from CommandHelper import CommandHelper
+from pkghelper import Pkghelper
+from stonixutilityfunctions import iterate
+from localize import MACKRB5, LINUXKRB5
 
 
 class ConfigureKerberos(Rule):
@@ -72,7 +73,7 @@ class ConfigureKerberos(Rule):
         self.rootrequired = True
         self.guidance = []
         self.applicable = {'type': 'white', 'family': 'linux',
-                           'os': {'Mac OS X': ['10.12', 'r', '10.14.10']}}
+                           'os': {'Mac OS X': ['10.15', 'r', '10.15.10']}}
         # This if/else statement fixes a bug in Configure Kerberos that
         # occurs on Debian systems due to the fact that Debian has no wheel
         # group by default.
@@ -81,7 +82,7 @@ class ConfigureKerberos(Rule):
                           {"path": "/etc/krb5.conf",
                            "remove": False,
                            "content": MACKRB5,
-                           "permissions": 0644,
+                           "permissions": 0o644,
                            "owner": os.getuid(),
                            "group": "wheel",
                            "eventid": str(self.rulenumber).zfill(4) + "krb5"},
@@ -126,7 +127,7 @@ class ConfigureKerberos(Rule):
                           {"path": "/etc/krb5.conf",
                            "remove": False,
                            "content": LINUXKRB5,
-                           "permissions": 0644,
+                           "permissions": 0o644,
                            "owner": "root",
                            "group": "root",
                            "eventid": str(self.rulenumber).zfill(4) + "krb5"}}

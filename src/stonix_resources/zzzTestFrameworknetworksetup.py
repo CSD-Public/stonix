@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 ###############################################################################
 #                                                                             #
 # Copyright 2019. Triad National Security, LLC. All rights reserved.          #
@@ -24,9 +24,9 @@ Created on May 13, 2015
 @change: 2015-05-13 ekkehard - original implementation
 '''
 import unittest
-import environment
-import logdispatcher
-import networksetup
+from stonix_resources import environment
+from stonix_resources import logdispatcher
+from stonix_resources import networksetup
 
 
 class zzzTestFrameworknetworksetup(unittest.TestCase):
@@ -42,7 +42,7 @@ class zzzTestFrameworknetworksetup(unittest.TestCase):
 
     def testGetLocation(self):
         location = self.ns.getLocation()
-        self.failUnless( location == "" )
+        self.assertTrue( location == "" )
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 ###############################################################################
 #                                                                             #
 # Copyright 2019. Triad National Security, LLC. All rights reserved.          #
@@ -79,23 +79,29 @@ The following options control the running of the script:
  -f  --fix  Apply system hardening.
  -r  --report  Print a configuration compliance report.
  -u  --update  Check and update the known SUID, GUID, World
-         Writable, unowned and/or AIDE databases.
- -G  --gui  Use the GUI interface.
- -c  --gui  Use the Console interface.
+        Writable, unowned and/or AIDE databases.
+ -G  Use the GUI interface (default option)
+ -c  --cli  Use the Console interface.
  -X  --rollback  Will rollback file changes to pre-STONIX state.
  -h  --help  or no arguments will display this help message and exit.
  -v  --verbose print verbose information about what stor is doing.
- -R  --rule run a single stonix rule. Requires -f, -X or -r.
+ -m --module modulename run a single stonix rule. Requires -f, -X or -r.
+ -p --printconfigsimple
+      Generate a new config file with current options in the simple format.
+ -P --printconfigfull
+      Generate a new config file with current options in the full format (shows all options).
+ -l --list
+      Print the list of installed rules that apply to this platform.
 
 WARNING! If run with the -f flag THIS PROGRAM WILL MODIFY
 SYSTEM SETTINGS!
 
 *********
-The system should be rebooted when the script completes for all
-changes to take effect.
+Some changes applied by STONIX require the system to be rebooted
+to take effect
 *********
 
-stonix is a system hardening program produced by the NIE
+STONIX is a system hardening program produced by the NIE
 Development Services team. It is designed to apply hardening settings
 to Unix and Unix-like operating systems in accordance with published
 security guidelines.
@@ -110,24 +116,20 @@ hardening process please review the hardening guidance from CIS, DISA and NSA.
 
 Created on Aug 23, 2010
 
-@author: David Kennel
+
 @change: 2017/03/07 - David Kennel - Added support for FISMA categorization.
 @change: 2017/06/19 - David Kennel - Added safeties to rule loading for redundant
         rule names and numbers.
 @change: 2017/07/12 - Breen Malmberg - added method getruleauditonly();
         added to do notes; changed author name formats to be consistent;
         fixed some typo's in the class doc string; updated group name (CSD -> NIE)
-@TODO There are some methods that require fixing / completing / re-working (search FIXME)
-@TODO All methods need a once-over done on their doc strings
-@TODO improve logging/debugging on all methods
-@TODO look at adding try/except to all methods missing them
 @change: 2019/04/08 - Breen Malmberg - removed unused import 'imp'; fixed unreachable logging calls
 """
 
-# Std Library imports
 import sys
 import os
 import re
+import stat
 import traceback
 import time
 import subprocess
@@ -135,7 +137,6 @@ from pkgutil import extend_path
 
 # Local imports
 __path__ = extend_path(os.path.dirname(os.path.abspath(__file__)), 'stonix_resources')
-import stonix_resources
 
 from stonix_resources.observable import Observable
 from stonix_resources.configuration import Configuration
@@ -143,18 +144,15 @@ from stonix_resources.environment import Environment
 from stonix_resources.StateChgLogger import StateChgLogger
 from stonix_resources.logdispatcher import LogPriority, LogDispatcher
 from stonix_resources.program_arguments import ProgramArguments
-from stonix_resources.CheckApplicable import CheckApplicable
 from stonix_resources.CommandHelper import CommandHelper
-
 from stonix_resources.cli import Cli
 
 
 class Controller(Observable):
-    '''This is the main worker object for stonix. It handles the
+    """This is the main worker object for stonix. It handles the
     stand up and tear down of the rest of the program.
 
-
-    '''
+    """
 
     def __init__(self):
         """
@@ -172,168 +170,124 @@ class Controller(Observable):
         self.pcs = False
         self.list = False
 
-        if not self.safetycheck():
-            self.logger.log(LogPriority.CRITICAL,
-                            ['SafetyCheck',
-                             'ERROR: Installation safety checks failed!'])
-            self.logger.log(LogPriority.WARNING,
-                            ['SafetyCheck',
-                             'STONIX files may only be writable by the ' +
-                             'root user!'])
-            self.logger.log(LogPriority.WARNING,
-                            ['SafetyCheck',
-                             'Validate and correct permissions on all ' +
-                             'STONIX files and try again.'])
-            self.logger.log(LogPriority.WARNING,
-                            ['SafetyCheck',
-                             'STONIX will now exit.'])
-            sys.exit(1)
+        self.euid = self.environ.geteuid()
+        test_mode = self.environ.get_test_mode()
+        self.lockfile = '/var/run/stonix.pid'
+        self.config = Configuration(self.environ)
+        self.numrulesrunning = 0
+        self.numrulescomplete = 0
+        self.currulename = ''
+        self.currulenum = 0
 
         # this part added so stonix will create files with the intended root umask (022)
         # instead of using the default user umask (which is currently being set to 077)
         # running stonix with a umask of 077 would break several bits of functionality
         # (namely installbanners, in some cases)
-        if self.environ.geteuid() == 0:
-            os.umask(022)
+        if self.euid == 0:
+            os.umask(0o22)
 
-        self.lockfile = '/var/run/stonix.pid'
-        if(self.environ.get_test_mode()):
+        if test_mode:
             self.setuptesting()
         if not self.mode == 'test':
+            # processargs() MUST be called BEFORE logging object is instantiated to
+            # get the given logging level provided via command line!
             self.prog_args = ProgramArguments()
             self.processargs()
-        self.config = Configuration(self.environ)
+
+        self.logger = LogDispatcher(self.environ)
+        self.logger.log(LogPriority.DEBUG, 'Logging Started')
+        self.ch = CommandHelper(self.logger)
+        self.statechglogger = StateChgLogger(self.logger, self.environ)
+        self.logger.log(LogPriority.DEBUG, 'State Logger Started')
+
+        if not self.safetycheck():
+            self.logger.log(LogPriority.CRITICAL, ['SafetyCheck', 'ERROR: Installation safety check failed!'])
+            self.logger.log(LogPriority.WARNING, ['SafetyCheck', 'STONIX will now exit.'])
+            sys.exit(1)
+
         try:
             fismacategory = self.config.getconfvalue('main', 'fismacat')
             self.environ.setsystemfismacat(fismacategory)
-        except(KeyError):
+        except KeyError:
             pass
-        self.numrulesrunning = 0
-        self.numrulescomplete = 0
-        self.currulename = ''
-        self.currulenum = 0
-        self.logger = LogDispatcher(self.environ)
-        self.logger.log(LogPriority.DEBUG, 'Logging Started')
 
         # set session variables needed by stonix which may not normally get
         # set when running under a root context
-        self.ch = CommandHelper(self.logger)
-        session_vars_dict = {"DBUS_SESION_BUS_ADDRESS": "export $(dbus-launch)"}
-        try:
-            for sv in session_vars_dict:
-                self.set_session_var(sv, session_vars_dict[sv])
-        except:
-            self.logger.log(LogPriority.WARNING, "Unable to set " + sv + " session variable")
-            pass
+        self.setup_session_vars()
 
         self.tryacquirelock()
 
-        if self.mode == 'gui':
-            applicable2PyQt5 = {'type': 'white',
-                               'os': {'Mac OS X': ['10.10', '+']}}
-            applicable2PyQt4 = {'type': 'black',
-                               'family': ['darwin']}
-            self.chkapp = CheckApplicable(self.environ, self.logger)
+        try:
 
-            if self.chkapp.isApplicable(applicable2PyQt5):
-                #####
-                # Appropriate to OS that supports PyQt5
+            if self.mode == "gui":
+
                 try:
                     from PyQt5 import QtCore, QtWidgets, QtGui
                     from stonix_resources.gui_pyqt5 import GUI
-                except ImportError:
-                    pass
-
-                # This resets the UI to the command line if GUI was selected on the
-                # command line and PyQt4 isn't present.
-                if 'PyQt5' not in sys.modules and self.mode == 'gui':
-                    self.mode = 'cli'
-                    self.logger.log(LogPriority.ERROR,
-                                    'GUI Selected but PyQt5 not available. ' +
-                                    'Please install PyQt5 and dependencies for ' +
-                                    'GUI functionality.')
-                elif 'PyQt5' in sys.modules:
-                    app = QtWidgets.QApplication(sys.argv)
-                    splashart = os.path.join(self.environ.get_icon_path(),
-                                             'StonixSplash.png')
-                    splashimage = QtGui.QPixmap(splashart)
-                    splash = QtWidgets.QSplashScreen(splashimage,
-                                                 QtCore.Qt.WindowStaysOnTopHint)
-                    splash.setMask(splashimage.mask())
-                    splash.show()
-                    app.processEvents()
-
-            if self.chkapp.isApplicable(applicable2PyQt4):
-                #####
-                # Appropriate to OS that supports PyQt4
-                try:
+                    self.logger.log(LogPriority.DEBUG, "Using PyQt5 libraries")
+                except:
+                    self.logger.log(LogPriority.DEBUG, "PyQt5 libraries not found")
                     from PyQt4 import QtCore, QtGui
                     from stonix_resources.gui import GUI
-                except(ImportError):
-                    pass
+                    self.logger.log(LogPriority.DEBUG, "Using PyQt4 libraries")
 
-                # This resets the UI to the command line if GUI was selected on the
-                # command line and PyQt4 isn't present.
-                if 'PyQt4' not in sys.modules and self.mode == 'gui':
-                    self.mode = 'cli'
-                    self.logger.log(LogPriority.ERROR,
-                                    'GUI Selected but PyQt4 not available. ' +
-                                    'Please install PyQt4 and dependencies for ' +
-                                    'GUI functionality.')
-                elif 'PyQt4' in sys.modules:
-                    app = QtGui.QApplication(sys.argv)
-                    splashart = os.path.join(self.environ.get_icon_path(),
-                                             'StonixSplash.png')
+                icon_path = self.environ.get_icon_path()
+
+                if "PyQt5" in sys.modules:
+                    app = QtWidgets.QApplication(sys.argv)
+                    splashart = os.path.join(icon_path, 'StonixSplash.png')
                     splashimage = QtGui.QPixmap(splashart)
-                    splash = QtGui.QSplashScreen(splashimage,
-                                                 QtCore.Qt.WindowStaysOnTopHint)
+                    splash = QtWidgets.QSplashScreen(splashimage, QtCore.Qt.WindowStaysOnTopHint)
                     splash.setMask(splashimage.mask())
                     splash.show()
                     app.processEvents()
+                elif "PyQt4" in sys.modules:
+                    app = QtGui.QApplication(sys.argv)
+                    splashart = os.path.join(icon_path, 'StonixSplash.png')
+                    splashimage = QtGui.QPixmap(splashart)
+                    splash = QtGui.QSplashScreen(splashimage, QtCore.Qt.WindowStaysOnTopHint)
+                    splash.setMask(splashimage.mask())
+                    splash.show()
+                    app.processEvents()
+                else:
+                    self.mode = "cli"
+                    self.logger.log(LogPriority.DEBUG, "Unable to detect PyQt5 or PyQt4 libraries. Reverting to command line mode")
 
-        self.statechglogger = StateChgLogger(self.logger, self.environ)
-        # NB We don't have a main event loop at this point so we call
-        # the app.processEvents() again to make the splash screen show
-        if self.mode == 'gui':
-            app.processEvents()
-        self.logger.log(LogPriority.DEBUG,
-                        'State Logger Started')
-        if not(self.mode == 'test'):
-            # This resets the UI to the command line if GUI was selected on the
-            # command line and PyQt4 isn't present.
-            if 'PyQt4' not in sys.modules and 'PyQt5' not in sys.modules and self.mode == 'gui':
-                self.mode = 'cli'
-                self.logger.log(LogPriority.ERROR,
-                                'GUI Selected but PyQt4 not available. ' +
-                                'Please install PyQt4 and dependencies for ' +
-                                'GUI functionality.')
-        self.statechglogger = StateChgLogger(self.logger, self.environ)
-        self.logger.log(LogPriority.DEBUG,
-                        'State Logger Started')
-        self.logger.log(LogPriority.DEBUG,
-                        'Running in ' + self.mode)
+                # NB We don't have a main event loop at this point so we call
+                # the app.processEvents() again to make the splash screen show
+                if self.mode == "gui":
+                    app.processEvents()
+
+        except Exception as err:
+            self.logger.log(LogPriority.DEBUG, str(err))
+            self.mode = "cli"
+
+        self.logger.log(LogPriority.DEBUG, 'Running in ' + self.mode)
+
         starttime = time.time()
         allrules = self.getrules(self.config, self.environ)
         etime = time.time() - starttime
-        self.logger.log(LogPriority.DEBUG,
-                        'Rules Processed in ' + str(etime))
+        self.logger.log(LogPriority.DEBUG, 'Rules Processed in ' + str(etime))
         self.installedrules = self.findapplicable(allrules)
+
+        # if no applicable rules are found, exit STONIX with message
+        if len(self.installedrules) == 0:
+            try:
+                self.releaselock()
+            except:
+                pass
+            sys.exit("********************\n\nSTONIX: No applicable rules for this platform\n\n********************")
+
         etime = time.time() - starttime
-        self.logger.log(LogPriority.DEBUG,
-                        'Rules Applicable in ' + str(etime))
+        self.logger.log(LogPriority.DEBUG, 'Rules Applicable in ' + str(etime))
         self.numexecutingrules = len(self.installedrules)
         self.environ.setnumrules(self.numexecutingrules)
         self.logger.logRuleCount()
-        self.logger.log(LogPriority.DEBUG,
-                        str(self.numexecutingrules) + ' rules loaded')
-        self.logger.log(LogPriority.DEBUG,
-                        ['CurrentEUID', str(self.environ.geteuid())])
-        self.logger.log(LogPriority.DEBUG,
-                        ['OSFamily', self.environ.getosfamily()])
-        self.logger.log(LogPriority.DEBUG,
-                        ['OSType', self.environ.getostype()])
-        self.logger.log(LogPriority.DEBUG,
-                        ['OSVersion', self.environ.getosver()])
+        self.logger.log(LogPriority.DEBUG, str(self.numexecutingrules) + ' rules loaded')
+        self.logger.log(LogPriority.DEBUG, ['CurrentEUID', str(self.environ.geteuid())])
+        self.logger.log(LogPriority.DEBUG, ['OSFamily', self.environ.getosfamily()])
+        self.logger.log(LogPriority.DEBUG, ['OSType', self.environ.getostype()])
+        self.logger.log(LogPriority.DEBUG, ['OSVersion', self.environ.getosver()])
         self.list = self.prog_args.getList()
 
         if self.list:
@@ -347,13 +301,27 @@ class Controller(Observable):
         elif self.mode == 'test':
             pass
 
+    def setup_session_vars(self):
+        """
+
+        """
+
+        session_vars_dict = {"DBUS_SESSION_BUS_ADDRESS": "export $(dbus-launch)"}
+
+        try:
+            for sv in session_vars_dict:
+                self.set_session_var(sv, session_vars_dict[sv])
+        except:
+            self.logger.log(LogPriority.WARNING, "Unable to set " + sv + " session variable")
+            pass
+
     def set_session_var(self, session_var, set_command):
-        '''
+        """
 
         :param session_var: session variable to set
         :param set_command: the command to run to set the given session variable
 
-        '''
+        """
 
         session_var_value = ""
 
@@ -369,13 +337,14 @@ class Controller(Observable):
             raise
 
     def getrules(self, config, environ):
-        '''Private method to process the stonix rules file to populate the rules.
+        """Private method to process the stonix rules file to populate the rules.
 
-        :param config: 
-        :param environ: 
-        :returns: List of instantiated rule objects
+        :param config: Configuration object instance
+        :param environ: Environment object instance
+        :return: instruleclasses
+        :rtype: list ;  List of instantiated rule objects
 
-        '''
+        """
         rulewalklist = []
         instruleclasses = []
         validrulefiles = []
@@ -399,14 +368,13 @@ class Controller(Observable):
 
         rulefiles = os.listdir(str(rulesPath))
 
-
         #####
         # Check if stonix has been 'frozen' with pyinstaller, py2app, etc and
         # process rules accordingly
         if hasattr(sys, 'frozen'):
             #####
             # Search through the already imported libraries for stonix rules
-            for item in sys.modules.keys():
+            for item in list(sys.modules.keys()):
                 if re.match("stonix_resources\.rules\.[A-Z]\w+$", item):
                     self.logger.log(LogPriority.DEBUG,
                                     'Key Match: ' + str(item))
@@ -522,15 +490,15 @@ class Controller(Observable):
         return instruleclasses
 
     def findapplicable(self, rules):
-        '''This method checks each rule to see if it is applicable on the current
+        """This method checks each rule to see if it is applicable on the current
         platform on which stonix is running. A list of applicable rule objects
         is returned.
 
         :param rules: List of instantiated rule objects
-        :returns: List of instantiated rule objects
-        @author: David Kennel
+        :return: List of instantiated rule objects
+        
 
-        '''
+        """
         applicablerules = []
         for rule in rules:
             try:
@@ -557,40 +525,36 @@ class Controller(Observable):
         return applicablerules
 
     def getallrulesdata(self):
-        '''This method returns a dictionary of lists containing the data for all
+        """This method returns a dictionary of lists containing the data for all
         installed rules. Returned properties include; rule name, rule number,
         and the rule help text. The dictionary is keyed by rule number.
 
 
-        :returns: Dictionary of lists
-        @author: David Kennel
+        :return: Dictionary of lists
+        
 
-        '''
+        """
         rulesdata = {}
         for rule in self.installedrules:
             rulenum = rule.getrulenum()
             rulename = rule.getrulename()
             ruletxt = rule.gethelptext()
-            ruledetails = []
-            ruledetails.append(rulename)
-            ruledetails.append(ruletxt)
+            ruledetails = [rulename, ruletxt]
             rulesdata[rulenum] = ruledetails
         return rulesdata
 
     def getrulenumbyname(self, name):
-        '''This method takes a name associated with a rule as an argument and
+        """This method takes a name associated with a rule as an argument and
         translates it into a number associated with a rule class. Acceptable
         rule names are the section headers from the stonix_resources.conf.
         These section headers are generated from the rulename property that
         each rule has.
 
-        :param string: name of the rule to fetch a number for.
-        :param name: 
-        :returns: int : number for the rule matching the passed name 0 if no
-        match is found.
-        @author: David Kennel
+        :param string name: of the rule to fetch a number for.
+        :return: rulenum
+        :rtype: int
+        """
 
-        '''
         rulenum = 0
         for rule in self.installedrules:
             rulename = rule.getrulename()
@@ -599,18 +563,18 @@ class Controller(Observable):
         return rulenum
 
     def getrulenamebynum(self, rulenum):
-        '''This method takes a number associated with a rule as an argument and
+        """This method takes a number associated with a rule as an argument and
         translates it into a name associated with a rule class. Acceptable
         rule number are integers and are found in rule implementations.
 
-        :param int: number of the rule to fetch a name for.
-        :param rulenum: 
-        :returns: string : name for the rule matching the passed number. None if
-        no match is found.
-        @author: David Kennel
+        :param int rulenum: of the rule to fetch a name for.
+        :return: rulename
+        :rtype: str
+        
 
-        '''
-        rulename = None
+        """
+
+        rulename = ""
         for rule in self.installedrules:
             ruleid = rule.getrulenum()
             if rulenum == ruleid:
@@ -618,13 +582,11 @@ class Controller(Observable):
         return rulename
 
     def hardensystem(self):
-        '''Call all rules in fix(harden) mode
+        """Call all rules in fix(harden) mode
 
 
-        :returns: void :
-        @author David Kennel
-
-        '''
+        
+        """
         self.numrulesrunning = self.numexecutingrules
         self.numrulescomplete = 0
         for rule in self.installedrules:
@@ -682,13 +644,9 @@ class Controller(Observable):
             self.notify_check()
 
     def auditsystem(self):
-        '''Call all rules in audit(report) mode
+        """Call all rules in audit(report) mode
 
-
-        :returns: void :
-        @author David Kennel
-
-        '''
+        """
         self.numrulesrunning = self.numexecutingrules
         self.numrulescomplete = 0
         for rule in self.installedrules:
@@ -730,14 +688,11 @@ class Controller(Observable):
             self.notify_check()
 
     def runruleharden(self, ruleid):
-        '''Run a single rule in fix(harden) mode
+        """Run a single rule in fix(harden) mode
 
-        :param int: ruleid :
-        :param ruleid: 
-        :returns: void :
-        @author David Kennel
+        :param int ruleid:
 
-        '''
+        """
         self.numrulesrunning = 1
         self.numrulescomplete = 0
         rulename = self.getrulenamebynum(ruleid)
@@ -828,14 +783,11 @@ class Controller(Observable):
         self.logger.log(LogPriority.DEBUG, "****************** RULE END: " + str(rulename) + " ******************")
 
     def runruleaudit(self, ruleid):
-        '''Run a single rule in audit(report) mode
+        """Run a single rule in audit(report) mode
 
-        :param int: ruleid :
-        :param ruleid: 
-        :returns: void :
-        @author David Kennel
+        :param int ruleid:
 
-        '''
+        """
         rulename = self.getrulenamebynum(ruleid)
         self.logger.log(LogPriority.DEBUG, "****************** RULE START: " + str(rulename) + " ******************")
         message = "Controller:runruleaudit: Entering rule with id " + \
@@ -889,13 +841,9 @@ class Controller(Observable):
         self.logger.log(LogPriority.DEBUG, "****************** RULE END: " + str(rulename) + " ******************")
 
     def undochangessystem(self):
-        '''Undo all changes to the system.
+        """Undo all changes to the system.
 
-
-        :returns: void :
-        @author David Kennel
-
-        '''
+        """
         self.numrulesrunning = self.numexecutingrules
         self.numrulescomplete = 0
         for rule in self.installedrules:
@@ -925,15 +873,12 @@ class Controller(Observable):
             self.notify_check()
 
     def undorule(self, ruleid):
-        '''Undo the changes from a single rule. Expects the integer rule number
+        """Undo the changes from a single rule. Expects the integer rule number
         as the ruleid
 
-        :param int: ruleid :
-        :param ruleid: 
-        :returns: void :
-        @author David Kennel
+        :param int ruleid:
 
-        '''
+        """
         self.numrulesrunning = 1
         self.numrulescomplete = 0
         for rule in self.installedrules:
@@ -968,28 +913,23 @@ class Controller(Observable):
                     self.notify_check()
 
     def getrulehelp(self, ruleid):
-        '''Return rule help information.
+        """Return rule help information.
 
-        :param int: ruleid : int (identifier) of rule to get help text for.
-        :param ruleid: 
-        :returns: string :
-        @author David Kennel
-
-        '''
-        helptxt = []
+        :param int ruleid: int (identifier) of rule to get help text for.
+        :return: helptxt
+        :rtype: str
+        
+        """
+        helptxt = ""
         for rule in self.installedrules:
             if ruleid == rule.getrulenum():
                 helptxt = rule.gethelptext()
         return helptxt
 
     def updatedbs(self):
-        '''Update all databases held by database rules in stonix_resources.
+        """Update all databases held by database rules in stonix_resources.
 
-
-        :returns: void :
-        @author David Kennel
-
-        '''
+        """
         numdbrules = 0
         self.numrulescomplete = 0
         for rule in self.installedrules:
@@ -1018,20 +958,18 @@ class Controller(Observable):
                 self.notify_check()
 
     def getconfigoptions(self):
-        '''This method retrieves the configitems for all rules and returns a dict
+        """This method retrieves the configitems for all rules and returns a dict
         of lists where the keys are rule names and the lists contain the rule
         text and a list of configitem objects for that rule.
 
-
-        :returns: dict :
-        @author David Kennel
-
-        '''
+        :return: configdict
+        :rtype: dict
+        
+        """
         configdict = {}
         for rule in self.installedrules:
             rulename = rule.getrulename()
-            ruledata = []
-            ruledata.append(rule.gethelptext())
+            ruledata = [rule.gethelptext()]
             for configitem in rule.getconfigitems():
                 ruledata.append(configitem)
             configdict[rulename] = ruledata
@@ -1039,16 +977,15 @@ class Controller(Observable):
         return configdict
 
     def getruleconfigoptions(self, ruleid):
-        '''This method returns the configurationitem object instances associated
+        """This method returns the configurationitem object instances associated
         with a rule. We expect to be passed the integer rule number to id the
         rule.
 
-        :param int: ruleid : Integer rule number
-        :param ruleid: 
-        :returns: list : list of configurationitem objects
-        @author David Kennel
-
-        '''
+        :param int ruleid: Integer rule number
+        :return: cilist
+        :rtype: list
+        
+        """
         cilist = []
         for rule in self.installedrules:
             if ruleid == rule.getrulenum():
@@ -1056,55 +993,39 @@ class Controller(Observable):
         return cilist
 
     def regenerateconfig(self, simpleconf):
-        '''This method will write the stonix configuration file with the current
+        """This method will write the stonix configuration file with the current
         configuration data. If simpleconf is True then we only write changed
         rules and rules that are marked as being in the simple config.
         
         The configuration file object actually does most of the work here.
 
-        :param bool: simpleconf : Whether or not we are generating a simple
+        :param bool simpleconf: Whether or not we are generating a simple
         configuration file or not.
-        :param simpleconf: 
-        :returns: void
-        @author David Kennel
-
-        '''
+                
+        """
         currdata = self.getconfigoptions()
         self.config.writeconfig(simpleconf, currdata)
 
-    def validateconfig(self):
-        '''FIXME - unimplemented method, is this still required/desirable at this
-        level?
-
-
-        :returns: bool :
-        @author
-
-        '''
-        pass
-
     def getcurrentrule(self):
-        '''This method returns the rule name for the currently executing rule.
+        """This method returns the rule name for the currently executing rule.
         This method only returns valid data when called while the whole rule
         stack is running.
 
 
-        :returns: string : rulename
-        @author David Kennel
-
-        '''
+        :return: string : rulename
+        
+        """
         return self.currulename
 
     def getrulecompstatus(self, ruleid):
-        '''This method returns the compliance status for the named rule. This info
+        """This method returns the compliance status for the named rule. This info
         is only valid after the rule has had the report or fix methods called.
 
-        :param int: ruleid
-        :param ruleid: 
-        :returns: bool
-        @author: David Kennel
+        :param int ruleid:
+        :return: compliant
+        :rtype: bool
 
-        '''
+        """
         compliant = False
         for rule in self.installedrules:
             if ruleid == rule.getrulenum():
@@ -1112,71 +1033,68 @@ class Controller(Observable):
         return compliant
 
     def getruledetailedresults(self, ruleid):
-        '''This method returns the detailed results from the rule with a given
+        """This method returns the detailed results from the rule with a given
         rule id. Returned data will be a string.
 
-        :param int: ruleid
-        :param ruleid: 
-        :returns: string
-        @author: David Kennel
+        :param int ruleid:
+        :return: detailedresults
+        :rtype: str
 
-        '''
-        detailedresults = []
+        """
+        detailedresults = ""
         for rule in self.installedrules:
             if ruleid == rule.getrulenum():
                 detailedresults = rule.getdetailedresults()
         return detailedresults
 
     def getcompletionpercentage(self):
-        '''This method returns the percentage of items on the to-do list
+        """This method returns the percentage of items on the to-do list
         completed. This only returns valid data when called while the whole
         rule stack is running.
 
-
-        :returns: int : range 0 - 100
-        @author David Kennel
-
-        '''
+        :return: percent
+        :rtype: int (range = 0 - 100)
+        
+        """
         total = float(self.numrulesrunning)
         curr = float(self.numrulescomplete)
         if self.environ.getdebugmode():
-            print "Controller:getcompletionpercentage: Total: " + str(total)
-            print "Controller:getcompletionpercentage: Current: " + str(curr)
+            print("Controller:getcompletionpercentage: Total: " + str(total))
+            print("Controller:getcompletionpercentage: Current: " + str(curr))
         if curr == 0:
             percent = 0
         else:
             percent = int((curr / total) * 100)
         if self.environ.getdebugmode():
-            print "Controller:getcompletionpercentage: Percent: " + str(percent)
+            print("Controller:getcompletionpercentage: Percent: " + str(percent))
         return percent
 
     def set_rule_detailedresults(self, ruleid, mode, result, msg):
-        '''update the specified rule's (ruleid) detailedresults with the msg from
+        """update the specified rule's (ruleid) detailedresults with the msg from
         the caller; (used to bridge the observable gap between other classes and
         the running rule)
 
-        :param ruleid: int; the rule number identifier
-        :param mode: string; fix|report|undo
-        :param result: bool; (see rule.py formatDetailedResults())
-        :param msg: string; message to update detailedresults with
-        @author: Breen Malmberg
+        :param ruleid:the rule number identifier
+        :param mode:fix|report|undo
+        :param result:(see rule.py formatDetailedResults())
+        :param msg:message to update detailedresults with
 
-        '''
+        """
 
         for rule in self.installedrules:
             if ruleid == rule.getrulenum():
                 rule.formatDetailedResults(mode, result, msg)
 
     def getruleauditonly(self, ruleid):
-        '''This method returns the audit only status boolean
+        """This method returns the audit only status boolean
         from the rule with a given <ruleid>.
 
-        :param ruleid: int; the rule number identifier
-        :returns: auditonly
+        :param ruleid: the rule number identifier
+        :return: auditonly
         :rtype: bool
-@author: Breen Malmberg
 
-        '''
+
+        """
 
         auditonly = False
 
@@ -1192,149 +1110,159 @@ class Controller(Observable):
         return auditonly
 
     def displaylastrun(self):
-        '''Returns the contents of the log file by way of the logger object.
+        """Returns the contents of the log file by way of the logger object.
 
 
-        :returns: string :
-        @author: ???
+        :return: self.logger.displaylastrun()
+        :rtype: str
+        
 
-        '''
+        """
         return self.logger.displaylastrun()
 
-    def updatestatus(self, callingobject):
-        '''WARNING! FIX ME! This was intended to be a part of the comms between
-        the controller and the view. I'm not sure this method still makes
-        sense.
-
-        :param object_: callingobject :
-        :param callingobject: 
-        :returns: void
-
-        '''
-        pass
-
     def tryacquirelock(self):
-        '''Try to set a lock file at /var/run/stonix_resources.pid. If the lock
+        """Try to set a lock file at /var/run/stonix_resources.pid. If the lock
         file already exists check to see if a stonix process with that PID is
         already running. If so exit with error else re-create lock file with
         our PID.
 
+        """
 
-        :returns: void
-        @author: David Kennel
-
-        '''
         lockmessage = """
 !WARNING! Another copy of STONIX appears to be running!
 Running more than one copy of STONIX at a time may result in
 unintended behavior! If STONIX is not running remove the file
 /var/run/stonix.pid and re-launch STONIX.
 ABORTING EXECUTION!"""
-        if not self.environ.geteuid() == 0:
+
+        if not self.euid == 0:
             # only grab a lock file for privileged use.
             return
+
         if os.path.exists(self.lockfile):
             rw_lockfile = open(self.lockfile, 'r+')
             lockpid = rw_lockfile.readline()
             lockpid = lockpid.strip()
-            self.logger.log(LogPriority.DEBUG,
-                            ['TryAcquireLock',
-                             'Found lock for PID: ' + lockpid])
+            self.logger.log(LogPriority.DEBUG, ['TryAcquireLock', 'Found lock for PID: ' + lockpid])
             try:
                 if int(lockpid) == os.getpid():
                     # PID is the same, reuse PID file
                     return
             except (TypeError, ValueError):
-                self.logger.log(LogPriority.DEBUG,
-                                ['TryAcquireLock',
-                                 'Could not coerce PID to INT: ' + lockpid])
-            command = None
+                self.logger.log(LogPriority.DEBUG, ['TryAcquireLock', 'Could not coerce PID to INT: ' + lockpid])
+
             if self.environ.getosfamily() == 'freebsd':
                 command = '/bin/ps -aux'
             elif self.environ.getosfamily() == 'solaris':
                 command = '/usr/bin/ps -ef'
             else:
                 command = '/bin/ps -ef'
-            self.logger.log(LogPriority.DEBUG,
-                            ['TryAcquireLock',
-                             'PS command is: ' + str(command)])
-            if not type(command) is None:
-                pscom = subprocess.Popen(command, stdout=subprocess.PIPE,
-                                         stderr=subprocess.PIPE,
-                                         shell=True, close_fds=True)
-                psout = pscom.stdout.readlines()
-                for line in psout:
-                    if re.search('stonix', line):
-                        splits = line.split()
-                        pspid = splits[1]
-                        self.logger.log(LogPriority.DEBUG,
-                                        ['TryAcquireLock',
-                                         'Checking PIDs: ' + lockpid + ' ' + \
-                                         pspid])
-                        if pspid == lockpid:
-                            self.logger.log(LogPriority.DEBUG,
-                                            ['TryAcquireLock',
-                                             'Matched PIDs: ' + lockpid + ' ' \
-                                             + pspid])
-                            self.logger.log(LogPriority.CRITICAL,
-                                            ['TryAcquireLock', lockmessage])
-                            rw_lockfile.close()
-                            sys.exit(2)
-            self.logger.log(LogPriority.DEBUG,
-                            ['TryAcquireLock',
-                             'Truncating existing Lockfile'])
+
+            self.logger.log(LogPriority.DEBUG, ['TryAcquireLock', 'PS command is: ' + str(command)])
+
+            pscom = subprocess.Popen(command, stdout=subprocess.PIPE,
+                                     stderr=subprocess.PIPE,
+                                     shell=True, close_fds=True)
+            psout = pscom.stdout.readlines()
+            for line in psout:
+                line = str(line)
+                if re.search('stonix', line):
+                    splits = line.split()
+                    pspid = splits[1]
+                    self.logger.log(LogPriority.DEBUG, ['TryAcquireLock', 'Checking PIDs: ' + lockpid + ' ' + pspid])
+                    if pspid == lockpid:
+                        self.logger.log(LogPriority.DEBUG, ['TryAcquireLock', 'Matched PIDs: ' + lockpid + ' ' + pspid])
+                        self.logger.log(LogPriority.CRITICAL, ['TryAcquireLock', lockmessage])
+                        rw_lockfile.close()
+                        sys.exit(2)
+
+            self.logger.log(LogPriority.DEBUG, ['TryAcquireLock', 'Truncating existing Lockfile'])
             rw_lockfile.truncate(0)
             rw_lockfile.write(str(os.getpid()))
             rw_lockfile.close()
         else:
-            self.logger.log(LogPriority.DEBUG,
-                            ['TryAcquireLock',
-                             'Creating new Lockfile'])
+            self.logger.log(LogPriority.DEBUG, ['TryAcquireLock', 'Creating new Lockfile'])
             rw_lockfile = open(self.lockfile, 'w')
             rw_lockfile.write(str(os.getpid()))
             rw_lockfile.close()
 
     def safetycheck(self):
-        '''Check that the installation of STONIX is safe from a security
+        """Check that the installation of STONIX is safe from a security
         perspective. All files must only be writable by root.
-        
-        @author: David Kennel
 
+        :return: safe
+        :rtype: bool
 
-        :returns: bool True if install passes checks
+        """
 
-        '''
         safe = True
+
+        if not self.permissions_check():
+            safe = False
+
         return safe
 
+    def permissions_check(self):
+        """
+
+        :return:
+        """
+
+        perms_ok = True
+        group_writable = []
+        world_writable = []
+
+        installation_dirs = ["/usr/bin/stonix_resources"]
+        installation_files = ["/etc/stonix.conf"]
+
+        # build installation files list
+        for d in installation_dirs:
+            if os.path.isdir(d):
+                files = os.listdir(d)
+                for f in files:
+                    if re.search(".py", f, re.I):
+                        installation_files.append(d + "/" + f)
+
+        # check installation files permissions
+        for f in installation_files:
+            if os.path.isfile(f):
+                statinfo = os.stat(f)
+                if bool(statinfo.st_mode & stat.S_IWGRP):
+                    perms_ok = False
+                    group_writable.append(f)
+                elif bool(statinfo.st_mode & stat.S_IWOTH):
+                    perms_ok = False
+                    world_writable.append(f)
+
+        self.logger.log(LogPriority.DEBUG, "The following STONIX files are group writable:\n" + "\n".join(group_writable))
+        self.logger.log(LogPriority.DEBUG, "The following STONIX files are world writable:\n" + "\n".join(world_writable))
+
+        if not perms_ok:
+            self.logger.log(LogPriority.DEBUG, "STONIX files should only be writable by root!")
+
+        return perms_ok
+
     def releaselock(self):
-        '''Cleans up the stonix lock file in the event of normal program
+        """Cleans up the stonix lock file in the event of normal program
         exit.
 
+        """
 
-        :returns: void
-        @author: David Kennel
+        self.logger.log(LogPriority.DEBUG, "Cleaning up STONIX lock file")
 
-        '''
-
-        if os.path.exists(self.lockfile):
-            try:
+        if os.path.isfile(self.lockfile):
+            if self.euid == 0:
                 os.remove(self.lockfile)
-            except:
-                # the lock release can cause errors when run w/o privilege
-                # and a lock file has been left behind by a privileged run.
-                pass
+            else:
+                self.logger.log(LogPriority.DEBUG, "STONIX running as unprivileged user. Cannot remove lock file")
+        else:
+            self.logger.log(LogPriority.DEBUG, "No STONIX lock file exists to remove")
 
     def processargs(self):
-        '''This method calls the prog_args instance to process the command line
+        """This method calls the prog_args instance to process the command line
         args and then jumps to the appropriate execution mode.
-        
-        @author: Roy Nielsen, David Kennel
 
-
-        :returns: void
-
-        '''
+        """
         self.environ.setverbosemode(self.prog_args.get_verbose())
         self.environ.setdebugmode(self.prog_args.get_debug())
         self.fix = self.prog_args.get_fix()
@@ -1383,15 +1311,10 @@ ABORTING EXECUTION!"""
             self.mode = 'cli'
 
     def setuptesting(self):
-        '''this method is called when the environment object determins that the
+        """this method is called when the environment object determins that the
         controller is in test mode - e.g. running from a unittest.
-        
-        @author: Ekkehard J. Koch
 
-
-        :returns: void
-
-        '''
+        """
         self.environ.setverbosemode(True)
         self.environ.setdebugmode(True)
         self.fix = False
@@ -1408,8 +1331,6 @@ ABORTING EXECUTION!"""
         is needed for users to be able to list rules available to run in module
         mode. The program will exit after this method is complete.
 
-        @author: David Kennel
-        @return: void
         """
         rulelist = []
         for rule in self.installedrules:
@@ -1418,9 +1339,9 @@ ABORTING EXECUTION!"""
             rulestring = rulename + ' (' + str(rulenum) + ')'
             rulelist.append(rulestring)
         rulelist.sort(key=str.lower)
-        print "STONIX rules for this platform:"
+        print("STONIX rules which apply to this platform:")
         for rule in rulelist:
-            print rule
+            print(rule)
         try:
             self.logger.closereports()
         except:
@@ -1431,101 +1352,78 @@ ABORTING EXECUTION!"""
         """
         This private method performs a cli run based on the passed flags.
 
-        @author: David Kennel
-        @return: void
         """
-        self.logger.log(LogPriority.DEBUG,
-                        ['Controller.__clirun',
-                         ' __clirun called'])
+
+        self.logger.log(LogPriority.DEBUG, "Running STONIX in command line mode")
         myui = Cli(self.environ)
+
         # self.logger.register_listener(myui)
         self.register_listener(myui)
         if not self.runrule:
-            self.logger.log(LogPriority.DEBUG,
-                            'Entering full system run')
+            self.logger.log(LogPriority.DEBUG, 'Running all enabled rules')
             if self.fix:
-                self.logger.log(LogPriority.DEBUG,
-                                'Mode is Fix')
+                self.logger.log(LogPriority.DEBUG, 'Mode is Fix')
                 self.hardensystem()
                 self.logger.closereports()
             if self.report:
-                self.logger.log(LogPriority.DEBUG,
-                                'Mode is Report')
+                self.logger.log(LogPriority.DEBUG, 'Mode is Report')
                 self.auditsystem()
                 self.logger.postreport()
             if self.undo:
-                self.logger.log(LogPriority.DEBUG,
-                                'Mode is Undo')
+                self.logger.log(LogPriority.DEBUG, 'Mode is Undo')
                 self.undochangessystem()
                 self.logger.closereports()
             if self.pcf:
-                self.logger.log(LogPriority.DEBUG,
-                                'Generating Full config file')
+                self.logger.log(LogPriority.DEBUG, 'Generating Full config file')
                 self.regenerateconfig(False)
                 self.logger.closereports()
             if self.pcs:
-                self.logger.log(LogPriority.DEBUG,
-                                'Generating Simple config file')
+                self.logger.log(LogPriority.DEBUG, 'Generating Simple config file')
                 self.regenerateconfig(True)
                 self.logger.closereports()
-            if not self.fix and not self.report and not self.undo and \
-            not self.pcf and not self.pcs:
-                self.logger.log(LogPriority.INFO,
-                                'No action specified. Please check command syntax')
+            elif True not in [self.fix, self.report, self.undo, self.pcf, self.pcs]:
+                self.logger.log(LogPriority.INFO, 'No action specified. Please check command syntax')
                 self.logger.closereports()
 
         elif isinstance(self.runrule, list):
-            self.logger.log(LogPriority.DEBUG,
-                            'Running rules: ' + ", ".join(self.runrule))
+            self.logger.log(LogPriority.DEBUG, 'Running rules: ' + ", ".join(self.runrule))
             for rule in self.runrule:
-                self.logger.log(LogPriority.DEBUG,
-                               'Entering single rule run for ' + rule)
+                self.logger.log(LogPriority.DEBUG, 'Entering single rule run for ' + rule)
                 ruleid = self.getrulenumbyname(rule)
-                self.logger.log(LogPriority.DEBUG,
-                               'Rule ID number ' + str(ruleid))
+                self.logger.log(LogPriority.DEBUG, 'Rule ID number ' + str(ruleid))
                 if self.fix:
-                    self.logger.log(LogPriority.DEBUG,
-                                    'Mode is Fix')
+                    self.logger.log(LogPriority.DEBUG, 'Mode is Fix')
                     self.runruleharden(ruleid)
                     self.logger.closereports()
                 if self.report:
-                    self.logger.log(LogPriority.DEBUG,
-                                    'Mode is Report')
+                    self.logger.log(LogPriority.DEBUG, 'Mode is Report')
                     self.runruleaudit(ruleid)
                     self.logger.closereports()
                 if self.undo:
-                    self.logger.log(LogPriority.DEBUG,
-                                    'Mode is Undo')
+                    self.logger.log(LogPriority.DEBUG, 'Mode is Undo')
                     self.undorule(ruleid)
                     self.logger.closereports()
-                if not self.fix and not self.report and not self.undo:
-                    self.logger.log(LogPriority.INFO,
-                                    'No action specified. Please pass the -r, -f, or -u flag')
+                if True not in [self.fix, self.report, self.undo]:
+                    self.logger.log(LogPriority.INFO, 'No action specified. Please pass the -r, -f, or -u flag')
                 self.logger.closereports()
         else:
-            self.logger.log(LogPriority.DEBUG,
-                           'Entering single rule run ' + self.runrule)
+            self.logger.log(LogPriority.DEBUG, 'Entering single rule run ' + self.runrule)
             ruleid = self.getrulenumbyname(self.runrule)
-            self.logger.log(LogPriority.DEBUG,
-                           'Rule ID number ' + str(ruleid))
+            self.logger.log(LogPriority.DEBUG, 'Rule ID number ' + str(ruleid))
             if self.fix:
-                self.logger.log(LogPriority.DEBUG,
-                                'Mode is Fix')
+                self.logger.log(LogPriority.DEBUG, 'Mode is Fix')
                 self.runruleharden(ruleid)
                 self.logger.closereports()
             if self.report:
-                self.logger.log(LogPriority.DEBUG,
-                                'Mode is Report')
+                self.logger.log(LogPriority.DEBUG, 'Mode is Report')
                 self.runruleaudit(ruleid)
                 self.logger.closereports()
             if self.undo:
-                self.logger.log(LogPriority.DEBUG,
-                                'Mode is Undo')
+                self.logger.log(LogPriority.DEBUG, 'Mode is Undo')
                 self.undorule(ruleid)
                 self.logger.closereports()
-            if not self.fix and not self.report and not self.undo:
-                self.logger.log(LogPriority.INFO,
-                                'No action specified. Please pass the -r, -f, or -u flag')
+            if True not in [self.fix, self.report, self.undo]:
+                self.logger.log(LogPriority.INFO, 'No action specified. Please pass the -r, -f, or -u flag')
                 self.logger.closereports()
         self.releaselock()
 

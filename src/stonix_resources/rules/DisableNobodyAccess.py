@@ -24,14 +24,14 @@ Created on Aug 8, 2013
 @change: 2015/04/15 dkennel updated for new isApplicable
 @change 2017/08/28 rsn Fixing to use new help text methods
 '''
-from __future__ import absolute_import
-from ..stonixutilityfunctions import resetsecon, checkPerms
-from ..stonixutilityfunctions import setPerms, iterate
-from ..rule import Rule
-from ..logdispatcher import LogPriority
+
+from stonixutilityfunctions import resetsecon, checkPerms
+from stonixutilityfunctions import setPerms, iterate
+from rule import Rule
+from logdispatcher import LogPriority
 from subprocess import call
 import os
-from ..KVEditorStonix import KVEditorStonix
+from KVEditorStonix import KVEditorStonix
 import traceback
 
 

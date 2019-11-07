@@ -29,17 +29,18 @@ in promiscuous mode or not.
 @change: 2018/06/08 Ekkehard - make eligible for macOS Mojave 10.14
 @change: 2019/06/13 Breen Malmberg - updated documentation to reST format;
         added missing documentation
+@change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
 """
 
-from __future__ import absolute_import
+
 
 import re
 import traceback
 import os
 
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..CommandHelper import CommandHelper
+from rule import Rule
+from logdispatcher import LogPriority
+from CommandHelper import CommandHelper
 
 
 class AuditNetworkSniffing(Rule):
@@ -74,7 +75,7 @@ class AuditNetworkSniffing(Rule):
         self.guidance = ['CCE-RHEL7-CCE-TBD 2.5.3']
         self.applicable = {'type': 'white',
                            'family': ['linux'],
-                           'os': {'Mac OS X': ['10.11', 'r', '10.14.10']}}
+                           'os': {'Mac OS X': ['10.15', 'r', '10.15.10']}}
 
         self.auditonly = True
 

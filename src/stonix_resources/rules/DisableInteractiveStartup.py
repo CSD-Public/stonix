@@ -26,17 +26,17 @@ startup mode for all supported flavors of Linux operating systems.
 @change: 2015/04/15 dkennel updated for new isApplicable
 @change: 2015/10/07 eball Help text/PEP8 cleanup
 '''
-from __future__ import absolute_import
+
 import os
 import traceback
 
-from ..rule import Rule
-from ..stonixutilityfunctions import resetsecon, checkPerms
-from ..stonixutilityfunctions import iterate, setPerms, createFile
-from ..logdispatcher import LogPriority
-from ..pkghelper import Pkghelper
-from ..KVEditorStonix import KVEditorStonix
-from ..CommandHelper import CommandHelper
+from rule import Rule
+from stonixutilityfunctions import resetsecon, checkPerms
+from stonixutilityfunctions import iterate, setPerms, createFile
+from logdispatcher import LogPriority
+from pkghelper import Pkghelper
+from KVEditorStonix import KVEditorStonix
+from CommandHelper import CommandHelper
 
 
 class DisableInteractiveStartup(Rule):

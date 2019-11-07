@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 ###############################################################################
 #                                                                             #
 # Copyright 2019. Triad National Security, LLC. All rights reserved.          #
@@ -30,7 +30,7 @@ This is a Unit Test for Rule RestrictMounting
 @change: 20019/04/08 Breen Malmberg - re-wrote unit tests; added to do note in rule
 """
 
-from __future__ import absolute_import
+
 import os
 import sys
 import unittest

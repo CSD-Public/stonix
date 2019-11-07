@@ -25,11 +25,11 @@ and NX features, the kernel-PAE package should be installed to enable XD or NX s
 @change: 2017/08/28 Breen Malmberg Fixing to use new help text methods
 '''
 
-from __future__ import absolute_import
-from ..rule import Rule
-from ..CommandHelper import CommandHelper
-from ..pkghelper import Pkghelper
-from ..logdispatcher import LogPriority
+
+from rule import Rule
+from CommandHelper import CommandHelper
+from pkghelper import Pkghelper
+from logdispatcher import LogPriority
 
 import re
 import os
@@ -196,7 +196,7 @@ class EnablePAEandNX(Rule):
 
         if not systemos:
             self.logger.log(LogPriority.DEBUG, "Required parameter: systemos was passed as blank")
-        if not isinstance(systemos, basestring):
+        if not isinstance(systemos, str):
             self.logger.log(LogPriority.DEBUG, "Required parameter: systemos was passed as incorrect data type. Required data type: string")
         else:
             self.logger.log(LogPriority.DEBUG, "System info was: " + str(systemos))
@@ -271,7 +271,7 @@ class EnablePAEandNX(Rule):
             if not package:
                 self.detailedresults += "\nNo package was specified. No package check will be performed. Assuming: not installed."
                 self.logger.log(LogPriority.DEBUG, "Required parameter: package was empty")
-            elif not isinstance(package, basestring):
+            elif not isinstance(package, str):
                 self.logger.log(LogPriority.DEBUG, "Required parameter: package was not passed as the correct data type. Type required: string")
                 self.detailedresults += "\nNo package was specified. No package check will be performed. Assuming: not installed."
             else:

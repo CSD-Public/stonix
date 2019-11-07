@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 ###############################################################################
 #                                                                             #
 # Copyright 2019. Triad National Security, LLC. All rights reserved.          #
@@ -126,7 +126,7 @@ class ConsistencyCheck():
 
     def set_up_tests(self):
         '''Run tests based on the data structure that has the test data'''
-        for behavior, test_cases in self.tests.items():
+        for behavior, test_cases in list(self.tests.items()):
             for test_case_data in test_cases:
                 moduletestfound, name, _ = test_case_data
                 my_test_name = "test_{0}_{1}_{2}".format(str(behavior),
@@ -456,22 +456,22 @@ class RuleDictionary ():
         self.initializeRuleContextData()
 
     def print_inputs(self):
-        print "\n###==-     -==###"
-        print "unit     : " + str(self.unit)
-        print "network  : " + str(self.network)
-        print "interactive: " + str(self.interactive)
-        print "###==-     -==###\n"
+        print("\n###==-     -==###")
+        print("unit     : " + str(self.unit))
+        print("network  : " + str(self.network))
+        print("interactive: " + str(self.interactive))
+        print("###==-     -==###\n")
 
     def gotoFirstRule(self):
         self.keyIndexNumber = 0
-        self.keys = sorted(self.ruledictionary.keys(), reverse=True)
+        self.keys = sorted(list(self.ruledictionary.keys()), reverse=True)
         self.keysNumberOf = len(self.keys)
         self.key = self.keys[self.keyIndexNumber]
         self.dictinaryItem = self.ruledictionary[self.key]
 
     def gotoNextRule(self):
         self.keyIndexNumber = self.keyIndexNumber + 1
-        self.keys = sorted(self.ruledictionary.keys(), reverse=True)
+        self.keys = sorted(list(self.ruledictionary.keys()), reverse=True)
         self.keysNumberOf = len(self.keys)
         if (self.keysNumberOf - 1) < self.keyIndexNumber:
             self.keyIndexNumber = 0
@@ -527,7 +527,7 @@ class RuleDictionary ():
             try:
                 testpath = self.realpath + "/src/tests/rules/unit_tests"
                 runit = os.listdir(testpath)
-            except Exception, err:
+            except Exception as err:
                 self.logdispatch.log(LogPriority.ERROR,
                                      "Exception: " + str(err))
 
@@ -535,7 +535,7 @@ class RuleDictionary ():
             try:
                 testpath = self.realpath + "/src/tests/rules/network_tests"
                 rnetwork = os.listdir(testpath)
-            except Exception, err:
+            except Exception as err:
                 self.logdispatch.log(LogPriority.ERROR,
                                      "Exception: " + str(err))
 
@@ -543,7 +543,7 @@ class RuleDictionary ():
             try:
                 testpath = self.realpath + "/src/tests/rules/interactive_tests"
                 rinteractive = os.listdir(testpath)
-            except Exception, err:
+            except Exception as err:
                 self.logdispatch.log(LogPriority.ERROR,
                                      "Exception: " + str(err))
 
@@ -749,7 +749,7 @@ class RuleDictionary ():
         success = True
         messagestring = "--------------------------------- start"
         self.logdispatch.log(LogPriority.INFO, str(messagestring))
-        keys = sorted(self.ruledictionary.keys(), reverse=True)
+        keys = sorted(list(self.ruledictionary.keys()), reverse=True)
         for key in keys:
             messagestring = ""
             rulename = self.ruledictionary[key]["rulename"]
@@ -935,7 +935,7 @@ def assemble_suite(framework=True, rule=True, utils=True, unit=True,
                         # suite
                         testList.append(ruleTestToRun)
 
-                    except Exception, err:
+                    except Exception as err:
                         LOGGER.log(LogPriority.DEBUG, "stonixtest error: " +
                                    str(ruleName) + "(" + str(ruleNumber) +
                                    ") Exception: " + str(err))
@@ -995,7 +995,7 @@ def assemble_suite(framework=True, rule=True, utils=True, unit=True,
                     # Add the import to a list, to later "map" to a test suite
                     testList.append(fameworkTestToRun)
 
-                except Exception, err:
+                except Exception as err:
                     debug = "stonixtest error: " + \
                         str(frameworkTestClassName) + " Exception: " + \
                         str(err) + "\n"
@@ -1050,7 +1050,7 @@ def assemble_suite(framework=True, rule=True, utils=True, unit=True,
                     # Add the import to a list, to later "map" to a test suite
                     testList.append(utilsTestToRun)
 
-                except Exception, err:
+                except Exception as err:
                     debug = "stonixtest error: " + \
                         str(frameworkTestClassName) + " Exception: " + \
                         str(err) + "\n"
@@ -1065,7 +1065,7 @@ def assemble_suite(framework=True, rule=True, utils=True, unit=True,
 
     #####
     # Define a test suite based on the testList.
-    suite = unittest.TestSuite(map(load, testList))
+    suite = unittest.TestSuite(list(map(load, testList)))
 
     if rule and not modules:
         # Add the test for every rule and rule for every test... test.
@@ -1201,7 +1201,7 @@ if options.framework and options.rule and not options.utils or \
    options.framework and not options.rule and options.utils or \
    not options.framework and options.rule and options.utils or \
    options.framework and options.rule and options.utils:
-    print "Sorry, -f and -r and -u are mutually exclusive."
+    print("Sorry, -f and -r and -u are mutually exclusive.")
     sys.exit(255)
 
 if options.all:

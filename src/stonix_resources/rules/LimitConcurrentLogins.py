@@ -28,17 +28,18 @@ This is not a mandatory rule
         checking of config file(s); changed mandatory flag to False
 @change: 10/09/2018 - Breen Malmberg - made applicable to mojave 10.14
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
+@change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
 '''
 
-from __future__ import absolute_import
+
 
 import traceback
 import re
 import os
 
-from ..rule import Rule
-from ..stonixutilityfunctions import iterate, resetsecon, checkPerms
-from ..logdispatcher import LogPriority
+from rule import Rule
+from stonixutilityfunctions import iterate, resetsecon, checkPerms
+from logdispatcher import LogPriority
 
 
 class LimitConcurrentLogins(Rule):
@@ -67,7 +68,7 @@ class LimitConcurrentLogins(Rule):
         self.mandatory = False
         self.applicable = {'type': 'white',
                            'family': ['linux'],
-                            'os': {'Mac OS X': ['10.12', 'r', '10.14.10']}}
+                            'os': {'Mac OS X': ['10.15', 'r', '10.15.10']}}
 
         self.conffilesdir = "/etc/security/limits.d"
         self.sethelptext()
@@ -241,7 +242,7 @@ class LimitConcurrentLogins(Rule):
             self.userloginsvalue = "10"
             self.logger.log(LogPriority.DEBUG, "An invalid value was entered for MAXLOGINS. Please enter a single, positive integer. Resetting to default value of 10...")
 
-        correctconfig = "^\s*\*\s+\hard\s+maxlogins\s+" + self.userloginsvalue
+        correctconfig = "^\s*\*\s+hard\s+maxlogins\s+" + self.userloginsvalue
 
         try:
 
@@ -270,7 +271,7 @@ class LimitConcurrentLogins(Rule):
                 else:
                     self.logger.log(LogPriority.DEBUG, "Configure file: " + str(cf) + " was empty/blank")
 
-                if not checkPerms(cf, [0, 0, 0600], self.logger):
+                if not checkPerms(cf, [0, 0, 0o600], self.logger):
                     self.compliant = False
                     self.detailedresults += "\nIncorrect permissions on file: " + str(cf)
 

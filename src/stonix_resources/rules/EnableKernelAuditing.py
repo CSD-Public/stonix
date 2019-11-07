@@ -15,7 +15,7 @@
 #                                                                             #
 ###############################################################################
 
-'''
+"""
 Created on Aug 12, 2015
 
 The kernel auditing service is provided for system auditing. By default, the
@@ -30,18 +30,19 @@ account modifications, and authentication events.
 @change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
 @change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
-'''
+@change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
+"""
 
-from __future__ import absolute_import
 
-from ..logdispatcher import LogPriority
-from ..rule import Rule
-from ..KVEditorStonix import KVEditorStonix
-from ..CommandHelper import CommandHelper
-from ..ServiceHelper import ServiceHelper
-from ..pkghelper import Pkghelper
-from ..stonixutilityfunctions import resetsecon
-from ..stonixutilityfunctions import iterate
+
+from logdispatcher import LogPriority
+from rule import Rule
+from KVEditorStonix import KVEditorStonix
+from CommandHelper import CommandHelper
+from ServiceHelper import ServiceHelper
+from pkghelper import Pkghelper
+from stonixutilityfunctions import resetsecon
+from stonixutilityfunctions import iterate
 
 import traceback
 import os
@@ -49,12 +50,12 @@ import re
 
 
 class EnableKernelAuditing(Rule):
-    '''classdocs'''
+    """classdocs"""
 
     def __init__(self, config, environ, logger, statechglogger):
-        '''
+        """
         Constructor
-        '''
+        """
         Rule.__init__(self, config, environ, logger, statechglogger)
         self.logger = logger
         self.rulenumber = 67
@@ -71,7 +72,7 @@ class EnableKernelAuditing(Rule):
         self.iditerator = 0
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.12', 'r', '10.14.10']}}
+                           'os': {'Mac OS X': ['10.15', 'r', '10.15.10']}}
         # init CIs
         datatype = 'bool'
         key = 'ENABLEKERNELAUDITING'
@@ -96,18 +97,18 @@ this system, set the value of EnableKernelAuditing to False"""
         self.flushtype = str(self.flushtypeci.getcurrvalue())
 
     def searchFileContents(self, contents, searchstring):
-        '''search specified filepath for regex param searchstring
+        """search specified filepath for regex param searchstring
         return true if found, false if not
 
         :param contents: list of strings to search through, looking for value
                          searchstring
         :param searchstring: string regex string value to search for in
                              filepath's contents
-        :returns: found
+        :return: found
         :rtype: bool
 @author: Breen Malmberg
 
-        '''
+        """
 
         found = False
 
@@ -128,14 +129,14 @@ this system, set the value of EnableKernelAuditing to False"""
         return found
 
     def getFileContents(self, filepath):
-        '''retrieve specified file path's contents and return them in list form
+        """retrieve specified file path's contents and return them in list form
 
         :param filepath: string full path to file to read
-        :returns: contentlines
+        :return: contentlines
         :rtype: list
 @author: Breen Malmberg
 
-        '''
+        """
 
         contentlines = []
 
@@ -155,14 +156,14 @@ this system, set the value of EnableKernelAuditing to False"""
         return contentlines
 
     def localization(self):
-        '''determine which operating system and version of operating system (if
+        """determine which operating system and version of operating system (if
         relevant), and then set all variables, paths, commands, etc. to the
         correct versions for that os type and version.
         
         @author: Breen Malmberg
 
 
-        '''
+        """
 
         try:
 
@@ -218,7 +219,7 @@ this system, set the value of EnableKernelAuditing to False"""
 
             self.flushfrequency = str(self.freqci.getcurrvalue())
             allowable_flush_types = ['data', 'incremental', 'sync', 'incremental_async']
-            allowable_freq_range = range(1,100)
+            allowable_freq_range = list(range(1,100))
             if self.flushtypeci.getcurrvalue() not in allowable_flush_types:
                 self.flushtypeci.updatecurrvalue('incremental_async')
                 self.logger.log(LogPriority.DEBUG, "User entered value for flush type was not one of the acceptable types. Changed to default incremental.")
@@ -249,13 +250,10 @@ this system, set the value of EnableKernelAuditing to False"""
             for loc in auditdispconflocs:
                 if os.path.exists(loc):
                     self.auditdispconffile = loc
-            # fedora doesn't have a separate audit dispatcher and bundles all of the normal audispd conf
-            # options into the audit daemon config file (auditd.conf) instead
-            if self.environ.getosname().lower() == "fedora":
-                self.auditdispconffile = self.auditconffile
+
             if not self.auditdispconffile:
-                self.logger.log(LogPriority.DEBUG, "Couldn't locate audit " +
-                                "dispatcher configuration file")
+                self.auditdispconffile = self.auditconffile
+
             self.audisptmp = self.auditdispconffile + '.stonixtmp'
             self.auditdispconfoptions = {'q_depth': '1024'}
 
@@ -289,24 +287,24 @@ this system, set the value of EnableKernelAuditing to False"""
             raise
 
     def set_grub_one(self):
-        '''set up grub v1 variables and objects
+        """set up grub v1 variables and objects
         
         @author: Breen Malmberg
 
 
-        '''
+        """
 
         self.logger.log(LogPriority.DEBUG, "Setting Grub v1 variables...")
 
         self.grubver = 1
 
     def set_grub_two(self):
-        '''set up grub v2 variables and objects
+        """set up grub v2 variables and objects
         
         @author: Breen Malmberg
 
 
-        '''
+        """
 
         self.logger.log(LogPriority.DEBUG, "Setting Grub v2 variables...")
         self.grubver = 2
@@ -327,12 +325,12 @@ this system, set the value of EnableKernelAuditing to False"""
         self.grubupdatecmd = grubmkconfigname + ' -o ' + self.grubcfgloc
 
     def report(self):
-        '''run report actions to determine the current system's compliancy status
+        """run report actions to determine the current system's compliancy status
         
         @author: Breen Malmberg
 
 
-        '''
+        """
 
         self.compliant = True
         self.aurulesstatus = True
@@ -377,7 +375,7 @@ this system, set the value of EnableKernelAuditing to False"""
                 self.logger.log(LogPriority.DEBUG, errout)
             if outputlines:
                 for line in outputlines:
-                    if re.search('x86\_64', line):
+                    if re.search('x86_64', line):
                         self.arch = '64'
     
             if not self.arch:
@@ -403,19 +401,39 @@ this system, set the value of EnableKernelAuditing to False"""
                                       '-w /var/log/wtmp -p wa -k session': True,
                                       '-w /sbin/insmod -p x -k modules': True,
                                       '-w /sbin/rmmod -p x -k modules': True,
-                                      '-w /sbin/modprobe -p x -k modules': True,
-                                      '-a always,exit -F arch=b' + str(self.arch) + ' -S chmod -S lchown -S fsetxattr -S fremovexattr -S fchownat -S fchown -S fchmodat -S fchmod -S chown -S lremovexattr -S lsetxattr -S setxattr -F auid>=1000 -F auid!=4294967295 -k perm_mod': True,
-                                      '-a always,exit -F arch=b' + str(self.arch) + ' -S creat -S open -S openat -S open_by_handle_at -S truncate -S ftruncate -F exit=-EACCES -F exit=-EPERM -F auid>=1000 -F auid!=4294967295 -k access': True,
-                                      '-a always,exit -F arch=b' + str(self.arch) + ' -S mount -F auid>=1000 -F auid!=4294967295 -k export': True,
-                                      '-a always,exit -F arch=b' + str(self.arch) + ' -S rmdir -F auid>=1000 -F auid!=4294967295 -k delete': True,
-                                      # the following rule commented out due to the massive log spam it creates (system-killer)
-                                      # this is due primarily to cache and temp files management by java, browsers, and other applications as well
-                                      # '-a always,exit -F ' + str(self.arch) + ' -S unlink -S unlinkat -S rename -S renameat -F auid>=1000 -F auid!=4294967295 -k delete': True,
-                                      '-a always,exit -F arch=b' + str(self.arch) + ' -S init_module -S delete_module -k modules': True,
-                                      '-a always,exit -F arch=b' + str(self.arch) + ' -S settimeofday -S adjtimex -S clock_settime -k audit_time_rules': True,
-                                      '-a always,exit -F arch=b32 -S stime -k audit_time_rules': True,
-                                      '-a always,exit -F arch=b' + str(self.arch) + ' -S sethostname -S setdomainname -k audit_rules_networkconfig_modification': True,
-                                      '-a always,exit -F perm=x -F euid=0 -F auid>=1000 -F auid!=4294967295 -k privileged': True}
+                                      '-w /sbin/modprobe -p x -k modules': True}
+
+            audit_perm_mod_list = ["chmod", "chown", "lchown", "fchown", "fchownat", "fchmodat", "fchown", "fsetxattr", "fremovexattr", "lremovexattr", "lsetxattr", "setxattr"]
+            audit_access_list = ["creat", "open", "openat", "open_by_handle_at", "truncate", "ftruncate"]
+            audit_export_list = ["mount"]
+            audit_delete_list = ["rmdir"]
+            audit_modules_list = ["init_module", "delete_module"]
+            audit_time_list = ["settimeofday", "adjtimex", "clock_settime"]
+            audit_networking_list = ["sethostname", "setdomainname"]
+            arches = ["b32", "b64"]
+            for i in audit_perm_mod_list:
+                for arch in arches:
+                    self.auditrulesoptions["-a always,exit -F arch=" + arch + " -S " + i + " -F auid>=1000 -F auid!=4294967295 -k perm_mod"] = True
+            for i in audit_access_list:
+                for arch in arches:
+                    self.auditrulesoptions["-a always,exit -F arch=" + arch + " -S " + i + " -F exit=-EACCES -F exit=-EPERM -F auid>=1000 -F auid!=4294967295 -k access"] = True
+            for i in audit_export_list:
+                for arch in arches:
+                    self.auditrulesoptions["-a always,exit -F arch=" + arch + " -S " + i + " -F auid>=1000 -F auid!=4294967295 -k export"] = True
+            for i in audit_delete_list:
+                for arch in arches:
+                    self.auditrulesoptions["-a always,exit -F arch=" + arch + " -S " + i + " -F auid>=1000 -F auid!=4294967295 -k export"] = True
+            for i in audit_modules_list:
+                for arch in arches:
+                    self.auditrulesoptions["-a always,exit -F arch=" + arch + " -S " + i + " -k modules"] = True
+            for i in audit_time_list:
+                for arch in arches:
+                    self.auditrulesoptions["-a always,exit -F arch=" + arch + " -S " + i + " -k audit_time_rules"] = True
+            for i in audit_networking_list:
+                for arch in arches:
+                    self.auditrulesoptions["-a always,exit -F arch=" + arch + " -S " + i + " -k audit_rules_networkconfig_mofidication"] = True
+            self.auditrulesoptions["-a always,exit -F arch=b32 -S stime -k audit_time_rules"] = True
+            self.auditrulesoptions["-a always,exit -S all -F euid=0 -F perm=x -F auid>=1000 -F auid!=4294967295 -k privileged"] = True
 
             if self.environ.getosfamily() == 'darwin':
                 self.localization()
@@ -425,8 +443,6 @@ this system, set the value of EnableKernelAuditing to False"""
                                            self.detailedresults)
                 self.logdispatch.log(LogPriority.INFO, self.detailedresults)
                 return self.compliant
-
-            outputlines = []
 
             # GET LIST OF SETUID & SETGID FILES ON SYSTEM
             self.logger.log(LogPriority.DEBUG, "Getting list of setuid and setgid files on this system...")
@@ -451,6 +467,21 @@ this system, set the value of EnableKernelAuditing to False"""
             else:
                 self.logger.log(LogPriority.DEBUG, "No setuid or setgid files were found in root (/)")
 
+            # REMOVE ANY NON-EXISTENT PATHS FROM DICT, BECAUSE THIS WILL CAUSE AUDITCTL TO FAIL TO
+            # LOAD ALL RULES IF NON-EXISTENT PATHS ARE WRITTEN TO AUDIT.RULES FILE
+            filtered_auditrules_dict = {}
+            for r in self.auditrulesoptions:
+                if re.search("^-w", r, re.I):
+                    splitr = r.split()
+                    if not os.path.exists(splitr[1]):
+                        continue
+                    else:
+                        filtered_auditrules_dict[r] = self.auditrulesoptions[r]
+                else:
+                    filtered_auditrules_dict[r] = self.auditrulesoptions[r]
+
+            self.auditrulesoptions = filtered_auditrules_dict
+
             # if the system starts issuing user id's at 500 instead of the newer 1000
             # then change all auid>=1000 entries, in auditrulesoptions dict, to auid>=500
             # first find whether the system starts issuing uid's at 500 or 1000
@@ -459,9 +490,9 @@ this system, set the value of EnableKernelAuditing to False"""
                 contentlines = f.readlines()
                 f.close()
                 for line in contentlines:
-                    if re.search('^UID\_MIN\s+500', line):
+                    if re.search('^UID_MIN\s+500', line):
                         uidstart = '500'
-                    if re.search('^UID\_MIN\s+1000', line):
+                    if re.search('^UID_MIN\s+1000', line):
                         uidstart = '1000'
             else:
                 self.logger.log(LogPriority.DEBUG, "Could not locate login.defs file. Cannot determine uid start number.")
@@ -547,15 +578,15 @@ this system, set the value of EnableKernelAuditing to False"""
         return self.compliant
 
     def reportmac(self):
-        '''run report actions for Mac OS systems
+        """run report actions for Mac OS systems
 
 
-        :returns: retval
+        :return: retval
 
         :rtype: bool
 @author: Breen Malmberg
 
-        '''
+        """
 
         retval = True
 
@@ -617,15 +648,15 @@ this system, set the value of EnableKernelAuditing to False"""
         return retval
 
     def report_grub_one(self):
-        '''run report actions for grub version 1
+        """run report actions for grub version 1
 
 
-        :returns: retval
+        :return: retval
 
         :rtype: bool
 @author: Breen Malmberg
 
-        '''
+        """
 
         retval = False
 
@@ -641,15 +672,15 @@ this system, set the value of EnableKernelAuditing to False"""
         return retval
 
     def report_grub_two(self):
-        '''run report actions for grub version 2
+        """run report actions for grub version 2
 
 
-        :returns: retval
+        :return: retval
 
         :rtype: bool
 @author: Breen Malmberg
 
-        '''
+        """
 
         retval = False
 
@@ -665,15 +696,15 @@ this system, set the value of EnableKernelAuditing to False"""
         return retval
 
     def reportAuditRules(self):
-        '''private method to report status on the audit rules configuration
+        """private method to report status on the audit rules configuration
 
 
-        :returns: retval
+        :return: retval
 
         :rtype: bool
 @author: Breen Malmberg
 
-        '''
+        """
 
         retval = True
 
@@ -731,16 +762,16 @@ this system, set the value of EnableKernelAuditing to False"""
         return retval
 
     def reportAURulesSingle(self):
-        '''check audit rules which are stored only in a single
+        """check audit rules which are stored only in a single
         file (audit.rules)
 
 
-        :returns: retval
+        :return: retval
 
         :rtype: bool
 @author: Breen Malmberg
 
-        '''
+        """
 
         retval = True
         configoptsnotfound = []
@@ -767,17 +798,17 @@ this system, set the value of EnableKernelAuditing to False"""
         return retval
 
     def reportAURulesParts(self):
-        '''check audit rules which are stored in multiple files
+        """check audit rules which are stored in multiple files
         within rules.d/ directory on systems which use this
         structure
 
 
-        :returns: retval
+        :return: retval
 
         :rtype: bool
 @author: Breen Malmberg
 
-        '''
+        """
 
         retval = True
         configoptsnotfound = []
@@ -796,7 +827,7 @@ this system, set the value of EnableKernelAuditing to False"""
                         self.auditrulesoptions[ar] = True
 
             for ar in self.auditrulesoptions:
-                if self.auditrulesoptions[ar] == False:
+                if not self.auditrulesoptions[ar]:
                     retval = False
                     configoptsnotfound.append(ar)
 
@@ -809,7 +840,7 @@ this system, set the value of EnableKernelAuditing to False"""
         return retval
 
     def fix(self):
-        '''fix audit rules
+        """fix audit rules
         ensure audit package is installed
         ensure audit daemon is configured and running
         ensure audit dispatcher is configured
@@ -817,7 +848,7 @@ this system, set the value of EnableKernelAuditing to False"""
         @author: Breen Malmberg
 
 
-        '''
+        """
 
         fixsuccess = True
         self.detailedresults = ""
@@ -937,23 +968,23 @@ this system, set the value of EnableKernelAuditing to False"""
         return fixsuccess
 
     def fixAuditRules(self):
-        '''private method to fix audit rules configuration
+        """private method to fix audit rules configuration
         kveditor will not work for this rule because the keys used in
         the dictionary have spaces
 
 
-        :returns: retval
+        :return: retval
 
         :rtype: bool
 @author: Breen Malmberg
 
-        '''
+        """
 
         self.logger.log(LogPriority.DEBUG, "Fixing audit rules...")
 
         retval = True
         owner = [0, 0]
-        perms = 0640
+        perms = 0o640
 
         try:
 
@@ -980,7 +1011,7 @@ this system, set the value of EnableKernelAuditing to False"""
 
             if not contentlines:
                 contentlines.append('-D\n')
-                contentlines.append('-b 320\n')
+                contentlines.append('-b 8192\n')
             else:
                 # find -e 2 line if it already exists, remove it
                 # and move it to the end of the file
@@ -990,11 +1021,8 @@ this system, set the value of EnableKernelAuditing to False"""
 
             # append all missing audit rules options
             for item in self.auditrulesoptions:
-                if item not in map(str.strip, contentlines):
+                if item not in list(map(str.strip, contentlines)):
                     contentlines.append(item + '\n')
-
-            # fix arch= flags
-            contentlines = self.fixArches(contentlines)
 
             # append -e 2 (to lock audit rules) last
             contentlines.append('-e 2\n')
@@ -1019,9 +1047,8 @@ this system, set the value of EnableKernelAuditing to False"""
                 for line in primcontentlines:
                     if re.search('(^-D|^-b|^-e)', line, re.IGNORECASE):
                         primcontentlines.remove(line)
-                primcontentlines.insert(0, "-b 320\n")
+                primcontentlines.insert(0, "-b 8192\n")
                 primcontentlines.insert(0, "-D\n")
-                primcontentlines = self.fixArches(primcontentlines)
                 primcontentlines.append('-e 2\n')
                 primcontentlines = self.fixDuplicates(primcontentlines)
                 # the line '-a task,never' (added by default on some distro's)
@@ -1039,71 +1066,17 @@ this system, set the value of EnableKernelAuditing to False"""
             raise
         return retval
 
-    def fixArches(self, contentlines):
-        '''fix any arch flags to be appropriate to the current
-        system's arch (64 or 32)
-        cannot have rule entries for both 64 and 32 of the
-        same sys calls, because audit control reads them as
-        duplicates and will not load the rules file if it
-        detects duplicates
-
-        :param contentlines: 
-        :returns: contentlines
-        :rtype: list
-@author: Breen Malmberg
-
-        '''
-
-        self.logger.log(LogPriority.DEBUG, "Fixing arches...")
-
-        linefixedcount = 0
-
-        if not contentlines:
-            return contentlines
-        if not isinstance(contentlines, list):
-            return contentlines
-
-        try:
-
-            if self.arch == '64':
-                for line in contentlines:
-                    if re.search("arch=b32", line, re.IGNORECASE):
-                        # stime only has a 32 bit call, even on 64 bit systems
-                        if not re.search("stime", line, re.IGNORECASE):
-                            fixedline = line.replace("arch=b32", "arch=b64")
-                            linefixedcount += 1
-                            contentlines = [c.replace(line, fixedline) for c in contentlines]
-            elif self.arch == '32':
-                for line in contentlines:
-                    if re.search("arch=b64", line, re.IGNORECASE):
-                        fixedline = line.replace("arch=b64", "arch=b32")
-                        linefixedcount += 1
-                        contentlines = [c.replace(line, fixedline) for c in contentlines]
-
-            if linefixedcount > 0:
-                self.logger.log(LogPriority.DEBUG, "Fixed " + str(linefixedcount) + " arch lines")
-                self.detailedresults += "\nFixed " + str(linefixedcount) + " arch flags in audit rules"
-            else:
-                self.logger.log(LogPriority.DEBUG, "Nothing was changed")
-
-        except Exception:
-            raise
-        return contentlines
-
     def fixDuplicates(self, contentlines):
-        '''build a new list which is a copy of contentlines
+        """build a new list which is a copy of contentlines
         except for removing all duplicate entries
 
         :param contentlines: list; list of strings to search
                 through and remove duplicates from
-        :returns: fixedlist
+        :return: fixedlist
         :rtype: list
-@author: Breen Malmberg
-
-        '''
+        """
 
         self.logger.log(LogPriority.DEBUG, "Fixing duplicate audit rules entries...")
-        linesfixed = 0
 
         # got nothing, return nothing
         if not contentlines:
@@ -1137,19 +1110,16 @@ this system, set the value of EnableKernelAuditing to False"""
         return fixedlist
 
     def remBadRules(self):
-        '''look for, and remove any unwanted or "bad" audit
+        """look for, and remove any unwanted or "bad" audit
         rules (rules which may be disruptive or harmful to
         the normal operation of a system)
         simply add the correct regex to find the rule you
         want to remove, to the badrules list below
 
 
-        :returns: success
-
+        :return: success
         :rtype: bool
-@author: Breen Malmberg
-
-        '''
+        """
 
         success = True
         linesfixedcount = 0
@@ -1167,7 +1137,7 @@ this system, set the value of EnableKernelAuditing to False"""
         # all files in rules.d/ have these
         # as well as audit.rules in /etc/audit/
         owner = [0, 0]
-        perms = 0640
+        perms = 0o640
 
         try:
 
@@ -1210,7 +1180,7 @@ this system, set the value of EnableKernelAuditing to False"""
         return success
 
     def writeFileContents(self, contents, filepath, owner, perms):
-        '''write new contents to a temp file then rename it to the
+        """write new contents to a temp file then rename it to the
         intended/original file name
         set the given ownership and permissions to the renamed file
         reset the security context of the renamed file
@@ -1225,11 +1195,11 @@ this system, set the value of EnableKernelAuditing to False"""
                 ex: [0, 0]
         :param perms: int; integer representation of file permissions to be applied to filepath
                 (will use OCTAL form of this int!) ex: 0640 = rw, r, none
-        :returns: success
+        :return: success
         :rtype: bool
 @author: Breen Malmberg
 
-        '''
+        """
 
         success = True
         eventtype = 'conf'
@@ -1245,7 +1215,7 @@ this system, set the value of EnableKernelAuditing to False"""
             self.logger.log(LogPriority.DEBUG, "The base directory for the specified filepath does not exist!")
             return success
 
-        if not isinstance(filepath, basestring):
+        if not isinstance(filepath, str):
             success = False
             self.logger.log(LogPriority.DEBUG, "Parameter: filepath must be type: string. Got: " + str(type(filepath)))
             return success
@@ -1308,15 +1278,15 @@ this system, set the value of EnableKernelAuditing to False"""
         return success
 
     def fixmac(self):
-        '''run fix actions for Mac OS systems
+        """run fix actions for Mac OS systems
 
 
-        :returns: retval
+        :return: retval
 
         :rtype: bool
 @author: Breen Malmberg
 
-        '''
+        """
 
         retval = True
         accontentlines = []
@@ -1336,7 +1306,7 @@ this system, set the value of EnableKernelAuditing to False"""
                 if not self.searchFileContents(accontentlines, aco):
                     accontentlines.append(aco + "\n")
 
-            if not self.writeFileContents(accontentlines, self.auditcontrolfile, [0, 0], 0400):
+            if not self.writeFileContents(accontentlines, self.auditcontrolfile, [0, 0], 0o400):
                     retval = False
 
             # audit_user section
@@ -1349,7 +1319,7 @@ this system, set the value of EnableKernelAuditing to False"""
                 if not self.searchFileContents(aucontentlines, auo):
                     aucontentlines.append(auo + '\n')
 
-            if not self.writeFileContents(aucontentlines, self.audituserfile, [0, 0], 0400):
+            if not self.writeFileContents(aucontentlines, self.audituserfile, [0, 0], 0o400):
                 retval = False
 
             # restart audit service
@@ -1372,12 +1342,12 @@ this system, set the value of EnableKernelAuditing to False"""
         return retval
 
     def fix_grub_one(self):
-        '''run fix actions for grub version one
+        """run fix actions for grub version one
         
         @author: Breen Malmberg
 
 
-        '''
+        """
 
         retval = True
         replaced = False
@@ -1405,7 +1375,7 @@ this system, set the value of EnableKernelAuditing to False"""
                         replaced = True
 
             if replaced:
-                if not self.writeFileContents(contentlines, self.grubconffile, [0, 0], 0644):
+                if not self.writeFileContents(contentlines, self.grubconffile, [0, 0], 0o644):
                     retval = False
 
         except Exception:
@@ -1413,12 +1383,12 @@ this system, set the value of EnableKernelAuditing to False"""
         return retval
 
     def fix_grub_two(self):
-        '''run fix actions for grub version two
+        """run fix actions for grub version two
         
         @author: Breen Malmberg
 
 
-        '''
+        """
 
         retval = True
         replaced = False
@@ -1465,7 +1435,7 @@ this system, set the value of EnableKernelAuditing to False"""
 
                 self.logger.log(LogPriority.DEBUG, "The grub conf file contents have been edited. Saving those changes to the file now...")
 
-                if not self.writeFileContents(contentlines, self.grubconffile, [0, 0], 0644):
+                if not self.writeFileContents(contentlines, self.grubconffile, [0, 0], 0o644):
                     retval = False
 
                 if not self.grubupdatecmd:

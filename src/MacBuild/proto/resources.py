@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 
 import os
 def getResourcesDir() :
@@ -13,9 +13,9 @@ def getResourcesDir() :
     selfdir = os.path.dirname(selffile)
     resource_dir = ""
 
-    print selffile
-    print selfdir
-    print "\n\n"
+    print(selffile)
+    print(selfdir)
+    print("\n\n")
 
 
     parents = selfdir.split("/")
@@ -35,4 +35,4 @@ def getResourcesDir() :
     return resource_dir
 
 
-print getResourcesDir()
+print((getResourcesDir()))

@@ -34,18 +34,18 @@ access to this set of users.
 @change: 2015/10/08 eball Help text/PEP8 cleanup
 '''
 
-from __future__ import absolute_import
+
 import os
 import re
 import traceback
 
-from ..rule import Rule
-from ..stonixutilityfunctions import readFile
-from ..stonixutilityfunctions import resetsecon, writeFile, iterate
-from ..stonixutilityfunctions import checkPerms, setPerms
-from ..logdispatcher import LogPriority
-from ..pkghelper import Pkghelper
-from ..CommandHelper import CommandHelper
+from rule import Rule
+from stonixutilityfunctions import readFile
+from stonixutilityfunctions import resetsecon, writeFile, iterate
+from stonixutilityfunctions import checkPerms, setPerms
+from logdispatcher import LogPriority
+from pkghelper import Pkghelper
+from CommandHelper import CommandHelper
 
 
 class SecureSU(Rule):
@@ -72,6 +72,7 @@ class SecureSU(Rule):
         self.rulename = 'SecureSU'
         self.mandatory = True
         self.sethelptext()
+        self.formatDetailedResults("initialize")
         self.rootrequired = True
         datatype = 'bool'
         key = 'SECURESU'

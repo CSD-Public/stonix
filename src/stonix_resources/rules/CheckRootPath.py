@@ -1,4 +1,4 @@
-###############################################################################
+################################################################################
 #                                                                             #
 # Copyright 2019. Triad National Security, LLC. All rights reserved.          #
 # This program was produced under U.S. Government contract 89233218CNA000001  #
@@ -36,17 +36,18 @@ world-writable files or directories in any of the path directories.
 @change: 2017/11/13 Ekkehard - make eligible for OS X El Capitan 10.11+
 @change: 2018/06/08 Ekkehard - make eligible for macOS Mojave 10.14
 @change: 2019/03/12 Ekkehard - make eligible for macOS Sierra 10.12+
+@change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
 """
 
-from __future__ import absolute_import
+
 
 import os
 import re
 import traceback
 
-from ..rule import Rule
-from ..KVEditorStonix import KVEditorStonix
-from ..logdispatcher import LogPriority
+from rule import Rule
+from KVEditorStonix import KVEditorStonix
+from logdispatcher import LogPriority
 
 
 class CheckRootPath(Rule):
@@ -79,7 +80,7 @@ world-writable files or directories in any of the path directories.
                          "CCE-RHEL7-CCE-TBD 2.4.1.1.7"]
         self.applicable = {'type': 'white',
                            'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.12', 'r', '10.14.10']}}
+                           'os': {'Mac OS X': ['10.15', 'r', '10.15.10']}}
 
         # Configuration item instantiation
         datatype = "bool"
@@ -156,7 +157,7 @@ world-writable files or directories in any of the path directories.
             self.logger.log(LogPriority.DEBUG, self.detailedresults)
         except (KeyboardInterrupt, SystemExit):
             raise
-        except Exception, err:
+        except Exception as err:
             self.rulesuccess = False
             self.detailedresults = self.detailedresults + "\n" + str(err) + \
                 " - " + str(traceback.format_exc())

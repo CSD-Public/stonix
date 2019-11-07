@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 ###############################################################################
 #                                                                             #
 # Copyright 2019. Triad National Security, LLC. All rights reserved.          #
@@ -27,7 +27,7 @@ This is a Unit Test for Rule FilePermissions
 @change: 2016/08/26 eball Updated unit test to not fail on NCAF, and to
     test getfilesystems method directly
 '''
-from __future__ import absolute_import
+
 import unittest
 import sys
 sys.path.append("../../../..")

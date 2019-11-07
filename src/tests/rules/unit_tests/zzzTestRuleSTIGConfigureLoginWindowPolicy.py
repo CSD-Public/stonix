@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 ###############################################################################
 #                                                                             #
 # Copyright 2019. Triad National Security, LLC. All rights reserved.          #
@@ -23,7 +23,7 @@ Created on Jun 6, 2017
 
 @author: dwalker
 '''
-from __future__ import absolute_import
+
 import unittest
 import sys
 sys.path.append("../../../..")

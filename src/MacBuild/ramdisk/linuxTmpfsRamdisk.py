@@ -11,10 +11,10 @@ import sys
 from tempfile import mkdtemp
 
 #--- non-native python libraries in this source tree
-from lib.run_commands import RunWith
-from lib.loggers import CyLogger
-from lib.loggers import LogPriority as lp
-from commonRamdiskTemplate import RamDiskTemplate
+from .lib.run_commands import RunWith
+from .lib.loggers import CyLogger
+from .lib.loggers import LogPriority as lp
+from .commonRamdiskTemplate import RamDiskTemplate
 
 ###############################################################################
 
@@ -113,12 +113,12 @@ class RamDisk(RamDiskTemplate):
         else:
             self.gid = gid
 
-        if isinstance(nr_inodes, basestring):
+        if isinstance(nr_inodes, str):
             self.nr_inodes = nr_inodes
         else:
             self.nr_inodes = None
 
-        if isinstance(nr_blocks, basestring):
+        if isinstance(nr_blocks, str):
             self.nr_blocks = nr_blocks
         else:
             self.nr_blocks = None
@@ -227,10 +227,10 @@ class RamDisk(RamDiskTemplate):
         if gid and isinstance(gid, int):
             self.gid = gid
 
-        if nr_inodes and isinstance(nr_inodes, (int, long)):
+        if nr_inodes and isinstance(nr_inodes, int):
             self.nr_inodes = nr_inodes
 
-        if nr_blocks and isinstance(nr_blocks, (int, long)):
+        if nr_blocks and isinstance(nr_blocks, int):
             self.nr_blocks = nr_blocks
 
         #####

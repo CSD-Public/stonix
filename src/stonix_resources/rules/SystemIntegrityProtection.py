@@ -25,13 +25,14 @@ dictionary
 @change: 2017/07/07 ekkehard - make eligible for macOS High Sierra 10.13
 @change: 2017/07/26 ekkehard - make it an audit only rule
 @change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
+@change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
 '''
-from __future__ import absolute_import
+
 import traceback
 import types
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..SystemIntegrityProtectionObject import SystemIntegrityProtectionObject
+from rule import Rule
+from logdispatcher import LogPriority
+from SystemIntegrityProtectionObject import SystemIntegrityProtectionObject
 
 
 class SystemIntegrityProtection(Rule):
@@ -50,7 +51,7 @@ class SystemIntegrityProtection(Rule):
         self.rootrequired = True
         self.guidance = []
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.11.0', 'r', '10.14.10']}}
+                           'os': {'Mac OS X': ['10.15', 'r', '10.15.10']}}
         self.sipobject = SystemIntegrityProtectionObject(self.logdispatch)
         self.auditonly = True
 
@@ -66,7 +67,7 @@ class SystemIntegrityProtection(Rule):
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
-        except Exception, err:
+        except Exception as err:
             self.rulesuccess = False
             messagestring = str(err) + " - " + str(traceback.format_exc())
             self.resultAppend(messagestring)
@@ -89,7 +90,7 @@ class SystemIntegrityProtection(Rule):
 
         '''
         datatype = type(pMessage)
-        if datatype == types.StringType:
+        if datatype == str:
             if not (pMessage == ""):
                 messagestring = pMessage
                 if (self.detailedresults == ""):
@@ -97,7 +98,7 @@ class SystemIntegrityProtection(Rule):
                 else:
                     self.detailedresults = self.detailedresults + "\n" + \
                     messagestring
-        elif datatype == types.ListType:
+        elif datatype == list:
             if not (pMessage == []):
                 for item in pMessage:
                     messagestring = item
@@ -109,8 +110,8 @@ class SystemIntegrityProtection(Rule):
         else:
             raise TypeError("pMessage with value" + str(pMessage) + \
                             "is of type " + str(datatype) + " not of " + \
-                            "type " + str(types.StringType) + \
-                            " or type " + str(types.ListType) + \
+                            "type " + str(str) + \
+                            " or type " + str(list) + \
                             " as expected!")
 
 ###############################################################################

@@ -31,11 +31,11 @@ root:root and 600
 @change: 2017/05/04 Breen Malmberg added logging and detailedresults output
 """
 
-from __future__ import absolute_import
 
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..stonixutilityfunctions import getOctalPerms, resetsecon, iterate
+
+from rule import Rule
+from logdispatcher import LogPriority
+from stonixutilityfunctions import getOctalPerms, resetsecon, iterate
 import os
 import traceback
 import stat
@@ -189,7 +189,7 @@ class BootloaderPerms(Rule):
                         myid = iterate(self.iditerator, self.rulenumber)
 
                         os.chown(path, 0, 0)
-                        os.chmod(path, 0600)
+                        os.chmod(path, 0o600)
                         resetsecon(path)
 
                         self.statechglogger.recordchgevent(myid, event)

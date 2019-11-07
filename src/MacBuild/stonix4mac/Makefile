@@ -31,9 +31,11 @@ pack-stonix: l_Applications
 	@sudo chmod -R 775 ${WORK_D}/Applications/${TITLE}.app
 	@-sudo /usr/bin/xattr -dr com.apple.quarantine ${WORK_D}/Applications/${TITLE}.app
 
-pack-stonix-manpage: l_usr_man_man8
-	@sudo ${INSTALL} -m 644  ${MANPG} ${WORK_D}/${MAN8PATH}/stonix.8
-	@chmod 644 ${WORK_D}/${MAN8PATH}/stonix.8
+pack-stonix-manpage: l_usr_local_share
+	@sudo mkdir -p ${WORK_D}${MAN8PATH}
+	@sudo ${CP} -R ${MANPG} ${WORK_D}${MAN8PATH}/stonix.8
+	@sudo ${INSTALL} -m 644  ${MANPG} ${WORK_D}${MAN8PATH}/stonix.8
+	@chmod 644 ${WORK_D}${MAN8PATH}/stonix.8
 	@sync
 	@sleep 4
 	@sync
@@ -49,10 +51,8 @@ PACKAGE_VERSION=0.9.5.0
 REVERSE_DOMAIN=gov.lanl.${TITLE}.${PACKAGE_VERSION}
 PI=postinstall
 PRE=preinstall
-MANPG=../../usr/share/man/man8/stonix.8
-MAN8PATH=/usr/share/man/man8
+MANPG=../../usr/local/share/man/man8/stonix.8
+MAN8PATH=/usr/local/share/man/man8
 PAYLOAD=pack-stonix \
 	pack-stonix-manpage \
 	pack-stonix4mac-install
-
-

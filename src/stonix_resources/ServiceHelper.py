@@ -33,22 +33,24 @@ installed.
 @change: 2019/04/17 dwalker - added submethods getStartCommand, getStopCommand,
         getEnableCommand, getDisableCommand for use by rule when recording
         change events
+@change: 2019/07/30 Brandon R. Gonzales - Add conditional for chkconfig systems
+        to make sure that the 'service' command is available
 """
 
 import os
 import re
 
-import SHchkconfig
-import SHrcupdate
-import SHupdaterc
-import SHsystemctl
-import SHsvcadm
-import SHrcconf
-import SHlaunchd
-import SHlaunchdTwo
+from stonix_resources import SHchkconfig
+from stonix_resources import SHrcupdate
+from stonix_resources import SHupdaterc
+from stonix_resources import SHsystemctl
+from stonix_resources import SHsvcadm
+from stonix_resources import SHrcconf
+from stonix_resources import SHlaunchd
+from stonix_resources import SHlaunchdTwo
 
-from logdispatcher import LogPriority
-from get_libc import getLibc
+from stonix_resources.logdispatcher import LogPriority
+from stonix_resources.get_libc import getLibc
 
 
 class ServiceHelper(object):
@@ -97,10 +99,14 @@ class ServiceHelper(object):
         systemctl_paths = ["/usr/bin/systemctl", "/bin/systemctl"]
 
         # Red Hat, CentOS, SUSE
-        if os.path.exists('/sbin/chkconfig'):
+        foundchkconfig = os.path.exists('/sbin/chkconfig')
+        foundservice = os.path.exists('/sbin/service') or \
+                       os.path.exists('/usr/sbin/service')
+        if foundchkconfig and foundservice:
             ischkconfig = True
         else:
             ischkconfig = False
+
         # Gentoo
         if os.path.exists('/sbin/rc-update'):
             isrcupdate = True
@@ -286,7 +292,7 @@ class ServiceHelper(object):
             # Generic factory input validation, only for "service", the
             # rest of the parameters need to be validated by the concrete
             # service helper instance.
-            if not isinstance(service, basestring):
+            if not isinstance(service, str):
                 raise TypeError("Service: " + str(service) +
                                 " is not a string as expected.")
 

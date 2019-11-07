@@ -4,15 +4,15 @@ the appropriate environment/OS.
 
 @author: Roy Nielsen
 """
-from __future__ import absolute_import
+
 import os
 import sys
 import inspect
 import traceback
 
-from .. loggers import LogPriority as lp
-from .. loggers import CyLogger
-from .. libHelperExceptions import UnsupportedOSError, NotACyLoggerError
+from ..loggers import LogPriority as lp
+from ..loggers import CyLogger
+from ..libHelperExceptions import UnsupportedOSError, NotACyLoggerError
 
 
 class ManageUser(object):
@@ -58,7 +58,7 @@ class ManageUser(object):
             filename = inspect.stack()[2][1]
             functionName = str(inspect.stack()[2][3])
             lineNumber = str(inspect.stack()[2][2])
-        except Exception, err:
+        except Exception as err:
             self.logger.log(lp.WARNING, traceback.format_exc())
             self.logger.log(lp.WARNING, str(err))
             raise err

@@ -17,8 +17,8 @@
 
 
 import re
-from logdispatcher import LogPriority
-from CommandHelper import CommandHelper
+from stonix_resources.logdispatcher import LogPriority
+from stonix_resources.CommandHelper import CommandHelper
 import glob
 
 
@@ -67,7 +67,7 @@ class Portage(object):
             if not package:
                 self.logger.log(LogPriority.DEBUG, "Parameter: package was blank!")
                 return installed
-            if not isinstance(package, basestring):
+            if not isinstance(package, str):
                 self.logger.log(LogPriority.DEBUG, "Parameter: package must be of type string. Got: " + str(type(package)))
                 return installed
 
@@ -106,7 +106,7 @@ class Portage(object):
             if not package:
                 self.logger.log(LogPriority.DEBUG, "Parameter: package was blank!")
                 return removed
-            if not isinstance(package, basestring):
+            if not isinstance(package, str):
                 self.logger.log(LogPriority.DEBUG, "Parameter package must be of type string. Got: " + str(type(package)))
                 return removed
 
@@ -148,7 +148,7 @@ class Portage(object):
             if not package:
                 self.logger.log(LogPriority.DEBUG, "Parameter: package was blank!")
                 return installed
-            if not isinstance(package, basestring):
+            if not isinstance(package, str):
                 self.logger.log(LogPriority.DEBUG, "Parameter: package must be of type string. Got: " + str(type(package)))
                 return installed
 
@@ -194,7 +194,7 @@ class Portage(object):
             if not package:
                 self.logger.log(LogPriority.DEBUG, "Parameter: package was blank!")
                 return available
-            if not isinstance(package, basestring):
+            if not isinstance(package, str):
                 self.logger.log(LogPriority.DEBUG, "Parameter: package must be of type string. Got: " + str(type(package)))
                 return available
 
@@ -231,7 +231,7 @@ class Portage(object):
 
             if package:
                 # parameter validation
-                if not isinstance(package, basestring):
+                if not isinstance(package, str):
                     self.logger.log(LogPriority.DEBUG, "Parameter package must be of type string. Got: " + str(type(package)))
                     return updatesavail
 

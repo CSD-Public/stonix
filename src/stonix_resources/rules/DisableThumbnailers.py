@@ -28,16 +28,17 @@ Created on Apr 22, 2015
         logging; improved code readability
 """
 
-from __future__ import absolute_import
+
 
 import os
 import re
 import traceback
 
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..CommandHelper import CommandHelper
-from ..pkghelper import Pkghelper
+from rule import Rule
+from logdispatcher import LogPriority
+from CommandHelper import CommandHelper
+from pkghelper import Pkghelper
+from stonixutilityfunctions import iterate
 
 
 class DisableThumbnailers(Rule):
@@ -69,8 +70,6 @@ class DisableThumbnailers(Rule):
         instructions = "To disable this rule set the value of DISABLETHUMBNAILERS to False."
         default = True
         self.ci = self.initCi(datatype, key, instructions, default)
-
-        self.localize()
 
     def localize(self):
         """
@@ -121,7 +120,7 @@ class DisableThumbnailers(Rule):
         self.detailedresults = ""
 
         try:
-
+            self.localize()
             if self.gnome_installed:
                 # This portion of the code is relevant to user context
                 if self.environ.geteuid() != 0:
@@ -191,12 +190,25 @@ class DisableThumbnailers(Rule):
                 if self.environ.geteuid() != 0:
                     if not self.setValue():
                         self.rulesuccess = False
+                    else:
+                        self.iditerator += 1
+                        myid = iterate(self.iditerator, self.rulenumber)
+                        event = {"eventtype": "commandstring",
+                                 "command": re.sub("true", "false", self.setcmd)}
+                        self.statechglogger.recordchgevent(myid, event)
                 # This portion of the code has to be run in root context
                 else:
-                    self.setLockFile()
+                    if not self.setLockFile():
+                        self.rulesuccess = False
 
                 if os.path.exists(self.dconf):
                     self.ch.executeCommand(self.updatecmd)
+                    if self.ch.getReturnCode() == 0:
+                        self.iditerator += 1
+                        myid = iterate(self.iditerator, self.rulenumber)
+                        event = {"eventtype": "commandstring",
+                                 "command": self.updatecmd}
+                        self.statechglogger.recordchgevent(myid, event)
             else:
                 self.logger.log(LogPriority.DEBUG, "CI not enabled. Fix was not performed.")
 
@@ -234,12 +246,35 @@ class DisableThumbnailers(Rule):
         """
         create the lock file for disable thumbnailers (if running in root context)
 
-        :return: void
+        :return: success - True if file is created; False if not
+        :rtype: bool
         """
 
-        if os.path.exists("/etc/dconf/db/local.d/locks"):
+        success = True
+
+        if not os.path.isdir("/etc/dconf/db/local.d/locks"):
+            try:
+                os.makedirs("/etc/dconf/db/local.d/locks", 0o755)
+            except Exception:
+                pass
+        try:
+
             f = open(self.lockfile, "w")
             f.write(self.locksetting)
             f.close()
-            os.chmod(self.lockfile, 0644)
+            os.chmod(self.lockfile, 0o644)
             os.chown(self.lockfile, 0, 0)
+
+        except Exception:
+            success = False
+
+        if success:
+            self.iditerator += 1
+            myid = iterate(self.iditerator, self.rulenumber)
+            event = {"eventtype": "creation",
+                     "filepath": self.lockfile}
+            self.statechglogger.recordchgevent(myid, event)
+        else:
+            self.logger.log(LogPriority.DEBUG, "Failed to create thumbnailers lock file")
+
+        return success

@@ -32,20 +32,21 @@ Created on May 31, 2016
 @change: 2018/12/12 dwalker - Updating rule to properly record change events
     and not override the undo method.
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
+@change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
 '''
-from __future__ import absolute_import
+
 
 import os
 import traceback
 import re
 import subprocess
 
-from ..KVEditorStonix import KVEditorStonix
-from ..CommandHelper import CommandHelper
-from ..rule import Rule
-from ..logdispatcher import LogPriority
-from ..stonixutilityfunctions import resetsecon, setPerms, iterate, writeFile, readFile, checkPerms, createFile
-from ..pkghelper import Pkghelper
+from KVEditorStonix import KVEditorStonix
+from CommandHelper import CommandHelper
+from rule import Rule
+from logdispatcher import LogPriority
+from stonixutilityfunctions import resetsecon, setPerms, iterate, writeFile, readFile, checkPerms, createFile
+from pkghelper import Pkghelper
 from pwd import getpwnam
 
 
@@ -88,7 +89,7 @@ managers will not save work in progress when the logout occurs.
         self.rootrequired = True
         self.applicable = {'type': 'white',
                            'family': ['linux'],
-                           'os': {'Mac OS X': ['10.12', 'r', '10.11.10']},
+                           'os': {'Mac OS X': ['10.15', 'r', '10.15.10']},
                            'fisma': 'high'}
         self.cmdhelper = CommandHelper(self.logger)
         self.guidance = ['NIST 800-53 AC-2(5)']
@@ -596,6 +597,7 @@ FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
                         success = False
                         self.detailedresults += "Unable to create " + self.gnomelockpath + " file\n"
                     else:
+
                         created2 = True
                         if not createddir:
                             self.iditerator += 1
@@ -839,7 +841,7 @@ FORCEIDLELOGOUTTIMEOUT to the desired duration in minutes.'''
                     return False
         uid = getpwnam(user)[2]
         gid = getpwnam(user)[3]
-        os.chmod(kfile, 0600)
+        os.chmod(kfile, 0o600)
         os.chown(kfile, uid, gid)
         resetsecon(kfile)
         return success

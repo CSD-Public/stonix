@@ -1,6 +1,6 @@
-#!/usr/bin/python -u
+#!/usr/bin/env python3 -u
 
-from __future__ import absolute_import
+
 
 import os
 import re
@@ -13,7 +13,7 @@ from optparse import Option, OptionValueError
 
 mydir = os.path.dirname(os.path.abspath(__file__))
 parentdir = "/" + "/".join(mydir.split("/")[:-1])
-print parentdir
+print(parentdir)
 sys.path.append("../../../..")
 
 from src.stonix_resources.loggers import CyLogger
@@ -203,7 +203,7 @@ if __name__=="__main__":
     '''
 
     if not opts.treeRoot and not opts.dirToCheck and not opts.doFiles and not opts.confFile:
-        print "\n\n\nNeed to choose a file acquisition method.\n\n"
+        print("\n\n\nNeed to choose a file acquisition method.\n\n")
         parser.parse_args(["--help"])
         sys.exit(0)
 
