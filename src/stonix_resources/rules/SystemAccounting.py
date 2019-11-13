@@ -43,6 +43,7 @@ messaging to indicate to the user whether the method will run or not, based on c
 
 import traceback
 import os
+import re
 
 from rule import Rule
 from pkghelper import Pkghelper
@@ -90,20 +91,25 @@ class SystemAccounting(Rule):
         """
 
         self.sysstat_package = "sysstat"
-        self.sysstat_service_file = "/usr/lib/systemd/system/sysstat.service"
+        self.sysstat_service_file = ""
+        sysstat_service_locs = ["/usr/lib/systemd/system/sysstat.service", "/lib/systemd/system/sysstat.service",  "/etc/init.d/sysstat"]
+        for ss in sysstat_service_locs:
+            if os.path.isfile(ss):
+                self.sysstat_service_file = ss
+                break
         self.accton = "/usr/sbin/accton"
         self.acct_file = "/var/account/acct"
         self.cron_file = "/etc/cron.d/sysstat"
 
         self.sa1 = ""
-        sa1_locs = ["/usr/lib64/sa/sa1", "/usr/local/lib64/sa/sa1"]
+        sa1_locs = ["/usr/lib64/sa/sa1", "/usr/local/lib64/sa/sa1", "/usr/lib/sysstat/sa1"]
         for sl in sa1_locs:
             if os.path.isfile(sl):
                 self.sa1 = sl
                 break
 
         self.sa2 = ""
-        sa2_locs = ["/usr/lib64/sa/sa2", "/usr/local/lib64/sa/sa2"]
+        sa2_locs = ["/usr/lib64/sa/sa2", "/usr/local/lib64/sa/sa2", "/usr/lib/sysstat/sa2"]
         for sl in sa2_locs:
             if os.path.isfile(sl):
                 self.sa2 = sl
@@ -167,9 +173,18 @@ WantedBy=multi-user.target
                 f = open(self.sysstat_service_file, "r")
                 contents = f.read()
                 f.close()
-                if contents != self.sysstat_service_contents:
-                    compliant = False
-                    self.detailedresults += "\nSystem accounting service file has incorrect contents"
+                if self.sysstat_service_file != "/etc/init.d/sysstat":
+                    if contents != self.sysstat_service_contents:
+                        compliant = False
+                        self.detailedresults += "\nSystem accounting service file has incorrect contents"
+
+        if os.path.isfile("/etc/default/sysstat"):
+            f = open("/etc/default/sysstat", "r")
+            contents = f.read()
+            f.close()
+            if not re.search('ENABLED="true"', contents):
+                compliant = False
+                self.detailedresults += "\n/etc/default/sysstat file has incorrect contents"
 
         return compliant
 
@@ -280,11 +295,27 @@ WantedBy=multi-user.target
                 self.logger.log(LogPriority.DEBUG, "kveditor failed to commit()")
         else:
             try:
-                f = open(self.sysstat_service_file, "w")
-                f.write(self.sysstat_service_contents)
-                f.close()
+                if self.sysstat_service_file != "/etc/init.d/sysstat":
+                    f = open(self.sysstat_service_file, "w")
+                    f.write(self.sysstat_service_contents)
+                    f.close()
             except:
                 success = False
+
+        if os.path.isfile("/etc/default/sysstat"):
+            default_sysstat_contents = """# 
+# Default settings for /etc/init.d/sysstat, /etc/cron.d/sysstat 
+# and /etc/cron.daily/sysstat files 
+# 
+
+# Should sadc collect system activity information? Valid values 
+# are 'true' and 'false'. Please do not put other values, they 
+# will be overwritten by debconf! 
+ENABLED="true"
+"""
+            f = open("/etc/default/sysstat", "w")
+            f.write(default_sysstat_contents)
+            f.close()
 
         return success
 
