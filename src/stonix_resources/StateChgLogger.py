@@ -92,8 +92,19 @@ class StateChgLogger(object):
                self.environment.geteuid() == 0:
                 os.makedirs('/var/db/stonix', 0o700)
             if self.environment.geteuid() == 0:
-                self.eventlog = shelve.open('/var/db/stonix/eventlog', 'c',
-                                            None, True)
+                try:
+                    self.eventlog = shelve.open('/var/db/stonix/eventlog', 'c', None, True)
+                except:
+                    # if a python 3 version of stonix attempts to access an eventlog file
+                    # created or written to in a python 2 version of stonix, there is an incompatibility
+                    # which results in a traceback; catch this traceback and backup the old python 2 version
+                    # of the file and create a new python 3 version of it
+                    if not os.path.isfile('/var/db/stonix/eventlog.old'):
+                        if os.path.isfile('/var/db/stonix/eventlog'):
+                            shutil.copy2('/var/db/stonix/eventlog', '/var/db/stonix/eventlog.old')
+                    if os.path.isfile('/var/db/stonix/eventlog'):
+                        os.remove('/var/db/stonix/eventlog')
+                    self.eventlog = shelve.open('/var/db/stonix/eventlog', 'c', None, True)
             else:
                 self.privmode = False
             for node in [self.diffdir, self.archive]:
