@@ -38,8 +38,10 @@ class KVAProfiles():
         self.path = path
         self.undocmd = ""
         self.installcmd = ""
+        self.data = ""
+        self.badvalues = ""
 
-    def validate(self, output, key, val):
+    def validate(self, output, data):
         '''@summary: Method checks if either profile is installed and/or contents of
         profile is up to par with our security standards
         @author: dwalker
@@ -56,125 +58,101 @@ class KVAProfiles():
         :returns: bool - True or False
 
         '''
-        '''When passed through, key should be the identifier to be found
-        such as com.apple.DiscRecording and val should be the rest of the
-        dictionary.'''
-        retval = True
-        '''In some cases val will be blank in which case we're just
-        looking for the presence of the profile or more specifically
-        the identifier (key)'''
-        if not val:
-            for line in output:
-                if re.search("^" + key, line.strip()):
-                    return True
-            '''We never found the profile, return False'''
-            debug = "The profile sub-identifier:" + key + " was not found\n"
-            self.logger.log(LogPriority.DEBUG, debug)
-            return False
         
         '''Go throught output and see if we can find the profile
         identifier (key)'''
-        iterator1 = 0
-        keyoutput = []
-        keyfound = False
-        for line in output:
-            '''We found the profile identifier'''
-            if re.search("^" + key + ":$", line.strip()):
-                keyfound = True
-                ''''Put all output after the identifier line into a 
-                new list'''
-                temp = output[iterator1 + 1:]
-                iterator2 = 0
-                '''Go through this new list and look for where the 
-                payload section starts.  The rest of the output gets
-                stored in the keyout list'''
-                for line in temp:
-                    if re.search("^Payload Data:", line.strip()):
-                        temp = temp[iterator2 + 1:]
-                        keyoutput = temp
-                        break
-                    else:
-                        iterator2 += 1
-                if keyoutput:
-                    break
-            else:
-                iterator1 += 1
-        '''Check to see if we ever found the identifier (key).
-        If not, return False'''
-        if not keyfound:
-            debug = "Key: " + key + " was never found\n"
-            self.logger.log(LogPriority.DEBUG, debug)
-            return False
-        '''keyoutput should just contain lines after Payload Data line'''
-        if keyoutput:
-            payloadblocktemp = []
-            '''This next loop is getting everything inside the payload
-            section stopping before the next identifier'''
-            for line in keyoutput:
-                if not re.search(".*:", line):
-                    line = re.sub("\s+", "", line)
-                    payloadblocktemp.append(line)
-                else:
-                    break
-            payloadblock = []
-            i = 0
-            dontadd = False
-            '''This loop is to clean up the output and squash together
-            any consecutive lines that are blank values inside {} or ()'''
-            while i < len(payloadblocktemp):
-                if dontadd:
-                    i += 1
-                    dontadd = False
-                    continue
-                '''The next two if statements check to see if two consecutive
-                lines represent an empty dictionary or tuple.  If so we want
-                to combine these into one line without the ; at the end'''
-                if re.search("\{$", payloadblocktemp[i]):
-                    try:
-                        if re.search("\};$", payloadblocktemp[i + 1]):
-                            dontadd = True
-                            line = re.sub(";$", "", payloadblocktemp[i + 1])
-                            payloadblock.append(payloadblocktemp[i] + line)
+        self.badvalues = ""
+        self.data = data
+        for key, val in self.data.iteritems():
+            iterator1 = 0
+            for line in output:
+                keyoutput = []
+                '''We found the profile identifier'''
+                if re.search("^" + key + ":$", line.strip()):
+                    ''''Put all output after the identifier line into a 
+                    new list called temp'''
+                    temp = output[iterator1 + 1:]
+                    iterator2 = 0
+                    '''Go through this new list and look for where the 
+                    payload section starts.  The rest of the output gets
+                    stored in the keyoutput list'''
+                    for line in temp:
+                        if re.search("^Payload Data:", line.strip()):
+                            temp = temp[iterator2 + 1:]
+                            keyoutput = temp
+                            break
                         else:
-                            payloadblock.append(payloadblocktemp[i])
-                    except IndexError:
-                        debug = "File in bad format, fix will install profile\n"
-                        self.logger.log(LogPriority.DEBUG, debug)
-                        return False
-                elif re.search("\($", payloadblocktemp[i]):
-                    try:
-                        if re.search("\);$", payloadblocktemp[i + 1]):
-                            dontadd = True
-                            line = re.sub(";$", "", payloadblocktemp[i + 1])
-                            payloadblock.append(payloadblocktemp[i] + line)
-                        else:
-                            payloadblock.append(payloadblocktemp[i])
-                    except IndexError:
-                        debug = "File in bad format, fix will install profile\n"
-                        self.logger.log(LogPriority.DEBUG, debug)
-                        return False
+                            iterator2 += 1
+                    if keyoutput:
+                        payloadblocktemp = []
+                        '''This next loop is getting everything inside the payload
+                        section stopping before the next identifier'''
+                        for line in keyoutput:
+                            if not re.search(".*:", line):
+                                line = re.sub("\s+", "", line)
+                                payloadblocktemp.append(line)
+                            else:
+                                break
+                        payloadblock = []
+                        i = 0
+                        dontadd = False
+                        '''This loop is to clean up the output and squash together
+                        any consecutive lines that are blank values inside {} or ()'''
+                        while i < len(payloadblocktemp):
+                            if dontadd:
+                                i += 1
+                                dontadd = False
+                                continue
+                            '''The next two if statements check to see if two consecutive
+                            lines represent an empty dictionary or tuple.  If so we want
+                            to combine these into one line without the ; at the end'''
+                            if re.search("\{$", payloadblocktemp[i]):
+                                try:
+                                    if re.search("\};$", payloadblocktemp[i + 1]):
+                                        dontadd = True
+                                        line = re.sub(";$", "", payloadblocktemp[i + 1])
+                                        payloadblock.append(payloadblocktemp[i] + line)
+                                    else:
+                                        payloadblock.append(payloadblocktemp[i])
+                                except IndexError:
+                                    debug = "File in bad format, fix will install profile\n"
+                                    self.logger.log(LogPriority.DEBUG, debug)
+                                    return False
+                            elif re.search("\($", payloadblocktemp[i]):
+                                try:
+                                    if re.search("\);$", payloadblocktemp[i + 1]):
+                                        dontadd = True
+                                        line = re.sub(";$", "", payloadblocktemp[i + 1])
+                                        payloadblock.append(payloadblocktemp[i] + line)
+                                    else:
+                                        payloadblock.append(payloadblocktemp[i])
+                                except IndexError:
+                                    debug = "File in bad format, fix will install profile\n"
+                                    self.logger.log(LogPriority.DEBUG, debug)
+                                    return False
+                            else:
+                                payloadblock.append(payloadblocktemp[i])
+                            i += 1
+                        '''k is the key inside val variable (e.g. allowsimple)
+                        and v is the value, in this example, a dict (e.g. {"val": "1",
+                                                                           "type": "bool",
+                                                                           "accept": "",
+                                                                           "result": False"})'''
+                        for k, v in val.iteritems():
+                            retval = False
+                            if isinstance(v["val"], tuple):
+                                retval = self.checkTuple(k, v, payloadblock)
+                            elif isinstance(v["val"], dict):
+                                retval = self.checkDict(k, v, payloadblock)
+                            else:
+                                retval = self.checkSimple(k, v, payloadblock)
+                            if retval == True:
+                                v["result"] = True
                 else:
-                    payloadblock.append(payloadblocktemp[i])
-                i += 1
-            '''k is the key inside val variable (e.g. allowsimple)
-            and v is the value, in this example, a list (e.g. ["1", "bool"])'''
-            for k, v, in val.iteritems():
-                if isinstance(v, list):
-                    retval = self.checkSimple(k, v, payloadblock)
-                elif isinstance(v, tuple):
-                    retval = self.checkTuple(k, v, payloadblock)
-                elif isinstance(v, dict):
-                    retval = self.checkDict(k, v, payloadblock)
-                if not retval:
-                    return False
-        else:
-            if not val:
-                return True
-            else:
-                debug = "There was no Payload Data for key: " + key + "\n"
-                self.logger.log(LogPriority.DEBUG, debug)
-                return False
-        return retval    
+                    iterator1 += 1
+        print "self.data after report: " + str(self.data) + "\n"
+        self.setbadvalues()
+        return self.data
 
     def checkSimple(self, k, v, payloadblock):
         '''@summary: Method that checks payloadblock contents
@@ -201,7 +179,7 @@ class KVAProfiles():
         debug = ""
         print "payload block: " + str(payloadblock) + "\n\n"
         for line in payloadblock:
-            if re.search("^" + k + " = ", line.strip()):
+            if re.search("^" + k + "=", line.strip()):
                 founditem = True
                 temp = line.strip().split("=")
                 try:
@@ -214,8 +192,8 @@ class KVAProfiles():
                         bool, then we want to make sure that our value found
                         after the = in our output matches what we're expecting
                         in v[0] which is either going to be a 1 or 0'''
-                        if v[1] == "bool":
-                            if str(temp[1].strip()) != v[0]:
+                        if v["type"] == "bool":
+                            if str(temp[1].strip()) != v["val"]:
                                 debug += "Key: " + k + " doesn't " + \
                                     "contain the correct boolean " + \
                                     "value\n"
@@ -231,16 +209,16 @@ class KVAProfiles():
                             don't match but the value in our output is a greater 
                             integer value than what we're expecting, then it's still
                             ok and vice versa with the less keyword.'''
-                        elif v[1] == "int":
-                            if v[2] == "more":
-                                if int(temp[1].strip()) < int(v[0]):
+                        elif v["type"] == "int":
+                            if v["accept"] == "more":
+                                if int(temp[1].strip()) < int(v["val"]):
                                     debug += "Key: " + k + " doesn't " + \
                                         "contain the correct integer " + \
                                         "value\n"
                                     unsecure = True
                                     break 
-                            elif v[2] == "less":
-                                if int(temp[1].strip()) > int(v[0]):
+                            elif v["accept"] == "less":
+                                if int(temp[1].strip()) > int(v["val"]):
                                     debug += "Key: " + k + " doesn't " + \
                                         "contain the correct integer " + \
                                         "value\n"
@@ -250,8 +228,8 @@ class KVAProfiles():
                             string, then we want to make sure that our value found
                             after the = in our output matches what we're expecting
                             in v[0] which could be any string.'''
-                        elif v[1] == "string":
-                            if temp[1].strip() != v[0]:
+                        elif v["type"] == "string":
+                            if temp[1].strip() != v["val"]:
                                 debug += "Key: " + k + " doesn't " + \
                                     "contain the correct string value\n"
                                 unsecure = True
@@ -288,13 +266,15 @@ class KVAProfiles():
         :returns: bool - True or False
 
         '''
+        print "payloadblock inside checkTuple: \n"
+        print str(payloadblock) + "\n"
         retval = True
         iterator = 0
         temp, temp2 = [], []
         for line in payloadblock:
-            if re.search("^" + k + "=", line):
+            if re.search("^" + k + "=", line.strip()):
                 if re.search("\(\)$", line):
-                    if str(v) == "()":
+                    if str(v["val"]) == "()":
                         return True
                     else:
                         return False
@@ -475,3 +455,10 @@ class KVAProfiles():
         else:
             return False
         return True
+
+    def setbadvalues(self):
+        if self.data:
+            for k, v in self.data.iteritems():
+                for k2, v2, in v.iteritems():
+                    if v2["result"] == False:
+                        self.badvalues += k2 + " key has incorrect value of " + str(v2["val"]) + "\n"

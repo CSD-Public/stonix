@@ -66,7 +66,6 @@ class KVEditor(object):
         self.configType = configType
         self.data = data
         self.output = output
-        self.detailedresults = ""
         self.missing = []
         self.fixables = {}
         self.fixlist = []
@@ -82,6 +81,7 @@ class KVEditor(object):
                                                       self.intent,
                                                       self.configType,
                                                       self.logger)
+
         elif self.kvtype == "conf":
             if not self.getPath:
                 return None
@@ -93,9 +93,9 @@ class KVEditor(object):
         elif self.kvtype == "profiles":
             self.editor = KVAProfiles.KVAProfiles(self.logger, self.path)
         else:
-            self.detailedresults = "Not one of the supported kveditor types"
+            debug = "Not one of the supported kveditor types"
             self.logger.log(LogPriority.DEBUG,
-                            ["KVEditor.__init__", self.detailedresults])
+                            ["KVEditor.__init__", debug])
             return None
 
     def setData(self, data):
@@ -126,9 +126,9 @@ class KVEditor(object):
 
     def setPath(self, path):
         if not os.path.exists(path):
-            self.detailedresults = "File path does not exist"
+            debug = "File path does not exist"
             self.logger.log(LogPriority.INFO,
-                            ["KVEditor", self.detailedresults])
+                            ["KVEditor", debug])
             return False
         else:
             self.path = path
@@ -397,14 +397,21 @@ class KVEditor(object):
         self.ch = CommandHelper(self.logger)
         if self.ch.executeCommand(cmd):
             self.output = self.ch.getOutput()
-            retval = True
             if self.output:
-                for k, v in self.data.iteritems():
-                    retval = self.editor.validate(self.output, k, v)
-                    if not retval:
-                        return False
+                retval = True
+                resultdict = ""
+                #for k, v in self.data.iteritems():
+                #retval = self.editor.validate(self.output, k, v)
+                resultdict = self.editor.validate(self.output, self.data)
+                if resultdict:
+                    self.data = resultdict
+                    for k, v in self.data.iteritems():
+                        for k2, v2 in v.iteritems():
+                            if v2["result"] == False:
+                                retval = False
+                return retval
             else:
-                debug = "There are no profiles installed"
+                debug = "There are no profiles installed\n"
                 self.logger.log(LogPriority.DEBUG, debug)
                 return False
         return True
