@@ -488,8 +488,6 @@ This rule will not configure su on Debian distributions."
 
 <96>        "This rule configures network time to use the internal or external servers specified in localize.py ('NTPSERVERSINTERNAL' and 'NTPSERVERSEXTERNAL')."
 
-<77>        "This rule sets root's 'group id' (GID) to 0 and root's home directory to /root."
-
 <188>        "***REQUIRES LOGOUT and LOGIN*** 
 
 This rule removes the functionality of using a 'hot corner' to disable the screen saver. 
