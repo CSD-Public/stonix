@@ -15,7 +15,7 @@
 #                                                                             #
 ###############################################################################
 
-'''
+"""
 Created on Apr 5, 2016
 
 @author: Derek Walker
@@ -24,9 +24,7 @@ Created on Apr 5, 2016
 @change: 2018/07/31 Breen Malmberg - added doc strings for report and fix
         methods; added redhat insights software to default list of software
         to remove
-'''
-
-
+"""
 
 import traceback
 
@@ -37,12 +35,13 @@ from rule import Rule
 
 
 class RemoveSoftware(Rule):
-    '''This class removes any unnecessary software installed on the system'''
+    """This class removes any unnecessary software installed on the system"""
 
     def __init__(self, config, environ, logger, statechglogger):
-        '''
+        """
         Constructor
-        '''
+        """
+
         Rule.__init__(self, config, environ, logger, statechglogger)
         self.logger = logger
         self.rulenumber = 91
@@ -54,7 +53,6 @@ class RemoveSoftware(Rule):
         self.guidance = ["NSA 2.3.5.6"]
         self.applicable = {'type': 'white',
                            'family': ['linux', 'freebsd']}
-        self.iditerator = 0
 
         # Configuration item instantiation
         datatype1 = "bool"
@@ -109,28 +107,27 @@ class RemoveSoftware(Rule):
         self.pkgci = self.initCi(datatype2, key2, instructions2, default2)
 
     def report(self):
-        '''report on any unnecessary software that is currently
-        installed
-        return True if none installed
-        return False if any installed
-
+        """
+        report whether any of the packages listed in the self.pkgci ci are installed
+        return False if any are installed
+        return True if none of them are installed
 
         :returns: self.compliant
-
         :rtype: bool
-@author: Derek Walker
-
-        '''
+        """
 
         self.detailedresults = ""
         self.compliant = True
         self.ph = Pkghelper(self.logger, self.environ)
+        packages = self.pkgci.getcurrvalue()
+        self.remove_packages = []
 
         try:
 
-            if self.pkgci.getcurrvalue():
-                for pkg in self.pkgci.getcurrvalue():
+            if packages:
+                for pkg in packages:
                     if self.ph.check(pkg):
+                        self.remove_packages.append(pkg)
                         self.detailedresults += pkg + " is installed\n"
                         self.compliant = False
 
@@ -144,26 +141,24 @@ class RemoveSoftware(Rule):
         return self.compliant
 
     def fix(self):
-        '''remove all unnecessary software
-
+        """
+        remove all software packages listed in the self.pkgci list
 
         :returns: self.rulesuccess
-
         :rtype: bool
-@author: Derek Walker
-
-        '''
+        """
 
         self.rulesuccess = True
         self.detailedresults = ""
         self.iditerator = 0
+        enabled = self.ci.getcurrvalue()
 
         try:
 
-            if not self.ci.getcurrvalue():
+            if not enabled:
                 self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
                 return self.rulesuccess
-            elif not self.pkgci.getcurrvalue():
+            elif not self.remove_packages:
                 self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
                 return self.rulesuccess
 
@@ -172,21 +167,22 @@ class RemoveSoftware(Rule):
             for event in eventlist:
                 self.statechglogger.deleteentry(event)
 
-            for pkg in self.pkgci.getcurrvalue():
-                if self.ph.check(pkg):
-                    try:
-                        if self.ph.remove(pkg):
-                            self.iditerator += 1
-                            myid = iterate(self.iditerator, self.rulenumber)
-                            event = {"eventtype": "pkghelper",
-                                     "pkgname": pkg,
-                                     "startstate": "installed",
-                                     "endstate": "removed"}
-                            self.statechglogger.recordchgevent(myid, event)
-                        else:
-                            self.rulesuccess = False
-                    except Exception:
-                        continue
+            for pkg in self.remove_packages:
+                try:
+                    if self.ph.remove(pkg):
+                        self.iditerator += 1
+                        self.detailedresults += "\nRemoved package: " + str(pkg)
+                        myid = iterate(self.iditerator, self.rulenumber)
+                        event = {"eventtype": "pkghelper",
+                                 "pkgname": pkg,
+                                 "startstate": "installed",
+                                 "endstate": "removed"}
+                        self.statechglogger.recordchgevent(myid, event)
+                    else:
+                        self.rulesuccess = False
+                        self.detailedresults += "\nFailed to remove package: " + str(pkg)
+                except Exception:
+                    continue
 
         except (KeyboardInterrupt, SystemExit):
             raise
