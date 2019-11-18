@@ -67,7 +67,7 @@ FISMACAT = 'med'
 # arbitrary values are fine. A recommended local version might look like this:
 # 1.2.2-local3 or just 1.2.2-3 or 1.2.2.3
 # Variable Type: String
-STONIXVERSION = '0.9.36'
+STONIXVERSION = '0.9.37'
 
 # The report server should be a string containing a valid FQDN or IP address
 # for the host that STONIX should upload it's run report XML data to.
@@ -77,7 +77,7 @@ REPORTSERVER = None
 # sendreports to False. Please note no quotes.
 # sendreports = False
 # Variable Type: Boolean
-SENDREPORTS = True
+SENDREPORTS = False
 
 # The SoftwarePatching rule will check to see if local update sources are being
 # used. If you have local update sources list them here. This check will be
