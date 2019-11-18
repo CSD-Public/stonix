@@ -153,9 +153,9 @@ In interactive start-up mode it is possible to control which services are run."
 
 <215>        "This rule disables 'Internet sharing'.
 
-<192>        "This rule disables the ability of the Gnome Display Manager to allow users to automatically log in without user interaction or credentials. If Gnome Display Manager is not installed then this rule will not make any changes to the system."
-
 Internet sharing uses the open-source 'Network Address Translation Daemon' (NATD) process to share an internet connection with other computers and devices on a local network. Unless specifically required, Internet sharing should be turned off. If used, it should only be turned on when actual sharing is needed. A much better solution is a dedicated router. Apple makes a number of certified compatible routers."
+
+<192>        "This rule disables the ability of the Gnome Display Manager to allow users to automatically log in without user interaction or credentials. If Gnome Display Manager is not installed then this rule will not make any changes to the system."
 
 <123>        "This rule disables IPv6 functionality on all system interfaces.  This rule requires a restart to take effect."
 
