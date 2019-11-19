@@ -39,6 +39,7 @@ Created on Aug 24, 2010
 
 from stonix_resources.observable import Observable
 
+import atexit
 import re
 import logging
 from stonix_resources import localize
@@ -588,11 +589,13 @@ class LogPriority:
 
 
 class xmlReport:
-    """Simple class to manage the STONIX XML report formatting.
+    """
+    Simple class to manage the STONIX XML report formatting.
     
     @author: dkennel
 
-
+    @change: 2019/11/19 Brandon R. Gonzales - Replace destructor with cleanup
+        function to be triggered by the python atexit library on termination.
     """
     def __init__(self, path, debug=False):
         """
@@ -610,19 +613,7 @@ class xmlReport:
         self.meta = ET.SubElement(self.root, 'metadata')
         self.findings = ET.SubElement(self.root, 'findings')
         self.closed = False
-
-    def __del__(self):
-        """
-        This class has an explicit destructor to ensure that log data is
-        written to disk.
-        @author: D. Kennel
-        """
-        try:
-            if not self.closed:
-                self.closeReport()
-        except Exception:
-            pass
-            #
+        atexit.register(self.cleanup)
 
     def writeMetadata(self, entry):
         """xmlReport.writeMetadata(entry): The xmlReport method to add a metadata
@@ -673,3 +664,14 @@ class xmlReport:
                 print(err)
                 trace = traceback.format_exc()
                 print(trace)
+
+    def cleanup(self):
+        """
+        Ensures that log data is written to disk on program exit.
+        @author: Brandon R. Gonzales
+        """
+        try:
+            if not self.closed:
+                self.closeReport()
+        except Exception:
+            pass
