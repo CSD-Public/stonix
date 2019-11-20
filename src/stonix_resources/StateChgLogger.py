@@ -40,6 +40,7 @@ import time
 import difflib
 import weakref
 import subprocess
+
 from stonix_resources.logdispatcher import LogPriority
 
 
@@ -110,7 +111,7 @@ class StateChgLogger(object):
             for node in [self.diffdir, self.archive]:
                 if not os.path.exists(node) and self.environment.geteuid() == 0:
                     os.makedirs(node, 0o700)
-        except(OSError):
+        except OSError:
             raise
 
     def __del__(self):
