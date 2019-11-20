@@ -50,12 +50,11 @@ dictionary
 
 import re
 import traceback
+import os
 
 from ..ruleKVEditor import RuleKVEditor
 from ..CommandHelper import CommandHelper
 from ..logdispatcher import LogPriority
-from ..localize import APPLESOFTUPDATESERVER
-from ..stonixutilityfunctions import iterate
 
 
 class ConfigureAppleSoftwareUpdate(RuleKVEditor):
@@ -119,30 +118,26 @@ class ConfigureAppleSoftwareUpdate(RuleKVEditor):
         self.applicable = {'type': 'white',
                            'os': {'Mac OS X': ['10.15', 'r', '10.15.10']}}
 
-        if self.environ.getostype() == "Mac OS X":
-            if self.environ.geteuid() == 0:
-                softwareupdate_path = "/Library/Preferences/com.apple.SoftwareUpdate.plist"
-                commerce_path = "/Library/Preferences/com.apple.commerce.plist"
-            else:
-                softwareupdate_path = "com.apple.SoftwareUpdate"
-                commerce_path = "com.apple.commerce"
+        self.euid = os.geteuid()
+        self.os_minor_vers = self.environ.getosminorver()
+        self.set_catalog_key_name()
 
-            self.ccurlci = None
-            if self.checkConsts([APPLESOFTUPDATESERVER]):
-                # ConfigureCatalogURL ci needs to be set up manually because
-                # it is reported with kveditor and fixed with command helper
-                datatype = 'bool'
-                key = 'CONFIGURECATALOGURL'
-                instructions = "Set software update server (AppleCatalogURL) to '" + \
-                               str(APPLESOFTUPDATESERVER) + \
-                               "'. This should always be enabled. If disabled " + \
-                               " it will point to the Apple Software Update " + \
-                               "Server. NOTE: your system will report as not " + \
-                               "compliant if you disable this option."
-                default = True
-                self.ccurlci = self.initCi(datatype, key, instructions, default)
-            else:
-                self.detailedresults += "\nThe Configure Catalogue URL portion of this rule requires that the constant: APPLESOFTWAREUPDATESERVER be defined and not None. Please ensure this constant is set properly in localize.py"
+        if self.euid == 0:
+            softwareupdate_path = "/Library/Preferences/com.apple.SoftwareUpdate.plist"
+            commerce_path = "/Library/Preferences/com.apple.commerce.plist"
+        else:
+            softwareupdate_path = "com.apple.SoftwareUpdate"
+            commerce_path = "com.apple.commerce"
+
+        datatype = "string"
+        key = "UPDATESERVERURL"
+        instructions = "Set the software update source for the system to the specified server/URL. Changing this to a blank value will prevent the system from updating"
+
+        # this URL may change in the future
+        default = "http://swscan.apple.com"
+
+        self.update_serverCI = self.initCi(datatype, key, instructions, default)
+
         self.addKVEditor("EnableAutomaticDownload",
                          "defaults",
                          softwareupdate_path,
@@ -233,24 +228,24 @@ class ConfigureAppleSoftwareUpdate(RuleKVEditor):
                          None,
                          False,
                          {"AutoUpdateRestartRequired": ["1", "-bool yes"]})
+
         self.ch = CommandHelper(self.logdispatch)
         self.softwareupdatehasnotrun = True
 
-    def beforereport(self):
-        """set a flag to indicate whether report has run yet or not
+    def set_catalog_key_name(self):
+        """
+        set the catalog url key name based on os version
 
-        :return: success
-        :rtype: bool
+        :return: void
         """
 
-        success = True
-        if self.softwareupdatehasnotrun:
-            # FIXME this is way to slow
-            # success = self.ch.executeCommand("softwareupdate --list")
-            self.softwareupdatehasnotrun = False
-        else:
-            success = True
-        return success
+        self.catalog_key = ""
+
+        if int(self.os_minor_vers) <= 14:
+            self.catalog_key = "AppleCatalogURL"
+        # changed in macOS X 10.15 Catalina
+        elif int(self.os_minor_vers) >= 15:
+            self.catalog_key = "CatalogURL"
 
     def report(self):
         """Calls the inherited RuleKVEditor report method.
@@ -265,90 +260,25 @@ class ConfigureAppleSoftwareUpdate(RuleKVEditor):
 
         """
 
-        try:
-            # Invoke super method
-            self.resultReset()
-            compliant = True
-            detailedresults = ""
-            if not RuleKVEditor.report(self, True):
-                compliant = False
-            if not self.checkConsts([APPLESOFTUPDATESERVER]):
-                compliant = False
-                detailedresults += "The Configure Catalogue URL " + \
-                                   "portion of this rule requires that the constant: " + \
-                                   "APPLESOFTWAREUPDATESERVER be defined and not None. " + \
-                                   "Please ensure this constant is set properly in " + \
-                                   "localize.py\n"
-            else:
-                if self.environ.geteuid() == 0:
-                    if self.ccurlci is not None:
-                        cmd = "/usr/bin/defaults read /Library/Preferences/com.apple.SoftwareUpdate AppleCatalogURL"
-                        if self.ch.executeCommand(cmd):
-                            output = self.ch.getOutputString()
-                            # This condition checks if our output matches the catalogURL
-                            # we set in localize.py and if the ci was enabled.  complicancy
-                            # is False if ci was enabled but URL doesn't match that in
-                            # localize.py
-                            if self.ccurlci.getcurrvalue():
-                                if output.strip() != APPLESOFTUPDATESERVER:
-                                    self.detailedresults += "Apple catalog URL is not set to " + APPLESOFTUPDATESERVER + "\n"
-                                    self.originalserver = output.strip()
-                                    compliant = False
-                            # This condition checks if our ci wasn't enabled, this should
-                            # find the output to be cleared and contain the words does not
-                            # exist. If the words does not exist don't appear in the output
-                            # compliancy is False
-                            elif not self.ccurlci.getcurrvalue():
-                                if output.strip() != "":
-                                    self.detailedresults += "CI for apple catalog url is unchecked " + \
-                                                            "which means catalog url should not be set, but url is " + \
-                                                            "pointing to another location\n"
-                                    self.originalserver = output.strip()
-                                    compliant = False
-                                # However, because the rule requires the CI to be enabled, at
-                                # least for now, even if the words does not exist are found
-                                # in the output and the CI is not enabled, this is still
-                                # not compliant. We may eventually make this be compliant = True
-                                elif output.strip() == "":
-                                    compliant = False
-                                    detailedresults += "The Configure Catalogue URL " + \
-                                                       "portion of this rule requires that " + \
-                                                       "the ci: CONFIGURECATALOGURL be " + \
-                                                       "enabled. Please enable this " + \
-                                                       "configuration item either in the " + \
-                                                       "STONIX GUI or stonix.conf\n"
-                        else:
-                            self.detailedresults += "Unable to run defaults command " + \
-                                                    "to retrieve the Apple catalog URL\n"
-                            compliant = False
+        self.update_server = self.update_serverCI.getcurrvalue()
+        self.detailedresults = ""
+        self.compliant = True
 
-            # The KVEditor object for "RecommendedUpdates" may require a manual
-            # fix (running apple software updates). Here is where we instruct the
-            # user on how to fix this item if it is non-compliant.
-            self.getKVEditor("RecommendedUpdates")
-            softwareupdated = self.kveditor.report()
-            if not softwareupdated:
-                compliant = False
-                # OSX 10.14+ has a different way of updating software
-                if re.search("10\.12\.*", self.environ.getosver()) or \
-                        re.search("10\.13\.*", self.environ.getosver()):
-                    detailedresults = "\nThe software on this system is " + \
-                                      "not up-to-date. Please update " + \
-                                      "your software by opening the App " + \
-                                      "Store, navigating to the " + \
-                                      "'Updates' tab, and running " + \
-                                      "'UPDATE ALL'.\n\n" + \
-                                      detailedresults
-                else:
-                    detailedresults = "\nThe software on this system is " + \
-                                      "not up-to-date. Please update " + \
-                                      "your software by opening System " + \
-                                      "Preferences, navigating to the " + \
-                                      "'Software Update' menu, and " + \
-                                      "running the necessary updates.\n\n" + \
-                                      detailedresults
-            self.compliant = compliant
-            self.resultAppend(detailedresults)
+        try:
+            # reset rulekveditor.detailedresults to blank
+            self.resultReset()
+
+            # report on many update server config's
+            if not RuleKVEditor.report(self, True):
+                self.compliant = False
+
+            # report whether an update server is configured
+            if not self.report_update_server():
+                self.compliant = False
+
+            # report whether the system is up-to-date on system updates
+            if not self.report_updated():
+                self.compliant = False
 
         except (KeyboardInterrupt, SystemExit):
             raise
@@ -361,6 +291,94 @@ class ConfigureAppleSoftwareUpdate(RuleKVEditor):
 
         return self.compliant
 
+    def report_updated(self):
+        """
+        check if the system is up to date on all recommended software updates
+
+        :return: up2date
+        :rtype: bool
+        """
+
+        up2date = True
+
+        list_updates_cmd = "/usr/sbin/softwareupdate --list"
+        self.ch.executeCommand(list_updates_cmd)
+        output = self.ch.getOutputString()
+        if re.search("\[recommended\]", output, re.I):
+            up2date = False
+            self.detailedresults += "\nYour system is not fully updated"
+
+        return up2date
+
+    def report_update_server(self):
+        """
+
+        :return: update_server_configured
+        :rtype: bool
+        """
+
+        update_server_configured = True
+
+        if not self.update_server:
+            update_server_configured = False
+            return update_server_configured
+
+        try:
+            get_update_server_cmd = "/usr/bin/defaults read /Library/Preferences/com.apple.SoftwareUpdate " + str(self.catalog_key)
+            self.ch.executeCommand(get_update_server_cmd)
+            output = self.ch.getOutputString()
+            if not re.search(self.update_server, output, re.I):
+                update_server_configured = False
+                self.detailedresults += "\nAn automatic updates server is not configured"
+        except Exception as err:
+            update_server_configured = False
+            self.detailedresults += "\nAn automatic updates server is not configured"
+            self.logdispatch.log(LogPriority.DEBUG, str(err))
+
+        return update_server_configured
+
+    def fix_catalog_url(self):
+        """
+        set the update catalog url (update server url)
+
+        :return: success
+        :rtype: bool
+        """
+
+        success = True
+        set_url_cmd = "/usr/sbin/softwareupdate --set-catalog " + self.update_server
+
+        try:
+            if self.update_server:
+                if self.euid == 0:
+                    self.ch.executeCommand(set_url_cmd)
+                else:
+                    success = False
+        except:
+            success = False
+
+        return success
+
+    def fix_update(self):
+        """
+
+        :return: success
+        """
+
+        success = True
+        update_cmd = "/usr/sbin/softwareupdate -i -r"
+
+        try:
+            if self.update_server:
+                if self.euid == 0:
+                    self.ch.executeCommand(update_cmd)
+                else:
+                    success = False
+        except:
+            success = False
+
+        return success
+
     def fix(self):
         """Calls the inherited RuleKVEditor fix method.
 
@@ -371,65 +389,19 @@ class ConfigureAppleSoftwareUpdate(RuleKVEditor):
         :rtype: bool
         """
 
-        success = True
-        detailedresults = ""
-        self.iditerator = 0
-        eventlist = self.statechglogger.findrulechanges(self.rulenumber)
-        for event in eventlist:
-            self.statechglogger.deleteentry(event)
-        if not RuleKVEditor.fix(self, True):
-            success = False
+        self.rulesuccess = True
+        self.detailedresults = ""
+
         try:
-            if self.environ.geteuid() == 0:
-                if self.checkConsts([APPLESOFTUPDATESERVER]) and self.ccurlci != None:
-                    if self.ccurlci.getcurrvalue():
-                        cmd1 = "/usr/sbin/softwareupdate --set-catalog " + str(APPLESOFTUPDATESERVER)
-                        if not self.ch.executeCommand(cmd1):
-                            self.detailedresults += "Unable to set the " + \
-                                                    "catalogURL to " + APPLESOFTUPDATESERVER + "\n"
-                            success = False
-                        else:
-                            self.iditerator += 1
-                            myid = iterate(self.iditerator, self.rulenumber)
-                            if self.originalserver:
-                                undocmd = "/usr/sbin/softwareupdate --set-catalog " + self.originalserver
-                                event = {"eventtype": "comm",
-                                         "command": undocmd}
-                                self.statechglogger.recordchgevent(myid, event)
-                            else:
-                                undocmd = "/usr/sbin/softwareupdate --clear-catalog"
-                                event = {"eventtype": "comm",
-                                         "command": undocmd}
-                                self.statechglogger.recordchgevent(myid, event)
-                    else:
-                        cmd2 = ["/usr/sbin/softwareupdate", "--clear-catalog"]
-                        if not self.ch.executeCommand(cmd2):
-                            self.detailedresults += "Unable to clear the " + \
-                                                    "catalogURL setting\n"
-                            success = False
-                        else:
-                            if self.originalserver:
-                                self.iditerator += 1
-                                myid = iterate(self.iditerator, self.rulenumber)
-                                undocmd = "/usr/sbin/softwareupdate --set-catalog " + self.originalserver
-                                event = {"eventtype": "comm",
-                                         "command": undocmd}
-                                self.statechglogger.recordchgevent(myid, event)
-                            else:
-                                self.detailedresults += "Was able to clear " + \
-                                                        "the catalogURL setting however this is " + \
-                                                        "currently required to be set to a local " + \
-                                                        "server\n"
-                            success = False
-                else:
-                    success = False
-                    detailedresults += "\nThe Configure Catalogue URL " + \
-                                       "portion of this rule requires that the constant: " + \
-                                       "APPLESOFTWAREUPDATESERVER be defined and not None. " + \
-                                       "Please ensure this constant is set properly in " + \
-                                       "localize.py"
-            self.rulesuccess = success
-            self.resultAppend(detailedresults)
+
+            if not self.fix_catalog_url():
+                self.rulesuccess = False
+
+            if not RuleKVEditor.fix(self, True):
+                self.rulesuccess = False
+
+            if not self.fix_update():
+                self.rulesuccess = False
 
         except (KeyboardInterrupt, SystemExit):
             raise
@@ -439,4 +411,5 @@ class ConfigureAppleSoftwareUpdate(RuleKVEditor):
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+
         return self.rulesuccess
