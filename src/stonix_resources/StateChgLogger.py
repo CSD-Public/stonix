@@ -529,9 +529,9 @@ are an end user please report a bug.''')
         for key in self.eventlog:
             try:
                 keyruleid = key[0:4]
-                self.logger.log(LogPriority.DEBUG,
-                                ['StateChgLogger.findrulechanges',
-                                 "Comparing to keyruleid: %s" % keyruleid])
+                # self.logger.log(LogPriority.DEBUG,
+                #                 ['StateChgLogger.findrulechanges',
+                #                  "Comparing to keyruleid: %s" % keyruleid])
                 if keyruleid == myruleid:
                     eventlist.append(key)
             except(IndexError):
