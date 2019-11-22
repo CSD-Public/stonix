@@ -151,7 +151,7 @@ class KVAProfiles():
                 else:
                     iterator1 += 1
         print "self.data after report: " + str(self.data) + "\n"
-        self.setbadvalues()
+        #self.setbadvalues()
         return self.data
 
     def checkSimple(self, k, v, payloadblock):
