@@ -18,7 +18,10 @@
 """
 Created on Sep 11, 2013
 
-@author: dwalker
+Configure system authentication and password settings in accordance
+with rhel 7 stig requirements
+
+@author: Derek Walker
 @change: 2014/04/18 dkennel Implemented new style CI in place of old style.
 @change: 2014/12/15 dkennel replaced print statement with logger debug call.
 @change: 2015/04/14 dkennel updated for new isApplicable
@@ -31,17 +34,15 @@ Created on Sep 11, 2013
 @change: 2017/08/28 ekkehard - Added self.sethelptext()
 """
 
-
 import os
 import re
-from subprocess import call
 import traceback
+
 from KVEditorStonix import KVEditorStonix
 from localize import PWQUALITY_HIGH_REGEX, PWQUALITY_REGEX, \
     CRACKLIB_HIGH_REGEX, CRACKLIB_REGEX, PAMFAIL_REGEX, PAMTALLY_REGEX, \
     AUTH_APT, ACCOUNT_APT, PASSWORD_ZYPPER, AUTH_ZYPPER, ACCOUNT_ZYPPER, \
-    PASSWORD_NSLCD, AUTH_NSLCD, ACCOUNT_NSLCD, SESSION_NSLCD, AUTH_YUM, \
-    ACCOUNT_YUM, SESSION_YUM, PASSWORD_YUM, PASSWORD_APT
+    AUTH_YUM, ACCOUNT_YUM, SESSION_YUM, PASSWORD_YUM, PASSWORD_APT
 from logdispatcher import LogPriority
 from pkghelper import Pkghelper
 from rule import Rule
@@ -49,9 +50,22 @@ from stonixutilityfunctions import iterate, setPerms, checkPerms, readFile, \
     writeFile, resetsecon, createFile
 from CommandHelper import CommandHelper
 
+
 class ConfigureSystemAuthentication(Rule):
+    """
+    Configure system authentication and password settings in accordance
+with rhel 7 stig requirements
+    """
 
     def __init__(self, config, environ, logger, statechglogger):
+        """
+
+        :param config:
+        :param environ:
+        :param logger:
+        :param statechglogger:
+        """
+
         Rule.__init__(self, config, environ, logger, statechglogger)
         self.logger = logger
         self.rulenumber = 57
@@ -60,7 +74,7 @@ class ConfigureSystemAuthentication(Rule):
         self.mandatory = True
         self.sethelptext()
         self.applicable = {'type': 'white',
-                           'family': ['linux', 'solaris', 'freebsd']}
+                           'family': 'linux'}
         datatype = "bool"
         key = "CONFIGSYSAUTH"
         instructions = "To disable this rule, set the value of " + \
@@ -100,13 +114,14 @@ class ConfigureSystemAuthentication(Rule):
         self.localize()
 
     def localize(self):
+        """
+        set up session variables based on system platform and
+        version
+        """
+
         myos = self.environ.getostype().lower()
-        if re.search("red hat.*?release 6", myos):
-            self.password = PASSWORD_NSLCD
-            self.auth = AUTH_NSLCD
-            self.acct = ACCOUNT_NSLCD
-            self.session = SESSION_NSLCD
-        elif re.search("suse", myos):
+
+        if re.search("suse", myos):
             self.password = PASSWORD_ZYPPER
             self.auth = AUTH_ZYPPER
             self.acct = ACCOUNT_ZYPPER
@@ -121,63 +136,63 @@ class ConfigureSystemAuthentication(Rule):
             self.session = SESSION_YUM
 
     def report(self):
-        """ConfigureSystemAuthentication() report method to report if system
-        is compliant with authentication and password settings
-        @author: dwalker
-
-        :param self: essential if you override this definition
-        :returns: bool - True if system is compliant, False if it isn't
-
         """
+        ConfigureSystemAuthentication() report method to report if system
+        is compliant with authentication and password settings
+
+        @author: Derek Walker
+
+        :return: self.compliant
+        :rtype: bool
+        """
+
+        self.compliant = True
+        self.detailedresults = ""
+        self.ci2comp, self.ci3comp, self.ci4comp = True, True, True
+
         try:
-            self.ci2comp, self.ci3comp, self.ci4comp = True, True, True
-            self.detailedresults = ""
+
             if self.environ.getosfamily() == "linux":
                 self.compliant = self.reportLinux()
-            elif self.environ.getosfamily() == "solaris":
-                self.compliant = self.reportSolaris()
-            elif self.environ.getosfamily() == "freebsd":
-                self.compliant = self.reportFreebsd()
+
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception:
             self.rulesuccess = False
             self.detailedresults += "\n" + traceback.format_exc()
             self.logger.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("report", self.compliant,
-                                   self.detailedresults)
+        self.formatDetailedResults("report", self.compliant, self.detailedresults)
         self.logger.log(LogPriority.INFO, self.detailedresults)
+
         return self.compliant
 
     def fix(self):
-        """ConfigureSystemAuthentication.fix() method to fix the system to be
+        """
+        ConfigureSystemAuthentication.fix() method to fix the system to be
         compliant with authentication and password settings
-        @author: dwalker
 
-        :param self: essential if you override this definition
-        :returns: bool - True if fix is successful, False if it isn't
+        @author: Derek Walker
 
+        :return: self.rulesuccess
+        :rtype: bool
         """
 
+        self.rulesuccess = True
         self.detailedresults = ""
+        self.iditerator = 0
 
         try:
             if not self.ci1.getcurrvalue():
-                return
+                return self.rulesuccess
+
             # delete past state change records from previous fix
-            self.iditerator = 0
             eventlist = self.statechglogger.findrulechanges(self.rulenumber)
             for event in eventlist:
                 self.statechglogger.deleteentry(event)
 
             if self.environ.getosfamily() == "linux":
                 self.rulesuccess = self.fixLinux()
-            elif self.environ.getosfamily() == "freebsd":
-                self.rulesuccess = self.fixFreebsd()
-            elif self.environ.getosfamily() == "solaris":
-                self.rulesuccess = self.fixSolaris()
-            elif self.environ.getosfamily() == "darwin":
-                self.rulesuccess = self.fixMac()
+
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception:
@@ -186,16 +201,19 @@ class ConfigureSystemAuthentication(Rule):
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+
         return self.rulesuccess
 
     def reportLinux(self):
-        """Linux specific submethod for linux distributions.
-        @author: dwalker
-
-        :param self: essential if you override this definition
-        :returns: bool - True if system is compliant, False if it isn't
-
         """
+        Linux-specific submethod for config reporting
+
+        @author: Derek Walker
+
+        :return: compliant
+        :rtype: bool
+        """
+
         self.logindefs = "/etc/login.defs"
         debug = ""
         compliant = True
@@ -253,26 +271,23 @@ class ConfigureSystemAuthentication(Rule):
         return compliant
 
     def fixLinux(self):
-        """Linux specific submethod to correct linux distributions.  If your
+        """
+        Linux specific submethod to correct linux distributions.  If your
         system is portage based, i.e. gentoo, you will need to do a manual
         fix for everything except the login.defs file
-        @author: dwalker
 
-        :param self: essential if you override this definition
-        :returns: bool - True if fix is successful, False if it isn't
-        @change: Breen Malmberg - 9/26/2018 - added a check and installation of a
-                necessary package for fedora 28, in order for the fix to continue
+        @author: Derek Walker
 
+        :return: success
+        :rtype: bool
         """
 
         success = True
-        debug = ""
-        self.detailedresults = ""
 
         try:
             if self.ph.manager == "dnf":
                 if not self.ph.check("authconfig"):
-                    self.ph.install("authconfig") # this is needed by fedora 28 to continue
+                    self.ph.install("authconfig") # this is needed by fedora to continue
         except:
             pass
 
@@ -355,20 +370,21 @@ class ConfigureSystemAuthentication(Rule):
                     if not self.setlogindefs():
                         debug = "setdefpasshash() failed\n"
                         self.logger.log(LogPriority.DEBUG, debug)
-                        self.detailedresults += "Unable to configure " + \
-                            "/etc/login.defs file\n"
+                        self.detailedresults += "Unable to configure /etc/login.defs file\n"
                         success = False
         return success
 
     def checkpasswordreqs(self):
-        """Method to check which password checking program the system
-        is or should be using.
-        @author: dwalker
-
-
-        :returns: bool
-
         """
+        Method to check which password checking program the system
+        is or should be using
+
+        @author: Derek Walker
+
+        :return: True, False
+        :rtype: bool
+        """
+
         self.pwqinstalled, self.clinstalled = False, False
         self.pwqpkg, self.crackpkg = "", ""
         """Check if either pam_pwquality or cracklib are installed"""
@@ -432,14 +448,17 @@ class ConfigureSystemAuthentication(Rule):
             return False
     
     def checkpasswordsetup(self, package):
-        """Method called from within checkpasswordreqs method
-        @author: dwalker
+        """
+        Method called from within checkpasswordreqs method
 
-        :param package: pwquality or cracklib
-        :returns: bool
+        @author: Derek Walker
 
+        :param package: string; name of package to check for
+        :return: compliant
+        :rtype: bool
         """
         compliant = True
+        regex1 = ""
         if package == "pwquality":
             self.password = re.sub("pam_cracklib\.so", "pam_pwquality.so",
                                        self.password)
@@ -493,7 +512,16 @@ class ConfigureSystemAuthentication(Rule):
                         compliant = False
         return compliant
 
-    def setpasswordsetup(self, regex1, pkglist = ""):
+    def setpasswordsetup(self, regex1, pkglist = None):
+        """
+        configure password requirements in pam, install necessary packages
+
+        :param regex1: string; regular expression
+        :param pkglist: list; string names of packages to install
+        :return: success
+        :rtype: bool
+        """
+
         regex2 = "^password[ \t]+sufficient[ \t]+pam_unix.so sha512 shadow " + \
             "try_first_pass use_authtok remember=10"
         success = True
@@ -523,7 +551,7 @@ class ConfigureSystemAuthentication(Rule):
                                      "command": comm}
                             self.statechglogger.recordchgevent(myid, event)
                             pwqfile = "/etc/security/pwquality.conf"
-                            tmpfile = pwqfile + ".tmp"
+                            tmpfile = pwqfile + ".stonixtmp"
                             if self.environ.getsystemfismacat() == "high":
                                 data = {"difok": "7",
                                         "minlen": "14",
@@ -585,7 +613,7 @@ class ConfigureSystemAuthentication(Rule):
                 if re.search(regex2, line.strip()):
                     found2 = True
             if not found1 or not found2:
-                tmpfile = pamfile + ".tmp"
+                tmpfile = pamfile + ".stonixtmp"
                 if writeFile(tmpfile, writecontents, self.logger):
                     self.iditerator += 1
                     myid = iterate(self.iditerator, self.rulenumber)
@@ -603,20 +631,23 @@ class ConfigureSystemAuthentication(Rule):
         return success
 
     def checkaccountlockout(self):
-        """Method to determine which account locking program to
-        use if any.
-        @author: dwalker
-
-
-        :returns: bool
-
         """
+        Method to determine which account locking program to
+        use if any
+
+        @author: Derek Walker
+
+        :return: compliant
+        :rtype: bool
+        """
+
         which = "/usr/bin/which "
         cmd1 = which + "faillock"
         cmd2 = which + "pam_tally2"
         ch = CommandHelper(self.logger)
         pamfiles = []
         compliant = True
+        regex = ""
         if ch.executeCommand(cmd1):
             debug = "ran " + cmd1 + " successfully\n"
             self.logger.log(LogPriority.DEBUG, debug)
@@ -693,6 +724,14 @@ class ConfigureSystemAuthentication(Rule):
         return compliant
 
     def setaccountlockout(self, regex):
+        """
+        configure the account lockout time in pam
+
+        :param regex: string; regular expression
+        :return: success
+        :rtype: bool
+        """
+
         success = True
         pamfiles = []
         if self.ph.manager in ("yum", "dnf"):
@@ -724,7 +763,7 @@ class ConfigureSystemAuthentication(Rule):
                 if re.search(regex, line.strip()):
                     found = True
             if not found:
-                tmpfile = pamfile + ".tmp"
+                tmpfile = pamfile + ".stonixtmp"
                 if writeFile(tmpfile, writecontents, self.logger):
                     self.iditerator += 1
                     myid = iterate(self.iditerator, self.rulenumber)
@@ -742,10 +781,17 @@ class ConfigureSystemAuthentication(Rule):
         return success
 
     def chkpwquality(self):
+        """
+        check settings of pwquality pam plugin
+
+        :return: compliant
+        :rtype: bool
+        """
+
         compliant = True
         pwqfile = "/etc/security/pwquality.conf"
         if os.path.exists(pwqfile):
-            tmpfile = pwqfile + ".tmp"
+            tmpfile = pwqfile + ".stonixtmp"
             if self.environ.getsystemfismacat() == "high":
                 data = {"difok": "7",
                         "minlen": "14",
@@ -777,121 +823,49 @@ class ConfigureSystemAuthentication(Rule):
                 "crucial file /etc/security/pwquality doesn't exist\n"
         return compliant
 
-    def chklockout(self):
-        """Systemauth.__chklockout() Private method to check the account lock
-        out settings that should be enforced via pam_tally2. There are two
-        potential styles of lockout, the old style setup by STOR 4.0 and the
-        new style setup by STOR 4.1. Either version is valid.
-
-
-        """
-        # the first auth line should be the pam_tally2.so line
-        if self.ph.manager == "solaris":
-            compliant = True
-            path = "/etc/default/login"
-            if os.path.exists(path):
-                if not checkPerms(path, [0, 0, 0o444], self.logger):
-                    self.detailedresults += "permissions are incorrect " + \
-                        "for " + path + " file\n"
-                    compliant = False
-                data = {"RETRIES": "5"}
-                tmppath = path + ".tmp"
-                self.editor1 = KVEditorStonix(self.statechglogger, self.logger,
-                                              "conf", path, tmppath, data,
-                                              "present", "closedeq")
-                if not self.editor1.report():
-                    self.detailedresults += "Didn't find the correct " + \
-                        "contents inside " + path + "file\n"
-                    compliant = False
-                return compliant
-            else:
-                self.detailedresults += path + " doesn't exist\n"
-                return False
-
     def checklogindefs(self):
-        """Method to check the password hash algorithm settings in
-        login.defs.
+        """
+        Method to check the password hash algorithm settings in
+        login.defs
 
-
+        :return: compliant
+        :rtype: bool
         """
         compliant = True
-        debug = ""
         if os.path.exists(self.logindefs):
             if not checkPerms(self.logindefs, [0, 0, 0o644], self.logger):
                 self.detailedresults += "Permissions incorrect for " + \
                     self.logindefs + " file\n"
                 compliant = False
-        if self.ph.manager == "freebsd":
-            contents = readFile(self.logindefs, self.logger)
-            if not contents:
-                return False
-            iterator1 = 0
-            for line in contents:
-                if re.search("^#", line) or re.match('^\s*$', line):
-                    iterator1 += 1
-                elif re.search('^default:\\\\$', line.strip()):
-                    found = True
-                    temp = contents[iterator1 + 1:]
-                    length2 = len(temp) - 1
-                    iterator2 = 0
-                    for line2 in temp:
-                        if re.search('^[^:][^:]*:\\\\$', line2):
-                            contents2 = temp[:iterator2]
-                            break
-                        elif iterator2 < length2:
-                            iterator2 += 1
-                        elif iterator2 == length2:
-                            contents2 = temp[:iterator2]
-                    break
-                else:
-                    iterator1 += 1
-            if contents2:
-                found = False
-                for line in contents2:
-                    if re.search("^#", line) or re.match('^\s*$', line):
-                        continue
-                    elif re.search("^:passwd_format", line.strip()):
-                        if re.search('=', line):
-                            temp = line.split('=')
-                            if re.search(str("sha512") + "(:\\\\|:|\\\\|\s)",
-                                         temp[1]):
-                                found = True
-                                continue
-                            else:
-                                found = False
-                                break
-                if not found:
-                    debug += "Did not find the SHA512 line in " + \
-                        "/etc/login.defs\n"
-                    compliant = False
-            return compliant
-        else:
-            data = {"MD5_CRYPT_ENAB": "no",
-                    "ENCRYPT_METHOD": "SHA512",
-                    "PASS_MAX_DAYS": "180",
-                    "PASS_MIN_DAYS": "1",
-                    "PASS_WARN_AGE": "7"}
-            tmppath = self.logindefs + ".tmp"
-            self.editor2 = KVEditorStonix(self.statechglogger, self.logger,
-                                          "conf", self.logindefs, tmppath,
-                                          data, "present", "space")
-            if not self.editor2.report():
-                debug = self.logindefs + " doesn't contain the correct " + \
-                    "contents\n"
-                self.detailedresults += self.logindefs + " doesn't contain " + \
-                    "the correct contents\n"
-                self.logger.log(LogPriority.DEBUG, debug)
-                compliant = False
+
+        data = {"MD5_CRYPT_ENAB": "no",
+                "ENCRYPT_METHOD": "SHA512",
+                "PASS_MAX_DAYS": "180",
+                "PASS_MIN_DAYS": "1",
+                "PASS_WARN_AGE": "7",
+                "FAIL_DELAY": "4"}
+        tmppath = self.logindefs + ".stonixtmp"
+        self.editor2 = KVEditorStonix(self.statechglogger, self.logger,
+                                      "conf", self.logindefs, tmppath,
+                                      data, "present", "space")
+        if not self.editor2.report():
+            debug = self.logindefs + " doesn't contain the correct " + \
+                "contents\n"
+            self.detailedresults += self.logindefs + " doesn't contain " + \
+                "the correct contents\n"
+            self.logger.log(LogPriority.DEBUG, debug)
+            compliant = False
         return compliant
 
     def checklibuser(self):
-        """Private method to check the password hash algorithm settings in
-        libuser.conf.
-        @author: dwalker
+        """
+        Private method to check the password hash algorithm settings in
+        libuser.conf
 
+        @author: Derek Walker
 
-        :returns: bool
-
+        :return: compliant
+        :rtype: bool
         """
         compliant = True
         """check if libuser is intalled"""
@@ -909,7 +883,7 @@ class ConfigureSystemAuthentication(Rule):
             data = {"defaults": {"crypt_style": "sha512"}}
             datatype = "tagconf"
             intent = "present"
-            tmppath = self.libuserfile + ".tmp"
+            tmppath = self.libuserfile + ".stonixtmp"
             self.editor1 = KVEditorStonix(self.statechglogger, self.logger,
                                           datatype, self.libuserfile,
                                           tmppath, data, intent, "openeq")
@@ -930,213 +904,6 @@ class ConfigureSystemAuthentication(Rule):
             compliant = False
         return compliant
 
-    def fixFreebsd(self):
-        changed = False
-        success = True
-        if self.config:
-            if not checkPerms(self.pam, [0, 0, 0o644], self.logger):
-                self.iditerator += 1
-                myid = iterate(self.iditerator, self.rulenumber)
-                if not setPerms(self.pam, [0, 0, 0o644], self.logger,
-                                self.statechglogger, myid):
-                    success = False
-            if not self.chklockout():
-                if os.path.exists('/lib/security/pam_faillock.so'):
-                    if self.setlockout6():
-                        changed = True
-                    else:
-                        success = False
-                else:
-                    if self.setlockout5():
-                        changed = True
-                    else:
-                        success = False
-                tempstring = ""
-                for line in self.config:
-                    tempstring += line
-                tmpfile = self.pam + ".tmp"
-                if writeFile(tmpfile, tempstring, self.logger):
-                    self.iditerator += 1
-                    myid = iterate(self.iditerator, self.rulenumber)
-                    event = {'eventtype': 'conf',
-                             'filepath': self.pam}
-                    self.statechglogger.recordchgevent(myid, event)
-                    self.statechglogger.recordfilechange(self.pam, tmpfile,
-                                                         myid)
-                    os.rename(tmpfile, self.pam)
-                    os.chown(self.pam, 0, 0)
-                    os.chmod(self.pam, 0o644)
-                    resetsecon(self.pam)
-                else:
-                    success = False
-        if self.config2:
-            changed = False
-            self.config = self.config2
-            if not checkPerms(self.pam2, [0, 0, 0o644], self.logger):
-                self.iditerator += 1
-                myid = iterate(self.iditerator, self.rulenumber)
-                if not setPerms(self.pam2, [0, 0, 0o644], self.logger,
-                                self.statechglogger, myid):
-                    success = False
-            if not self.chkpasswdqc():
-                if self.setpasswdqc():
-                    changed = True
-                else:
-                    success = False
-            if not self.chkpampasshash():
-                if self.setpampasshash():
-                    changed = True
-                else:
-                    success = False
-            if changed:
-                tempstring = ""
-                for line in self.config:
-                    tempstring += line
-                tmpfile = self.pam2 + ".tmp"
-                if writeFile(tmpfile, tempstring, self.logger):
-                    self.iditerator += 1
-                    myid = iterate(self.iditerator, self.rulenumber)
-                    event = {'eventtype': 'conf',
-                             'filepath': self.pam2}
-                    self.statechglogger.recordchgevent(myid, event)
-                    self.statechglogger.recordfilechange(self.pam2, tmpfile,
-                                                         myid)
-                    os.rename(tmpfile, self.pam2)
-                    os.chown(self.pam2, 0, 0)
-                    os.chmod(self.pam2, 0o644)
-                    resetsecon(self.pam2)
-                else:
-                    success = False
-        if not self.chkdefspasshash():
-            if not self.fixLogin():
-                success = False
-        return success
-
-    def chkpolicy(self):
-        compliant = True
-        path = "/etc/security/policy.conf"
-        tmppath = path + ".tmp"
-        data = {"CRYPT_DEFAULT": "6",
-                "LOCK_AFTER_RETRIES": "YES"}
-        if not os.path.exists(path):
-            self.detailedresults += path + " doesn't exist\n"
-            return False
-        self.editor2 = KVEditorStonix(self.statechglogger, self.logger, "conf",
-                                      path, tmppath, data, "present",
-                                      "closedeq")
-        if not checkPerms(path, [0, 0, 0o644], self.logger):
-            self.detailedresults += "permissions are incorrect on " + path + \
-                "\n"
-            compliant = False
-        if not self.editor2.report():
-            self.detailedresults += path + " doesn't contain the correct " + \
-                "contents\n"
-            compliant = False
-        return compliant
-
-    def fixPolicy(self):
-        path = "/etc/security/policy.conf"
-        if not checkPerms(path, [0, 0, 0o644], self.logger):
-            self.iditerator += 1
-            myid = iterate(self.iditerator, self.rulenumber)
-            if not setPerms(path, [0, 0, 0o644], self.logger,
-                            self.statechglogger, myid):
-                return False
-        if self.editor2.fixables:
-            self.iditerator += 1
-            myid = iterate(self.iditerator, self.rulenumber)
-            self.editor2.setEventID(myid)
-            if not self.editor2.fix():
-                return False
-            elif not self.editor2.commit():
-                return False
-            os.chown(path, 0, 0)
-            os.chmod(path, 0o644)
-            resetsecon(path)
-        return True
-
-    def fixLogin(self):
-        # only for freebsd
-        tempstring = ""
-        if os.path.exists(self.logindefs):
-            if not checkPerms(self.logindefs, [0, 0, 0o640], self.logger):
-                self.iditerator += 1
-                myid = iterate(self.iditerator, self.rulenumber)
-                if not setPerms(self.logindefs, [0, 0, 0o640], self.logger,
-                                self.statechglogger, myid):
-                    return False
-            contents = readFile(self.logindefs, self.logger)
-            iterator1 = 0
-            for line in contents:
-                if re.search("^#", line) or re.match('^\s*$', line):
-                    iterator1 += 1
-                elif re.search('^default:\\\\$', line.strip()):
-                    contents1 = contents[:iterator1 + 1]
-                    temp = contents[iterator1 + 1:]
-                    length2 = len(temp) - 1
-                    iterator2 = 0
-                    for line2 in temp:
-                        if re.search('^[^:][^:]*:\\\\$', line2):
-                            contents3 = temp[iterator2:]
-                            contents2 = temp[:iterator2]
-                            break
-                        elif iterator2 < length2:
-                            iterator2 += 1
-                        elif iterator2 == length2:
-                            contents2 = temp[:iterator2]
-                    break
-                else:
-                    iterator1 += 1
-            if contents2:
-                iterator = 0
-                for line in contents2:
-                    if re.search("^#", line) or re.match('^\s*$', line):
-                        iterator += 1
-                        continue
-                    elif re.search("^:passwd_format", line.strip()):
-                        if re.search('=', line):
-                            temp = line.split('=')
-                            if not re.search(str("sha512") +
-                                             '(:\\\\|:|\\\\|\s)',
-                                             temp[1]):
-                                iterator += 1
-                                contents2.pop(iterator)
-                    else:
-                        iterator += 1
-                contents2.append('\t' + ":passwd_format=sha512" + ':\\\n')
-            final = []
-            for line in contents1:
-                final.append(line)
-            for line in contents2:
-                final.append(line)
-            for line in contents3:
-                final.append(line)
-        for line in final:
-            tempstring += line
-        tmpfile = self.logindefs + ".tmp"
-        if writeFile(tmpfile, tempstring, self.logger):
-            self.iditerator += 1
-            myid = iterate(self.iditerator, self.rulenumber)
-            event = {'eventtype': 'conf',
-                     'filepath': self.logindefs}
-            self.statechglogger.recordchgevent(myid, event)
-            self.statechglogger.recordfilechange(self.logindefs, tmpfile, myid)
-            os.rename(tmpfile, self.logindefs)
-            os.chown(self.logindefs, 0, 0)
-            if self.ph.manager == "freebsd":
-                os.chmod(self.logindefs, 0o644)
-            else:
-                os.chmod(self.logindefs, 0o640)
-            resetsecon(self.logindefs)
-            retval = call(["/usr/bin/cap_mkdb", "/etc/login.conf"],
-                          stdout=None, shell=False)
-            if retval == 0:
-                return True
-            else:
-                return False
-        else:
-            return False
-
     def setpwquality(self):
         success = True
         created = False
@@ -1149,7 +916,7 @@ class ConfigureSystemAuthentication(Rule):
                      'filepath': pwqfile}
             self.statechglogger.recordchgevent(myid, event)
             created = True
-        tmpfile = pwqfile + ".tmp"
+        tmpfile = pwqfile + ".stonixtmp"
         if self.environ.getsystemfismacat() == "high":
             data = {"difok": "7",
                     "minlen": "14",
@@ -1189,10 +956,10 @@ class ConfigureSystemAuthentication(Rule):
     def setlibuser(self):
         """Method to check if libuser is installed and the contents of libuser
         file.
-        @author: dwalker
+        @author: Derek Walker
 
 
-        :returns: bool
+        :return: bool
 
         """
         created = False
@@ -1217,7 +984,7 @@ class ConfigureSystemAuthentication(Rule):
                     self.statechglogger.recordchgevent(myid, event)
                     datatype = "tagconf"
                     intent = "present"
-                    tmppath = self.libuserfile + ".tmp"
+                    tmppath = self.libuserfile + ".stonixtmp"
                     self.editor1 = KVEditorStonix(self.statechglogger, self.logger,
                                                   datatype, self.libuserfile,
                                                   tmppath, data, intent, "openeq")
@@ -1236,7 +1003,7 @@ class ConfigureSystemAuthentication(Rule):
             event = {"eventtype": "creation",
                      "filepath": self.libuserfile}
             self.statechglogger.recordchgevent(myid, event)
-            tmppath = self.libuserfile + ".tmp"
+            tmppath = self.libuserfile + ".stonixtmp"
             self.editor1 = KVEditorStonix(self.statechglogger, self.logger,
                                           "tagconf", self.libuserfile,
                                           tmppath, data, "present", "openeq")
@@ -1277,6 +1044,13 @@ class ConfigureSystemAuthentication(Rule):
         return success
 
     def setlogindefs(self):
+        """
+        configure login.defs options
+
+        :return: success
+        :rtype: bool
+        """
+
         success = True
         if not checkPerms(self.logindefs, [0, 0, 0o644], self.logger):
             self.iditerator += 1
@@ -1286,33 +1060,32 @@ class ConfigureSystemAuthentication(Rule):
                 self.detailedresults += "Unable to set permissions " + \
                     "on " + self.logindefs + " file\n"
                 success = False
-        if self.ph.manager == "freebsd":
-            pass
-        else:
-            if self.editor2:
-                if self.editor2.fixables:
-                    self.iditerator += 1
-                    myid = iterate(self.iditerator, self.rulenumber)
-                    self.editor2.setEventID(myid)
-                    if self.editor2.fix():
-                        if self.editor2.commit():
-                            debug = "/etc/login.defs file has been corrected\n"
-                            self.logger.log(LogPriority.DEBUG, debug)
-                            os.chown(self.logindefs, 0, 0)
-                            os.chmod(self.logindefs, 0o644)
-                            resetsecon(self.logindefs)
-                        else:
-                            debug = "Unable to correct the " + \
-                                "contents of /etc/login.defs\n"
-                            self.detailedresults += "Unable to correct the " + \
-                                "contents of /etc/login.defs\n"
-                            self.logger.log(LogPriority.DEBUG, debug)
-                            success = False
+
+        if self.editor2:
+            if self.editor2.fixables:
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                self.editor2.setEventID(myid)
+                if self.editor2.fix():
+                    if self.editor2.commit():
+                        debug = "/etc/login.defs file has been corrected\n"
+                        self.logger.log(LogPriority.DEBUG, debug)
+                        os.chown(self.logindefs, 0, 0)
+                        os.chmod(self.logindefs, 0o644)
+                        resetsecon(self.logindefs)
                     else:
+                        debug = "Unable to correct the " + \
+                            "contents of /etc/login.defs\n"
                         self.detailedresults += "Unable to correct the " + \
                             "contents of /etc/login.defs\n"
-                        debug = "Unable to correct the contents of " + \
-                            "/etc/login.defs\n"
                         self.logger.log(LogPriority.DEBUG, debug)
                         success = False
+                else:
+                    self.detailedresults += "Unable to correct the " + \
+                        "contents of /etc/login.defs\n"
+                    debug = "Unable to correct the contents of " + \
+                        "/etc/login.defs\n"
+                    self.logger.log(LogPriority.DEBUG, debug)
+                    success = False
+
         return success
