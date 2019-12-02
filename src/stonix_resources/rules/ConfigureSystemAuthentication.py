@@ -532,10 +532,8 @@ with rhel 7 stig requirements
                     for line in contents:
                         if re.search(regex1, line.strip()):
                             found1 = True
-                            break
                         if re.search(regex2, line.strip()):
                             found2 = True
-                            break
 
                     if not found1:
                         self.detailedresults += "\n'password requisite ...' line not correct in " + pamfile
