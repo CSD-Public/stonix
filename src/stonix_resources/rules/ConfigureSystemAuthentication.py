@@ -291,21 +291,26 @@ with rhel 7 stig requirements
         except:
             pass
 
-        """create backups of pamfiles"""
+        # """create backups of pamfiles"""
         if os.path.exists(self.pampassfile):
             createFile(self.pampassfile + ".backup", self.logger)
         if os.path.exists(self.pamauthfile):
             createFile(self.pamauthfile + ".backup", self.logger)
+
+        # potential password requirements package names
         self.cracklibpkgs = ["libpam-cracklib",
                              "cracklib"]
         self.pwqualitypkgs = ["libpam-pwquality",
                               "pam_pwquality",
-                              "libpwquality"]
+                              "libpwquality",
+                              "libpwquality1"]
+
         if self.ci2.getcurrvalue():
             if not self.ci2comp:
+
+                # configure regex for pwquality
                 if self.usingpwquality:
-                    self.password = re.sub("pam_cracklib\.so", "pam_pwquality.so",
-                                       self.password)
+                    self.password = re.sub("pam_cracklib\.so", "pam_pwquality.so", self.password)
                     if self.environ.getsystemfismacat() == "high":
                         self.password = re.sub("minlen=8", "minlen=14", self.password)
                         self.password = re.sub("minclass=3", "minclass=4", self.password)
@@ -318,9 +323,10 @@ with rhel 7 stig requirements
                     else:
                         if not self.setpasswordsetup(regex, self.pwqualitypkgs):
                             success = False
+
+                # configure regex for cracklib
                 elif self.usingcracklib:
-                    self.password = re.sub("pam_pwquality\.so", "pam_cracklib.so",
-                                       self.password)
+                    self.password = re.sub("pam_pwquality\.so", "pam_cracklib.so", self.password)
                     if self.environ.getsystemfismacat() == "high":
                         self.password = re.sub("minlen=8", "minlen=14", self.password)
                         self.password = re.sub("minclass=3", "minclass=4", self.password)
@@ -334,8 +340,7 @@ with rhel 7 stig requirements
                         if not self.setpasswordsetup(regex, self.cracklibpkgs):
                             success = False
                 else:
-                    error = "Could not find pwquality/cracklib pam " + \
-                        "module. Fix failed."
+                    error = "Could not find pwquality/cracklib pam module. Fix failed."
                     self.logger.log(LogPriority.ERROR, error)
                     self.detailedresults += error + "\n"
                     return False
@@ -345,25 +350,21 @@ with rhel 7 stig requirements
                     regex = PAMFAIL_REGEX
                     if not self.setaccountlockout(regex):
                         success = False
-                        self.detailedresults += "Unable to configure pam " + \
-                            "for faillock\n"
+                        self.detailedresults += "Unable to configure pam for faillock\n"
                 elif self.usingpamtally2:
                     regex = PAMTALLY_REGEX
                     if not self.setaccountlockout(regex):
                         success = False
-                        self.detailedresults += "Unable to configure pam " + \
-                            "for pam_tally2\n"
+                        self.detailedresults += "Unable to configure pam for pam_tally2\n"
                 else:
-                    self.detailedresults += "There is no account lockout " + \
-                        "program available for this system\n"
+                    self.detailedresults += "There is no account lockout program available for this system\n"
                     success = False
         if self.ci4.getcurrvalue():
             if not self.ci4comp:
                 if not self.checklibuser():
                     if not self.setlibuser():
                         debug = "setlibuser() failed\n"
-                        self.detailedresults += "Unable to configure " + \
-                            "/etc/libuser.conf\n"
+                        self.detailedresults += "Unable to configure /etc/libuser.conf\n"
                         self.logger.log(LogPriority.DEBUG, debug)
                         success = False
                 if not self.checklogindefs():
@@ -387,31 +388,30 @@ with rhel 7 stig requirements
 
         self.pwqinstalled, self.clinstalled = False, False
         self.pwqpkg, self.crackpkg = "", ""
-        """Check if either pam_pwquality or cracklib are installed"""
+        # """Check if either pam_pwquality or cracklib are installed"""
         for pkg in self.pwqualitypkgs:
             if self.ph.check(pkg):
                 self.pwqinstalled = True
         for pkg in self.cracklibpkgs:
             if self.ph.check(pkg):
                 self.clinstalled = True
-        """if pwquality is installed we check to see if it's configured"""
+        # """if pwquality is installed we check to see if it's configured"""
         if self.pwqinstalled:
-            """If it's not, since it is already installed we want to
-            configure pwquality and not cracklib since it's better"""
+            # """If it's not, since it is already installed we want to
+            # configure pwquality and not cracklib since it's better"""
             if not self.checkpasswordsetup("pwquality"):
                 self.usingpwquality = True
-                self.detailedresults += "System is using pwquality but " + \
-                    "it's not configured properly in PAM\n"
+                self.detailedresults += "System is using pwquality but it's not configured properly in PAM\n"
                 return False
             else:
-                """pwquality is installed and configured"""
+                # """pwquality is installed and configured"""
                 return True
         elif self.clinstalled:
-            """Although we want pwquality over cracklib, if cracklib is
-            already installed and configured correctly, we will go with that"""
+            # """Although we want pwquality over cracklib, if cracklib is
+            # already installed and configured correctly, we will go with that"""
             if not self.checkpasswordsetup("cracklib"):
-                """cracklib is not configured correctly so we check
-                if pwquality is available for install"""
+                # """cracklib is not configured correctly so we check
+                # if pwquality is available for install"""
                 for pkg in self.pwqualitypkgs:
                     if self.ph.checkAvailable(pkg):
                         self.usingpwquality = True
@@ -421,29 +421,26 @@ with rhel 7 stig requirements
                             "PAM and pwquality is available for install. " + \
                             "will install and configure pwquality\n"
                         return False
-                self.detailedresults += "cracklib installed but not " + \
-                    "configured properly\n"
+                self.detailedresults += "cracklib installed but not configured properly\n"
                 self.usingcracklib = True
             else:
-                """cracklib is installed and configured"""
+                # """cracklib is installed and configured"""
                 return True
         else:
-            """neither pwquality or cracklib is installed, we prefer
-            pwquality so we check if it's available for install"""
+            # """neither pwquality or cracklib is installed, we prefer
+            # pwquality so we check if it's available for install"""
             for pkg in self.pwqualitypkgs:
                 if self.ph.checkAvailable(pkg):
                     self.usingpwquality = True
                     self.pwqpkg = pkg
-                    self.detailedresults += "pwquality is available for " + \
-                        "install\n"
+                    self.detailedresults += "pwquality is available for install\n"
                     return False
-            """pwquality wasn't available for install, check for cracklib"""
+            # """pwquality wasn't available for install, check for cracklib"""
             for pkg in self.cracklibpkgs:
                 if self.ph.checkAvailable(pkg):
                     self.usingcracklib = True
                     self.crackpkg = pkg
-                    self.detailedresults += "cracklib is available for " + \
-                        "install\n"
+                    self.detailedresults += "cracklib is available for install\n"
                     return False
             return False
     
@@ -507,8 +504,7 @@ with rhel 7 stig requirements
                         if re.search(regex2, line.strip()):
                             found2 = True
                     if not found1 or not found2:
-                        self.detailedresults += "Didn't find the correct " + \
-                            "contents in " + pamfile + "\n"
+                        self.detailedresults += "Didn't find the correct contents in " + pamfile + "\n"
                         compliant = False
         return compliant
 
@@ -538,8 +534,7 @@ with rhel 7 stig requirements
             for pkg in pkglist:
                 if self.ph.checkAvailable(pkg):
                     if not self.ph.install(pkg):
-                        self.detailedresults += "Unable to install pkg " + \
-                            pkg + "\n" 
+                        self.detailedresults += "Unable to install pkg " + pkg + "\n"
                         return False
                     else:
                         installed = True
@@ -596,15 +591,14 @@ with rhel 7 stig requirements
                     "Stonix will not attempt to create this file " + \
                     "and the fix for the this rule will not continue\n"
                 return False
-        """Check permissions on pam file(s)"""
+        # """Check permissions on pam file(s)"""
         for pamfile in pamfiles:
             if not checkPerms(pamfile, [0, 0, 0o644], self.logger):
                 self.iditerator += 1
                 myid = iterate(self.iditerator, self.rulenumber)
                 if not setPerms(pamfile, [0, 0, 0o644], self.logger, self.statechglogger, myid):
                     success = False
-                    self.detailedresults += "Unable to set " + \
-                        "correct permissions on " + pamfile + "\n"
+                    self.detailedresults += "Unable to set correct permissions on " + pamfile + "\n"
             contents = readFile(pamfile, self.logger)
             found1, found2 = False, False
             for line in contents:
@@ -698,13 +692,11 @@ with rhel 7 stig requirements
         for pamfile in pamfiles:
             found = False
             if not os.path.exists(pamfile):
-                self.detailedresults += "Critical pam file " + pamfile + \
-                    "doesn't exist\n"
+                self.detailedresults += "Critical pam file " + pamfile + " doesn't exist\n"
                 compliant = False
             else:
                 if not checkPerms(pamfile, [0, 0, 0o644], self.logger):
-                    self.detailedresults += "Permissions aren't correct " + \
-                        "on " + pamfile + "\n"
+                    self.detailedresults += "Permissions aren't correct on " + pamfile + "\n"
                     self.ci3comp = False
                     compliant = False
                 contents = readFile(pamfile, self.logger)
@@ -717,8 +709,7 @@ with rhel 7 stig requirements
                         if re.search(regex, line.strip()):
                             found = True
                     if not found:
-                        self.detailedresults += "Didn't find the correct " + \
-                            "contents in " + pamfile + "\n"
+                        self.detailedresults += "Didn't find the correct contents in " + pamfile + "\n"
                         self.ci3comp = False
                         compliant = False
         return compliant
@@ -748,7 +739,7 @@ with rhel 7 stig requirements
                     "Stonix will not attempt to create this file " + \
                     "and the fix for the this rule will not continue\n"
                 return False
-        """Check permissions on pam file(s)"""
+        # """Check permissions on pam file(s)"""
         for pamfile in pamfiles:
             if not checkPerms(pamfile, [0, 0, 0o644], self.logger):
                 self.iditerator += 1
@@ -815,12 +806,10 @@ with rhel 7 stig requirements
                                             "present", "openeq")
             if not self.pwqeditor.report():
                 compliant = False
-                self.detailedresults += "Not all correct contents were " + \
-                    "found in " + pwqfile + "\n"
+                self.detailedresults += "Not all correct contents were found in " + pwqfile + "\n"
         else:
             compliant = False
-            self.detailedresults += "System is using pwquality and " + \
-                "crucial file /etc/security/pwquality doesn't exist\n"
+            self.detailedresults += "System is using pwquality and crucial file /etc/security/pwquality.conf doesn't exist\n"
         return compliant
 
     def checklogindefs(self):
@@ -868,17 +857,17 @@ with rhel 7 stig requirements
         :rtype: bool
         """
         compliant = True
-        """check if libuser is intalled"""
+        # """check if libuser is intalled"""
         if not self.ph.check("libuser"):
-            """if not, check if available"""
+            # """if not, check if available"""
             if self.ph.checkAvailable("libuser"):
                 self.detailedresults += "libuser available but not installed\n"
                 return False
             else:
-                """not available, not a problem"""
+                # """not available, not a problem"""
                 return True
-        """create a kveditor for file if it exists, if not, we do it in
-        the setlibuser method inside the fix"""
+        # """create a kveditor for file if it exists, if not, we do it in
+        # the setlibuser method inside the fix"""
         if os.path.exists(self.libuserfile):
             data = {"defaults": {"crypt_style": "sha512"}}
             datatype = "tagconf"
@@ -888,23 +877,23 @@ with rhel 7 stig requirements
                                           datatype, self.libuserfile,
                                           tmppath, data, intent, "openeq")
             if not self.editor1.report():
-                debug = "/etc/libuser.conf doesn't contain the correct " + \
-                    "contents\n"
-                self.detailedresults += "/etc/libuser.conf doesn't " + \
-                    "contain the correct contents\n"
+                debug = "/etc/libuser.conf doesn't contain the correct contents\n"
+                self.detailedresults += "/etc/libuser.conf doesn't contain the correct contents\n"
                 self.logger.log(LogPriority.DEBUG, debug)
                 compliant = False
             if not checkPerms(self.libuserfile, [0, 0, 0o644], self.logger):
-                self.detailedresults += "Permissions are incorrect on " + \
-                    self.libuserfile + "\n"
+                self.detailedresults += "Permissions are incorrect on " + self.libuserfile + "\n"
                 compliant = False
         else:
-            self.detailedresults += "Libuser installed but libuser " + \
-                "file doesn't exist\n"
+            self.detailedresults += "Libuser installed but libuser file doesn't exist\n"
             compliant = False
         return compliant
 
     def setpwquality(self):
+        """
+
+        :return:
+        """
         success = True
         created = False
         pwqfile = "/etc/security/pwquality.conf"
@@ -965,17 +954,17 @@ with rhel 7 stig requirements
         created = False
         success = True
         data = {"defaults": {"crypt_style": "sha512"}}
-        """check if installed"""
+        # """check if installed"""
         if not self.ph.check("libuser"):
-            """if not installed, check if available"""
+            # """if not installed, check if available"""
             if self.ph.checkAvailable("libuser"):
-                """if available, install it"""
+                # """if available, install it"""
                 if not self.ph.install("libuser"):
                     self.detailedresults += "Unable to install libuser\n"
                     return False
                 else:
-                    """since we're just now installing it we know we now
-                    need to create the kveditor"""
+                    # """since we're just now installing it we know we now
+                    # need to create the kveditor"""
                     self.iditerator += 1
                     myid = iterate(self.iditerator, self.rulenumber)
                     comm = self.ph.getRemove() + "libuser"
@@ -1015,12 +1004,10 @@ with rhel 7 stig requirements
                 if not setPerms(self.libuserfile, [0, 0, 0o644], self.logger,
                                 self.statechglogger, myid):
                     success = False
-                    self.detailedresults += "Unable to set the " + \
-                        "permissions on " + self.libuserfile + "\n"
+                    self.detailedresults += "Unable to set the permissions on " + self.libuserfile + "\n"
             elif not setPerms(self.libuserfile, [0, 0, 0o644], self.logger):
                 success = False
-                self.detailedresults += "Unable to set the " + \
-                        "permissions on " + self.libuserfile + "\n"
+                self.detailedresults += "Unable to set the permissions on " + self.libuserfile + "\n"
         if self.editor1.fixables:
             if not created:
                 self.iditerator += 1
@@ -1034,12 +1021,10 @@ with rhel 7 stig requirements
                     os.chmod(self.libuserfile, 0o644)
                     resetsecon(self.libuserfile)
                 else:
-                    self.detailedresults += "/etc/libuser.conf " + \
-                        "couldn't be corrected\n"
+                    self.detailedresults += "/etc/libuser.conf couldn't be corrected\n"
                     success = False
             else:
-                self.detailedresults += "/etc/libuser.conf couldn't " + \
-                    "be corrected\n"
+                self.detailedresults += "/etc/libuser.conf couldn't be corrected\n"
                 success = False
         return success
 
@@ -1057,8 +1042,7 @@ with rhel 7 stig requirements
             myid = iterate(self.iditerator, self.rulenumber)
             if not setPerms(self.logindefs, [0, 0, 0o644], self.logger,
                             self.statechglogger, myid):
-                self.detailedresults += "Unable to set permissions " + \
-                    "on " + self.logindefs + " file\n"
+                self.detailedresults += "Unable to set permissions on " + self.logindefs + " file\n"
                 success = False
 
         if self.editor2:
@@ -1074,17 +1058,13 @@ with rhel 7 stig requirements
                         os.chmod(self.logindefs, 0o644)
                         resetsecon(self.logindefs)
                     else:
-                        debug = "Unable to correct the " + \
-                            "contents of /etc/login.defs\n"
-                        self.detailedresults += "Unable to correct the " + \
-                            "contents of /etc/login.defs\n"
+                        debug = "Unable to correct the contents of /etc/login.defs\n"
+                        self.detailedresults += "Unable to correct the contents of /etc/login.defs\n"
                         self.logger.log(LogPriority.DEBUG, debug)
                         success = False
                 else:
-                    self.detailedresults += "Unable to correct the " + \
-                        "contents of /etc/login.defs\n"
-                    debug = "Unable to correct the contents of " + \
-                        "/etc/login.defs\n"
+                    self.detailedresults += "Unable to correct the contents of /etc/login.defs\n"
+                    debug = "Unable to correct the contents of /etc/login.defs\n"
                     self.logger.log(LogPriority.DEBUG, debug)
                     success = False
 
