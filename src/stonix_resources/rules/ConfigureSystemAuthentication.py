@@ -109,7 +109,6 @@ with rhel 7 stig requirements
         self.ci4 = self.initCi(datatype, key, instructions, default)
 
         self.guidance = ["NSA 2.3.3.1,", "NSA 2.3.3.2"]
-        self.iditerator = 0
         self.created = False
         self.localize()
 
@@ -152,8 +151,8 @@ with rhel 7 stig requirements
 
         try:
 
-            if self.environ.getosfamily() == "linux":
-                self.compliant = self.reportLinux()
+            if not self.reportLinux():
+                self.compliant = False
 
         except (KeyboardInterrupt, SystemExit):
             raise
@@ -190,8 +189,8 @@ with rhel 7 stig requirements
             for event in eventlist:
                 self.statechglogger.deleteentry(event)
 
-            if self.environ.getosfamily() == "linux":
-                self.rulesuccess = self.fixLinux()
+            if not self.fixLinux():
+                self.rulesuccess = False
 
         except (KeyboardInterrupt, SystemExit):
             raise
@@ -222,13 +221,9 @@ with rhel 7 stig requirements
         self.usingpwquality, self.usingcracklib = False, False
         self.usingpamtally2, self.usingpamfail = False, False
         self.created1, self.created2 = False, False
-        self.ph = Pkghelper(self.logger, self.environ)
-        self.cracklibpkgs = ["libpam-cracklib",
-                             "cracklib"]
-        self.pwqualitypkgs = ["libpam-pwquality",
-                              "pam_pwquality",
-                              "libpwquality"]
         self.libuserfile = "/etc/libuser.conf"
+        self.ph = Pkghelper(self.logger, self.environ)
+        self.determine_pwreqs_mechanism()
 
         # set pam password and authentication file paths
         pampassfiles = ["/etc/pam.d/common-password", "/etc/pam.d/common-password-pc", "/etc/pam.d/password-auth", "/etc/pam.d/password-auth-ac"]
@@ -250,7 +245,7 @@ with rhel 7 stig requirements
                 self.pampassfile = "/etc/pam.d/password-auth"
                 self.pamauthfile = "/etc/pam.d/system-auth"
 
-        if not self.checkpasswordreqs():
+        if not self.check_pwreqs_configured():
             self.ci2comp = False
             debug += "checkpasswordreqs method is False compliancy\n"
             compliant = False
@@ -296,14 +291,6 @@ with rhel 7 stig requirements
             createFile(self.pampassfile + ".backup", self.logger)
         if os.path.exists(self.pamauthfile):
             createFile(self.pamauthfile + ".backup", self.logger)
-
-        # potential password requirements package names
-        self.cracklibpkgs = ["libpam-cracklib",
-                             "cracklib"]
-        self.pwqualitypkgs = ["libpam-pwquality",
-                              "pam_pwquality",
-                              "libpwquality",
-                              "libpwquality1"]
 
         if self.ci2.getcurrvalue():
             if not self.ci2comp:
@@ -375,75 +362,116 @@ with rhel 7 stig requirements
                         success = False
         return success
 
-    def checkpasswordreqs(self):
+    def determine_pwreqs_mechanism(self):
         """
-        Method to check which password checking program the system
-        is or should be using
+        determine whether this system is using cracklib or pwquality
+        as a password requirements control mechanism
+        use pwquality by default since cracklib is legacy
 
-        @author: Derek Walker
+        """
 
-        :return: True, False
+        self.usingcracklib = False
+        self.usingpwquality = False
+        self.pwqualitypkg = ""
+        self.cracklibpkg = ""
+
+        # potential password requirements package names
+        self.cracklibpkgs = ["libpam-cracklib",
+                             "cracklib"]
+        self.pwqualitypkgs = ["libpam-pwquality",
+                              "pam_pwquality",
+                              "libpwquality",
+                              "libpwquality1"]
+
+        # pwquality check
+        for pkg in self.pwqualitypkgs:
+            if self.ph.check(pkg):
+                self.usingpwquality = True
+                self.pwqualitypkg = pkg
+                break
+        if not self.usingpwquality:
+            for pkg in self.pwqualitypkgs:
+                if self.ph.checkAvailable(pkg):
+                    self.usingpwquality = True
+                    self.pwqualitypkg = pkg
+                    break
+
+        # cracklib check (only runs if pwquality check turns up nothing)
+        if not self.usingpwquality:
+            for pkg in self.cracklibpkgs:
+                if self.ph.check(pkg):
+                    self.usingcracklib = True
+                    self.cracklibpkg = pkg
+                    break
+            if not self.usingcracklib:
+                for pkg in self.cracklibpkgs:
+                    if self.ph.checkAvailable(pkg):
+                        self.usingcracklib = True
+                        self.cracklibpkg = pkg
+                        break
+
+    def check_pwreqs_installed(self):
+        """
+        determine if either a cracklib package or pwquality
+        package is installed
+
+        :return: installed
         :rtype: bool
         """
 
-        self.pwqinstalled, self.clinstalled = False, False
-        self.pwqpkg, self.crackpkg = "", ""
-        # """Check if either pam_pwquality or cracklib are installed"""
+        installed = False
+        self.pwqinstalled = False
+        self.clinstalled = False
+
         for pkg in self.pwqualitypkgs:
             if self.ph.check(pkg):
                 self.pwqinstalled = True
         for pkg in self.cracklibpkgs:
             if self.ph.check(pkg):
                 self.clinstalled = True
-        # """if pwquality is installed we check to see if it's configured"""
-        if self.pwqinstalled:
-            # """If it's not, since it is already installed we want to
-            # configure pwquality and not cracklib since it's better"""
-            if not self.checkpasswordsetup("pwquality"):
-                self.usingpwquality = True
-                self.detailedresults += "System is using pwquality but it's not configured properly in PAM\n"
-                return False
-            else:
-                # """pwquality is installed and configured"""
-                return True
-        elif self.clinstalled:
-            # """Although we want pwquality over cracklib, if cracklib is
-            # already installed and configured correctly, we will go with that"""
-            if not self.checkpasswordsetup("cracklib"):
-                # """cracklib is not configured correctly so we check
-                # if pwquality is available for install"""
+
+        if bool(self.clinstalled or self.pwqinstalled):
+            installed = True
+
+        return installed
+
+    def check_pwreqs_configured(self):
+        """
+        check whether the password requirements have been properly configured
+        in PAM, using either cracklib or pwquality
+
+        :return: passwords_configured
+        :rtype: bool
+        """
+
+        passwords_configured = True
+
+        if not self.check_pwreqs_installed():
+            passwords_configured = False
+            return passwords_configured
+
+        if self.usingpwquality:
+            if not self.pwqinstalled:
                 for pkg in self.pwqualitypkgs:
-                    if self.ph.checkAvailable(pkg):
-                        self.usingpwquality = True
-                        self.pwqpkg = pkg
-                        self.detailedresults += "System has cracklib " + \
-                            "installed but is not configured properly with " + \
-                            "PAM and pwquality is available for install. " + \
-                            "will install and configure pwquality\n"
-                        return False
-                self.detailedresults += "cracklib installed but not configured properly\n"
-                self.usingcracklib = True
-            else:
-                # """cracklib is installed and configured"""
-                return True
-        else:
-            # """neither pwquality or cracklib is installed, we prefer
-            # pwquality so we check if it's available for install"""
-            for pkg in self.pwqualitypkgs:
-                if self.ph.checkAvailable(pkg):
-                    self.usingpwquality = True
-                    self.pwqpkg = pkg
-                    self.detailedresults += "pwquality is available for install\n"
-                    return False
-            # """pwquality wasn't available for install, check for cracklib"""
-            for pkg in self.cracklibpkgs:
-                if self.ph.checkAvailable(pkg):
-                    self.usingcracklib = True
-                    self.crackpkg = pkg
-                    self.detailedresults += "cracklib is available for install\n"
-                    return False
-            return False
-    
+                    if self.ph.install(pkg):
+                        self.pwqinstalled = True
+                        break
+            if not self.checkpasswordsetup("pwquality"):
+                self.detailedresults += "System is using pwquality but it's not configured properly in PAM\n"
+                passwords_configured = False
+
+        elif self.usingcracklib:
+            if not self.clinstalled:
+                for pkg in self.cracklibpkgs:
+                    if self.ph.install(pkg):
+                        self.clinstalled = True
+                        break
+            if not self.checkpasswordsetup("cracklib"):
+                self.detailedresults += "System is using cracklib but it's not configured properly in PAM\n"
+                passwords_configured = False
+
+        return passwords_configured
+
     def checkpasswordsetup(self, package):
         """
         Method called from within checkpasswordreqs method
@@ -454,11 +482,12 @@ with rhel 7 stig requirements
         :return: compliant
         :rtype: bool
         """
+
         compliant = True
         regex1 = ""
+
         if package == "pwquality":
-            self.password = re.sub("pam_cracklib\.so", "pam_pwquality.so",
-                                       self.password)
+            self.password = re.sub("pam_cracklib\.so", "pam_pwquality.so", self.password)
             if self.environ.getsystemfismacat() == "high":
                 self.password = re.sub("minlen=8", "minlen=14", self.password)
                 self.password = re.sub("minclass=3", "minclass=4", self.password)
@@ -467,23 +496,25 @@ with rhel 7 stig requirements
                 regex1 = PWQUALITY_REGEX
             if not self.chkpwquality():
                 compliant = False
+
         elif package == "cracklib":
-            self.password = re.sub("pam_pwquality\.so", "pam_cracklib.so",
-                                       self.password)
+            self.password = re.sub("pam_pwquality\.so", "pam_cracklib.so", self.password)
             if self.environ.getsystemfismacat() == "high":
                 self.password = re.sub("minlen=8", "minlen=14", self.password)
                 self.password = re.sub("minclass=3", "minclass=4", self.password)
                 regex1 = CRACKLIB_HIGH_REGEX
             else:
                 regex1 = CRACKLIB_REGEX
-        regex2 = "^password[ \t]+sufficient[ \t]+pam_unix.so sha512 shadow " + \
-            "try_first_pass use_authtok remember=10"
+
+        regex2 = "^password[ \t]+sufficient[ \t]+pam_unix.so sha512 shadow try_first_pass use_authtok remember=10"
         pamfiles = []
+
         if self.ph.manager in ("yum", "dnf"):
             pamfiles.append(self.pamauthfile)
             pamfiles.append(self.pampassfile)
         else:
             pamfiles.append(self.pampassfile)
+
         for pamfile in pamfiles:
             found1, found2 = False, False
             if not os.path.exists(pamfile):
@@ -491,7 +522,7 @@ with rhel 7 stig requirements
                 compliant = False
             else:
                 if not checkPerms(pamfile, [0, 0, 0o644], self.logger):
-                    self.detailedresults += ""
+                    self.detailedresults += "Incorrect permissions or ownership exist for file " + pamfile
                     compliant = False
                 contents = readFile(pamfile, self.logger)
                 if not contents:
@@ -501,11 +532,17 @@ with rhel 7 stig requirements
                     for line in contents:
                         if re.search(regex1, line.strip()):
                             found1 = True
+                            break
                         if re.search(regex2, line.strip()):
                             found2 = True
-                    if not found1 or not found2:
-                        self.detailedresults += "Didn't find the correct contents in " + pamfile + "\n"
+                            break
+
+                    if not found1:
+                        self.detailedresults += "\n'password requisite ...' line not correct in " + pamfile
+                    if not found2:
+                        self.detailedresults += "\n'password sufficient ...' line not correct in " + pamfile
                         compliant = False
+
         return compliant
 
     def setpasswordsetup(self, regex1, pkglist = None):
