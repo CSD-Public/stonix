@@ -506,7 +506,7 @@ with rhel 7 stig requirements
             else:
                 regex1 = CRACKLIB_REGEX
 
-        regex2 = "^password[ \t]+sufficient[ \t]+pam_unix.so sha512 shadow try_first_pass use_authtok remember=10"
+        regex2 = "^password[ \t]+sufficient[ \t]+pam_unix.so\s+sha512\s+shadow\s+try_first_pass\s+use_authtok\s+remember=10"
         pamfiles = []
 
         if self.ph.manager in ("yum", "dnf"):
