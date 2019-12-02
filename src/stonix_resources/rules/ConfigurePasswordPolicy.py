@@ -124,8 +124,6 @@ class ConfigurePasswordPolicy(Rule):
         '''
         try:
             self.compliant = True
-            self.pwcompliant = False
-            self.secompliant = False
             self.detailedresults = ""
             if not self.passprofile:
                 self.detailedresults += "Could not determine the appropriate password policy profile for your system.\n"
@@ -302,7 +300,6 @@ class ConfigurePasswordPolicy(Rule):
             '''Run the system_proflier command'''
             if not self.pweditor.report():
                 self.detailedresults += "The following have incorrect values: \n"
-                #self.detailedresults += "Password profile not installed or profiles values are incorrect\n"
                 self.compliant = False
 
             self.seceditor = KVEditorStonix(self.statechglogger, self.logger,
@@ -326,29 +323,25 @@ class ConfigurePasswordPolicy(Rule):
 ###############################################################################
 
     def fix(self):
-        '''Configure and install the password policy profile for Mac OS X
-        
+        '''
+        Configure and install the password policy and security profiles for Mac OS X
         @author: Derek Walker
         @change: 04/19/2018 - Breen Malmberg - added doc string; cleaned up redundant code;
-                added more logging; added in-line comments; removed dead-end logic paths which
-                blocked correct code from running at all (ever); corrected the return variable;
-                added detailedresults formatting if exiting method early due to CI not being set
-
-
+            added more logging; added in-line comments; removed dead-end logic paths which
+            blocked correct code from running at all (ever); corrected the return variable;
+            added detailedresults formatting if exiting method early due to CI not being set
+        @change: 12/1/2019 - Derek Walker - cleaned up logic, updated rule to use updated version
+            of KVAprofiles class.
         '''
-
-
         try:
 
             self.detailedresults = ""
             self.rulesuccess = True
-
-            if self.pwci.getcurrvalue():  # and self.sci.getcurrvalue():
+            if self.pwci.getcurrvalue() or self.sci.getcurrvalue():
                 self.iditerator = 0
                 eventlist = self.statechglogger.findrulechanges(self.rulenumber)
                 for event in eventlist:
                     self.statechglogger.deleteentry(event)
-
             # if the primary rule CI is enabled, then run the fix actions for this rule
             if self.pwci.getcurrvalue():
                 if not self.pweditor.report():
@@ -385,8 +378,6 @@ class ConfigurePasswordPolicy(Rule):
             else:
                 self.rulesuccess = False
                 self.detailedresults += "Security and privacy CI was not enabled.\n"
-
-
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception:
