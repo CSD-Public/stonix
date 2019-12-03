@@ -183,6 +183,8 @@ class ConfigureScreenLocking(RuleKVEditor):
             self.ph = Pkghelper(self.logger, self.environ)
             self.ch = CommandHelper(self.logger)
 
+            self.euid = self.environ.geteuid()
+
     def report(self):
         '''ConfigureScreenLocking.report() method to report whether system
         is configured to screen locking NSA standards.  If the system is linux,
@@ -203,6 +205,10 @@ class ConfigureScreenLocking(RuleKVEditor):
                 if not self.ph.check("screen"):
                     compliant = False
                     self.detailedresults += "\nRequired package 'screen' is missing"
+                    if self.euid != 0:
+                        self.detailedresults += "\nThis is expected if not running with elevated privileges since STONIX " \
+                                                "requires elevated privileges to install packages. Please run STONIX with elevated privileges " \
+                                                "and run the fix for this rule again, to fix this issue."
 
                 if self.ph.check("gdm") or self.ph.check("gdm3"):
                     self.gnomeInstalled = True
@@ -596,9 +602,12 @@ class ConfigureScreenLocking(RuleKVEditor):
                     self.detailedresults += "Rule not enabled so nothing was done\n"
                     self.logger.log(LogPriority.DEBUG, 'Rule was not enabled, so nothing was done')
                     return
-                if not self.ph.install("screen"):
-                    success = False
-                    self.logger.log(LogPriority.DEBUG, "Failed to install required package 'screen'")
+                if self.euid == 0:
+                    if not self.ph.install("screen"):
+                        success = False
+                        self.logger.log(LogPriority.DEBUG, "Failed to install required package 'screen'")
+                else:
+                    self.detailedresults += "\nNote: Some required packages may not be installed because STONIX is not running with elevated privileges."
                 if self.gnomeInstalled:
                     if not self.fixGnome():
                         success = False

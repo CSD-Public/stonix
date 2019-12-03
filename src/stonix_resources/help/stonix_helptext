@@ -155,6 +155,8 @@ In interactive start-up mode it is possible to control which services are run."
 
 Internet sharing uses the open-source 'Network Address Translation Daemon' (NATD) process to share an internet connection with other computers and devices on a local network. Unless specifically required, Internet sharing should be turned off. If used, it should only be turned on when actual sharing is needed. A much better solution is a dedicated router. Apple makes a number of certified compatible routers."
 
+<192>        "This rule disables the ability of the Gnome Display Manager to allow users to automatically log in without user interaction or credentials. If Gnome Display Manager is not installed then this rule will not make any changes to the system."
+
 <123>        "This rule disables IPv6 functionality on all system interfaces.  This rule requires a restart to take effect."
 
 <202>        "This rule turns off the infrared receiver that allows the user to remotely control their Mac with a remote control."
@@ -487,8 +489,6 @@ This rule will not configure su on Debian distributions."
 <21>        "This rule sets the file system mount options for non-root, local partitions and file systems mounted on removable media, removable storage partitions, and temporary storage partitions such as /tmp and /dev/shm in order to help protect against malicious code being run on the system."
 
 <96>        "This rule configures network time to use the internal or external servers specified in localize.py ('NTPSERVERSINTERNAL' and 'NTPSERVERSEXTERNAL')."
-
-<77>        "This rule sets root's 'group id' (GID) to 0 and root's home directory to /root."
 
 <188>        "***REQUIRES LOGOUT and LOGIN*** 
 

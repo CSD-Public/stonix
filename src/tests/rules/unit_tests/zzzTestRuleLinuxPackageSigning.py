@@ -16,8 +16,7 @@
 #                                                                             #
 ###############################################################################
 
-
-'''
+"""
 This is a Unit Test for Rule LinuxPackageSigning
 
 @author: Breen Malmberg
@@ -27,13 +26,11 @@ This is a Unit Test for Rule LinuxPackageSigning
 @change: 2018/04/09 - Breen Malmberg - changed the setUp to use a list of possible
         configuration paths/files because that's what the rule currently uses (instead
         of a single "path")
-'''
-
-
+"""
 
 import sys
 import unittest
-from shutil import copyfile
+from shutil import copy2
 import os
 import re
 
@@ -46,7 +43,10 @@ from src.stonix_resources.rules.LinuxPackageSigning import LinuxPackageSigning
 class zzzTestRuleLinuxPackageSigning(RuleTest):
 
     def setUp(self):
-        ''' '''
+        """
+
+        :return:
+        """
 
         RuleTest.setUp(self)
         self.rule = LinuxPackageSigning(self.config,
@@ -61,39 +61,50 @@ class zzzTestRuleLinuxPackageSigning(RuleTest):
         self.backup = ""
         self.confpath = ""
 
-        self.confpaths = self.rule.repos
-        for p in self.confpaths:
-            if os.path.exists(p):
-                self.confpath = p
-                self.backup = p + ".stonixtest"
-                copyfile(p, self.backup)
+        if not self.rule.suse:
+            try:
+                self.confpaths = self.rule.repos
+            except:
+                pass
+            for p in self.confpaths:
+                if os.path.exists(p):
+                    self.confpath = p
+                    self.backup = p + ".stonixtest"
+                    copy2(p, self.backup)
 
     def tearDown(self):
-        ''' '''
+        """
+
+        :return:
+        """
 
         if os.path.exists(self.backup):
-            copyfile(self.backup, self.confpath)
+            copy2(self.backup, self.confpath)
             os.remove(self.backup)
 
     def setConditionsForRule(self):
-        '''Configure system for the unit test
+        """Configure system for the unit test
 
         :param self: essential if you override this definition
-        :returns: boolean - If successful True; If failure False
-        @author: ekkehard j. koch
-
-        '''
+        :return: boolean - If successful True; If failure False
+        """
 
         success = True
         return success
 
-    def test_default(self):
-        ''' '''
+    def runTest(self):
+        """
+
+        :return:
+        """
 
         self.simpleRuleTest()
 
     def test_gpgoff(self):
-        ''' '''
+        """
+
+        :return:
+        """
 
         self.logdispatch.log(LogPriority.DEBUG, "Running test_gpgoff")
         found = 0
@@ -116,10 +127,17 @@ class zzzTestRuleLinuxPackageSigning(RuleTest):
             f.writelines(contentlines)
             f.close()
 
-            self.simpleRuleTest()
+            self.assertFalse(self.rule.report())
+            self.assertTrue(self.rule.fix())
+            self.assertTrue(self.rule.report())
+        else:
+            return True
 
     def test_gpgmissing(self):
-        ''' '''
+        """
+
+        :return:
+        """
 
         self.logdispatch.log(LogPriority.DEBUG, "Running test_gpgmissing")
 
@@ -137,10 +155,17 @@ class zzzTestRuleLinuxPackageSigning(RuleTest):
             f.writelines(contentlines)
             f.close()
 
-            self.simpleRuleTest()
+            self.assertFalse(self.rule.report())
+            self.assertTrue(self.rule.fix())
+            self.assertTrue(self.rule.report())
+        else:
+            return True
 
     def test_gpgon(self):
-        ''' '''
+        """
+
+        :return:
+        """
 
         self.logdispatch.log(LogPriority.DEBUG, "Running test_gpgon")
 
@@ -164,10 +189,16 @@ class zzzTestRuleLinuxPackageSigning(RuleTest):
             f.writelines(contentlines)
             f.close()
 
-            self.simpleRuleTest()
+            self.assertTrue(self.rule.report())
+            self.assertTrue(self.rule.fix())
+        else:
+            return True
 
     def test_gpggarbage(self):
-        ''' '''
+        """
+
+        :return:
+        """
 
         self.logdispatch.log(LogPriority.DEBUG, "Running test_gpggarbage")
 
@@ -191,18 +222,23 @@ class zzzTestRuleLinuxPackageSigning(RuleTest):
             f.writelines(contentlines)
             f.close()
 
-            self.simpleRuleTest()
+            self.assertFalse(self.rule.report())
+            self.assertTrue(self.rule.fix())
+            self.assertTrue(self.rule.report())
+        else:
+            return True
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
-        '''check on whether report was correct
+        """
+        check on whether report was correct
 
         :param self: essential if you override this definition
         :param pCompliance: the self.iscompliant value of rule
         :param pRuleSuccess: did report run successfully
-        :returns: boolean - If successful True; If failure False
-        @author: ekkehard j. koch
+        :return: boolean - If successful True; If failure False
 
-        '''
+        """
+
         self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " +
                              str(pCompliance) + ".")
         self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
@@ -211,28 +247,30 @@ class zzzTestRuleLinuxPackageSigning(RuleTest):
         return success
 
     def checkFixForRule(self, pRuleSuccess):
-        '''check on whether fix was correct
+        """check on whether fix was correct
 
         :param self: essential if you override this definition
         :param pRuleSuccess: did report run successfully
         :returns: boolean - If successful True; If failure False
         @author: ekkehard j. koch
 
-        '''
+        """
+
         self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True
         return success
 
     def checkUndoForRule(self, pRuleSuccess):
-        '''check on whether undo was correct
+        """check on whether undo was correct
 
         :param self: essential if you override this definition
         :param pRuleSuccess: did report run successfully
         :returns: boolean - If successful True; If failure False
         @author: ekkehard j. koch
 
-        '''
+        """
+
         self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " +
                              str(pRuleSuccess) + ".")
         success = True

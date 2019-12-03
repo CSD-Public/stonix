@@ -130,8 +130,7 @@ class LinuxPackageSigning(RuleKVEditor):
         self.repos = ["/etc/yum.conf"]
         repos = os.listdir("/etc/yum.repos.d")
         for repo in repos:
-            self.repos.append(
-            "/etc/yum.repos.d/" + repo)
+            self.repos.append("/etc/yum.repos.d/" + repo)
 
     def setFedora(self):
         """
