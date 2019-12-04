@@ -15,7 +15,7 @@
 #                                                                             #
 ###############################################################################
 
-'''
+"""
 Created on May 27, 2016
 
 @author: dkennel
@@ -23,7 +23,8 @@ Created on May 27, 2016
 @change: 2017/10/23 rsn - change to new service helper interface
 @change: 2018/08/29 Brandon R. Gonzales - increased the sleep time in fixes to
     give iptables more time to restart
-'''
+"""
+
 from __future__ import absolute_import
 
 import os
@@ -40,7 +41,7 @@ from ..localize import ALLOWNETS
 
 
 class ConfigureLinuxFirewall(Rule):
-    '''The configureLinuxFirewall class attempts to audit and configure firewalls
+    """The configureLinuxFirewall class attempts to audit and configure firewalls
     for Linux OS based systems. Note: there is tremendous variations in the
     approach taken by the various distributions on how to manage firewalls,
     this code should work effectively for debian, ubuntu, RHEL and close
@@ -48,13 +49,13 @@ class ConfigureLinuxFirewall(Rule):
     manager, the undo will set the system back to an as new state with no
     firewalls.
 
-
-    '''
+    """
 
     def __init__(self, config, environ, logger, statechglogger):
-        '''
+        """
         Constructor
-        '''
+        """
+
         Rule.__init__(self, config, environ, logger, statechglogger)
         self.config = config
         self.environ = environ
@@ -82,8 +83,7 @@ class ConfigureLinuxFirewall(Rule):
                          'DISA RHEL 7 STIG 2.5.8.2.4']
         datatype = 'bool'
         key = 'CONFIGURELINUXFIREWALL'
-        instructions = '''To disable this rule set the value of \
-CONFIGURELINUXFIREWALL to False.'''
+        instructions = """To disable this rule set the value of CONFIGURELINUXFIREWALL to False"""
         default = False
         self.clfci = self.initCi(datatype, key, instructions, default)
         self.scriptType = ""
@@ -93,17 +93,20 @@ CONFIGURELINUXFIREWALL to False.'''
         self.iditerator = 0
 
     def report(self):
-        '''Report on whether the firewall meets baseline expectations.
+        """
+        Report on whether the firewall meets baseline expectations.
 
+        :return: self.compliant
+        :rtype: bool
 
-        :returns: bool
         @author: D.Kennel
         @change: dwalker - updating rule to check for every possible firewall
             implementation and configure it rather than mutually exclusively
             checking based on system.
+        """
 
-        '''
         try:
+
             compliant = True
             iptablesrunning = False
             ip6tablesrunning = False
@@ -112,7 +115,21 @@ CONFIGURELINUXFIREWALL to False.'''
             catchall = False
             catchall6 = False
             self.detailedresults = ""
-            scriptExists = ""
+            self.supports_ipv6 = False
+            self.compliant = True
+
+            # check to see if the kernel was compiled with ipv6 support first
+            lsmod_paths = ["/sbin/lsmod", "/usr/sbin/lsmod"]
+            lsmod_path = ""
+            for p in lsmod_paths:
+                if os.path.exists(p):
+                    lsmod_path = p
+            if lsmod_path:
+                check_ipv6_kernel = lsmod_path + " | grep -w 'ipv6'"
+                self.cmdhelper.executeCommand(check_ipv6_kernel)
+                retcode = self.cmdhelper.getReturnCode()
+                if retcode == 0:
+                    self.supports_ipv6 = True
 
             if self.checkFirewalld():
                 if not self.servicehelper.auditService('firewalld.service', serviceTarget=self.serviceTarget):
@@ -122,8 +139,7 @@ CONFIGURELINUXFIREWALL to False.'''
             elif self.checkUFW():
                 cmdufw = '/usr/sbin/ufw status'
                 if not self.cmdhelper.executeCommand(cmdufw):
-                    self.detailedresults += "Unable to run " + \
-                        "ufw status command\n"
+                    self.detailedresults += "Unable to run ufw status command\n"
                     compliant = False
                 else:
                     outputufw = self.cmdhelper.getOutputString()
@@ -138,7 +154,7 @@ CONFIGURELINUXFIREWALL to False.'''
                             self.detailedresults += "Cannot retrieve firewall rules\n"
                         else:
                             outputufw = self.cmdhelper.getOutputString()
-                            if not re.search("Default\:\ deny\ \(incoming\)", outputufw):
+                            if not re.search("Default: deny \(incoming\)", outputufw):
                                 compliant = False
                                 self.detailedresults += "The default value for " + \
                                     "incoming unspecified packets is not deny\n"
@@ -165,21 +181,25 @@ CONFIGURELINUXFIREWALL to False.'''
                 if self.scriptType != "debian":
                     self.servicehelper.stopService('iptables')
                     self.servicehelper.startService('iptables')
-                    self.servicehelper.stopService('ip6tables')
-                    self.servicehelper.startService('ip6tables')
                     if self.servicehelper.isRunning('iptables'):
                         iptablesrunning = True
-                    if self.servicehelper.isRunning('ip6tables'):
-                        ip6tablesrunning = True
                     if self.servicehelper.auditService('iptables'):
                         iptablesenabled = True
-                    if self.servicehelper.auditService('ip6tables'):
-                        ip6tablesenabled = True
+
+                    if self.supports_ipv6:
+                        self.servicehelper.stopService('ip6tables')
+                        self.servicehelper.startService('ip6tables')
+                        if self.servicehelper.isRunning('ip6tables'):
+                            ip6tablesrunning = True
+                        if self.servicehelper.auditService('ip6tables'):
+                            ip6tablesenabled = True
+
                 else:
                     iptablesrunning = True
-                    ip6tablesrunning = True
                     iptablesenabled = True
-                    ip6tablesenabled = True
+                    if self.supports_ipv6:
+                        ip6tablesrunning = True
+                        ip6tablesenabled = True
 
                 if self.iptables:
                     cmd = [self.iptables, "-L"]
@@ -190,22 +210,12 @@ CONFIGURELINUXFIREWALL to False.'''
                     else:
                         output = self.cmdhelper.getOutput()
                         for line in output:
-                            if re.search('Chain INPUT \(policy REJECT\)|REJECT' +
+                            if re.search('Chain\s+INPUT\s+\(policy\s+REJECT\)|REJECT' +
                                          '\s+all\s+--\s+anywhere\s+anywhere', line):
                                 catchall = True
                                 break
 
-                # check to see if the kernel was compiled with ipv6 support first
-                lsmod_paths = ["/sbin/lsmod", "/usr/sbin/lsmod"]
-                lsmod_path = ""
-                for p in lsmod_paths:
-                    if os.path.exists(p):
-                        lsmod_path = p
-                if lsmod_path:
-                    check_ipv6_kernel = "/sbin/lsmod | grep -w 'ipv6'"
-                    self.cmdhelper.executeCommand(check_ipv6_kernel)
-                    retcode = self.cmdhelper.getReturnCode()
-                    if retcode == 0:
+                    if self.supports_ipv6:
                         # if system has kernel support for ipv6, then check for ip6tables bin, then do ip6tables rules check
                         if self.ip6tables:
                             cmd6 = [self.ip6tables, "-L"]
@@ -216,7 +226,7 @@ CONFIGURELINUXFIREWALL to False.'''
                             else:
                                 output6 = self.cmdhelper.getOutput()
                                 for line in output6:
-                                    if re.search('Chain INPUT \(policy REJECT\)|REJECT' +
+                                    if re.search('Chain\s+INPUT\s+\(policy\s+REJECT\)|REJECT' +
                                                  '\s+all\s+anywhere\s+anywhere', line):
                                         catchall6 = True
                                         break
@@ -281,33 +291,42 @@ CONFIGURELINUXFIREWALL to False.'''
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception:
-            self.rulesuccess = False
+            self.compliant = False
             self.detailedresults += "\n" + traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("report", self.compliant,
-                                   self.detailedresults)
+        self.formatDetailedResults("report", self.compliant, self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+
         return self.compliant
 
     def fix(self):
-        '''Enable the firewall services and establish basic rules if needed.
+        """
+        Enable the firewall services and establish basic rules if needed
 
         @author: D. Kennel
+        """
 
+        self.iditerator = 0
+        self.detailedresults = ""
+        success = True
+        self.rulesuccess = True
 
-        '''
         try:
+
             if not self.clfci.getcurrvalue():
-                return
-            self.iditerator = 0
-            self.detailedresults = ""
-            success = True
+                self.detailedresults += "\nFix was not run because this rule was not enabled"
+                return self.rulesuccess
+
             # delete past state change records from previous fix
             eventlist = self.statechglogger.findrulechanges(self.rulenumber)
             for event in eventlist:
                 self.statechglogger.deleteentry(event)
+            self.logdispatch.log(LogPriority.DEBUG, "Removed previous undo entries")
+
             #firewall-cmd portion
             if self.checkFirewalld():
+                self.logdispatch.log(LogPriority.DEBUG, "System uses firewalld.service.")
+                self.logger.log(LogPriority.DEBUG, "Attempting to enable firewalld.service...")
                 if self.servicehelper.enableService('firewalld.service', serviceTarget=self.serviceTarget):
                     self.iditerator += 1
                     myid = iterate(self.iditerator, self.rulenumber)
@@ -315,11 +334,11 @@ CONFIGURELINUXFIREWALL to False.'''
                     event = {"eventtype": "commandstring",
                              "command": cmd}
                     self.statechglogger.recordchgevent(myid, event)
-                    self.detailedresults += "Firewall configured.\n "
+                    self.detailedresults += "Firewalld enabled.\n "
                 else:
                     success = False
-                    self.detailedresults += "Unable to enable firewall\n"
-                    debug = "Unable to enable firewall\n"
+                    self.detailedresults += "Unable to enable firewalld\n"
+                    debug = "Unable to enable firewalld\n"
                     self.logger.log(LogPriority.DEBUG, debug)
 
             #ufw command portion
@@ -327,18 +346,20 @@ CONFIGURELINUXFIREWALL to False.'''
                 self.logger.log(LogPriority.DEBUG, "System uses ufw. Running ufw commands...")
                 cmdufw = '/usr/sbin/ufw status'
                 if not self.cmdhelper.executeCommand(cmdufw):
-                    self.detailedresults += "Unable to run " + \
-                        "ufw status command\n"
+                    self.detailedresults += "Unable to run ufw status command\n"
                     success = False
                 else:
+                    self.logger.log(LogPriority.DEBUG, "Checking output of ufw status command...")
                     outputufw = self.cmdhelper.getOutputString()
-                    if re.search('Status: inactive', outputufw):
+                    if re.search('Status:\s+inactive', outputufw):
+                        self.logger.log(LogPriority.DEBUG, "Status reported as inactive.")
                         ufwcmd = '/usr/sbin/ufw --force enable'
+                        self.logger.log(LogPriority.DEBUG, "Attempting to enable ufw...")
                         if not self.cmdhelper.executeCommand(ufwcmd):
-                            self.detailedresults += "Unable to run " + \
-                                "ufw enable command\n"
+                            self.detailedresults += "Unable to run ufw enable command\n"
                             success = False
                         else:
+                            self.logger.log(LogPriority.DEBUG, "Ufw enabled.")
                             self.iditerator += 1
                             myid = iterate(self.iditerator, self.rulenumber)
                             undocmd = "/usr/sbin/ufw --force disable"
@@ -351,7 +372,7 @@ CONFIGURELINUXFIREWALL to False.'''
                                 success = False
                             else:
                                 outputfw = self.cmdhelper.getOutputString()
-                                if not re.search("Default\:\ deny\ \(incoming\)", outputfw):
+                                if not re.search("Default:\s+deny\s+\(incoming\)", outputfw):
                                     ufwcmd = "/usr/sbin/ufw default deny incoming"
                                     if not self.cmdhelper.executeCommand(ufwcmd):
                                         self.detailedresults += "Unable to set default " + \
@@ -364,14 +385,14 @@ CONFIGURELINUXFIREWALL to False.'''
                                         event = {"eventtype": "commandstring",
                                                  "command": undocmd}
                                         self.statechglogger.recordchgevent(myid, event)
-                    elif re.search('Status: active', outputufw):
+                    elif re.search('Status:\s+active', outputufw):
                         cmdufw = "/usr/sbin/ufw status verbose"
                         if not self.cmdhelper.executeCommand(cmdufw):
                             self.detailedresults += "Cannot retrieve firewall rules\n"
                             success = False
                         else:
                             outputufw = self.cmdhelper.getOutputString()
-                            if not re.search("Default\:\ deny\ \(incoming\)", outputufw):
+                            if not re.search("Default:\s+deny\s+\(incoming\)", outputufw):
                                 ufwcmd = "/usr/sbin/ufw default deny incoming"
                                 if not self.cmdhelper.executeCommand(ufwcmd):
                                     self.detailedresults += "Unable to set default " + \
@@ -395,8 +416,8 @@ CONFIGURELINUXFIREWALL to False.'''
                                 errmsg = self.cmdhelper.getErrorString()
                                 self.logger.log(LogPriority.DEBUG, errmsg)
             else:
+                self.logdispatch.log(LogPriority.DEBUG, "Configuring pre-start network scripts for firewall rules...")
                 #following portion is mainly for debian and opensuse systems only
-
                 if os.path.exists("/etc/network/if-pre-up.d"):
                     self.iptScriptPath = "/etc/network/if-pre-up.d/iptables"
                     self.scriptType = "debian"
@@ -405,22 +426,31 @@ CONFIGURELINUXFIREWALL to False.'''
                     self.iptScriptPath = "/etc/sysconfig/scripts/SuSEfirewall2-custom"
                     self.scriptType = "suse"
                     servicename = "network"
+                else:
+                    servicename = ""
+
                 #this script will ensure that iptables gets configured
                 #each time the network restarts
                 iptables = self.getScriptValues("iptables")
                 ip6tables = self.getScriptValues("ip6tables")
                 iptScript = ""
                 created = False
+
                 if self.iptScriptPath:
+                    self.logdispatch.log(LogPriority.DEBUG, "Pre-start network script (iptScriptPath) set")
                     if self.scriptType == "debian":
-                        if self.iprestore and self.ip6restore:
+                        self.logdispatch.log(LogPriority.DEBUG, "ipt script type is 'debian'")
+
+                        if self.iprestore and self.supports_ipv6:
                             iptScript = '#!/bin/bash\n' + self.iprestore + \
                                         ' <<< "' + iptables + '"\n' + self.ip6restore + \
                                         ' <<< "' + ip6tables + '"'
                     else:
                         iptScript = self.getScriptValues("iptscript")
+
                     if iptScript:
                         if not os.path.exists(self.iptScriptPath):
+                            self.logdispatch.log(LogPriority.DEBUG, "Pre-start network script (iptscriptpath) does not exist. Creating it...")
                             if not createFile(self.iptScriptPath, self.logger):
                                 success = False
                                 self.detailedresults += "Unable to create file " + self.iptScriptPath + "\n"
@@ -459,6 +489,7 @@ CONFIGURELINUXFIREWALL to False.'''
                                     resetsecon(self.iptScriptPath)
 
                             stonixfilepath = "/var/db/stonix/"
+                            self.logdispatch.log(LogPriority.DEBUG, "Saving a backup of iptables rules...")
                             savecmd = "/sbin/iptables-save > " + stonixfilepath + "user-firewall-pre-stonix"
                             if not self.cmdhelper.executeCommand(savecmd):
                                 success = False
@@ -483,6 +514,7 @@ CONFIGURELINUXFIREWALL to False.'''
                                 debug = "Unable to restart networking\n"
                                 self.logger.log(LogPriority.DEBUG, debug)
                             else:
+                                self.logdispatch.log(LogPriority.DEBUG, "Successfully restarted networking")
                                 self.iditerator += 1
                                 myid = iterate(self.iditerator, self.rulenumber)
                                 cmd = "/sbin/iptables-restore < " + stonixfilepath + "user-firewall-pre-stonix"
@@ -503,8 +535,7 @@ CONFIGURELINUXFIREWALL to False.'''
                         self.logger.log(LogPriority.DEBUG, debug)
 
                 #this portion mostly applies to RHEL6 and Centos6
-                if os.path.exists('/usr/bin/system-config-firewall') or \
-                        os.path.exists('/usr/bin/system-config-firewall-tui'):
+                if os.path.exists('/usr/bin/system-config-firewall') or os.path.exists('/usr/bin/system-config-firewall-tui'):
                     systemconfigfirewall = self.getScriptValues("systemconfigfirewall")
                     sysconfigiptables = self.getScriptValues("sysconfigiptables")
                     sysconfigip6tables = self.getScriptValues("sysconfigip6tables")
@@ -512,13 +543,17 @@ CONFIGURELINUXFIREWALL to False.'''
                     fwpath = '/etc/sysconfig/system-config-firewall'
                     iptpath = '/etc/sysconfig/iptables'
                     ip6tpath = '/etc/sysconfig/ip6tables'
+
                     #portion to handle the system-config-firewall file
                     created = False
                     if not os.path.exists(fwpath):
+                        self.logdispatch.log(LogPriority.DEBUG, "Attempting to create /etc/sysconfig/system-config-firewall path...")
                         if not createFile(fwpath, self.logger):
+                            self.logdispatch.log(LogPriority.DEBUG, "Failed.")
                             success = False
                             self.detailedresults += "Unable to create file " + fwpath + "\n"
                         else:
+                            self.logdispatch.log(LogPriority.DEBUG, "Created.")
                             created = True
                             self.iditerator += 1
                             myid = iterate(self.iditerator, self.rulenumber)
@@ -526,6 +561,7 @@ CONFIGURELINUXFIREWALL to False.'''
                                      "filepath": fwpath}
                             self.statechglogger.recordchgevent(myid, event)
                     if os.path.exists(fwpath):
+                        self.logdispatch.log(LogPriority.DEBUG, "/etc/sysconfig/system-config-firewall path already exists")
                         if not checkPerms(fwpath, [0, 0, 0o600], self.logger):
                             if not created:
                                 self.iditerator += 1
@@ -535,12 +571,15 @@ CONFIGURELINUXFIREWALL to False.'''
                                     self.detailedresults += "Unable to set permissions on " + fwpath + "\n"
                         contents = readFile(fwpath, self.logger)
                         if contents != systemconfigfirewall:
-                            print "contents don't equal systemconfigurefirewall contents\n"
+                            self.logdispatch.log(LogPriority.DEBUG, "/etc/sysconfig/system-config-firewall contents do not match desired")
                             tempfile = fwpath + ".tmp"
+                            self.logdispatch.log(LogPriority.DEBUG, "Attempting to write new config's to /etc/sysconfig/system-config-firewall...")
                             if not writeFile(tempfile, systemconfigfirewall, self.logger):
+                                self.logdispatch.log(LogPriority.DEBUG, "Write failed.")
                                 success = False
                                 self.detailedresults += "Unable to write contents to " + fwpath + "\n"
                             else:
+                                self.logdispatch.log(LogPriority.DEBUG, "Contents written.")
                                 if not created:
                                     self.iditerator += 1
                                     myid = iterate(self.iditerator, self.rulenumber)
@@ -555,10 +594,13 @@ CONFIGURELINUXFIREWALL to False.'''
                     created = False
                     #portion to handle the iptables rules file
                     if not os.path.exists(iptpath):
+                        self.logdispatch.log(LogPriority.DEBUG, "iptables rules file does not exist. Attempting to create it...")
                         if not createFile(iptpath, self.logger):
+                            self.logdispatch.log(LogPriority.DEBUG, "Create failed")
                             success = False
                             self.detailedresults += "Unable to create file " + iptpath + "\n"
                         else:
+                            self.logdispatch.log(LogPriority.DEBUG, "File created")
                             created = True
                             self.iditerator += 1
                             myid = iterate(self.iditerator, self.rulenumber)
@@ -566,20 +608,28 @@ CONFIGURELINUXFIREWALL to False.'''
                                      "filepath": iptpath}
                             self.statechglogger.recordchgevent(myid, event)
                     if os.path.exists(iptpath):
+                        self.logdispatch.log(LogPriority.DEBUG, "iptables rules file exists. Checking perm's...")
                         if not checkPerms(iptpath, [0, 0, 0o644], self.logger):
+                            self.logdispatch.log(LogPriority.DEBUG, "Bad perm's. Fixing...")
                             if not created:
                                 self.iditerator += 1
                                 myid = iterate(self.iditerator, self.rulenumber)
                                 if not setPerms(iptpath, [0, 0, 0o644], self.logger, self.statechglogger, myid):
                                     success = False
                                     self.detailedresults += "Unable to set permissions on " + iptpath + "\n"
+                        self.logdispatch.log(LogPriority.DEBUG, "Perm's Good")
+                        self.logdispatch.log(LogPriority.DEBUG, "Getting contents of iptables rules file...")
                         contents = readFile(iptpath, self.logger)
                         if contents != sysconfigiptables:
+                            self.logdispatch.log(LogPriority.DEBUG, "iptables rules file contents do not match desired")
                             tempfile = iptpath + ".tmp"
+                            self.logdispatch.log(LogPriority.DEBUG, "Attempting to write new contents...")
                             if not writeFile(tempfile, sysconfigiptables, self.logger):
+                                self.logdispatch.log(LogPriority.DEBUG, "Write failed.")
                                 success = False
                                 self.detailedresults += "Unable to write contents to " + iptpath + "\n"
                             else:
+                                self.logdispatch.log(LogPriority.DEBUG, "Contents written.")
                                 if not created:
                                     self.iditerator += 1
                                     myid = iterate(self.iditerator, self.rulenumber)
@@ -591,48 +641,69 @@ CONFIGURELINUXFIREWALL to False.'''
                                 os.chown(iptpath, 0, 0)
                                 os.chmod(iptpath, 0o644)
                                 resetsecon(iptpath)
+
                     created = False
-                    #portion to handle ip6tables rules file
-                    if not os.path.exists(ip6tpath):
-                        if not createFile(ip6tpath, self.logger):
-                            success = False
-                            self.detailedresults += "Unable to create file " + ip6tpath + "\n"
-                        else:
-                            created = True
-                            self.iditerator += 1
-                            myid = iterate(self.iditerator, self.rulenumber)
-                            event = {"eventtype": "creation",
-                                     "filepath": ip6tpath}
-                            self.statechglogger.recordchgevent(myid, event)
-                    if os.path.exists(ip6tpath):
-                        if not checkPerms(ip6tpath, [0, 0, 0o644], self.logger):
-                            if not created:
+
+                    if self.supports_ipv6:
+                        self.logdispatch.log(LogPriority.DEBUG, "System supports ipv6. Continuing with ip6tables fixes...")
+                        #portion to handle ip6tables rules file
+                        if not os.path.exists(ip6tpath):
+                            self.logdispatch.log(LogPriority.DEBUG, "ip6tables rules file does not exist. Attempting to create it...")
+                            if not createFile(ip6tpath, self.logger):
+                                self.logdispatch.log(LogPriority.DEBUG, "Create Failed.")
+                                success = False
+                                self.detailedresults += "Unable to create file " + ip6tpath + "\n"
+                            else:
+                                self.logdispatch.log(LogPriority.DEBUG, "File created.")
+                                created = True
                                 self.iditerator += 1
                                 myid = iterate(self.iditerator, self.rulenumber)
-                                if not setPerms(ip6tpath, [0, 0, 0o644], self.logger, self.statechglogger, myid):
-                                    success = False
-                                    self.detailedresults += "Unable to set permissions on " + ip6tpath + "\n"
-                        contents = readFile(ip6tpath, self.logger)
-                        if contents != sysconfigip6tables:
-                            tempfile = ip6tpath + ".tmp"
-                            if not writeFile(tempfile, sysconfigip6tables, self.logger):
-                                success = False
-                                self.detailedresults += "Unable to write contents to " + ip6tpath + "\n"
-                            else:
+                                event = {"eventtype": "creation",
+                                         "filepath": ip6tpath}
+                                self.statechglogger.recordchgevent(myid, event)
+                        if os.path.exists(ip6tpath):
+                            self.logdispatch.log(LogPriority.DEBUG, "ip6tables rules file exists. Checking perm's...")
+                            if not checkPerms(ip6tpath, [0, 0, 0o644], self.logger):
+                                self.logdispatch.log(LogPriority.DEBUG, "Bad perm's. Fixing...")
                                 if not created:
                                     self.iditerator += 1
                                     myid = iterate(self.iditerator, self.rulenumber)
-                                    event = {"eventtype": "conf",
-                                             "filepath": ip6tpath}
-                                    self.statechglogger.recordchgevent(myid, event)
-                                    self.statechglogger.recordfilechange(ip6tpath, tempfile, myid)
-                                os.rename(tempfile, ip6tpath)
-                                os.chown(ip6tpath, 0, 0)
-                                os.chmod(ip6tpath, 0o644)
-                                resetsecon(ip6tpath)
+                                    if not setPerms(ip6tpath, [0, 0, 0o644], self.logger, self.statechglogger, myid):
+                                        success = False
+                                        self.detailedresults += "Unable to set permissions on " + ip6tpath + "\n"
+                            self.logdispatch.log(LogPriority.DEBUG, "Perm's Good")
+                            self.logdispatch.log(LogPriority.DEBUG, "Getting contents of ip6tables rules file...")
+                            contents = readFile(ip6tpath, self.logger)
+                            if contents != sysconfigip6tables:
+                                self.logdispatch.log(LogPriority.DEBUG, "ip6tables rules file contents do not match desired")
+                                tempfile = ip6tpath + ".tmp"
+                                self.logdispatch.log(LogPriority.DEBUG, "Attempting to write new contents...")
+                                if not writeFile(tempfile, sysconfigip6tables, self.logger):
+                                    self.logdispatch.log(LogPriority.DEBUG, "Write failed.")
+                                    success = False
+                                    self.detailedresults += "Unable to write contents to " + ip6tpath + "\n"
+                                else:
+                                    self.logdispatch.log(LogPriority.DEBUG, "New contents written.")
+                                    if not created:
+                                        self.iditerator += 1
+                                        myid = iterate(self.iditerator, self.rulenumber)
+                                        event = {"eventtype": "conf",
+                                                 "filepath": ip6tpath}
+                                        self.statechglogger.recordchgevent(myid, event)
+                                        self.statechglogger.recordfilechange(ip6tpath, tempfile, myid)
+                                    os.rename(tempfile, ip6tpath)
+                                    os.chown(ip6tpath, 0, 0)
+                                    os.chmod(ip6tpath, 0o644)
+                                    resetsecon(ip6tpath)
+                    else:
+                        self.logdispatch.log(LogPriority.DEBUG, "System does not support ipv6. Skipping ipv6 fixes...")
+
+                    self.logdispatch.log(LogPriority.DEBUG, "Checking if iptables is enabled...")
                     # check if iptables is enabled to run at start
                     if not self.servicehelper.auditService('iptables'):
+                        self.logdispatch.log(LogPriority.DEBUG, "iptables not enabled.")
                         # enable service to run at start if not
+                        self.logdispatch.log(LogPriority.DEBUG, "Attempting to enable iptables...")
                         if not self.servicehelper.enableService('iptables'):
                             self.detailedresults += "Unable to enable iptables service\n"
                             debug = "Unable to enable iptables service\n"
@@ -646,7 +717,10 @@ CONFIGURELINUXFIREWALL to False.'''
                             event = {"eventtype": "commandstring",
                                      "command": cmd}
                             self.statechglogger.recordchgevent(myid, event)
+                    else:
+                        self.logdispatch.log(LogPriority.DEBUG, "iptables is enabled.")
 
+                    self.logdispatch.log(LogPriority.DEBUG, "Restarting iptables...")
                     self.servicehelper.stopService('iptables')
                     # start iptables if not
                     if not self.servicehelper.startService('iptables'):
@@ -655,8 +729,10 @@ CONFIGURELINUXFIREWALL to False.'''
                         self.logger.log(LogPriority.DEBUG, debug)
                         success = False
                     else:
+                        self.logdispatch.log(LogPriority.DEBUG, "iptables restarted.")
                         stonixfilepath = "/var/db/stonix/"
                         savecmd = "/sbin/iptables-save > " + stonixfilepath + "user-firewall-pre-stonix"
+                        self.logdispatch.log(LogPriority.DEBUG, "Exporting iptables rules...")
                         if not self.cmdhelper.executeCommand(savecmd):
                             success = False
                             self.detailedresults += "Unable to save current ipv4 " + \
@@ -665,65 +741,84 @@ CONFIGURELINUXFIREWALL to False.'''
                                     "firewall rules for revert\n"
                             self.logger.log(LogPriority.DEBUG, debug)
                         else:
+                            self.logdispatch.log(LogPriority.DEBUG, "iptables rules exported.")
                             self.iditerator += 1
                             myid = iterate(self.iditerator, self.rulenumber)
                             cmd = "/sbin/iptables-restore < " + stonixfilepath + "user-firewall-pre-stonix"
                             event = {"eventtype": "commandstring",
                                      "command": cmd}
                             self.statechglogger.recordchgevent(myid, event)
-                        savecmd = "/sbin/ip6tables-save > " + stonixfilepath + "user-firewall6-pre-stonix"
-                        if not self.cmdhelper.executeCommand(savecmd):
-                            success = False
-                            self.detailedresults += "Unable to save current ipv6 " + \
-                                                    "firewall rules for revert\n"
-                            debug = "Unable to save current ipv6 " + \
-                                    "firewall rules for revert\n"
-                            self.logger.log(LogPriority.DEBUG, debug)
-                        else:
-                            self.iditerator += 1
-                            myid = iterate(self.iditerator, self.rulenumber)
-                            cmd = "/sbin/ip6tables-restore < " + stonixfilepath + "user-firewall6-pre-stonix"
-                            event = {"eventtype": "commandstring",
-                                     "command": cmd}
-                            self.statechglogger.recordchgevent(myid, event)
-                    # check if ip6tables is enabled to run at start
-                    if not self.servicehelper.auditService('ip6tables'):
-                        # enable service to run at start if not
-                        if not self.servicehelper.enableService('ip6tables'):
-                            self.detailedresults += "Unable to enable ip6tables service\n"
-                            debug = "Unable to enable ip6tables service\n"
-                            self.logger.log(LogPriority.DEBUG, debug)
-                            success = False
-                        else:
-                            # record event if successful
-                            self.iditerator += 1
-                            myid = iterate(self.iditerator, self.rulenumber)
-                            cmd = self.servicehelper.getDisableCommand('ip6tables')
-                            event = {"eventtype": "commandstring",
-                                     "command": cmd}
-                            self.statechglogger.recordchgevent(myid, event)
 
-                    self.servicehelper.stopService('ip6tables')
-                    # start ip6tables if not
-                    if not self.servicehelper.startService('ip6tables'):
-                        self.detailedresults += "Unable to start ip6tables service\n"
-                        debug = "Unable to start ip6tables service\n"
-                        self.logger.log(LogPriority.DEBUG, debug)
-                        success = False
+                        if self.supports_ipv6:
+                            self.logdispatch.log(LogPriority.DEBUG, "System supports ipv6. Exporting ip6tables rules...")
+                            savecmd = "/sbin/ip6tables-save > " + stonixfilepath + "user-firewall6-pre-stonix"
+                            if not self.cmdhelper.executeCommand(savecmd):
+                                success = False
+                                self.detailedresults += "Unable to save current ipv6 " + \
+                                                        "firewall rules for revert\n"
+                                debug = "Unable to save current ipv6 " + \
+                                        "firewall rules for revert\n"
+                                self.logger.log(LogPriority.DEBUG, debug)
+                            else:
+                                self.logdispatch.log(LogPriority.DEBUG, "ip6tables rules exported")
+                                self.iditerator += 1
+                                myid = iterate(self.iditerator, self.rulenumber)
+                                cmd = "/sbin/ip6tables-restore < " + stonixfilepath + "user-firewall6-pre-stonix"
+                                event = {"eventtype": "commandstring",
+                                         "command": cmd}
+                                self.statechglogger.recordchgevent(myid, event)
+                        else:
+                            self.logdispatch.log(LogPriority.DEBUG, "System does NOT support ipv6. Skipping ip6tables export...")
+
+                    if self.supports_ipv6:
+                        self.logdispatch.log(LogPriority.DEBUG, "System supports ipv6. Checking if ip6tables is enabled...")
+                        # check if ip6tables is enabled to run at start
+                        if not self.servicehelper.auditService('ip6tables'):
+                            # enable service to run at start if not
+                            self.logdispatch.log(LogPriority.DEBUG, "ip6tables not enabled.")
+                            self.logdispatch.log(LogPriority.DEBUG, "Attempting to enable ip6tables...")
+                            if not self.servicehelper.enableService('ip6tables'):
+                                self.detailedresults += "Unable to enable ip6tables service\n"
+                                debug = "Unable to enable ip6tables service\n"
+                                self.logger.log(LogPriority.DEBUG, debug)
+                                success = False
+                            else:
+                                self.logdispatch.log(LogPriority.DEBUG, "ip6tables is enabled.")
+                                # record event if successful
+                                self.iditerator += 1
+                                myid = iterate(self.iditerator, self.rulenumber)
+                                cmd = self.servicehelper.getDisableCommand('ip6tables')
+                                event = {"eventtype": "commandstring",
+                                         "command": cmd}
+                                self.statechglogger.recordchgevent(myid, event)
+                        self.logdispatch.log(LogPriority.DEBUG, "Restarting ip6tables...")
+                        self.servicehelper.stopService('ip6tables')
+                        # start ip6tables if not
+                        if not self.servicehelper.startService('ip6tables'):
+                            self.detailedresults += "Unable to start ip6tables service\n"
+                            debug = "Unable to start ip6tables service\n"
+                            self.logger.log(LogPriority.DEBUG, debug)
+                            success = False
+                        else:
+                            self.logdispatch.log(LogPriority.DEBUG, "ip6tables restarted.")
+
+                    else:
+                        self.logdispatch.log(LogPriority.DEBUG, "System does NOT support ipv6. Will NOT attempt to enable ip6tables service.")
 
                      # Sleep for a bit to let the restarts occur
                     time.sleep(10)
+
             self.rulesuccess = success
+
         except (KeyboardInterrupt, SystemExit):
-            # User initiated exit
             raise
         except Exception:
             self.rulesuccess = False
             self.detailedresults += "\n" + traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("fix", self.rulesuccess,
-                                   self.detailedresults)
+        self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+
         return self.rulesuccess
 
     def checkFirewalld(self):
