@@ -15,7 +15,7 @@
 #                                                                             #
 ###############################################################################
 
-'''
+"""
 Created on May 27, 2016
 
 @author: dkennel
@@ -23,7 +23,8 @@ Created on May 27, 2016
 @change: 2017/10/23 rsn - change to new service helper interface
 @change: 2018/08/29 Brandon R. Gonzales - increased the sleep time in fixes to
     give iptables more time to restart
-'''
+"""
+
 from __future__ import absolute_import
 
 import os
@@ -40,7 +41,7 @@ from ..localize import ALLOWNETS
 
 
 class ConfigureLinuxFirewall(Rule):
-    '''The configureLinuxFirewall class attempts to audit and configure firewalls
+    """The configureLinuxFirewall class attempts to audit and configure firewalls
     for Linux OS based systems. Note: there is tremendous variations in the
     approach taken by the various distributions on how to manage firewalls,
     this code should work effectively for debian, ubuntu, RHEL and close
@@ -48,13 +49,13 @@ class ConfigureLinuxFirewall(Rule):
     manager, the undo will set the system back to an as new state with no
     firewalls.
 
-
-    '''
+    """
 
     def __init__(self, config, environ, logger, statechglogger):
-        '''
+        """
         Constructor
-        '''
+        """
+
         Rule.__init__(self, config, environ, logger, statechglogger)
         self.config = config
         self.environ = environ
@@ -82,8 +83,7 @@ class ConfigureLinuxFirewall(Rule):
                          'DISA RHEL 7 STIG 2.5.8.2.4']
         datatype = 'bool'
         key = 'CONFIGURELINUXFIREWALL'
-        instructions = '''To disable this rule set the value of \
-CONFIGURELINUXFIREWALL to False.'''
+        instructions = """To disable this rule set the value of CONFIGURELINUXFIREWALL to False"""
         default = False
         self.clfci = self.initCi(datatype, key, instructions, default)
         self.scriptType = ""
@@ -93,17 +93,20 @@ CONFIGURELINUXFIREWALL to False.'''
         self.iditerator = 0
 
     def report(self):
-        '''Report on whether the firewall meets baseline expectations.
+        """
+        Report on whether the firewall meets baseline expectations.
 
+        :return: self.compliant
+        :rtype: bool
 
-        :returns: bool
         @author: D.Kennel
         @change: dwalker - updating rule to check for every possible firewall
             implementation and configure it rather than mutually exclusively
             checking based on system.
+        """
 
-        '''
         try:
+
             compliant = True
             iptablesrunning = False
             ip6tablesrunning = False
@@ -112,7 +115,21 @@ CONFIGURELINUXFIREWALL to False.'''
             catchall = False
             catchall6 = False
             self.detailedresults = ""
-            scriptExists = ""
+            self.supports_ipv6 = False
+            self.compliant = True
+
+            # check to see if the kernel was compiled with ipv6 support first
+            lsmod_paths = ["/sbin/lsmod", "/usr/sbin/lsmod"]
+            lsmod_path = ""
+            for p in lsmod_paths:
+                if os.path.exists(p):
+                    lsmod_path = p
+            if lsmod_path:
+                check_ipv6_kernel = lsmod_path + " | grep -w 'ipv6'"
+                self.cmdhelper.executeCommand(check_ipv6_kernel)
+                retcode = self.cmdhelper.getReturnCode()
+                if retcode == 0:
+                    self.supports_ipv6 = True
 
             if self.checkFirewalld():
                 if not self.servicehelper.auditService('firewalld.service', serviceTarget=self.serviceTarget):
@@ -122,8 +139,7 @@ CONFIGURELINUXFIREWALL to False.'''
             elif self.checkUFW():
                 cmdufw = '/usr/sbin/ufw status'
                 if not self.cmdhelper.executeCommand(cmdufw):
-                    self.detailedresults += "Unable to run " + \
-                        "ufw status command\n"
+                    self.detailedresults += "Unable to run ufw status command\n"
                     compliant = False
                 else:
                     outputufw = self.cmdhelper.getOutputString()
@@ -138,7 +154,7 @@ CONFIGURELINUXFIREWALL to False.'''
                             self.detailedresults += "Cannot retrieve firewall rules\n"
                         else:
                             outputufw = self.cmdhelper.getOutputString()
-                            if not re.search("Default\:\ deny\ \(incoming\)", outputufw):
+                            if not re.search("Default: deny \(incoming\)", outputufw):
                                 compliant = False
                                 self.detailedresults += "The default value for " + \
                                     "incoming unspecified packets is not deny\n"
@@ -165,21 +181,25 @@ CONFIGURELINUXFIREWALL to False.'''
                 if self.scriptType != "debian":
                     self.servicehelper.stopService('iptables')
                     self.servicehelper.startService('iptables')
-                    self.servicehelper.stopService('ip6tables')
-                    self.servicehelper.startService('ip6tables')
                     if self.servicehelper.isRunning('iptables'):
                         iptablesrunning = True
-                    if self.servicehelper.isRunning('ip6tables'):
-                        ip6tablesrunning = True
                     if self.servicehelper.auditService('iptables'):
                         iptablesenabled = True
-                    if self.servicehelper.auditService('ip6tables'):
-                        ip6tablesenabled = True
+
+                    if self.supports_ipv6:
+                        self.servicehelper.stopService('ip6tables')
+                        self.servicehelper.startService('ip6tables')
+                        if self.servicehelper.isRunning('ip6tables'):
+                            ip6tablesrunning = True
+                        if self.servicehelper.auditService('ip6tables'):
+                            ip6tablesenabled = True
+
                 else:
                     iptablesrunning = True
-                    ip6tablesrunning = True
                     iptablesenabled = True
-                    ip6tablesenabled = True
+                    if self.supports_ipv6:
+                        ip6tablesrunning = True
+                        ip6tablesenabled = True
 
                 if self.iptables:
                     cmd = [self.iptables, "-L"]
@@ -190,22 +210,12 @@ CONFIGURELINUXFIREWALL to False.'''
                     else:
                         output = self.cmdhelper.getOutput()
                         for line in output:
-                            if re.search('Chain INPUT \(policy REJECT\)|REJECT' +
+                            if re.search('Chain\s+INPUT\s+\(policy\s+REJECT\)|REJECT' +
                                          '\s+all\s+--\s+anywhere\s+anywhere', line):
                                 catchall = True
                                 break
 
-                # check to see if the kernel was compiled with ipv6 support first
-                lsmod_paths = ["/sbin/lsmod", "/usr/sbin/lsmod"]
-                lsmod_path = ""
-                for p in lsmod_paths:
-                    if os.path.exists(p):
-                        lsmod_path = p
-                if lsmod_path:
-                    check_ipv6_kernel = "/sbin/lsmod | grep -w 'ipv6'"
-                    self.cmdhelper.executeCommand(check_ipv6_kernel)
-                    retcode = self.cmdhelper.getReturnCode()
-                    if retcode == 0:
+                    if self.supports_ipv6:
                         # if system has kernel support for ipv6, then check for ip6tables bin, then do ip6tables rules check
                         if self.ip6tables:
                             cmd6 = [self.ip6tables, "-L"]
@@ -216,7 +226,7 @@ CONFIGURELINUXFIREWALL to False.'''
                             else:
                                 output6 = self.cmdhelper.getOutput()
                                 for line in output6:
-                                    if re.search('Chain INPUT \(policy REJECT\)|REJECT' +
+                                    if re.search('Chain\s+INPUT\s+\(policy\s+REJECT\)|REJECT' +
                                                  '\s+all\s+anywhere\s+anywhere', line):
                                         catchall6 = True
                                         break
@@ -281,31 +291,36 @@ CONFIGURELINUXFIREWALL to False.'''
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception:
-            self.rulesuccess = False
+            self.compliant = False
             self.detailedresults += "\n" + traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("report", self.compliant,
-                                   self.detailedresults)
+        self.formatDetailedResults("report", self.compliant, self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+
         return self.compliant
 
     def fix(self):
-        '''Enable the firewall services and establish basic rules if needed.
+        """
+        Enable the firewall services and establish basic rules if needed
 
         @author: D. Kennel
+        """
 
+        self.iditerator = 0
+        self.detailedresults = ""
+        success = True
+        self.rulesuccess = True
 
-        '''
         try:
+
             if not self.clfci.getcurrvalue():
-                return
-            self.iditerator = 0
-            self.detailedresults = ""
-            success = True
+                return self.rulesuccess
+
             # delete past state change records from previous fix
             eventlist = self.statechglogger.findrulechanges(self.rulenumber)
             for event in eventlist:
                 self.statechglogger.deleteentry(event)
+
             #firewall-cmd portion
             if self.checkFirewalld():
                 if self.servicehelper.enableService('firewalld.service', serviceTarget=self.serviceTarget):
@@ -332,7 +347,7 @@ CONFIGURELINUXFIREWALL to False.'''
                     success = False
                 else:
                     outputufw = self.cmdhelper.getOutputString()
-                    if re.search('Status: inactive', outputufw):
+                    if re.search('Status:\s+inactive', outputufw):
                         ufwcmd = '/usr/sbin/ufw --force enable'
                         if not self.cmdhelper.executeCommand(ufwcmd):
                             self.detailedresults += "Unable to run " + \
@@ -351,7 +366,7 @@ CONFIGURELINUXFIREWALL to False.'''
                                 success = False
                             else:
                                 outputfw = self.cmdhelper.getOutputString()
-                                if not re.search("Default\:\ deny\ \(incoming\)", outputfw):
+                                if not re.search("Default:\s+deny\s+\(incoming\)", outputfw):
                                     ufwcmd = "/usr/sbin/ufw default deny incoming"
                                     if not self.cmdhelper.executeCommand(ufwcmd):
                                         self.detailedresults += "Unable to set default " + \
@@ -364,14 +379,14 @@ CONFIGURELINUXFIREWALL to False.'''
                                         event = {"eventtype": "commandstring",
                                                  "command": undocmd}
                                         self.statechglogger.recordchgevent(myid, event)
-                    elif re.search('Status: active', outputufw):
+                    elif re.search('Status:\s+active', outputufw):
                         cmdufw = "/usr/sbin/ufw status verbose"
                         if not self.cmdhelper.executeCommand(cmdufw):
                             self.detailedresults += "Cannot retrieve firewall rules\n"
                             success = False
                         else:
                             outputufw = self.cmdhelper.getOutputString()
-                            if not re.search("Default\:\ deny\ \(incoming\)", outputufw):
+                            if not re.search("Default:\s+deny\s+\(incoming\)", outputufw):
                                 ufwcmd = "/usr/sbin/ufw default deny incoming"
                                 if not self.cmdhelper.executeCommand(ufwcmd):
                                     self.detailedresults += "Unable to set default " + \
@@ -396,7 +411,6 @@ CONFIGURELINUXFIREWALL to False.'''
                                 self.logger.log(LogPriority.DEBUG, errmsg)
             else:
                 #following portion is mainly for debian and opensuse systems only
-
                 if os.path.exists("/etc/network/if-pre-up.d"):
                     self.iptScriptPath = "/etc/network/if-pre-up.d/iptables"
                     self.scriptType = "debian"
@@ -405,6 +419,8 @@ CONFIGURELINUXFIREWALL to False.'''
                     self.iptScriptPath = "/etc/sysconfig/scripts/SuSEfirewall2-custom"
                     self.scriptType = "suse"
                     servicename = "network"
+                else:
+                    servicename = ""
                 #this script will ensure that iptables gets configured
                 #each time the network restarts
                 iptables = self.getScriptValues("iptables")
@@ -535,7 +551,6 @@ CONFIGURELINUXFIREWALL to False.'''
                                     self.detailedresults += "Unable to set permissions on " + fwpath + "\n"
                         contents = readFile(fwpath, self.logger)
                         if contents != systemconfigfirewall:
-                            print "contents don't equal systemconfigurefirewall contents\n"
                             tempfile = fwpath + ".tmp"
                             if not writeFile(tempfile, systemconfigfirewall, self.logger):
                                 success = False
@@ -713,9 +728,13 @@ CONFIGURELINUXFIREWALL to False.'''
 
                      # Sleep for a bit to let the restarts occur
                     time.sleep(10)
-            self.rulesuccess = success
+
+            # check to see if the kernel was compiled with ipv6 support first
+            # if not, ignore failures related to ipv6
+            if self.supports_ipv6:
+                self.rulesuccess = success
+
         except (KeyboardInterrupt, SystemExit):
-            # User initiated exit
             raise
         except Exception:
             self.rulesuccess = False
