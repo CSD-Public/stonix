@@ -64,6 +64,17 @@ class KVAProfiles():
         self.badvalues = ""
         self.data = data
         for key, val in self.data.iteritems():
+            '''In some cases val will be blank in which case we're just
+                    looking for the presence of the profile or more specifically
+                    the identifier (key)'''
+            if not val:
+                for line in output:
+                    if re.search("^" + key, line.strip()):
+                        return True
+                '''We never found the profile, return False'''
+                debug = "The profile sub-identifier:" + key + " was not found\n"
+                self.logger.log(LogPriority.DEBUG, debug)
+                return False
             iterator1 = 0
             for line in output:
                 keyoutput = []
@@ -194,11 +205,19 @@ class KVAProfiles():
                         in v[0] which is either going to be a 1 or 0'''
                         if v["type"] == "bool":
                             if str(temp[1].strip()) != v["val"]:
-                                debug += "Key: " + k + " doesn't " + \
-                                    "contain the correct boolean " + \
-                                    "value\n"
-                                unsecure = True
-                                break
+                                if v["accept"]:
+                                    if temp[1].strip() != v["accept"]:
+                                        debug += "Key: " + k + " doesn't " + \
+                                            "contain the correct boolean " + \
+                                            "value\n"
+                                        unsecure = True
+                                        break
+                                else:
+                                    debug += "Key: " + k + " doesn't " + \
+                                             "contain the correct boolean " + \
+                                             "value\n"
+                                    unsecure = True
+                                    break
                             '''If the second value inside the list v is the word
                             int, then we want to make sure that our value found
                             after the = in our output matches what we're expecting
@@ -230,10 +249,17 @@ class KVAProfiles():
                             in v[0] which could be any string.'''
                         elif v["type"] == "string":
                             if temp[1].strip() != v["val"]:
-                                debug += "Key: " + k + " doesn't " + \
-                                    "contain the correct string value\n"
-                                unsecure = True
-                                break
+                                if v["accept"]:
+                                    if temp[1].strip() != v["accept"]:
+                                        debug += "Key: " + k + " doesn't " + \
+                                            "contain the correct string value\n"
+                                        unsecure = True
+                                        break
+                                else:
+                                    debug += "Key: " + k + " doesn't " + \
+                                             "contain the correct string value\n"
+                                    unsecure = True
+                                    break
                 except IndexError:
                     debug += "Profile in bad format\n"
                     break

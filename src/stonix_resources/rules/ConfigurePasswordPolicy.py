@@ -126,7 +126,7 @@ class ConfigurePasswordPolicy(Rule):
             self.compliant = True
             self.detailedresults = ""
             if not self.passprofile:
-                self.detailedresults += "Could not determine the appropriate password policy profile for your system.\n"
+                self.detailedresults += "Could not locate the appropriate password policy profile for your system.\n"
                 self.compliant = False
                 self.formatDetailedResults("report", self.compliant, self.detailedresults)
                 self.logdispatch.log(LogPriority.INFO, self.detailedresults)
@@ -138,16 +138,6 @@ class ConfigurePasswordPolicy(Rule):
                 self.logdispatch.log(LogPriority.INFO, self.detailedresults)
                 return self.compliant
             if self.fismacat == "high":
-                # self.pwprofiledict = {"com.apple.mobiledevice.passwordpolicy": {"allowSimple": ["0", "bool"],
-                #                                                                 "forcePIN": ["1", "bool"],
-                #                                                                 "maxFailedAttempts": ["3", "int", "less"],
-                #                                                                 "maxGracePeriod":["0", "string"],
-                #                                                                 "maxPINAgeInDays": ["60", "int", "less"],
-                #                                                                 "minComplexChars": ["1", "int", "more"],
-                #                                                                 "minLength": ["15", "int", "more"],
-                #                                                                 "minutesUntilFailedLoginReset": ["15", "int", "more"],
-                #                                                                 "pinHistory": ["25", "int", "more"],
-                #                                                                 "requireAlphanumeric": ["1", "bool"]}}
                 self.pwprofiledict = {"com.apple.mobiledevice.passwordpolicy": {"allowSimple": {"val": "0",
                                                                                                 "type": "bool",
                                                                                                 "accept": "",
@@ -161,7 +151,7 @@ class ConfigurePasswordPolicy(Rule):
                                                                                                       "accept": "less",
                                                                                                       "result": False},
                                                                                 "maxGracePeriod": {"val": "0",
-                                                                                                   "type": "string",
+                                                                                                   "type": "int",
                                                                                                    "accept": "",
                                                                                                    "result": False},
                                                                                 "maxPINAgeInDays": {"val": "60",
@@ -191,7 +181,7 @@ class ConfigurePasswordPolicy(Rule):
             else:
                 self.pwprofiledict = {"com.apple.mobiledevice.passwordpolicy": {"allowSimple": {"val": "1",
                                                                                                 "type": "bool",
-                                                                                                "accept": "",
+                                                                                                "accept": "0",
                                                                                                 "result": False},
                                                                                 "forcePIN": {"val": "1",
                                                                                              "type": "bool",
@@ -201,9 +191,9 @@ class ConfigurePasswordPolicy(Rule):
                                                                                                       "type": "int",
                                                                                                       "accept": "less",
                                                                                                       "result": False},
-                                                                                "maxGracePeriod":{"val": "15",
-                                                                                                  "type": "string",
-                                                                                                  "accept": "",
+                                                                                "maxGracePeriod": {"val": "15",
+                                                                                                  "type": "int",
+                                                                                                  "accept": "less",
                                                                                                   "result": False},
                                                                                 "maxPINAgeInDays": {"val": "180",
                                                                                                     "type": "int",
@@ -211,7 +201,7 @@ class ConfigurePasswordPolicy(Rule):
                                                                                                     "result": False},
                                                                                 "minComplexChars": {"val": "1",
                                                                                                     "type": "int",
-                                                                                                    "accept":"more",
+                                                                                                    "accept": "more",
                                                                                                     "result": False},
                                                                                 "minLength": {"val": "8",
                                                                                               "type": "int",
@@ -229,19 +219,6 @@ class ConfigurePasswordPolicy(Rule):
                                                                                                         "type": "bool",
                                                                                                         "accept": "",
                                                                                                         "result": False}}}
-            # self.secdict = {"com.apple.applicationaccess": {"allowAutoUnlock": ["0", "bool"]},
-            #                 "com.apple.security.firewall": {"Applications": (),
-            #                                                 "BlockAllIncoming": ["0", "bool"],
-            #                                                 "EnableFirewall": ["0", "bool"],
-            #                                                 "EnableStealthMode": ["0", "bool"]},
-            #                 "com.apple.systempolicy.control":{"AllowIdentifiedDevelopers": ["1", "bool"],
-            #                                                   "EnableAssessment": ["0", "bool"]},
-            #                 "com.apple.screensaver": {"askForPassword": ["1", "bool"],
-            #                                           "askForPasswordDelay": ["5", "int", "less"]},
-            #                 "com.apple.preference.security": {"dontAllowLockMessageUI": ["1", "bool"]},
-            #                 "com.apple.SubmitDiagInfo": {"AutoSubmit": ["0", "bool"]},
-            #                 "com.apple.MCX": {"DestroyFVKeyOnStandby": ["0", "bool"],
-            #                                   "dontAllowFDEDisable":["0", "bool"]}}
             self.secdict = {"com.apple.applicationaccess": {"allowAutoUnlock": {"val": "0",
                                                                                 "type": "bool",
                                                                                 "accept": "",
@@ -336,12 +313,17 @@ class ConfigurePasswordPolicy(Rule):
         try:
 
             self.detailedresults = ""
-            self.rulesuccess = True
-            if self.pwci.getcurrvalue() or self.sci.getcurrvalue():
-                self.iditerator = 0
-                eventlist = self.statechglogger.findrulechanges(self.rulenumber)
-                for event in eventlist:
-                    self.statechglogger.deleteentry(event)
+            success = True
+            if not self.pwci and not self.sci.getcurrvalue():
+                self.detailedresults += "Neither configuration item was enabled\n"
+                self.rulesuccess = False
+                self.formatDetailedResults("report", self.rulesuccess, self.detailedresults)
+                self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+                return self.rulesuccess
+            self.iditerator = 0
+            eventlist = self.statechglogger.findrulechanges(self.rulenumber)
+            for event in eventlist:
+                self.statechglogger.deleteentry(event)
             # if the primary rule CI is enabled, then run the fix actions for this rule
             if self.pwci.getcurrvalue():
                 if not self.pweditor.report():
@@ -350,15 +332,17 @@ class ConfigurePasswordPolicy(Rule):
                         myid = iterate(self.iditerator, self.rulenumber)
                         self.pweditor.setEventID(myid)
                         if not self.pweditor.commit():
-                            self.rulesuccess = False
+                            success = False
+                            self.detailedresults += "Unable to install " + self.passprofile + "profile\n"
                             self.logdispatch.log(LogPriority.DEBUG, "Kveditor commit failed")
                     else:
-                        self.rulesuccess = False
+                        success = False
+                        self.detailedresults += "Unable to install " + self.passprofile + "profile\n"
                         self.logdispatch.log(LogPriority.DEBUG, "Kveditor fix failed")
                 else:
-                    self.detailedresults += "Password policy profile was already installed. Nothing to do.\n"
+                    self.detailedresults += "Password policy profile was already installed.\n"
             else:
-                self.rulesuccess = False
+                success = False
                 self.detailedresults += "Password CI was not enabled.\n"
             # if the primary rule CI is enabled, then run the fix actions for this rule
             if self.sci.getcurrvalue():
@@ -368,16 +352,19 @@ class ConfigurePasswordPolicy(Rule):
                         myid = iterate(self.iditerator, self.rulenumber)
                         self.seceditor.setEventID(myid)
                         if not self.seceditor.commit():
-                            self.rulesuccess = False
+                            success = False
+                            self.detailedresults += "Unable to install " + self.secprofile + "profile\n"
                             self.logdispatch.log(LogPriority.DEBUG, "Kveditor commit failed")
                     else:
-                        self.rulesuccess = False
+                        success = False
+                        self.detailedresults += "Unable to install " + self.secprofile + "profile\n"
                         self.logdispatch.log(LogPriority.DEBUG, "Kveditor fix failed")
                 else:
-                    self.detailedresults += "Security and privacy profile was already installed. Nothing to do."
+                    self.detailedresults += "Security and privacy profile was already installed.\n"
             else:
-                self.rulesuccess = False
+                success = False
                 self.detailedresults += "Security and privacy CI was not enabled.\n"
+            self.rulesuccess = success
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception:
