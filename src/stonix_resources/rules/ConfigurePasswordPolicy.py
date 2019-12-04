@@ -24,6 +24,7 @@ Created on Feb 10, 2015
 @change: 2017/03/30 dkennel Setting this to FISMA high until Apple fixes bugs
 @change: 2017/08/28 ekkehard - Added self.sethelptext()
 @change: 2019/07/17 Brandon R. Gonzales - Make applicable to MacOS 10.13-10.14
+@change: 2019/12/4 dwalker - updated rule to use the updated profile helper
 '''
 
 from __future__ import absolute_import
@@ -81,23 +82,23 @@ class ConfigurePasswordPolicy(Rule):
 
         self.passprofile = ""
         self.secprofile = ""
-        # baseconfigpath = "/Applications/stonix4mac.app/Contents/Resources/stonix.app/Contents/MacOS/stonix_resources/files/"
-        # if self.fismacat == "high":
-        #     self.passprofile = baseconfigpath + "stonix4macPasscodeConfigurationProfile-high.mobileconfig"
-        #     self.secprofile = baseconfigpath + "stonix4macSecurity&PrivacyConfigurationProfile.mobileconfig"
-        # else:
-        #     self.passprofile = baseconfigpath + "stonix4macPasscodeConfigurationProfile.mobileconfig"
-        #     self.secprofile = baseconfigpath + "stonix4macSecuritySecurity&PrivacyConfigurationProfile.mobileconfig"
+        baseconfigpath = "/Applications/stonix4mac.app/Contents/Resources/stonix.app/Contents/MacOS/stonix_resources/files/"
+        if self.fismacat == "high":
+            self.passprofile = baseconfigpath + "stonix4macPasscodeConfigurationProfile-high.mobileconfig"
+            self.secprofile = baseconfigpath + "stonix4macSecurity&PrivacyConfigurationProfile.mobileconfig"
+        else:
+            self.passprofile = baseconfigpath + "stonix4macPasscodeConfigurationProfile.mobileconfig"
+            self.secprofile = baseconfigpath + "stonix4macSecuritySecurity&PrivacyConfigurationProfile.mobileconfig"
 
         # the following path and dictionaries are for testing on local vm's
         # without installing stonix package each time.  DO NOT DELETE
-        basetestpath = "/Users/dwalker/stonix/src/stonix_resources/files/"
-        if self.fismacat == "high":
-            self.passprofile = basetestpath + "stonix4macPasscodeConfigurationProfile-high.mobileconfig"
-            self.secprofile = basetestpath + "stonix4macSecurity&PrivacyConfigurationProfile.mobileconfig"
-        else:
-            self.passprofile = basetestpath + "stonix4macPasscodeConfigurationProfile.mobileconfig"
-            self.secprofile = basetestpath + "stonix4macSecurity&PrivacyConfigurationProfile.mobileconfig"
+        # basetestpath = "/Users/username/stonix/src/stonix_resources/files/"
+        # if self.fismacat == "high":
+        #     self.passprofile = basetestpath + "stonix4macPasscodeConfigurationProfile-high.mobileconfig"
+        #     self.secprofile = basetestpath + "stonix4macSecurity&PrivacyConfigurationProfile.mobileconfig"
+        # else:
+        #     self.passprofile = basetestpath + "stonix4macPasscodeConfigurationProfile.mobileconfig"
+        #     self.secprofile = basetestpath + "stonix4macSecurity&PrivacyConfigurationProfile.mobileconfig"
         if not os.path.exists(self.passprofile):
             self.logger.log(LogPriority.DEBUG, "Could not locate appropriate password policy profile\n")
             self.passprofile = ""
