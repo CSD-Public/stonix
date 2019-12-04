@@ -45,19 +45,16 @@ dictionary
 @change 2019/10/08 dwalker - updated rule to use softwareupdate command
             when setting catalogurl.  Implemented proper event recording
             for undo. Removed unecessary 10.9 code as no longer supported
+@change 2019/12/4 dwalker - changed rule to no longer set a custom update URL
+    and point to apple's update server.
 """
 
 from __future__ import absolute_import
-
 import re
 import traceback
-
 from ..ruleKVEditor import RuleKVEditor
 from ..CommandHelper import CommandHelper
 from ..logdispatcher import LogPriority
-from ..localize import APPLESOFTUPDATESERVER
-from ..stonixutilityfunctions import iterate
-
 
 class ConfigureAppleSoftwareUpdate(RuleKVEditor):
     """Mac Only rule:
@@ -128,20 +125,15 @@ class ConfigureAppleSoftwareUpdate(RuleKVEditor):
             commerce_path = "com.apple.commerce"
 
         self.ccurlci = None
-        if self.checkConsts([APPLESOFTUPDATESERVER]):
-            if self.environ.geteuid() == 0:
-                # ConfigureCatalogURL ci needs to be set up manually because
-                # it is reported with kveditor and fixed with command helper
-                datatype = 'bool'
-                key = 'CONFIGURECATALOGURL'
-                instructions = "Set software update server (AppleCatalogURL) to '" + \
-                               str(APPLESOFTUPDATESERVER) + \
-                               "'. This should always be enabled. If disabled " + \
-                               " it will point to the Apple Software Update " + \
-                               "Server. NOTE: your system will report as not " + \
-                               "compliant if you disable this option."
-                default = True
-                self.ccurlci = self.initCi(datatype, key, instructions, default)
+        if self.environ.geteuid() == 0:
+            # ConfigureCatalogURL ci needs to be set up manually because
+            # it is reported with kveditor and fixed with command helper
+            datatype = 'bool'
+            key = 'CONFIGURECATALOGURL'
+            instructions = "Set software update server (AppleCatalogURL) to '" + \
+                           "Apple's catalog URL"
+            default = True
+            self.ccurlci = self.initCi(datatype, key, instructions, default)
         self.addKVEditor("EnableAutomaticDownload",
                          "defaults",
                          softwareupdate_path,
@@ -270,55 +262,17 @@ class ConfigureAppleSoftwareUpdate(RuleKVEditor):
             detailedresults = ""
             if not RuleKVEditor.report(self, True):
                 compliant = False
-            if not self.checkConsts([APPLESOFTUPDATESERVER]):
-                compliant = False
-                detailedresults += "The Configure Catalogue URL " + \
-                    "portion of this rule requires that the constant: " + \
-                    "APPLESOFTWAREUPDATESERVER be defined and not None. " + \
-                    "Please ensure this constant is set properly in " + \
-                    "localize.py\n"
-            else:
-                if self.environ.geteuid() == 0:
-                    if self.ccurlci is not None:
-                        cmd = "/usr/bin/defaults read /Library/Preferences/com.apple.SoftwareUpdate AppleCatalogURL"
-                        if self.ch.executeCommand(cmd):
-                            output = self.ch.getOutputString()
-                            #This condition checks if our output matches the catalogURL
-                            #we set in localize.py and if the ci was enabled.  complicancy
-                            #is False if ci was enabled but URL doesn't match that in
-                            #localize.py
-                            if self.ccurlci.getcurrvalue():
-                                if output.strip() != APPLESOFTUPDATESERVER:
-                                    self.detailedresults += "Apple catalog URL is not set to " + APPLESOFTUPDATESERVER + "\n"
-                                    self.originalserver = output.strip()
-                                    compliant = False
-                            #This condition checks if our ci wasn't enabled, this should
-                            #find the output to be cleared and contain the words does not
-                            #exist. If the words does not exist don't appear in the output
-                            #compliancy is False
-                            elif not self.ccurlci.getcurrvalue():
-                                if output.strip() != "":
-                                    self.detailedresults += "CI for apple catalog url is unchecked " + \
-                                        "which means catalog url should not be set, but url is " + \
-                                        "pointing to another location\n"
-                                    self.originalserver = output.strip()
-                                    compliant = False
-                                #However, because the rule requires the CI to be enabled, at
-                                #least for now, even if the words does not exist are found
-                                #in the output and the CI is not enabled, this is still
-                                #not compliant. We may eventually make this be compliant = True
-                                elif output.strip() == "":
-                                    compliant = False
-                                    detailedresults += "The Configure Catalogue URL " + \
-                                                       "portion of this rule requires that " + \
-                                                       "the ci: CONFIGURECATALOGURL be " + \
-                                                       "enabled. Please enable this " + \
-                                                       "configuration item either in the " + \
-                                                       "STONIX GUI or stonix.conf\n"
-                        else:
-                            self.detailedresults += "Unable to run defaults command " + \
-                                "to retrieve the Apple catalog URL\n"
-                            compliant = False
+            if self.environ.geteuid() == 0:
+                cmd = "/usr/bin/defaults read /Library/Preferences/com.apple.SoftwareUpdate AppleCatalogURL"
+                if self.ch.executeCommand(cmd):
+                    #we want an error code of 1 which means that the catalog url is set to apple's
+                    if self.ch.getReturnCode() != 1:
+                        compliant = False
+                        self.detailedresults += "Catalog URL is not set to Apple's update URL\n"
+                else:
+                    self.detailedresults += "Unable to run defaults command " + \
+                        "to retrieve the Apple catalog URL\n"
+                    compliant = False
                         
             # The KVEditor object for "RecommendedUpdates" may require a manual
             # fix (running apple software updates). Here is where we instruct the
@@ -367,67 +321,25 @@ class ConfigureAppleSoftwareUpdate(RuleKVEditor):
         :return: self.rulesuccess - True if fix was successful, False otherwise
         :rtype: bool
         """
-
-        success = True
-        detailedresults = ""
-        self.iditerator = 0
-        eventlist = self.statechglogger.findrulechanges(self.rulenumber)
-        for event in eventlist:
-            self.statechglogger.deleteentry(event)
-        if not RuleKVEditor.fix(self, True):
-            success = False
         try:
+            success = True
+            detailedresults = ""
+            self.iditerator = 0
+            eventlist = self.statechglogger.findrulechanges(self.rulenumber)
+            for event in eventlist:
+                self.statechglogger.deleteentry(event)
+            if not RuleKVEditor.fix(self, True):
+                success = False
             if self.environ.geteuid() == 0:
-                if self.checkConsts([APPLESOFTUPDATESERVER]) and self.ccurlci != None:
+                if self.ccurlci != None:
                     if self.ccurlci.getcurrvalue():
-                        cmd1 = "/usr/sbin/softwareupdate --set-catalog " + str(APPLESOFTUPDATESERVER)
+                        cmd1 = "/usr/sbin/softwareupdate --clear-catalog"
                         if not self.ch.executeCommand(cmd1):
                             self.detailedresults += "Unable to set the " + \
-                                "catalogURL to " + APPLESOFTUPDATESERVER + "\n"
+                                "catalogURL to back to Apple's\n"
                             success = False
-                        else:
-                            self.iditerator += 1
-                            myid = iterate(self.iditerator, self.rulenumber)
-                            if self.originalserver:
-                                undocmd = "/usr/sbin/softwareupdate --set-catalog " + self.originalserver
-                                event = {"eventtype": "comm",
-                                         "command": undocmd}
-                                self.statechglogger.recordchgevent(myid, event)
-                            else:
-                                undocmd = "/usr/sbin/softwareupdate --clear-catalog"
-                                event = {"eventtype": "comm",
-                                         "command": undocmd}
-                                self.statechglogger.recordchgevent(myid, event)
-                    else:
-                        cmd2 = ["/usr/sbin/softwareupdate", "--clear-catalog"]
-                        if not self.ch.executeCommand(cmd2):
-                            self.detailedresults += "Unable to clear the " + \
-                                "catalogURL setting\n"
-                            success = False
-                        else:
-                            if self.originalserver:
-                                self.iditerator += 1
-                                myid = iterate(self.iditerator, self.rulenumber)
-                                undocmd = "/usr/sbin/softwareupdate --set-catalog " + self.originalserver
-                                event = {"eventtype": "comm",
-                                         "command": undocmd}
-                                self.statechglogger.recordchgevent(myid, event)
-                            else:
-                                self.detailedresults += "Was able to clear " + \
-                                    "the catalogURL setting however this is " + \
-                                    "currently required to be set to a local " + \
-                                    "server\n"
-                            success = False
-                else:
-                    success = False
-                    detailedresults += "\nThe Configure Catalogue URL " + \
-                        "portion of this rule requires that the constant: " + \
-                        "APPLESOFTWAREUPDATESERVER be defined and not None. " + \
-                        "Please ensure this constant is set properly in " + \
-                        "localize.py"
             self.rulesuccess = success
             self.resultAppend(detailedresults)
-
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception:
