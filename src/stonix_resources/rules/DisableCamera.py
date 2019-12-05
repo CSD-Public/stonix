@@ -77,12 +77,12 @@ class DisableCamera(Rule):
 
     def setvars(self):
         self.camprofile = ""
-        # baseconfigpath = "/Applications/stonix4mac.app/Contents/" + \
-        #                      "Resources/stonix.app/Contents/MacOS/" + \
-        #                      "stonix_resources/files/"
-        # self.camprofile = baseconfigpath + "stonix4macCameraDisablement.mobileconfig"
-        basetestpath = "/Users/dwalker/stonix/src/stonix_resources/files/"
-        self.camprofile = basetestpath + "stonix4macCameraDisablement.mobileconfig"
+        baseconfigpath = "/Applications/stonix4mac.app/Contents/" + \
+                             "Resources/stonix.app/Contents/MacOS/" + \
+                             "stonix_resources/files/"
+        self.camprofile = baseconfigpath + "stonix4macCameraDisablement.mobileconfig"
+        # basetestpath = "/Users/username/stonix/src/stonix_resources/files/"
+        # self.camprofile = basetestpath + "stonix4macCameraDisablement.mobileconfig"
         if not os.path.exists(self.camprofile):
             self.logger.log(LogPriority.DEBUG, "Could not locate appropriate camera disablement profile\n")
             self.camprofile = ""
