@@ -363,31 +363,32 @@ class KVEditor(object):
             return False
 
     def validateProfiles(self):
-        '''@since: 3/10/2016
+        '''
+        @since: 3/10/2016
         @author: dwalker
-        @var self.data: A dictionary in the form of {k: {v: ["numberValue",
-                                                             "datatype",
-                                                             "acceptableDeviation"(optional)],
-                                                        v: ["", "", ""],
-                                                        v: ["", "", ""],
-                                                        .
-                                                        .
-                                                        .}}
+        @var self.data: A dictionary in the form of {k: {v: {"val": "value",
+                                                             "type": ("int", "string", "bool"),
+                                                             "accept"(optional): ("more", "less", val),
+                                                             "result": False},
+                                                        v: {"":"",
+                                                            "":"",
+                                                            "":"",
+                                                            "":""}}}
         @var: k: The profile sub-identifier e.g.
             com.apple.mobiledevice.passwordpolicy
         @var v: The profile data key-value pairs in a dictionary e.g.
             allowSimple that will appear in the output of the system_profiler
             command within the first opening brace after the profile
-            sub-identifier.  v also contains an associated list containing:
-            [a,b,c]
-            a) the value on the other side of the = sign
-            b) whether that value is an integer(int) or a boolean(bool)
-            c) (optional) whether the value present after the = sign(a),
+            sub-identifier.  v also contains an associated dict containing:
+            {a,b,c,d}
+            a) val - the value on the other side of the = sign
+            b) type - whether that value is an integer(int), boolean(bool), or string
+            c) accept - (optional) whether the value present after the = sign(a),
                 if an int, can be lower(less) or higher(more) in order to
-                detect and represent stringency (see self.data description
-                above).
-
-
+                detect and represent stringency, or if any other string or bool
+                is acceptable.
+            d)result - default value of False, changes to True when we find the
+                desired key value pair.
         :returns: Value returned from validate method in factory sub-class
 
         :rtype: bool
@@ -397,12 +398,16 @@ class KVEditor(object):
         self.ch = CommandHelper(self.logger)
         if self.ch.executeCommand(cmd):
             self.output = self.ch.getOutput()
-            retval = True
             if self.output:
-                for k, v in list(self.data.items()):
-                    retval = self.editor.validate(self.output, k, v)
-                    if not retval:
-                        return False
+                retval = True
+                resultdict = self.editor.validate(self.output, self.data)
+                if resultdict:
+                    self.data = resultdict
+                    for k, v in self.data.items():
+                        for k2, v2 in v.items():
+                            if v2["result"] == False:
+                                retval = False
+                return retval
             else:
                 debug = "There are no profiles installed"
                 self.logger.log(LogPriority.DEBUG, debug)
