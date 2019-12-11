@@ -138,7 +138,6 @@ class DisableRemoveableStorage(Rule):
                 compliant = self.reportMac()
             else:
                 compliant = self.reportLinux()
-
             self.compliant = compliant
         except OSError:
             self.detailedresults = traceback.format_exc()
