@@ -343,21 +343,31 @@ class DisableRemoveableStorage(Rule):
 
         self.detailedresults = ""
         compliant = False
-
-        checkcroncmd = "/usr/bin/crontab -l"
-        self.ch.executeCommand(checkcroncmd)
-        output = self.ch.getOutput()
-        for line in output:
-            if re.search("\@reboot /bin/launchctl unload /System/Library/LaunchDaemons/com\.apple\.diskarbitrationd\.plist", line):
-                compliant = True
-                break
-
-        if not compliant:
-            self.detailedresults += "Missing required system cron job\n"
-
+        if not self.usbprofile:
+            self.detailedresults += "Could not locate the appropriate usb disablement profile for your system.\n"
+            self.compliant = False
+            self.formatDetailedResults("report", self.compliant, self.detailedresults)
+            self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+            return self.compliant
+        self.usbdict = {"com.apple.systemuiserver": {"harddisk-external": {"val": ("deny"),
+                                                                           "type": "",
+                                                                           "accept": "",
+                                                                           "result": False}}}
+        
         return compliant
 
+    def setvars(self):
+        self.usbprofile = ""
+        baseconfigpath = "/Applications/stonix4mac.app/Contents/Resources/stonix.app/Contents/MacOS/stonix_resources/files/"
+        self.usbprofile = baseconfigpath + "stonix4macDisableUSB.mobileconfig"
 
+        # the following path and dictionaries are for testing on local vm's
+        # without installing stonix package each time.  DO NOT DELETE
+        # basetestpath = "/Users/username/stonix/src/stonix_resources/files/"
+        # self.usbprofile = basetestpath + "stonix4macDisableUSB.mobileconfig"
+        if not os.path.exists(self.usbprofile):
+            self.logger.log(LogPriority.DEBUG, "Could not locate appropriate usb disablement profile\n")
+            self.usbprofile = ""
     def fix(self):
         '''attempt to perform necessary operations to bring the system into
         compliance with this rule.
