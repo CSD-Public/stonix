@@ -442,9 +442,12 @@ class ConfigureLinuxFirewall(Rule):
                         self.logdispatch.log(LogPriority.DEBUG, "ipt script type is 'debian'")
 
                         if self.iprestore and self.supports_ipv6:
-                            iptScript = '#!/bin/bash\n' + self.iprestore + \
-                                        ' <<< "' + iptables + '"\n' + self.ip6restore + \
+                            self.logdispatch.log(LogPriority.DEBUG, "System supports ipv6. Adding ip6tables entry to startup script...")
+                            iptScript = '#!/bin/bash\n' + self.iprestore + ' <<< "' + iptables + '"\n' + self.ip6restore + \
                                         ' <<< "' + ip6tables + '"'
+                        elif self.iprestore:
+                            self.logdispatch.log(LogPriority.DEBUG, "System does NOT support ipv6. Using only iptables in startup script...")
+                            iptScript = '#!/bin/bash\n' + self.iprestore + ' <<< "' + iptables + '"'
                     else:
                         iptScript = self.getScriptValues("iptscript")
 
@@ -498,14 +501,17 @@ class ConfigureLinuxFirewall(Rule):
                                 debug = "Unable to save current ipv4 " + \
                                         "firewall rules for revert\n"
                                 self.logger.log(LogPriority.DEBUG, debug)
-                            save6cmd = "/sbin/ip6tables-save > " + stonixfilepath + "user-firewall6-pre-stonix"
-                            if not self.cmdhelper.executeCommand(save6cmd):
-                                success = False
-                                self.detailedresults += "Unable to save current ipv6 " + \
-                                                        "firewall rules for revert\n"
-                                debug = "Unable to save current ipv6 " + \
-                                        "firewall rules for revert\n"
-                                self.logger.log(LogPriority.DEBUG, debug)
+
+                            if self.supports_ipv6:
+                                save6cmd = "/sbin/ip6tables-save > " + stonixfilepath + "user-firewall6-pre-stonix"
+                                if not self.cmdhelper.executeCommand(save6cmd):
+                                    success = False
+                                    self.detailedresults += "Unable to save current ipv6 " + \
+                                                            "firewall rules for revert\n"
+                                    debug = "Unable to save current ipv6 " + \
+                                            "firewall rules for revert\n"
+                                    self.logger.log(LogPriority.DEBUG, debug)
+
                             self.servicehelper.stopService(servicename)
 
                             if not self.servicehelper.startService(servicename):
@@ -521,18 +527,17 @@ class ConfigureLinuxFirewall(Rule):
                                 event = {"eventtype": "commandstring",
                                          "command": cmd}
                                 self.statechglogger.recordchgevent(myid, event)
-                                self.iditerator += 1
-                                myid = iterate(self.iditerator, self.rulenumber)
-                                cmd = "/sbin/ip6tables-restore < " + stonixfilepath + "user-firewall6-pre-stonix"
-                                event = {"eventtype": "commandstring",
-                                         "command": cmd}
-                                self.statechglogger.recordchgevent(myid, event)
+                                if self.supports_ipv6:
+                                    self.iditerator += 1
+                                    myid = iterate(self.iditerator, self.rulenumber)
+                                    cmd = "/sbin/ip6tables-restore < " + stonixfilepath + "user-firewall6-pre-stonix"
+                                    event = {"eventtype": "commandstring",
+                                             "command": cmd}
+                                    self.statechglogger.recordchgevent(myid, event)
 
                     else:
                         success = False
-                        self.detailedresults += "There is no iptables startup script\n"
-                        debug = "There is no iptables startup script\n"
-                        self.logger.log(LogPriority.DEBUG, debug)
+                        self.detailedresults += "\nFailed to configure network startup script"
 
                 #this portion mostly applies to RHEL6 and Centos6
                 if os.path.exists('/usr/bin/system-config-firewall') or os.path.exists('/usr/bin/system-config-firewall-tui'):
