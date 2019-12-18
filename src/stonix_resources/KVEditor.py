@@ -365,8 +365,10 @@ class KVEditor(object):
             return False
 
     def validateProfiles(self):
-        '''@since: 3/10/2016
+        '''
+        @since: 3/10/2016
         @author: dwalker
+<<<<<<< HEAD
         @var self.data: A dictionary in the form of:
             {"identifier": {"key1": {"val": [list]|"string",
                                     "type": "list"|"string"|"bool"|"int"

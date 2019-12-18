@@ -122,7 +122,6 @@ class ConfigurePasswordPolicy(Rule):
         third item in nested list (if int) is whether the allowable value
             is allowed to be more or less and still be ok
             "more", "less"
-
         @author: Derek Walker
         '''
         try:
@@ -368,10 +367,10 @@ class ConfigurePasswordPolicy(Rule):
                         self.detailedresults += "Unable to install " + self.secprofile + "profile\n"
                         self.logdispatch.log(LogPriority.DEBUG, "Kveditor fix failed")
                 else:
-                    self.detailedresults += "Security and privacy profile was already installed.\n"
+                    self.detailedresults += "Password policy profile was already installed.\n"
             else:
                 success = False
-                self.detailedresults += "Security and privacy CI was not enabled.\n"
+                self.detailedresults += "Password CI was not enabled.\n"
             self.rulesuccess = success
         except (KeyboardInterrupt, SystemExit):
             raise

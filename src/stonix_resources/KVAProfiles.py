@@ -121,9 +121,9 @@ class KVAProfiles(object):
                                         payloadblock.append(payloadblocktemp[i] + line)
                                     else:
                                         payloadblock.append(payloadblocktemp[i])
-                                except IndexError:
+                                except IndexError as err:
                                     debug = "File in bad format, fix will install profile\n"
-                                    self.logger.log(LogPriority.DEBUG, debug)
+                                    self.logger.log(LogPriority.DEBUG, [debug, err])
                                     return False
                             elif re.search("\($", payloadblocktemp[i]):
                                 try:
@@ -133,9 +133,9 @@ class KVAProfiles(object):
                                         payloadblock.append(payloadblocktemp[i] + line)
                                     else:
                                         payloadblock.append(payloadblocktemp[i])
-                                except IndexError:
+                                except IndexError as err:
                                     debug = "File in bad format, fix will install profile\n"
-                                    self.logger.log(LogPriority.DEBUG, debug)
+                                    self.logger.log(LogPriority.DEBUG, [debug, err])
                                     return False
                             else:
                                 payloadblock.append(payloadblocktemp[i])

@@ -44,12 +44,10 @@ from stonixutilityfunctions import iterate
 import os
 import traceback
 
-
 class DisableCamera(Rule):
 
     def __init__(self, config, environ, logger, statechglogger):
         '''
-
         :param config:
         :param environ:
         :param logger:
@@ -74,56 +72,68 @@ class DisableCamera(Rule):
         instructions = "To disable the built-in iSight camera, set the value of DISABLECAMERA to True."
         default = False
         self.ci = self.initCi(datatype, key, instructions, default)
-        self.camidentifier = "041AD784-F0E2-40F5-9433-08ED6B105DDA"
-        self.camprofile = "/Applications/stonix4mac.app/Contents/" + \
+        self.setvars()
+
+    def setvars(self):
+        self.camprofile = ""
+        baseconfigpath = "/Applications/stonix4mac.app/Contents/" + \
                              "Resources/stonix.app/Contents/MacOS/" + \
-                             "stonix_resources/files/" + \
-                             "stonix4macCameraDisablement.mobileconfig"
-#         self.camprofile = "/Users/user/stonix/src/" + \
-#                          "stonix_resources/files/" + \
-#                          "stonix4macCameraDisablement.mobileconfig"
+                             "stonix_resources/files/"
+        self.camprofile = baseconfigpath + "stonix4macCameraDisablement.mobileconfig"
+        # basetestpath = "/Users/username/stonix/src/stonix_resources/files/"
+        # self.camprofile = basetestpath + "stonix4macCameraDisablement.mobileconfig"
+        if not os.path.exists(self.camprofile):
+            self.logger.log(LogPriority.DEBUG, "Could not locate appropriate camera disablement profile\n")
+            self.camprofile = ""
+
     def report(self):
         '''check for the existence of the AppleCameraInterface driver in the
         output of kexstat. Report non-compliant if found. Report compliant
         if not found.
-
-
         :returns: self.compliant
-
         :rtype: bool
-@author: Breen Malmberg
-@change: dwalker - ??? - ???
-@change: Breen Malmberg - 1/19/2017 - minor doc string edit; minor refactor
-@change: dwalker 10/3/2017 updated to check for a profile value
-
+        @author: Breen Malmberg
+        @change: dwalker - ??? - ???
+        @change: Breen Malmberg - 1/19/2017 - minor doc string edit; minor refactor
+        @change: dwalker 10/3/2017 updated to check for a profile value
         '''
         try:
             self.detailedresults = ""
             self.compliant = True
+            if not self.camprofile:
+                self.detailedresults += "Could not locate the appropriate camera disablement profile for your system.\n"
+                self.compliant = False
+                self.formatDetailedResults("report", self.compliant, self.detailedresults)
+                self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+                return self.compliant
             if os.path.exists(self.camprofile):
-                cameradict = {"com.apple.applicationaccess":
-                              {"allowCamera": ["0", "bool"]}}
+                cameradict = {"com.apple.applicationaccess": {"allowCamera": {"val": "0",
+                                                                              "type": "bool",
+                                                                              "accept": "",
+                                                                              "result": False}}}
                 self.cameditor = KVEditorStonix(self.statechglogger, self.logger,
-                                                       "profiles", self.camprofile, "",
-                                                       cameradict, "", "")
+                                                "profiles", self.camprofile, "",
+                                                cameradict, "", "")
                 if not self.cameditor.report():
                     self.detailedresults += "iSight camera is not disabled\n"
                     self.compliant = False
             else:
                 self.detailedresults += self.camprofile + " doesn't exist\n"
                 self.compliant = False
-            self.detailedresults += "If your system is reporting non compliant and you " + \
-                "don't have a physical camera installed, be aware this is normal behavior.\n"
+            self.detailedresults += "Due to a Mac OS issue, having multiple camera profiles " + \
+                                    "installed with conflicting values may allow any camera, " + \
+                                    "internal or external to still function. If a rule is coming " + \
+                                    "back compliant but your camera is still working, check your " + \
+                                    "installed profiles and remove any other restriction based profiles.\n"
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception as err:
             self.rulesuccess = False
             self.detailedresults = self.detailedresults + "\n" + str(err) + \
-                " - " + str(traceback.format_exc())
+                                   " - " + str(traceback.format_exc())
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("report", self.compliant, self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
-
         return self.compliant
 
     def fix(self):
@@ -131,16 +141,12 @@ class DisableCamera(Rule):
         unload it and disable the iSight camera.
         return True if the command succeeds. return False if
         the command fails.
-
-
         :returns: success
-
         :rtype: bool
-@author: Breen Malmberg
-@change: dwalker - ??? - ???
-@change: Breen Malmberg - 1/19/2017 - minor doc string edit; minor refactor
-@change: dwalker 10/3/2017 updated to check for a profile value
-
+        @author: Breen Malmberg
+        @change: dwalker - ??? - ???
+        @change: Breen Malmberg - 1/19/2017 - minor doc string edit; minor refactor
+        @change: dwalker 10/3/2017 updated to check for a profile value
         '''
 
         try:
@@ -148,37 +154,38 @@ class DisableCamera(Rule):
             self.detailedresults = ""
             # only run the fix actions if the CI has been enabled
             if not self.ci.getcurrvalue():
-                return
+                self.detailedresults += "Configuration item was not enabled\n"
+                self.rulesuccess = False
+                self.formatDetailedResults("report", self.rulesuccess, self.detailedresults)
+                self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+                return self.rulesuccess
+            self.iditerator = 0
             eventlist = self.statechglogger.findrulechanges(self.rulenumber)
             for event in eventlist:
                 self.statechglogger.deleteentry(event)
-            if os.path.exists(self.camprofile):
-                if not self.cameditor.fix():
-                    self.detailedresults += "Unable to install profile\n"
-                    success = False
-                elif not self.cameditor.commit():
-                    self.detailedresults += "Unable to install profile\n"
-                    success = False
-                else:
+            if not self.cameditor.report():
+                if self.cameditor.fix():
                     self.iditerator += 1
                     myid = iterate(self.iditerator, self.rulenumber)
-                    cmd = ["/usr/bin/profiles", "-R", "-p",
-                           self.camidentifier]
-                    event = {"eventtype": "comm",
-                             "command": cmd}
-                    self.statechglogger.recordchgevent(myid, event) 
+                    self.cameditor.setEventID(myid)
+                    if not self.cameditor.commit():
+                        success = False
+                        self.detailedresults += "Unable to install profile\n"
+                        self.logdispatch.log(LogPriority.DEBUG, "Kveditor commit failed")
+                else:
+                    success = False
+                    self.detailedresults += "Unable to install profile\n"
+                    self.logdispatch.log(LogPriority.DEBUG, "Kveditor fix failed")
             else:
-                self.detailedresults += self.camprofile + " doesn't exist\n"
-                success = False
+                self.detailedresults += "Camera disablement profile was already installed.\n"
             self.rulesuccess = success
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception as err:
             self.rulesuccess = False
             self.detailedresults = self.detailedresults + "\n" + str(err) + \
-                " - " + str(traceback.format_exc())
+                                   " - " + str(traceback.format_exc())
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("fix", success, self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
-
-        return success
+        return self.rulesuccess
