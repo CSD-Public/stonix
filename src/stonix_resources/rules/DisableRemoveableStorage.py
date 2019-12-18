@@ -44,6 +44,8 @@ OS X Mavericks not Mountain Lion, Lion, etc.
 @change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
 @change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
+@chagne: 2019/12/18 Brandon R. Gonzales - update grub file fix to account for
+    Fedora 31's new kernel option format
 '''
 
 
@@ -207,8 +209,10 @@ class DisableRemoveableStorage(Rule):
                 contents = readFile(grub, self.logger)
                 if contents:
                     for line in contents:
-                        if re.search("^kernel", line.strip()) or re.search("^linux", line.strip()) \
-                                or re.search("^linux16", line.strip()):
+                        if re.search("^kernel", line.strip()) \
+                                or re.search("^linux", line.strip()) \
+                                or re.search("^linux16", line.strip()) \
+                                or re.search("^set default_kernelopts", line.strip()):
                             if not re.search("\s+nousb\s*", line):
                                 debug = grub + " file doesn't " + \
                                         "contain nousb kernel option\n"
@@ -491,6 +495,17 @@ class DisableRemoveableStorage(Rule):
                                 changed = True
                                 tempstring += line.strip() + " usbcore.authorized_default=0"
                             tempstring += "\n"
+                        elif re.search("^set default_kernelopts", line.strip()):
+                            # Fedora 31 has changed it's kernel option line format
+                            kernellinefound = True
+                            kernelline = line.strip()
+                            if not re.search("\s+nousb\s*", kernelline):
+                                changed = True
+                                kernelline = re.sub("\"$", " nousb\"", kernelline)
+                            if not re.search("\s+usbcore\.authorized_default=0\s+", kernelline):
+                                changed = True
+                                kernelline = re.sub("\"$", " usbcore.authorized_default=0\"", kernelline)
+                            tempstring += kernelline + "\n"
                         else:
                             tempstring += line
                 if not kernellinefound:
