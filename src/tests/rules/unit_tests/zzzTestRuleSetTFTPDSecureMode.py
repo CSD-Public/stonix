@@ -17,12 +17,12 @@
 ###############################################################################
 
 
-'''
-This is a Unit Test for Rule SetTFTPD
+"""
+This is a Unit Test for Rule SetTFTPDSecureMode
 Created on Jun 8, 2016
 
-@author: dwalker
-'''
+@author: Derek Walker
+"""
 
 
 import unittest
@@ -50,6 +50,7 @@ class zzzTestRuleSetTFTPDSecureMode(RuleTest):
         self.rulename = self.rule.rulename
         self.rulenumber = self.rule.rulenumber
         self.ch = CommandHelper(self.logdispatch)
+        self.ph = Pkghelper(self.logger, self.environ)
 
     def tearDown(self):
         pass
@@ -58,70 +59,69 @@ class zzzTestRuleSetTFTPDSecureMode(RuleTest):
         self.simpleRuleTest()
 
     def setConditionsForRule(self):
-        '''Configure system for the unit test
+        """Configure system for the unit test
 
         :param self: essential if you override this definition
         :returns: boolean - If successful True; If failure False
-        @author: dwalker
+        @author: Derek Walker
 
-        '''
+        """
+
         success = True
-        if not self.environ.getostype() == "Mac OS X":
-            self.ph = Pkghelper(self.logger, self.environ)
-            if self.ph.manager == "apt-get":
-                self.tftpfile = "/etc/default/tftpd-hpa"
-                tmpfile = self.tftpfile + ".tmp"
-                if os.path.exists(self.tftpfile):
-                    contents = readFile(self.tftpfile, self.logger)
-                    tempstring = ""
-                    for line in contents:
-                        '''Take TFTP_OPTIONS line out of file'''
-                        if re.search("TFTP_OPTIONS", line.strip()):
-                            continue
-                        elif re.search("TFTP_DIRECTORY", line.strip()):
-                            tempstring += 'TFTP_DIRECTORY="/var/lib/tftpbad"'
-                            continue
-                        else:
-                            tempstring += line
-                    if not writeFile(tmpfile, tempstring, self.logger):
-                        success = False
+        if self.ph.manager == "apt-get":
+            self.tftpfile = "/etc/default/tftpd-hpa"
+            tmpfile = self.tftpfile + ".tmp"
+            if os.path.exists(self.tftpfile):
+                contents = readFile(self.tftpfile, self.logger)
+                tempstring = ""
+                for line in contents:
+                    """Take TFTP_OPTIONS line out of file"""
+                    if re.search("TFTP_OPTIONS", line.strip()):
+                        continue
+                    elif re.search("TFTP_DIRECTORY", line.strip()):
+                        tempstring += 'TFTP_DIRECTORY="/var/lib/tftpbad"'
+                        continue
                     else:
-                        os.rename(tmpfile, self.tftpfile)
-                        os.chown(self.tftpfile, 0, 0)
-                        os.chmod(self.tftpfile, 400)
-            else:
-                #if server_args line found, remove to make non-compliant
-                self.tftpfile = "/etc/xinetd.d/tftp"
-                tftpoptions, contents2 = [], []
-                if os.path.exists(self.tftpfile):
-                    i = 0
-                    contents = readFile(self.tftpfile, self.logger)
-                    if checkPerms(self.tftpfile, [0, 0, 420], self.logger):
-                        setPerms(self.tftpfile, [0, 0, 400], self.logger)  
-                    try:
-                        for line in contents:
-                            if re.search("service tftp", line.strip()):
-                                contents2 = contents[i+1:]
-                            else:
-                                i += 1
-                    except IndexError:
-                        pass
+                        tempstring += line
+                if not writeFile(tmpfile, tempstring, self.logger):
+                    success = False
+                else:
+                    os.rename(tmpfile, self.tftpfile)
+                    os.chown(self.tftpfile, 0, 0)
+                    os.chmod(self.tftpfile, 400)
+        else:
+            #if server_args line found, remove to make non-compliant
+            self.tftpfile = "/etc/xinetd.d/tftp"
+            tftpoptions, contents2 = [], []
+            if os.path.exists(self.tftpfile):
+                i = 0
+                contents = readFile(self.tftpfile, self.logger)
+                if checkPerms(self.tftpfile, [0, 0, 420], self.logger):
+                    setPerms(self.tftpfile, [0, 0, 400], self.logger)
+                try:
+                    for line in contents:
+                        if re.search("service tftp", line.strip()):
+                            contents2 = contents[i+1:]
+                        else:
+                            i += 1
+                except IndexError:
+                    pass
+                if contents2:
+                    if contents2[0].strip() == "{":
+                        del(contents2[0])
                     if contents2:
-                        if contents2[0].strip() == "{":
-                            del(contents2[0])
-                        if contents2:
-                            i = 0
-                            while i <= len(contents2) and contents2[i].strip() != "}" and contents2[i].strip() != "{":
-                                tftpoptions.append(contents2[i])
-                                i += 1
-                            if tftpoptions:
-                                for line in tftpoptions:
-                                    if re.search("server_args", line):
-                                        contents.remove(line)
+                        i = 0
+                        while i <= len(contents2) and contents2[i].strip() != "}" and contents2[i].strip() != "{":
+                            tftpoptions.append(contents2[i])
+                            i += 1
+                        if tftpoptions:
+                            for line in tftpoptions:
+                                if re.search("server_args", line):
+                                    contents.remove(line)
         return success
 
     def checkReportForRule(self, pCompliance, pRuleSuccess):
-        '''check on whether report was correct
+        """check on whether report was correct
 
         :param self: essential if you override this definition
         :param pCompliance: the self.iscompliant value of rule
@@ -129,7 +129,7 @@ class zzzTestRuleSetTFTPDSecureMode(RuleTest):
         :returns: boolean - If successful True; If failure False
         @author: ekkehard j. koch
 
-        '''
+        """
         self.logdispatch.log(LogPriority.DEBUG, "pCompliance = " + \
                              str(pCompliance) + ".")
         self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
@@ -138,34 +138,33 @@ class zzzTestRuleSetTFTPDSecureMode(RuleTest):
         return success
 
     def checkFixForRule(self, pRuleSuccess):
-        '''check on whether fix was correct
+        """check on whether fix was correct
 
         :param self: essential if you override this definition
         :param pRuleSuccess: did report run successfully
         :returns: boolean - If successful True; If failure False
         @author: ekkehard j. koch
 
-        '''
+        """
         self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
                              str(pRuleSuccess) + ".")
         success = True
         return success
 
     def checkUndoForRule(self, pRuleSuccess):
-        '''check on whether undo was correct
+        """check on whether undo was correct
 
         :param self: essential if you override this definition
         :param pRuleSuccess: did report run successfully
         :returns: boolean - If successful True; If failure False
         @author: ekkehard j. koch
 
-        '''
+        """
         self.logdispatch.log(LogPriority.DEBUG, "pRuleSuccess = " + \
                              str(pRuleSuccess) + ".")
         success = True
         return success
 
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()
 

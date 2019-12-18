@@ -15,33 +15,40 @@
 #                                                                             #
 ###############################################################################
 
-'''
+"""
 Created on Apr 20, 2016
 
-@author: dwalker
-@change: 2016/06/06 dwalker updated applicability to not run on Mac until
+@author: Derek Walker
+@change: 2016/06/06 Derek Walker updated applicability to not run on Mac until
     configuration on Mac OS X is fully researched.
 @change: 2017/11/13 ekkehard - make eligible for OS X El Capitan 10.11+
-'''
+"""
 
 
 from stonixutilityfunctions import iterate, checkPerms, setPerms, resetsecon
-from stonixutilityfunctions import readFile, writeFile, getUserGroupName
+from stonixutilityfunctions import readFile, writeFile
 from rule import Rule
 from logdispatcher import LogPriority
 from pkghelper import Pkghelper
 import traceback
 import os
-import stat
 import re
-import grp
-import pwd
 
 
 class SetTFTPDSecureMode(Rule):
+    """
 
-###############################################################################
+    """
+
     def __init__(self, config, environ, logger, statechglogger):
+        """
+
+        :param config:
+        :param environ:
+        :param logger:
+        :param statechglogger:
+        """
+
         Rule.__init__(self, config, environ, logger,
                               statechglogger)
         self.logger = logger
@@ -62,34 +69,37 @@ class SetTFTPDSecureMode(Rule):
         self.iditerator = 0
         self.editor = ""
         self.applicable = {'type': 'white',
-                           'family': ['linux', 'solaris', 'freebsd'],
-                           'os': {'Mac OS X': ['10.11.0', 'r', '10.10.10']}}
+                           'family': ['linux', 'solaris', 'freebsd']}
         
     def report(self):
+        """
+
+        :return: self.compliant
+        :rtype: bool
+        """
+
         try:
             self.detailedresults = ""
             compliant = True
-            if self.environ.getostype() == "Mac OS X":
-                compliant = self.reportMac()
+
+            self.ph = Pkghelper(self.logger, self.environ)
+            if self.ph.manager == "apt-get":
+                pkg = "tftpd-hpa"
+                if self.ph.check(pkg):
+                    self.tftpFile = "/etc/default/tftpd-hpa"
+                    if os.path.exists(self.tftpFile):
+                        compliant = self.reportDebianSys()
             else:
-                self.ph = Pkghelper(self.logger, self.environ)
-                if self.ph.manager == "apt-get":
-                    pkg = "tftpd-hpa"
-                    if self.ph.check(pkg):
-                        self.tftpFile = "/etc/default/tftpd-hpa"
-                        if os.path.exists(self.tftpFile):
-                            compliant = self.reportDebianSys()
-                else:
-                    pkg = "tftp-server"
-                    if self.ph.check(pkg):
-                        self.tftpFile = "/etc/xinetd.d/tftp"
-                        if os.path.exists(self.tftpFile):
-                            compliant = self.reportOtherSys()
+                pkg = "tftp-server"
+                if self.ph.check(pkg):
+                    self.tftpFile = "/etc/xinetd.d/tftp"
+                    if os.path.exists(self.tftpFile):
+                        compliant = self.reportOtherSys()
             self.compliant = compliant
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception:
-            self.rulesuccess = False
+            self.compliant = False
             self.detailedresults += "\n" + traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("report", self.compliant,
@@ -97,89 +107,13 @@ class SetTFTPDSecureMode(Rule):
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
 
-    def reportMac(self):
-        compliant = True
-        self.detailedresults = ""
-        self.plistpath = "/System/Library/LaunchDaemons/tftp.plist"
-        self.plistcontents = '''<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-     <key>Disabled</key>
-     <true/>
-     <key>Label</key>
-     <string>com.apple.tftpd</string>
-     <key>ProgramArguments</key>
-     <array>
-           <string>/usr/libexec/tftpd</string>
-           <string>-i</string>
-           <string>-s</string>
-           <string>/private/tftpboot</string>
-     </array>
-     <key>inetdCompatibility</key>
-     <dict>
-          <key>Wait</key>
-          <true/>
-     </dict>
-     <key>InitGroups</key>
-     <true/>
-     <key>Sockets</key>
-     <dict>
-          <key>Listeners</key>
-          <dict>
-               <key>SockServiceName</key>
-               <string>tftp</string>
-               <key>SockType</key>
-               <string>dgram</string>
-          </dict>
-     </dict>
-</dict>
-</plist>'''
-        self.plistregex = "<\?xml\ version\=\"1\.0\"\ encoding\=\"UTF\-8\"\?>" + \
-            "<\!DOCTYPE\ plist\ PUBLIC\ \"\-//Apple//DTD\ PLIST\ 1\.0//EN\"\ \"http\://www\.apple\.com/DTDs/PropertyList\-1\.0\.dtd\">" + \
-            "<plist version\=\"1\.0\"><dict><key>Disabled</key><true/><key>Label</key><string>com\.apple\.tftpd</string>" + \
-            "<key>ProgramArguments</key><array><string>/usr/libexec/tftpd</string><string>\-i</string>" + \
-            "<string>\-s</string><string>/private/tftpboot</string></array><key>inetdCompatibility</key><dict>" + \
-            "<key>Wait</key><true/></dict><key>InitGroups</key><true/><key>Sockets</key><dict>" + \
-            "<key>Listeners</key><dict><key>SockServiceName</key><string>tftp</string><key>SockType</key>" + \
-            "<string>dgram</string></dict></dict></dict></plist>"
-        if os.path.exists(self.plistpath):
-            statdata = os.stat(self.plistpath)
-            mode = stat.S_IMODE(statdata.st_mode)
-            ownergrp = getUserGroupName(self.plistpath)
-            owner = ownergrp[0]
-            group = ownergrp[1]
-            if mode != 420:
-                compliant = False
-                self.detailedresults += "permissions on " + self.plistpath + \
-                    "aren't 644\n"
-                debug = "permissions on " + self.plistpath + " aren't 644\n"
-                self.logger.log(LogPriority.DEBUG, debug)
-            if owner != "root":
-                compliant = False
-                self.detailedresults += "Owner of " + self.plistpath + \
-                    " isn't root\n"
-                debug = "Owner of " + self.plistpath + \
-                    " isn't root\n"
-                self.logger.log(LogPriority.DEBUG, debug)
-            if group != "wheel":
-                compliant = False
-                self.detailedresults += "Group of " + self.plistpath + \
-                    " isn't wheel\n"
-                debug = "Group of " + self.plistpath + \
-                    " isn't wheel\n"
-                self.logger.log(LogPriority.DEBUG, debug)
-            contents = readFile(self.plistpath, self.logger)
-            contentstring = ""
-            for line in contents:
-                contentstring += line.strip()
-            if not re.search(self.plistregex, contentstring):
-                compliant = False
-                self.detailedresults += "plist file doesn't contian the " + \
-                    "correct contents\n"
-        return compliant
-
     def reportDebianSys(self):
+        """
+
+        :return: compliant
+        :rtype: bool
+        """
+
         contents = readFile(self.tftpFile, self.logger)
         found1 = False
         found2 = False
@@ -243,6 +177,12 @@ class SetTFTPDSecureMode(Rule):
         return compliant
 
     def reportOtherSys(self):
+        """
+
+        :return: compliant
+        :rtype: bool
+        """
+
         tftpoptions, contents2 = [], []
         contents = readFile(self.tftpFile, self.logger)
         found = False
@@ -274,7 +214,7 @@ class SetTFTPDSecureMode(Rule):
                                 if re.search("=", line):
                                     line = line.split("=")
                                     val = re.sub("\s+", " ", line[1].strip())
-                                    if not re.search("\-s", val) and not re.search("\-\-search", val):
+                                    if not re.search("-s", val) and not re.search("--search", val):
                                         compliant = False
                                         self.detailedresults += "server_args line " + \
                                             "doesn't contain the -s option\n"
@@ -305,6 +245,12 @@ class SetTFTPDSecureMode(Rule):
         return compliant
 
     def fix(self):
+        """
+
+        :return: self.rulesuccess
+        :rtype: bool
+        """
+
         try:
             success = True
             self.detailedresults = ""
@@ -315,8 +261,7 @@ class SetTFTPDSecureMode(Rule):
                 self.statechglogger.deleteentry(event)
             if not self.tftpdci.getcurrvalue():
                 return
-            if self.environ.getostype() == "Mac OS X":
-                success = self.fixMac()
+
             elif self.ph.manager == "apt-get":
                 if os.path.exists(self.tftpFile):
                     success = self.fixDebianSys()
@@ -330,12 +275,17 @@ class SetTFTPDSecureMode(Rule):
             self.rulesuccess = False
             self.detailedresults += "\n" + traceback.format_exc()
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("fix", self.rulesuccess,
-                                                          self.detailedresults)
+        self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.rulesuccess
     
     def fixOtherSys(self):
+        """
+
+        :return: success
+        :rtype: bool
+        """
+
         success = True
         if not checkPerms(self.tftpFile, [0, 0, 420], self.logger):
             self.iditerator += 1
@@ -346,6 +296,7 @@ class SetTFTPDSecureMode(Rule):
                     "permissions on " +  self.tftpFile + "\n"
                 success = False
         try:
+            contents2 = []
             contents = readFile(self.tftpFile, self.logger)
             found = False
             tempstring = ""
@@ -376,8 +327,8 @@ class SetTFTPDSecureMode(Rule):
                                 if re.search("=", line):
                                     tmp = line.split("=")
                                     val = re.sub("/s+", " ", tmp[1].strip())
-                                    if re.search("\-s", val) or re.search("\-\-secure", val):
-                                        if not re.search("\-s /var/lib/tftpboot", val) and not re.search("\-\-secure /var/lib/tftpboot", val):
+                                    if re.search("-s", val) or re.search("--secure", val):
+                                        if not re.search("-s /var/lib/tftpboot", val) and not re.search("--secure /var/lib/tftpboot", val):
                                             val = re.sub("-s\s{0,1}/{0,1}.*\s{0,1}", "-s /var/lib/tftpboot", tmp[1])
                                             tempstring += "\tserver_args \t\t= " + val + "\n"
                                         else:
@@ -422,6 +373,12 @@ class SetTFTPDSecureMode(Rule):
         return success
 
     def fixDebianSys(self):
+        """
+
+        :return: success
+        :rtype: bool
+        """
+
         success = True
         if not checkPerms(self.tftpFile, [0, 0, 420], self.logger):
             self.iditerator += 1
@@ -503,56 +460,4 @@ class SetTFTPDSecureMode(Rule):
             self.detailedresults += "Unable to write new contents " + \
                 "to " + self.tftpFile + " file.\n"
             success = False
-        return success
-    
-    def fixMac(self):
-        success = True
-        debug = ""
-        if not os.path.exists(self.plistpath):
-            debug = self.plistpath + " doesn't exist. " + \
-                "Stonix will not attempt to create this file\n"
-            self.logger.log(LogPriority.DEBUG, debug)
-            return success
-        uid, gid = "", ""
-        statdata = os.stat(self.plistpath)
-        mode = stat.S_IMODE(statdata.st_mode)
-        ownergrp = getUserGroupName(self.plistpath)
-        owner = ownergrp[0]
-        group = ownergrp[1]
-        if grp.getgrnam("wheel")[2] != "":
-            gid = grp.getgrnam("wheel")[2]
-        if pwd.getpwnam("root")[2] != "":
-            uid = pwd.getpwnam("root")[2]
-        if mode != 420 or owner != "root" or group != "wheel":
-            origuid = statdata.st_uid
-            origgid = statdata.st_gid
-            if gid and uid:
-                self.iditerator += 1
-                myid = iterate(self.iditerator, self.rulenumber)
-                event = {"eventtype": "perm",
-                         "startstate": [origuid, origgid, mode],
-                         "endstated": [uid, gid, 420],
-                         "filepath": self.plistpath}
-                self.statechglogger.recordchgevent(myid, event)
-        contents = readFile(self.plistpath, self.logger)
-        contentstring = ""
-        for line in contents:
-            contentstring += line.strip()
-        if not re.search(self.plistregex, contentstring):
-            tmpfile = self.plistpath + ".tmp"
-            if not writeFile(tmpfile, self.plistcontents, self.logger):
-                debug = "Unable to write correct contents to " + \
-                    self.plistpath + "\n"
-                success = False
-            else:
-                self.iditerator +=1 
-                myid = iterate(self.iditerator, self.rulenumber)
-                event = {"eventtype": "conf",
-                         "filepath": self.plistpath}
-                self.statechglogger.recordchgevent(myid, event)
-                self.statechglogger.recordfilechange(self.plistpath, tmpfile, myid)
-                os.rename(tmpfile, self.plistpath)
-                if uid and gid:
-                    os.chown(self.plistpath, uid, gid)
-                os.chmod(self.plistpath, 420)
         return success

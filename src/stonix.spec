@@ -121,6 +121,16 @@ installed at /usr/local/stonix/stonixdb.sql
 %attr(0750,root,apache) /var/www/html/stonix/results.php
 
 %changelog
+* Mon Dec 2 2019 Brandon Gonzales <bgonz12@lanl.gov> 0.9.37
+- New - DisableGDMAutoLogin rule which disables gdm auto login and timed login
+- Fixed - issue where xml report log was failing to be generated properly
+- Fixed - issue where ConfigureSystemAuthentication rule was failing to report accurately
+- Updated - ConfigureSystemAuthentication now configures a 4 second delay between failed logon attempts
+- Updated - fix issues and optimize the runtime of ConfigureAppleSoftwareUpdate
+- Updated - SetTFTPDSecureMode no longer applies to MacOS as STONIX no longer supports the last MacOS version that it applied to (MacOS 10.12 Sierra)
+- Updated - optimize the runtime of RemoveSoftware
+- Removed - SetRootDefaults rule has been removed as it only applies to legacy Solaris systems which are no longer supported by STONIX
+
 * Tue Nov 5 2019 Derek Walker <dwalker@lanl.gov> 0.9.36
 - 0.9.36 contains changes from 0.9.34 - 0.9.36
 - Code converted to python3

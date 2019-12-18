@@ -33,6 +33,12 @@ format of entries.
 that access the version variable to use this copy.
 @change: 2015/03/01 - Ekkehard - incremented STONIXVERSION to '0.8.15'
 @change: 2015/04/07 - Ekkehard - incremented STONIXVERSION to '0.8.16'
+@change: 2015/08/20 - Eric Ball - Added KRB5 for Linux Kerberos setup
+@change: 2015/12/07 - Eric Ball Renamed KERB5 to MACKRB5 and KRB5 to LINUXKRB5
+@change: 2015/12/14 - Ekkehard update os x kerberos option & stonixversion
+@change: 2016/01/13 - Roy Nielsen Added MACREPOROOT
+@change: 2016/02/03 - Ekkehard - incremented STONIXVERSION to '0.9.5'
+@change: 2016/05/05 - Eric Ball Add LOCALDOMAINS for AuditFirefoxUsage(84)
 @change: 2015/12/14 - Ekkehard update os x kerberos option & stonixversion
 @change: 2016/01/13 - Roy Nielsen Added MACREPOROOT
 @change: 2016/02/03 - Ekkehard - incremented STONIXVERSION to '0.9.5'
@@ -42,9 +48,11 @@ that access the version variable to use this copy.
 @change: 2017/11/13 - Ekkehard - incremented STONIXVERSION to '0.9.14'
 @change: 2018/02/06 - Ekkehard - incremented STONIXVERSION to '0.9.16'
 @change: 2018/02/06 - Ekkehard - incremented STONIXVERSION to '0.9.17'
-@change: 2018/04/11 - Ekkehard - incremented STONIXVERSION to '0.9.18'
+@change: 2018/04/11 - Ekkehard - incremented STONIXVERSION to '0.9.18' and krb5.conf
 @change: 2018/05/08 - Ekkehard - incremented STONIXVERSION to '0.9.19'
 @change: 2018/06/08 - Ekkehard - incremented STONIXVERSION to '0.9.20'
+@change: 2018/08/21 - Brandon - changed CRACKLIB_HIGH_REGEX minlen and
+                                PWQUALITY_HIGH_REGEX minlen from 12 to 14
 @change: 2018/11/14 - Breen Malmberg - incremented STONIXVERSION to '0.9.26'
 @change: 2019/02/05 - Breen Malmberg - incremented STONIXVERSION to '0.9.28'
 @change: 2019/03/12 - Ekkehard - incremented STONIXVERSION to '0.9.29'
@@ -59,7 +67,7 @@ FISMACAT = 'med'
 # arbitrary values are fine. A recommended local version might look like this:
 # 1.2.2-local3 or just 1.2.2-3 or 1.2.2.3
 # Variable Type: String
-STONIXVERSION = '0.9.36'
+STONIXVERSION = '0.9.38'
 
 # The report server should be a string containing a valid FQDN or IP address
 # for the host that STONIX should upload it's run report XML data to.
@@ -69,13 +77,14 @@ REPORTSERVER = None
 # sendreports to False. Please note no quotes.
 # sendreports = False
 # Variable Type: Boolean
-SENDREPORTS = True
+SENDREPORTS = False
 
 # The SoftwarePatching rule will check to see if local update sources are being
 # used. If you have local update sources list them here. This check will be
 # skipped if the list is empty. The list is in python list format:
 # updateservers = ['myserver1.mydomain.tld', 'myserver2.mydomain.tld']
-UPDATESERVERS = []
+# Variable Type: List (of strings)
+UPDATESERVERS = None
 
 # Stonix can set OS X systems to use a local Apple Software Update Server
 # if you have an ASUS server on your network enter its FQDN here. A zero
@@ -86,10 +95,12 @@ APPLESOFTUPDATESERVER = None
 
 # Repository used by the package helper to retrieve software for installation.
 # Currently only uses "https" as a valid protocol
+# Variable Type: String
 MACREPOROOT = None
 
 # If you are using central logging servers for catching syslog data you can
 # configure that hostname here as either a FQDN or IP address.
+# Variable Type: String
 CENTRALLOGHOST = None
 
 # Warning Banners are site-specific
@@ -107,6 +118,7 @@ GDM3WARNINGBANNER = None
 ALTWARNINGBANNER = None
 
 # Warning Banners abbreviated for OS X login Screen
+# Variable Type: String
 OSXSHORTWARNINGBANNER = None
 
 # Variable Type: String
@@ -132,72 +144,136 @@ STONIXDEVS = None
 # PROXY = 'http://my.proxy.com:3128'
 # PROXY = None
 PROXY = None
+
+# Variable Type: String
 PROXYCONFIGURATIONFILE = None
+
+# Variable Type: String
 PROXYDOMAIN = None
+
+# Variable Type: String
 PROXYDOMAINBYPASS = None
 
-# Variable Type: String
 # Domain Name Server (DNS) defaults
-DNS = None
-ALLOWEDAPPS = None
-# Variable Type: List (strings)
-# Specify a subnet to allow services access to in /etc/hosts.allow
-# use format: xxx.xxx.0.0/16
-ALLOWNETS = []
-
 # Variable Type: String
-# Specify a subnet to allow in xinetd.conf
-XINETDALLOW = None
+DNS = "192.168.0.1 192.168.0.2"
+
+# (for redhat 7 and later) Specify a subnet to allow services access to in /etc/hosts.allow
+# Variably Type: List (of strings)
+ALLOWNETS = ['192.168.0.1/24']
+
+# Specify a subnet to use with XinetdAccessControl (/etc/xinetd.conf)
+# Variable Type: String
+XINETDALLOW = '192.168.0.1/24'
 
 # Specify a list of internal Network Time Protocol (NTP) Servers
-NTPSERVERSINTERNAL = []
+# Variable Type: List (of strings)
+NTPSERVERSINTERNAL = None
 
-# Variable Type: List (strings)
 # Specify a list of external Network Time Protocol (NTP) Servers
-NTPSERVERSEXTERNAL = ["0.us.pool.ntp.org",
-                      "1.us.pool.ntp.org",
-                      "2.us.pool.ntp.org",
-                      "3.us.pool.ntp.org"]
+# Variable Type: List (of strings)
+NTPSERVERSEXTERNAL = ["0.us.pool.ntp.org", "1.us.pool.ntp.org",
+                      "2.us.pool.ntp.org", "3.us.pool.ntp.org"]
 
-# Variable Type: List (strings)
 # List Of Corporate Network Servers used to determine if we are on the
 # corporate network they need to be reachable only internally on port 80
-CORPORATENETWORKSERVERS = []
+# Variable Type: List (of strings)
+CORPORATENETWORKSERVERS = None
 
+# Content of the krb5.conf file
 # Variable Type: String
-# Desired content of the krb5.conf file for Mac OS
 MACKRB5 = None
 
+# Content of the krb5.conf file
 # Variable Type: String
-# Desired content of /etc/krb5.conf for linux
 LINUXKRB5 = None
 
-# Variable Type: String
 # Self Update server - a web server that houses packages for Mac, Solaris and
 # Gentoo, for a self update feature, since these OSs do not have good package
 # management like yum and apt-get.
+# Variable Type: String
 SELFUPDATESERVER = None
 
 # Variable Type: String
-# Desired content of /etc/hosts.deny
-HOSTSDENYDEFAULT = None
+HOSTSDENYDEFAULT = """##########################################################################
+#
+# FILENAME: hosts.deny
+#  LASTMOD: Thu Jan  4 12:35:00 MST 2001
+#
+#  DESCRIP: CTN standard hosts.deny file for tcp wrappers with banners
+#       OS: common
+#
+#   AUTHOR:
+#
+# WARNINGS: By default if it's not allowed it is denied
+#
+##########################################################################
+
+all : all : banners /etc/banners : DENY
+"""
 
 # Variable Type: String
-# Desired content of /etc/hosts.allow
-HOSTSALLOWDEFAULT = None
+HOSTSALLOWDEFAULT = """##########################################################################
+## Filename:            hosts.allow
+## Description:         Access control file for TCP Wrappers 7.6
+## Author:
+## Notes:               By default all services are denied. Uncomment the
+##                      relevant lines to allow access.
+## Release/ver:         stor3.1
+## Modified date:       10/30/2007
+## Changelog:           Added commented entries for nfs services
+##########################################################################
 
-# Variable Type: String
+# Allow access to localhost
+all : 127.0.0.1 : ALLOW
+
+# Kerberized services (uncomment to allow access)
+#ftpd : {allownet} : ALLOW
+#kshd : {allownet} : ALLOW
+#klogind : {allownet} : ALLOW
+#telnetd : {allownet} : ALLOW
+
+# Need special access for sgi_fam
+# Should be temporary
+#fam: ALL : ALLOW
+
+# Services that may be needed for NFS
+#sunrpc: {allownet} : ALLOW
+#nfs: {allownet} : ALLOW
+#portmap: {allownet} : ALLOW
+#lockd: {allownet} : ALLOW
+#mountd: {allownet} : ALLOW
+#rquotad: {allownet} : ALLOW
+#statd: {allownet} : ALLOW
+
+# SSH access
+sshd: {allownet} : ALLOW
+sshdfwd-X11: {allownet} : ALLOW
+
+# Other services (uncomment to allow access)
+#in.fingerd : {allownet} : banners /etc/banners : ALLOW
+#in.ftpd : {allownet} : banners /etc/banners/in.ftpd : ALLOW
+#in.rexecd : {allownet} : banners /etc/banners : ALLOW
+#in.rlogind : {allownet} : banners /etc/banners/in.rlogind : ALLOW
+#in.rshd : {allownet} : banners /etc/banners/in.rshd : ALLOW
+#in.telnetd : {allownet} : banners /etc/banners/in.telnetd : ALLOW
+
+# Deny all other access
+all : all : DENY
+"""
+
 # This is used in the SecureMailClient Rule to set up DomainForMatching
+# Variable Type: String
 APPLEMAILDOMAINFORMATCHING = None
 
-# Variables Type: List (strings)
 # This list contains quoted strings that are fully qualified paths to
 # world writable directories that are common at your site (possibly due to
 # widely deployed software).
-SITELOCALWWWDIRS = []
+# Variable Type: List (of strings)
+SITELOCALWWWDIRS = None
 
-# Variables Type: String
 # Default messages for self.detailedresults initialization, report, fix, undo
+# Variables Type: String
 DRINITIAL = "Neither report, fix, or revert have been run yet."
 DRREPORTCOMPIANT = "Rule is Compliant."
 DRREPORTNOTCOMPIANT = "Rule is not Compliant."
@@ -221,7 +297,6 @@ EXCLUDEACCOUNTS = []
 # are approved for browsing by the root user.
 LOCALDOMAINS = ["127.0.0.1", "localhost"]
 
-# Variable Type: Dictionary
 # these options will be set in /etc/dhcp/dhclient.conf
 # a value of 'request' will cause the client to request that
 # option's configuration from the dhcp server. a value of
@@ -236,11 +311,21 @@ DHCPDict = {'subnet-mask': 'request',
             'nis-servers': 'supersede',
             'ntp-servers': 'supersede'}
 
-# Variable Type: Dictionary
 # these options will be used whenever a value of
 # 'supersede' is specified for one of the options in
 # DCHPDict. Change these to reflect your organization's
 # actual servers/domains/settings
+# Variable Type: Dictionary (of string keys and string values)
+# EX:
+# {'broadcast-address': '192.168.',
+#            'time-offset': '3',
+#            'routers': 'routername.foo.bar',
+#            'domain-name': 'foo.bar',
+#            'domain-name-servers': 'dns.foo.bar',
+#            'host-name': 'host.foo.bar',
+#            'nis-domain': 'foo.nis',
+#            'nis-servers': 'nis.foo.bar',
+#            'ntp-servers': 'ntp.foo.bar'}
 # change the 'changeme' values if you choose to supersede
 # them in the DHCPDict dictionary, above!
 DHCPSup = {}
@@ -254,8 +339,8 @@ PWQUALITY_HIGH_REGEX =  "^password[ \t]+requisite[ \t]+pam_pwquality.so[ \t]+" +
     "lcredit=0[ \t]+ocredit=0[ \t]+retry=3[ \t]+maxrepeat=3"
 
 # Variable Type: String
-PWQUALITY_REGEX = regex = "^password[ \t]+requisite[ \t]+pam_pwquality.so[ \t]+" + \
-    "minlen=8[ \t]+minclass=3[ \t]+difok=7[ \t]+dcredit=0[ \t]ucredit=0[ \t]" + \
+PWQUALITY_REGEX = "^password[ \t]+requisite[ \t]+pam_pwquality.so[ \t]+" + \
+    "minlen=8[ \t]+minclass=3[ \t]+difok=7[ \t]+dcredit=0[ \t]+ucredit=0[ \t]+" + \
     "lcredit=0[ \t]+ocredit=0[ \t]+retry=3[ \t]+maxrepeat=3"
 
 # Variable Type: String
@@ -400,7 +485,6 @@ account     required      pam_permit.so
 # Variable Type: String
 PASSWORD_NSLCD = '''password    requisite     pam_pwquality.so minlen=8 \
 minclass=3 difok=7 dcredit=0 ucredit=0 lcredit=0 ocredit=0 retry=3 maxrepeat=3
-
 password    sufficient    pam_unix.so sha512 shadow \
 try_first_pass use_authtok remember=10
 password    sufficient    pam_krb5.so use_authtok
@@ -454,7 +538,6 @@ account     required      pam_permit.so
 # Variable Type: String
 PASSWORD_YUM = '''password    requisite     pam_pwquality.so minlen=8 \
 minclass=3 difok=7 dcredit=0 ucredit=0 lcredit=0 ocredit=0 retry=3 maxrepeat=3
-
 password    sufficient    pam_unix.so sha512 shadow try_first_pass \
 use_authtok remember=10
 password    sufficient    pam_sss.so use_authtok
