@@ -358,7 +358,7 @@ class DisableRemoveableStorage(Rule):
         if not self.usbeditor.report():
             if self.usbeditor.badvalues:
                 self.detailedresults += self.usbeditor.badvalues + "\n"
-            self.detailedresults += "Profile either not installed or values are incorrect\n"
+            self.detailedresults += "USB Disablement profile either not installed or values are incorrect\n"
             compliant = False
         return compliant
 

@@ -277,7 +277,9 @@ class ConfigurePasswordPolicy(Rule):
                                                self.pwprofiledict, "", "")
             '''Run the system_proflier command'''
             if not self.pweditor.report():
-                self.detailedresults += "Profile either not installed or values are incorrect\n"
+                if self.pweditor.badvalues:
+                    self.detailedresults += self.pweditor.badvalues + "\n"
+                self.detailedresults += "Password profile either not installed or values are incorrect\n"
                 self.compliant = False
 
             self.seceditor = KVEditorStonix(self.statechglogger, self.logger,
@@ -285,8 +287,10 @@ class ConfigurePasswordPolicy(Rule):
                                            self.secdict, "", "", self.environ)
             '''Run the system_proflier command'''
             if not self.seceditor.report():
+                if self.seceditor.badvalues:
+                    self.detailedresults += self.seceditor.badvalues + "\n"
                 self.compliant = False
-                self.detailedresults += "Security and privacy profile not installed or profiles values are incorrect\n"
+                self.detailedresults += "Security and privacy profile not installed or values are incorrect\n"
 
         except (KeyboardInterrupt, SystemExit):
             raise
