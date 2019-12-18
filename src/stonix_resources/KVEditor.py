@@ -92,6 +92,7 @@ class KVEditor(object):
                                                 self.data)
         elif self.kvtype == "profiles":
             self.editor = KVAProfiles.KVAProfiles(self.logger, self.path)
+            self.badvalues = self.editor.badvalues
         else:
             debug = "Not one of the supported kveditor types"
             self.logger.log(LogPriority.DEBUG,
@@ -365,29 +366,18 @@ class KVEditor(object):
     def validateProfiles(self):
         '''@since: 3/10/2016
         @author: dwalker
-        @var self.data: A dictionary in the form of {k: {v: ["numberValue",
-                                                             "datatype",
-                                                             "acceptableDeviation"(optional)],
-                                                        v: ["", "", ""],
-                                                        v: ["", "", ""],
-                                                        .
-                                                        .
-                                                        .}}
-        @var: k: The profile sub-identifier e.g.
-            com.apple.mobiledevice.passwordpolicy
-        @var v: The profile data key-value pairs in a dictionary e.g.
-            allowSimple that will appear in the output of the system_profiler
-            command within the first opening brace after the profile
-            sub-identifier.  v also contains an associated list containing:
-            [a,b,c]
-            a) the value on the other side of the = sign
-            b) whether that value is an integer(int) or a boolean(bool)
-            c) (optional) whether the value present after the = sign(a),
-                if an int, can be lower(less) or higher(more) in order to
-                detect and represent stringency (see self.data description
-                above).
-
-
+        @var self.data: A dictionary in the form of:
+            {"identifier": {"key1": {"val": [list]|"string",
+                                    "type": "list"|"string"|"bool"|"int"
+                                    "accept": "more"|"less"|"otherString/intValue"
+                                    "result": False}
+                            "key2": {"val": ...
+                                     "type": ...
+                                     "accept": ...
+                                     "result": ...}
+                            .
+                            .}}
+        example: {"com.apple.mobiledevice.passwordpolicy": {"allowSimple": {"val": "0"
         :returns: Value returned from validate method in factory sub-class
 
         :rtype: bool
@@ -399,9 +389,6 @@ class KVEditor(object):
             self.output = self.ch.getOutput()
             if self.output:
                 retval = True
-                resultdict = ""
-                #for k, v in self.data.iteritems():
-                #retval = self.editor.validate(self.output, k, v)
                 resultdict = self.editor.validate(self.output, self.data)
                 if resultdict:
                     self.data = resultdict
@@ -409,6 +396,7 @@ class KVEditor(object):
                         for k2, v2 in v.iteritems():
                             if v2["result"] == False:
                                 retval = False
+                    self.badvalues = self.editor.badvalues
                 return retval
             else:
                 debug = "There are no profiles installed\n"

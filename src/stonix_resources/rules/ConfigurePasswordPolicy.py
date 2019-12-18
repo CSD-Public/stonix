@@ -277,7 +277,7 @@ class ConfigurePasswordPolicy(Rule):
                                                self.pwprofiledict, "", "")
             '''Run the system_proflier command'''
             if not self.pweditor.report():
-                self.detailedresults += "The following have incorrect values: \n"
+                self.detailedresults += "Profile either not installed or values are incorrect\n"
                 self.compliant = False
 
             self.seceditor = KVEditorStonix(self.statechglogger, self.logger,
@@ -318,7 +318,7 @@ class ConfigurePasswordPolicy(Rule):
             if not self.pwci and not self.sci.getcurrvalue():
                 self.detailedresults += "Neither configuration item was enabled\n"
                 self.rulesuccess = False
-                self.formatDetailedResults("report", self.rulesuccess, self.detailedresults)
+                self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
                 self.logdispatch.log(LogPriority.INFO, self.detailedresults)
                 return self.rulesuccess
             self.iditerator = 0
@@ -340,8 +340,6 @@ class ConfigurePasswordPolicy(Rule):
                         success = False
                         self.detailedresults += "Unable to install " + self.passprofile + "profile\n"
                         self.logdispatch.log(LogPriority.DEBUG, "Kveditor fix failed")
-                else:
-                    self.detailedresults += "Password policy profile was already installed.\n"
             else:
                 success = False
                 self.detailedresults += "Password CI was not enabled.\n"

@@ -14,7 +14,6 @@
 # perform publicly and display publicly, and to permit others to do so.       #
 #                                                                             #
 ###############################################################################
-
 '''
 Created on Mar 9, 2016
 
@@ -25,13 +24,16 @@ Created on Mar 9, 2016
         inside validate method.
 @changed: 08/15/2018 - Brandon R. Gonzales - changed a regular expression from
         "*:" to ".*:"
+@changed: 12/18/2019 - dwalker - Updated class to handle a new type of data
+    dictionary.
 '''
+
 import re
 from logdispatcher import LogPriority
 from CommandHelper import CommandHelper
 
 
-class KVAProfiles():
+class KVAProfiles(object):
 
     def __init__(self, logger, path):
         self.logger = logger
@@ -47,14 +49,10 @@ class KVAProfiles():
         @author: dwalker
 
         :param output: The output from system_profiler
-                SPConfigurationProfileDataType command
-        :param key: The profile identifier we're looking for in the output.
-                Usually takes the form of com.apple.example
-        :param val: A dictionary which could contain other lists, dicts,
-                and/or tuples nested within.  Example:
-                {"allowsimple": ["1", "bool"],
-                 "forcePIN": ["1", "bool"],
-                 ...}
+            SPConfigurationProfileDataType command
+        :param data: The data dictionary from the calling rule
+            with the profile identifiers and key value pairs
+            to look for. View KVEditor class for details on data dict format
         :returns: bool - True or False
 
         '''
@@ -151,7 +149,7 @@ class KVAProfiles():
                                                                            "result": False"})'''
                         for k, v in val.iteritems():
                             retval = False
-                            if isinstance(v["val"], tuple):
+                            if isinstance(v["val"], list):
                                 retval = self.checkTuple(k, v, payloadblock)
                             elif isinstance(v["val"], dict):
                                 retval = self.checkDict(k, v, payloadblock)
@@ -161,8 +159,7 @@ class KVAProfiles():
                                 v["result"] = True
                 else:
                     iterator1 += 1
-        print "self.data after report: " + str(self.data) + "\n"
-        #self.setbadvalues()
+        self.setbadvalues()
         return self.data
 
     def checkSimple(self, k, v, payloadblock):
@@ -176,8 +173,11 @@ class KVAProfiles():
                 passed through as val from the calling method
         :param v: Not to be confused with the value in the calling
                 method which was our inner dictionary passed through
-                as val. This val is now the list associated with our
-                k value.
+                as val. This val is now the inner dictionary:
+                {"val":...,
+                 "type": ...,
+                 "accept": ...,
+                 "result": False}
         :param payloadblock: A list of lines from our payload
                 portion of the output from the system_profiler
                 command
@@ -188,9 +188,8 @@ class KVAProfiles():
         retval = True
         unsecure = False
         debug = ""
-        print "payload block: " + str(payloadblock) + "\n\n"
         for line in payloadblock:
-            if re.search("^" + k + "=", line.strip()):
+            if re.search("^\"{0,1}" + k + "\"{0,1}=", line.strip()):
                 founditem = True
                 temp = line.strip().split("=")
                 try:
@@ -199,11 +198,10 @@ class KVAProfiles():
                         temp[1] = re.sub("\s", "", temp[1])
                         '''Remove semicolon at end if exists'''
                         temp[1] = re.sub(";$", "", temp[1])
-                        '''If the second value inside the list v is the word
-                        bool, then we want to make sure that our value found
-                        after the = in our output matches what we're expecting
-                        in v[0] which is either going to be a 1 or 0'''
-                        if v["type"] == "bool":
+                        '''We handle strings and bools the same, checking the value
+                        and if accept key has an alternately accpeted value, we 
+                        check for that, if neither match, return False'''
+                        if v["type"] == "bool" or v["type"] == "string":
                             if str(temp[1].strip()) != v["val"]:
                                 if v["accept"]:
                                     if temp[1].strip() != v["accept"]:
@@ -221,45 +219,38 @@ class KVAProfiles():
                             '''If the second value inside the list v is the word
                             int, then we want to make sure that our value found
                             after the = in our output matches what we're expecting
-                            in v[0] which could be any numerical integer.
-                            Additionally, if it's "int", there will be a third value
-                            inside the list v (v[2]) which will contain either the
+                            in v["val"] which could be any numerical integer.
+                            It it's not correct, then we check the accept key for the
                             word "more" or "less".  More indicates that if the values
                             don't match but the value in our output is a greater 
                             integer value than what we're expecting, then it's still
                             ok and vice versa with the less keyword.'''
                         elif v["type"] == "int":
-                            if v["accept"] == "more":
-                                if int(temp[1].strip()) < int(v["val"]):
-                                    debug += "Key: " + k + " doesn't " + \
-                                        "contain the correct integer " + \
-                                        "value\n"
-                                    unsecure = True
-                                    break 
-                            elif v["accept"] == "less":
-                                if int(temp[1].strip()) > int(v["val"]):
-                                    debug += "Key: " + k + " doesn't " + \
-                                        "contain the correct integer " + \
-                                        "value\n"
-                                    unsecure = True
-                                    break
-                            '''If the second value inside the list v is the word
-                            string, then we want to make sure that our value found
-                            after the = in our output matches what we're expecting
-                            in v[0] which could be any string.'''
-                        elif v["type"] == "string":
                             if temp[1].strip() != v["val"]:
-                                if v["accept"]:
-                                    if temp[1].strip() != v["accept"]:
+                                if v["accept"] == "more":
+                                    if int(temp[1].strip()) < int(v["val"]):
                                         debug += "Key: " + k + " doesn't " + \
-                                            "contain the correct string value\n"
+                                            "contain the correct integer " + \
+                                            "value\n"
                                         unsecure = True
                                         break
-                                else:
-                                    debug += "Key: " + k + " doesn't " + \
-                                             "contain the correct string value\n"
+                                elif v["accept"] == "less":
+                                    if int(temp[1].strip()) > int(v["val"]):
+                                        debug += "Key: " + k + " doesn't " + \
+                                            "contain the correct integer " + \
+                                            "value\n"
+                                        unsecure = True
+                                        break
+                                elif v["accept"] == "":
+                                    debug = "Key: " + k + " doesn't " + \
+                                        "contain the correct integer " + \
+                                        "value\n"
                                     unsecure = True
-                                    break
+                                else:
+                                    error = "Invalid value for accept parameter in data " + \
+                                        "dictionary. Needs to be either more or less keyword\n"
+                                    self.logger.log(LogPriority.ERROR, error)
+                                    raise Exception(error)
                 except IndexError:
                     debug += "Profile in bad format\n"
                     break
@@ -284,23 +275,24 @@ class KVAProfiles():
                 passed through as val from the calling method
         :param v: Not to be confused with the value in the calling
                 method which was our inner dictionary passed through
-                as val. This val is now the tuple associated with
-                our k value.
+                as val. This val is now the inner dictionary:
+                {"val":...,
+                 "type": ...,
+                 "accept": ...,
+                 "result": False}
         :param payloadblock: A list of lines from our payload
                 portion of the output from the system_profiler
                 command
         :returns: bool - True or False
 
         '''
-        print "payloadblock inside checkTuple: \n"
-        print str(payloadblock) + "\n"
         retval = True
         iterator = 0
         temp, temp2 = [], []
         for line in payloadblock:
-            if re.search("^" + k + "=", line.strip()):
+            if re.search("^\"{0,1}" + k + "\"{0,1}=", line.strip()):
                 if re.search("\(\)$", line):
-                    if str(v["val"]) == "()":
+                    if str(v["val"]) == "[]":
                         return True
                     else:
                         return False
@@ -322,18 +314,14 @@ class KVAProfiles():
             for line in temp:
                 if re.search("\,$", line):
                     line = re.sub("\,$", "", line)
-                    replaceables.append(line)
-                else:
-                    replaceables.append(line)
-            
-            if replaceables:
-                temp = replaceables
+                replaceables.append(line)
+            temp = replaceables
             removeables = []
             for line in temp:
-                if line in v:
+                if line in v["val"]:
                     removeables.append(line)
             if removeables:
-                v = list(v)
+                v = v["val"]
                 for item in removeables:
                     v.remove(item)
                     temp.remove(item)
@@ -341,7 +329,7 @@ class KVAProfiles():
             if v:
                 '''There are still items left so we didn't find them all'''
                 debug = "The following tuple items weren't found for the key " + k + "\n"
-                debug +=  str(v) + "\n"
+                debug += str(v) + "\n"
                 self.logger.log(LogPriority.DEBUG, debug)
                 retval = False
             if temp:
@@ -368,8 +356,11 @@ class KVAProfiles():
                 passed through as val from the calling method
         :param v: Not to be confused with the value in the calling
                 method which was our inner dictionary passed through
-                as val. This val is now the dict associated with
-                our k value.
+                as val. This val is now the inner dictionary:
+                {"val":...,
+                 "type": ...,
+                 "accept": ...,
+                 "result": False}
         :param payloadblock: A list of lines from our payload
                 portion of the output from the system_profiler
                 command
@@ -379,9 +370,9 @@ class KVAProfiles():
         retval = True
         iterator = 0
         for line in payloadblock:
-            if re.search("^" + k + "=", line):
+            if re.search("^\"{0,1}" + k + "\"{0,1}=", line):
                 if re.search("\{\}$", line):
-                    if str(v) == "{}":
+                    if str(v["val"]) == "{}":
                         return True
                     else:
                         return False
@@ -487,4 +478,4 @@ class KVAProfiles():
             for k, v in self.data.iteritems():
                 for k2, v2, in v.iteritems():
                     if v2["result"] == False:
-                        self.badvalues += k2 + " key has incorrect value of " + str(v2["val"]) + "\n"
+                        self.badvalues += k2 + " key does not have value of " + str(v2["val"]) + " or doesn't exist\n"
