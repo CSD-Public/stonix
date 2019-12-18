@@ -60,6 +60,7 @@ from stonixutilityfunctions import readFile, setPerms, createFile
 from stonixutilityfunctions import checkPerms, iterate, writeFile, resetsecon
 from logdispatcher import LogPriority
 from pkghelper import Pkghelper
+from ..KVEditorStonix import KVEditorStonix
 
 
 class DisableRemoveableStorage(Rule):
@@ -133,13 +134,11 @@ class DisableRemoveableStorage(Rule):
 
         try:
             # defaults
-            compliant = True
             self.detailedresults = ""
             if self.environ.getostype() == "Mac OS X":
                 compliant = self.reportMac()
             else:
                 compliant = self.reportLinux()
-
             self.compliant = compliant
         except OSError:
             self.detailedresults = traceback.format_exc()
@@ -335,30 +334,45 @@ class DisableRemoveableStorage(Rule):
 
     def reportMac(self):
         '''
-
-
         :returns: compliant
-
         :rtype: bool
-
         '''
 
         self.detailedresults = ""
-        compliant = False
-
-        checkcroncmd = "/usr/bin/crontab -l"
-        self.ch.executeCommand(checkcroncmd)
-        output = self.ch.getOutput()
-        for line in output:
-            if re.search("\@reboot /bin/launchctl unload /System/Library/LaunchDaemons/com\.apple\.diskarbitrationd\.plist", line):
-                compliant = True
-                break
-
-        if not compliant:
-            self.detailedresults += "Missing required system cron job\n"
-
+        compliant = True
+        self.setvars()
+        if not self.usbprofile:
+            self.detailedresults += "Could not locate the appropriate usb disablement profile for your system.\n"
+            compliant = False
+            self.formatDetailedResults("report", compliant, self.detailedresults)
+            self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+            return compliant
+        self.usbdict = {"com.apple.systemuiserver": {"harddisk-external": {"val": ["deny", "eject"],
+                                                                           "type": "",
+                                                                           "accept": "",
+                                                                           "result": False}}}
+        self.usbeditor = KVEditorStonix(self.statechglogger, self.logger,
+                                       "profiles", self.usbprofile, "",
+                                       self.usbdict, "", "")
+        if not self.usbeditor.report():
+            if self.usbeditor.badvalues:
+                self.detailedresults += self.usbeditor.badvalues + "\n"
+            self.detailedresults += "USB Disablement profile either not installed or values are incorrect\n"
+            compliant = False
         return compliant
 
+    def setvars(self):
+        self.usbprofile = ""
+        baseconfigpath = "/Applications/stonix4mac.app/Contents/Resources/stonix.app/Contents/MacOS/stonix_resources/files/"
+        self.usbprofile = baseconfigpath + "stonix4macDisableUSB.mobileconfig"
+
+        # the following path and dictionaries are for testing on local vm's
+        # without installing stonix package each time.  DO NOT DELETE
+        # basetestpath = "/Users/username/stonix/src/stonix_resources/files/"
+        # self.usbprofile = basetestpath + "stonix4macDisableUSB.mobileconfig"
+        if not os.path.exists(self.usbprofile):
+            self.logger.log(LogPriority.DEBUG, "Could not locate appropriate usb disablement profile\n")
+            self.usbprofile = ""
 
     def fix(self):
         '''attempt to perform necessary operations to bring the system into
@@ -416,68 +430,25 @@ class DisableRemoveableStorage(Rule):
         @change: dwalker 8/19/2014
 
         '''
-        debug = ""
         success = True
-#         check = "/usr/sbin/kextstat "
-#         unload = "/sbin/kextunload "
-#         load = "/sbin/kextload "
-#         filepath = "/System/Library/Extensions/"
-        self.cronfile = "/usr/lib/cron/tabs/root"
-
-        croncreated = False
-        if not os.path.exists(self.cronfile):
-            createFile(self.cronfile, self.logger)
-            croncreated = True
-            self.iditerator += 1
-            myid = iterate(self.iditerator, self.rulenumber)
-            event = {"eventtype": "creation",
-                     "filepath": self.cronfile}
-            self.statechglogger.recordchgevent(myid, event)
-        if os.path.exists(self.cronfile):
-            # for this file we don't worry about permissions, SIP protected
-            contents = readFile(self.cronfile, self.logger)
-            found = False
-            badline = False
-            tempstring = ""
-            for line in contents:
-                if not re.search("^\@reboot /bin/launchctl unload /System/Library/LaunchDaemons/com\.apple\.diskarbitrationd\.plist$", line.strip()):
-                    tempstring += line
-                elif re.search("^@reboot /bin/launchctl load /System/Library/LaunchDaemons/com\.apple\.diskarbitrationd\.plist$", line.strip()):
-                    badline = True
-                    continue
-                else:
-                    tempstring += line
-                    found = True
-            if not found:
-                tempstring += "@reboot /bin/launchctl unload /System/Library/LaunchDaemons/com.apple.diskarbitrationd.plist\n"
-            if not found or badline:
-                tmpfile = self.cronfile + ".tmp"
-                if not writeFile(tmpfile, tempstring, self.logger):
+        if not self.usbprofile:
+            return False
+        if not self.usbeditor.report():
+            if self.usbeditor.fix():
+                self.iditerator += 1
+                myid = iterate(self.iditerator, self.rulenumber)
+                self.usbeditor.setEventID(myid)
+                if not self.usbeditor.commit():
                     success = False
-                else:
-                    if not croncreated:
-                        self.iditerator += 1
-                        myid = iterate(self.iditerator, self.rulenumber)
-                        event = {"eventtype": "conf",
-                                 "filepath": self.cronfile}
-                        self.statechglogger.recordchgevent(myid, event)
-                        self.statechglogger.recordfilechange(self.cronfile,
-                                                                     tmpfile, myid)
-                        if not checkPerms(self.cronfile, [0, 0, 0o644], self.logger):
-                            self.iditerator += 1
-                            myid = iterate(self.iditerator, self.rulenumber)
-                            if not setPerms(self.cronfile, [0, 0, 0o644],
-                                            self.logger,
-                                            self.statechglogger, myid):
-                                success = False
-                    else:
-                        if not checkPerms(self.cronfile, [0, 0, 0o644], self.logger):
-                            if not setPerms(self.cronfile, [0, 0, 0o644],
-                                            self.logger):
-                                success = False
-                    os.rename(tmpfile, self.cronfile)
-        if debug:
-            self.logger.log(LogPriority.DEBUG, debug)
+                    self.detailedresults += "Unable to install " + self.usbprofile + " profile\n"
+                    self.logdispatch.log(LogPriority.DEBUG, "Kveditor commit failed")
+            else:
+                success = False
+                self.detailedresults += "Unable to install " + self.passprofile + "profile\n"
+                self.logdispatch.log(LogPriority.DEBUG, "Kveditor fix failed")
+        else:
+            success = False
+            self.detailedresults += "Password CI was not enabled.\n"
         return success
 
     def fixLinux(self):
