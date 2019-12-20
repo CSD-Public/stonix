@@ -21,7 +21,7 @@ System accounts are different from user accounts in that each is meant to be use
 
 <146>        "This rule will ensure 'root:root' ownership and '0600' (owner:rw, group:none, other:none) permissions on the boot loader configuration file. The 'Master Boot Record' (MBR) occupies the first 512 bytes of the first hard disk, and is the first thing loaded by the 'Basic Input Output System' (BIOS), in order to hand over control to a program capable of booting the desired operating system. In general, a boot loader gets installed in the MBR, replacing the MBR's previous content."
 
-<18>        "This rule configures the system to run a job at boot time, which ensures that both WiFi and Bluetooth are turned off, and that microphone inputs are muted/disabled."
+<18>        "This rule configures the system to run a job at boot time, which ensures that both WiFi and Bluetooth are turned off, and that microphone inputs are muted/disabled. !WARNING! DO NOT ENABLE THE FIPS OPTION IF YOUR SYSTEM IS ARLEADY FDE ENCRYPTED! FIPS must be enabled BEFORE FDE encryption is set up on the system. If FIPS is enable AFTER FDE encryption is set up on the system, the FDE password will not work and you will not be able to boot the system!"
 
 <58>        "***AUDIT-ONLY; NO FIX*** 
 
