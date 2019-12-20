@@ -179,7 +179,7 @@ class ReqPassSysPref(Rule):
                     results += "Failed to execute 'security " + \
                                "authorizationdb write' command\n"
                 else:
-                    secOut = self.ch.getOutputString()
+                    secOut = self.ch.getAllString()
 
                     debug = "Command output for " + pref + ": " + secOut
                     self.logger.log(LogPriority.DEBUG, debug)
