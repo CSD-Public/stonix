@@ -32,13 +32,12 @@ import re
 import shutil
 import traceback
 
-from src.stonix_resources.localize import STONIXVERSION
-
 revision = '1'
 red = False
 color = ''
 
 # get user input for variables
+stonixversion = input("What version of stonix is this?\n")
 revision = input("Which package revision is this?\n")
 red = input("Is this a red package?\n")
 
@@ -53,8 +52,6 @@ if curruserid != 0:
     quit()
 
 print("\ncorrect uid detected\n")
-
-stonixversion = STONIXVERSION
 
 # specify package details for dpkg build process
 controltext = '''Package: stonix''' + color + '''
@@ -151,8 +148,9 @@ try:
         shutil.copytree(sourcedir + 'stonix_resources',
                         bindir + 'stonix_resources')
     if not os.path.exists(builddir + 'usr/share/man/man8/stonix.8'):
+        os.chmod(sourcedir + 'usr/share/man/man8/stonix.8', 0o644)
         shutil.copytree(sourcedir + 'usr/share', builddir + '/usr/share')
-        os.chmod(builddir + '/usr/share', 0o644)
+        os.chmod(builddir + '/usr/share', 0o755)
 
     # ensure all directories and files have correct permissions
     for dirName, _, fileList in os.walk(bindir):
