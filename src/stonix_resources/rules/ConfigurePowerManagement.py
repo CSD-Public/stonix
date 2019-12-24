@@ -201,7 +201,6 @@ class ConfigurePowerManagement(Rule):
                             self.resultAppend(pslabel + " setting still not compliant! " + powerSettingInfo)
                             success = False
             self.rulesuccess = success
-            self.logdispatch.log(LogPriority.DEBUG, self.detailedresults)
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
@@ -210,7 +209,7 @@ class ConfigurePowerManagement(Rule):
             self.detailedresults = self.detailedresults + "\n" + str(err) + \
             " - " + str(traceback.format_exc())
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("fix", self.compliant,
+        self.formatDetailedResults("fix", self.rulesuccess,
                                    self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.rulesuccess
