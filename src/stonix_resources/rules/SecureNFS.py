@@ -15,7 +15,7 @@
 #                                                                             #
 ###############################################################################
 
-'''
+"""
 Created on Mar 11, 2015
 
 @author: dwalker
@@ -35,7 +35,7 @@ return self.rulesuccess. self.rulesuccess will now return instead of success.
 @change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
 @change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
-'''
+"""
 
 
 from stonixutilityfunctions import iterate, setPerms, checkPerms
@@ -55,6 +55,14 @@ from os.path import isfile, join
 class SecureNFS(Rule):
 
     def __init__(self, config, environ, logger, statechglogger):
+        """
+
+        :param config:
+        :param environ:
+        :param logger:
+        :param statechglogger:
+        """
+
         Rule.__init__(self, config, environ, logger, statechglogger)
         self.logger = logger
         self.rulenumber = 39
@@ -76,16 +84,13 @@ class SecureNFS(Rule):
         self.ci = self.initCi(datatype, key, instructions, default)
 
     def report(self):
-        '''Run report actions for SecureNFS
+        """
+        Run report actions for SecureNFS
 
-
-        :returns: self.compliant
-
+        :return: self.compliant
         :rtype: bool
-@author: dwalker
-@change: Breen Malmberg - 4/26/2016 - added check for nfs exports
 
-        '''
+        """
 
         self.detailedresults = ""
         self.compliant = True
@@ -186,6 +191,8 @@ class SecureNFS(Rule):
                             else:
                                 missingconfiglines.append(str(item) + eqtypestr + str(data1[item]))
                         self.detailedresults += "\nThe following configuration lines are missing from " + str(nfsfile) + ":\n" + "\n".join(missingconfiglines)
+                    else:
+                        self.detailedresults += "\nOne or more configuration lines are missing from " + str(nfsfile)
                     self.logger.log(LogPriority.DEBUG, self.detailedresults)
                     self.compliant = False
                 if not checkPerms(nfsfile, [0, 0, 420], self.logger):
@@ -240,16 +247,12 @@ class SecureNFS(Rule):
         return self.compliant
 
     def checkNFSexports(self):
-        '''check the NFS export lines in the exports configuration file
+        """
+        check the NFS export lines in the exports configuration file
 
-
-        :returns: retval
-
+        :return: retval
         :rtype: bool
-@author: Breen Malmberg
-@change: method first added 4/26/2016
-
-        '''
+        """
 
         retval = True
         filename = "/etc/exports"
@@ -270,28 +273,28 @@ class SecureNFS(Rule):
             if os.path.exists(directory):
                 fileslist = [f for f in listdir(directory) if isfile(join(directory, f))]
             if fileslist:
-                for f in fileslist:
+                for filename in fileslist:
                     f = open(filename, "r")
                     contentlines = f.readlines()
                     f.close()
                     if not self.checkNFScontents(contentlines, str(f)):
                         retval = False
+            else:
+                self.logger.log(LogPriority.DEBUG, "No NFS exports to check")
 
         except Exception:
             raise
         return retval
 
     def checkNFScontents(self, contentlines, filename=""):
-        '''check given list of contentlines for required nfs export formatting
+        """
+        check given list of contentlines for required nfs export formatting
 
         :param contentlines: 
         :param filename:  (Default value = "")
-        :returns: retval
+        :return: retval
         :rtype: bool
-@author: Breen Malmberg
-@change: method first added 4/29/2016
-
-        '''
+        """
 
         retval = True
 
@@ -333,10 +336,11 @@ class SecureNFS(Rule):
         return retval
 
     def fix(self):
-        '''Run fix actions for SecureNFS
+        """
+        Run fix actions for SecureNFS
 
 
-        :returns: self.rulesuccess
+        :return: self.rulesuccess
 
         :rtype: bool
 @author: dwalker
@@ -346,7 +350,7 @@ class SecureNFS(Rule):
 @change: Breen Malmberg - 7/11/2017 - added another service check on mac os x; no files will be created on mac if the service is not
         enabled
 
-        '''
+        """
 
         self.logdispatch.log(LogPriority.DEBUG, "Entering SecureNFS.fix()...")
 
