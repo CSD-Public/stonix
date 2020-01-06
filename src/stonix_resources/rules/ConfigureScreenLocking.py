@@ -193,18 +193,20 @@ class ConfigureScreenLocking(RuleKVEditor):
         @author: dwalker
 
         :param self: essential if you override this definition
-        :returns: bool - True if system is compliant, False if it isn't
-
+        :return: self.compliant
+        :rtype: bool
         """
 
         self.detailedresults = ""
+        self.compliant = True
+
         try:
+
             compliant = True
             self.detailedresults = ""
             if self.environ.osfamily == 'linux':
-                if not self.ph.check("screen"):
+                if not self.check_package():
                     compliant = False
-                    self.detailedresults += "\nRequired package 'screen' is missing"
                     if self.euid != 0:
                         self.detailedresults += "\nThis is expected if not running with elevated privileges since STONIX " \
                                                 "requires elevated privileges to install packages. Please run STONIX with elevated privileges " \
@@ -213,45 +215,78 @@ class ConfigureScreenLocking(RuleKVEditor):
                 if self.ph.check("gdm") or self.ph.check("gdm3"):
                     self.gnomeInstalled = True
                     if not self.reportGnome():
-                        self.detailedresults += "Gnome GUI environment " + \
+                        self.detailedresults += "\nGnome GUI environment " + \
                                                 "does not appear to be correctly configured " + \
-                                                "for screen locking parameters.\n"
+                                                "for screen locking parameters."
                         compliant = False
                     else:
-                        self.detailedresults += "Gnome GUI environment " + \
+                        self.detailedresults += "\nGnome GUI environment " + \
                                                 "appears to be correctly configured for " + \
-                                                "screen locking parameters.\n"
+                                                "screen locking parameters."
                 else:
                     self.gnomeInstalled = False
-                    self.detailedresults += "Gnome not installed.  No need to configure for gnome.\n"
+                    self.detailedresults += "\nGnome not installed.  No need to configure for gnome."
 
                 if self.ph.check("kdm") or self.ph.check("kde-workspace") or \
                                       self.ph.check("sddm") or self.ph.check("patterns-kde-kde_yast"):
                     self.kdeInstalled = True
                     if not self.reportKde():
-                        self.detailedresults += "KDE GUI environment " + \
+                        self.detailedresults += "\nKDE GUI environment " + \
                                                 "does not appear to be correctly configured " + \
-                                                "for screen locking parameters.\n"
+                                                "for screen locking parameters."
                         compliant = False
                     else:
-                        self.detailedresults += "KDE GUI environment " + \
+                        self.detailedresults += "\nKDE GUI environment " + \
                                                 "appears to be correctly configured for " + \
-                                                "screen locking parameters.\n"
+                                                "screen locking parameters."
                 else:
                     self.kdeInstalled = False
-                    self.detailedresults += "KDE not installed.  No need to configure for kde.\n"
+                    self.detailedresults += "\nKDE not installed.  No need to configure for kde."
+
             elif self.environ.getosfamily() == "darwin":
                 compliant = self.reportMac()
+
             self.compliant = compliant
+
         except(KeyboardInterrupt, SystemExit):
             raise
         except Exception:
+            self.compliant = False
             self.detailedresults += traceback.format_exc()
             self.logger.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("report", self.compliant, self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
 
         return self.compliant
+
+    def check_package(self):
+        """
+        for rhel 7 and similar generation linux rpm-based systems, the
+        'screen' package is required by the STIG
+        for rhel 8 and beyond (and similar), the 'tmux' package
+        is required.
+
+        :return: installed
+        :rtype: bool
+        """
+
+        self.screen_pkg = ""
+        installed = True
+
+        if self.ph.checkAvailable("tmux"):
+            self.screen_pkg = "tmux"
+        elif self.ph.check("tmux"):
+            self.screen_pkg = "tmux"
+        else:
+            self.screen_pkg = "screen"
+
+        if not self.ph.check(self.screen_pkg):
+            self.detailedresults += "\nThe required package: " + str(self.screen_pkg) + " is not installed"
+            installed = False
+        else:
+            self.detailedresults += "\nThe required package: " + str(self.screen_pkg) + " is installed"
+
+        return installed
 
     def reportMac(self):
         """Mac osx specific report submethod
@@ -415,7 +450,7 @@ class ConfigureScreenLocking(RuleKVEditor):
                         " instead of the desired value: " + getcmds[cmd] + "\n"
                         compliant = False
                 elif error:
-                    if re.search("No such key", error[0]):
+                    if re.search("No such key", error[0], re.I):
                         continue
                     self.detailedresults += "There is no value set for:" + \
                         cmd2 + "\n"
