@@ -635,7 +635,7 @@ class ConfigureScreenLocking(RuleKVEditor):
                     self.logger.log(LogPriority.DEBUG, 'Rule was not enabled, so nothing was done')
                     return
                 if self.euid == 0:
-                    if not self.ph.install("screen"):
+                    if not self.ph.install(self.screen_pkg):
                         success = False
                         self.logger.log(LogPriority.DEBUG, "Failed to install required package 'screen'")
                 else:
