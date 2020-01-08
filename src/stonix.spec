@@ -121,7 +121,7 @@ installed at /usr/local/stonix/stonixdb.sql
 %attr(0750,root,apache) /var/www/html/stonix/results.php
 
 %changelog
-* Tue Jan 7 2019 Derek Walker <dwalker@lanl.gov> 0.9.38
+* Tue Jan 7 2020 Derek Walker <dwalker@lanl.gov> 0.9.38
 - Updated - DisableRemovableStorage rule now uses profiles to disable usb for Mac
 - Updated - ConfigureAppleSoftwareUpdate rule now sets the update server to apple production
 - Updated - ConfigureAppleSoftwareUpdate rule now sets the update server to asus.lanl.gov if in the red
