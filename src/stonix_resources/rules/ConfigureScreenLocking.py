@@ -17,7 +17,7 @@
 
 #from deb_build_script import line
 #from __builtin__ import False
-'''
+"""
 Created on Jul 11, 2013
 
 @author: dwalker
@@ -56,7 +56,7 @@ Created on Jul 11, 2013
     beginning of fix() to the beginning of the fix linux path
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
 @change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
-'''
+"""
 
 from stonixutilityfunctions import createFile
 from stonixutilityfunctions import readFile, resetsecon, writeFile
@@ -186,25 +186,27 @@ class ConfigureScreenLocking(RuleKVEditor):
             self.euid = self.environ.geteuid()
 
     def report(self):
-        '''ConfigureScreenLocking.report() method to report whether system
+        """ConfigureScreenLocking.report() method to report whether system
         is configured to screen locking NSA standards.  If the system is linux,
         although many desktops are available, this rule will only check the
         two most popular desktops, KDE, and Gnome.
         @author: dwalker
 
         :param self: essential if you override this definition
-        :returns: bool - True if system is compliant, False if it isn't
-
-        '''
+        :return: self.compliant
+        :rtype: bool
+        """
 
         self.detailedresults = ""
+        self.compliant = True
+
         try:
+
             compliant = True
             self.detailedresults = ""
             if self.environ.osfamily == 'linux':
-                if not self.ph.check("screen"):
+                if not self.check_package():
                     compliant = False
-                    self.detailedresults += "\nRequired package 'screen' is missing"
                     if self.euid != 0:
                         self.detailedresults += "\nThis is expected if not running with elevated privileges since STONIX " \
                                                 "requires elevated privileges to install packages. Please run STONIX with elevated privileges " \
@@ -213,39 +215,43 @@ class ConfigureScreenLocking(RuleKVEditor):
                 if self.ph.check("gdm") or self.ph.check("gdm3"):
                     self.gnomeInstalled = True
                     if not self.reportGnome():
-                        self.detailedresults += "Gnome GUI environment " + \
+                        self.detailedresults += "\nGnome GUI environment " + \
                                                 "does not appear to be correctly configured " + \
-                                                "for screen locking parameters.\n"
+                                                "for screen locking parameters."
                         compliant = False
                     else:
-                        self.detailedresults += "Gnome GUI environment " + \
+                        self.detailedresults += "\nGnome GUI environment " + \
                                                 "appears to be correctly configured for " + \
-                                                "screen locking parameters.\n"
+                                                "screen locking parameters."
                 else:
                     self.gnomeInstalled = False
-                    self.detailedresults += "Gnome not installed.  No need to configure for gnome.\n"
+                    self.detailedresults += "\nGnome not installed.  No need to configure for gnome."
 
                 if self.ph.check("kdm") or self.ph.check("kde-workspace") or \
                                       self.ph.check("sddm") or self.ph.check("patterns-kde-kde_yast"):
                     self.kdeInstalled = True
                     if not self.reportKde():
-                        self.detailedresults += "KDE GUI environment " + \
+                        self.detailedresults += "\nKDE GUI environment " + \
                                                 "does not appear to be correctly configured " + \
-                                                "for screen locking parameters.\n"
+                                                "for screen locking parameters."
                         compliant = False
                     else:
-                        self.detailedresults += "KDE GUI environment " + \
+                        self.detailedresults += "\nKDE GUI environment " + \
                                                 "appears to be correctly configured for " + \
-                                                "screen locking parameters.\n"
+                                                "screen locking parameters."
                 else:
                     self.kdeInstalled = False
-                    self.detailedresults += "KDE not installed.  No need to configure for kde.\n"
+                    self.detailedresults += "\nKDE not installed.  No need to configure for kde."
+
             elif self.environ.getosfamily() == "darwin":
                 compliant = self.reportMac()
+
             self.compliant = compliant
+
         except(KeyboardInterrupt, SystemExit):
             raise
         except Exception:
+            self.compliant = False
             self.detailedresults += traceback.format_exc()
             self.logger.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("report", self.compliant, self.detailedresults)
@@ -253,20 +259,49 @@ class ConfigureScreenLocking(RuleKVEditor):
 
         return self.compliant
 
+    def check_package(self):
+        """
+        for rhel 7 and similar generation linux rpm-based systems, the
+        'screen' package is required by the STIG
+        for rhel 8 and beyond (and similar), the 'tmux' package
+        is required.
+
+        :return: installed
+        :rtype: bool
+        """
+
+        self.screen_pkg = ""
+        installed = True
+
+        if self.ph.checkAvailable("tmux"):
+            self.screen_pkg = "tmux"
+        elif self.ph.check("tmux"):
+            self.screen_pkg = "tmux"
+        else:
+            self.screen_pkg = "screen"
+
+        if not self.ph.check(self.screen_pkg):
+            self.detailedresults += "\nThe required package: " + str(self.screen_pkg) + " is not installed"
+            installed = False
+        else:
+            self.detailedresults += "\nThe required package: " + str(self.screen_pkg) + " is installed"
+
+        return installed
+
     def reportMac(self):
-        '''Mac osx specific report submethod
+        """Mac osx specific report submethod
         
         @author: dwalker
 
         :param self: essential if you override this definition
         :returns: bool - True if system is compliant, False if it isn't
 
-        '''
+        """
         success = RuleKVEditor.report(self, True)
         return success
 
     def reportGnome(self):
-        '''determines if gnome is installed, if so, checks to see if the
+        """determines if gnome is installed, if so, checks to see if the
         return value strings from running the gconftool-2 command are
         correct.  Gconftool-2 command only works in root mode so if not root
         do not audit gnome and just return true
@@ -277,7 +312,7 @@ class ConfigureScreenLocking(RuleKVEditor):
         :returns: bool
         @change: dwalker - mass refactor, added comments
 
-        '''
+        """
 
         compliant = True
         gsettings = "/usr/bin/gsettings"
@@ -415,7 +450,7 @@ class ConfigureScreenLocking(RuleKVEditor):
                         " instead of the desired value: " + getcmds[cmd] + "\n"
                         compliant = False
                 elif error:
-                    if re.search("No such key", error[0]):
+                    if re.search("No such key", error[0], re.I):
                         continue
                     self.detailedresults += "There is no value set for:" + \
                         cmd2 + "\n"
@@ -476,26 +511,25 @@ class ConfigureScreenLocking(RuleKVEditor):
                                       "/org/gnome/desktop/screensaver/lock-enabled",
                                       "/org/gnome/desktop/screensaver/lock-delay",
                                       "/org/gnome/desktop/screensaver/picture-uri"]
+
+                locks_missing = []
                 if os.path.exists(self.dconfsettingslock):
                     contents = readFile(self.dconfsettingslock, self.logger)
                     for line in contents:
-                        if line.strip() in self.dconflockdata:
-                            self.dconflockdata.remove(line.strip())
-                    if self.dconflockdata:
-                        output = "The following settings should be locked " + \
-                                 "from changes by the user but aren't:\n"
+                        if line.strip() not in self.dconflockdata:
+                            locks_missing.append(line.strip())
+
+                    if locks_missing:
+                        self.detailedresults += "\nThe following settings should be locked from changes by the user but aren't:\n" + "\n".join(locks_missing)
                         compliant = False
-                        for item in self.dconflockdata:
-                            output += item + "\n"
-                        self.detailedresults += output
                 else:
                     compliant = False
-                    self.detailedresults += self.dconfsettingslock + " not " + \
-                                            "found\n"
+                    self.detailedresults += "\nGnome settings lock file not found"
+
         return compliant
 
     def reportKde(self):
-        '''determines if kde is installed, if so, ensures kde is configured
+        """determines if kde is installed, if so, ensures kde is configured
         by enabling screenlocking, automatically going black after 14 minutes
         and if inactivity ensues after 14 minutes, screen fully locks after 1
         additional minute of inactivity for a total of 15 minutes activity
@@ -505,7 +539,7 @@ class ConfigureScreenLocking(RuleKVEditor):
         :param self: essential if you override this definition
         :returns: bool
 
-        '''
+        """
         self.kdefix = {}
         if self.ph.manager == "apt-get" or self.ph.manager == "zypper":
             self.rcpath = ".config/kscreenlockerrc"
@@ -522,13 +556,11 @@ class ConfigureScreenLocking(RuleKVEditor):
         if self.environ.geteuid() == 0:
             contents = readFile("/etc/passwd", self.logger)
             for line in contents:
-                username = ""
-                homepath = ""
                 temp = line.split(":")
                 try:
                     username = temp[0]
                     homepath = temp[5]
-                except(IndexError):
+                except IndexError:
                     self.logdispatch.log(LogPriority.DEBUG,
                                          ['ConfigureScreenLocking',
                                            'IndexError processing ' + str(temp)])
@@ -581,14 +613,14 @@ class ConfigureScreenLocking(RuleKVEditor):
                     return True
 
     def fix(self):
-        '''ConfigureScreenLocking.fix() method to correct screen locking
+        """ConfigureScreenLocking.fix() method to correct screen locking
         
         @author: dwalker
 
         :param self: essential if you override this definition
         :returns: bool - True if fix is successful, False if it isn't
 
-        '''
+        """
 
         self.detailedresults = ""
         self.rulesuccess = True
@@ -603,7 +635,7 @@ class ConfigureScreenLocking(RuleKVEditor):
                     self.logger.log(LogPriority.DEBUG, 'Rule was not enabled, so nothing was done')
                     return
                 if self.euid == 0:
-                    if not self.ph.install("screen"):
+                    if not self.ph.install(self.screen_pkg):
                         success = False
                         self.logger.log(LogPriority.DEBUG, "Failed to install required package 'screen'")
                 else:
@@ -633,7 +665,7 @@ class ConfigureScreenLocking(RuleKVEditor):
         return self.rulesuccess
 
     def fixKde(self):
-        '''This method checks if the kde screenlock file is configured
+        """This method checks if the kde screenlock file is configured
         properly.  Please note, this rule may fail if the owner and group of
         configuration file are not that of the user in question but doesn't
         necessarily mean your system is out of compliance.  If the fix fails
@@ -644,7 +676,7 @@ class ConfigureScreenLocking(RuleKVEditor):
         :returns: bool - True if KDE is successfully configured, False if it
                 isn't
 
-        '''
+        """
 
         success = True
         if self.environ.geteuid() == 0:
@@ -661,6 +693,7 @@ class ConfigureScreenLocking(RuleKVEditor):
                                             kdefile + "\n"
                     self.logger.log(LogPriority.DEBUG, self.detailedresults)
         else:
+            username = ""
             homepath = self.environ.geteuidhome()
             kdefile = os.path.join(homepath, self.rcpath)
             uidnum = int(self.environ.geteuid())
@@ -674,7 +707,7 @@ class ConfigureScreenLocking(RuleKVEditor):
                     if puidnum == uidnum:
                         username = user[0]
                         found = True
-                except(IndexError):
+                except IndexError:
                     continue
 
             if not found:
@@ -690,7 +723,7 @@ class ConfigureScreenLocking(RuleKVEditor):
         return success
 
     def fixGnome(self):
-        '''ensures gnome is configured to automatically screen lock after
+        """ensures gnome is configured to automatically screen lock after
         15 minutes of inactivity, if gnome is installed
         @author: dwalker
 
@@ -698,7 +731,7 @@ class ConfigureScreenLocking(RuleKVEditor):
         :returns: bool - True if gnome is successfully configured, False if it
                 isn't
 
-        '''
+        """
         info = ""
         success = True
         gconf = "/usr/bin/gconftool-2"
@@ -708,6 +741,9 @@ class ConfigureScreenLocking(RuleKVEditor):
             #which was set in the reportGnome method, meaning some values
             #either were incorrect or didn't have values.  Go through and
             #set each remaining value that isn't correct
+
+            cmd = ""
+
             if self.setcmds:
                 for item in self.setcmds:
                     if item == "/apps/gnome-screensaver/idle_activation_enabled":
@@ -843,26 +879,26 @@ class ConfigureScreenLocking(RuleKVEditor):
 
 
     def fixMac(self):
-        '''Mac osx specific fix submethod
+        """Mac osx specific fix submethod
         
         @author: dwalker
 
         :param self: essential if you override this definition
         :returns: bool - True if system is successfully fix, False if it isn't
 
-        '''
+        """
         success = RuleKVEditor.fix(self, True)
         return success
 
     def searchFile(self, filehandle):
-        '''temporary method to separate the code to find directives from the
+        """temporary method to separate the code to find directives from the
         rest of the code.  Will put back all in one method eventually
         @author: dwalker
 
         :param filehandle: string
         :returns: bool
 
-        '''
+        """
         self.editor = ""
         kvt = "tagconf"
         intent = "present"
@@ -877,20 +913,16 @@ class ConfigureScreenLocking(RuleKVEditor):
             return True
 
     def correctFile(self, kfile, user):
-        '''separate method to find the correct contents of each file passed in
+        """separate method to find the correct contents of each file passed in
         as a parameter.
         @author: dwalker
 
-        :param filehandle: string
         :param kfile: 
         :param user: 
         :returns: bool
 
-        '''
+        """
         success = True
-        self.editor = ""
-        debug = ""
-        uid, gid = "", ""
 
         if not os.path.exists(kfile):
             if not createFile(kfile, self.logger):
@@ -931,5 +963,4 @@ class ConfigureScreenLocking(RuleKVEditor):
     def undo(self):
         self.detailedresults += "This rule cannot be reverted\n"
         self.rulesuccess = False
-        self.formatDetailedResults("undo", self.rulesuccess,
-                                   self.detailedresults)
+        self.formatDetailedResults("undo", self.rulesuccess, self.detailedresults)

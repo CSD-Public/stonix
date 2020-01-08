@@ -121,6 +121,12 @@ installed at /usr/local/stonix/stonixdb.sql
 %attr(0750,root,apache) /var/www/html/stonix/results.php
 
 %changelog
+* Tue Jan 7 2020 Derek Walker <dwalker@lanl.gov> 0.9.38
+- Updated - DisableRemovableStorage rule now uses profiles to disable usb for Mac
+- Updated - ConfigureAppleSoftwareUpdate rule now sets the update server to apple production
+- Updated - ConfigureAppleSoftwareUpdate rule now sets the update server to asus.lanl.gov if in the red
+- Updated - ConfigureSystemAuthentication rule now displays the date and time of the last successful account logon upon logon
+
 * Mon Dec 2 2019 Brandon Gonzales <bgonz12@lanl.gov> 0.9.37
 - New - DisableGDMAutoLogin rule which disables gdm auto login and timed login
 - Fixed - issue where xml report log was failing to be generated properly

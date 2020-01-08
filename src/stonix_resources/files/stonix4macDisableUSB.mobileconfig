@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>PayloadContent</key>
+	<array>
+		<dict>
+			<key>PayloadDescription</key>
+			<string>Configures Allowed Media settings</string>
+			<key>PayloadDisplayName</key>
+			<string>Allowed Media</string>
+			<key>PayloadIdentifier</key>
+			<string>com.apple.systemuiserver</string>
+			<key>PayloadOrganization</key>
+			<string></string>
+			<key>PayloadType</key>
+			<string>com.apple.systemuiserver</string>
+			<key>PayloadUUID</key>
+			<string>8270B358-1E62-466B-AD01-E1059B229A46</string>
+			<key>PayloadVersion</key>
+			<integer>1</integer>
+			<key>mount-controls</key>
+			<dict>
+				<key>harddisk-external</key>
+				<array>
+					<string>deny</string>
+					<string>eject</string>
+				</array>
+			</dict>
+		</dict>
+	</array>
+	<key>PayloadDescription</key>
+	<string>Profile to Disable any USB external devices</string>
+	<key>PayloadDisplayName</key>
+	<string>stonix4macDisableUSB</string>
+	<key>PayloadIdentifier</key>
+	<string>com.github.erikberglund.ProfileCreator.E70B0ADE-C4FA-4BFD-9C22-CF183A40EAA4</string>
+	<key>PayloadOrganization</key>
+	<string>gov.lanl.stonix</string>
+	<key>PayloadScope</key>
+	<string>System</string>
+	<key>PayloadType</key>
+	<string>Configuration</string>
+	<key>PayloadUUID</key>
+	<string>E70B0ADE-C4FA-4BFD-9C22-CF183A40EAA4</string>
+	<key>PayloadVersion</key>
+	<integer>1</integer>
+</dict>
+</plist>

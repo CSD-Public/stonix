@@ -263,6 +263,10 @@ with rhel 7 stig requirements
             compliant = False
         if debug:
             self.logger.log(LogPriority.DEBUG, debug)
+
+        if not self.check_showfailed_logins():
+            compliant = False
+
         return compliant
 
     def fixLinux(self):
@@ -360,6 +364,50 @@ with rhel 7 stig requirements
                         self.logger.log(LogPriority.DEBUG, debug)
                         self.detailedresults += "Unable to configure /etc/login.defs file\n"
                         success = False
+
+        if not self.set_showfailed_logins():
+            success = False
+
+        return success
+
+    def check_showfailed_logins(self):
+        """
+        config file: /etc/pam.d/postlogin-ac
+        config option: session required pam_lastlog.so showfailed
+
+        :return:
+        """
+
+        configured = True
+        search_line = {"session": "required pam_lastlog.so showfailed"}
+        config_file = "/etc/pam.d/postlogin-ac"
+        tmpfile = config_file + ".stonixtmp"
+
+        self.lastlog_editor = KVEditorStonix(self.statechglogger, self.logger, "conf", config_file, tmpfile, search_line, "present", "space")
+        if not self.lastlog_editor.report():
+            configured = False
+            self.detailedresults += "\nShow failed logins option is not configured correctly in PAM"
+
+        return configured
+
+    def set_showfailed_logins(self):
+        """
+        config file: /etc/pam.d/postlogin-ac
+        config option: session required pam_lastlog.so showfailed
+
+        :return: success
+        :rtype: bool
+        """
+
+        success = True
+
+        if not self.lastlog_editor.fix():
+            success = False
+            self.detailedresults += "\nFailed to enable show failed logins option in PAM"
+        elif not self.lastlog_editor.commit():
+            success = False
+            self.detailedresults += "\nFailed to enable show failed logins option in PAM"
+
         return success
 
     def determine_pwreqs_mechanism(self):

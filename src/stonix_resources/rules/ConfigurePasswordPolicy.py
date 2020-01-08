@@ -43,7 +43,10 @@ from KVEditorStonix import KVEditorStonix
 
 
 class ConfigurePasswordPolicy(Rule):
-    '''Deploy Passcode Policy configuration profiles for macOS X'''
+    '''Deploy Passcode Policy configuration profiles for OS X Mavericks 10.9
+    & OS Yosemite 10.10. Profile files are installed using the following
+    OS X command.
+    '''
 
     def __init__(self, config, environ, logdispatch, statechglogger):
         '''
@@ -59,168 +62,278 @@ class ConfigurePasswordPolicy(Rule):
         self.sethelptext()
         self.rootrequired = True
         self.applicable = {'type': 'white',
-                           'os': {'Mac OS X': ['10.15', 'r', '10.15.10']},
-                           'fisma': 'med'}
+                           'os': {'Mac OS X': ['10.10.0', 'r', '10.14.10']}}
         self.fismacat = FISMACAT
         datatype = "bool"
         key = "PWPOLICY"
         instructions = "To disable the installation of the password " + \
                        "profile set the value of PWPOLICY to False"
-        default = False
+        default = True
         self.pwci = self.initCi(datatype, key, instructions, default)
 
-        # uncomment if/when there is a security and privacy proflie available for catalina
-        # datatype = "bool"
-        # key = "SECPOLICY"
-        # instructions = "To disable the installation of the security " + \
-        #                "profile set the value of SECPOLICY to False"
-        # default = True
-        # self.sci = self.initCi(datatype, key, instructions, default)
+        datatype = "bool"
+        key = "SECPOLICY"
+        instructions = "To disable the installation of the security " + \
+                       "profile set the value of SECPOLICY to False"
+        default = True
+        self.sci = self.initCi(datatype, key, instructions, default)
         self.iditerator = 0
         self.setvars()
 
     def setvars(self):
         '''set class variables based on os version'''
 
-        self.pwprofile = ""
+        self.passprofile = ""
         self.secprofile = ""
-        self.os_major_ver = self.environ.getosmajorver()
-        self.os_minor_ver = self.environ.getosminorver()
         baseconfigpath = "/Applications/stonix4mac.app/Contents/Resources/stonix.app/Contents/MacOS/stonix_resources/files/"
         if self.fismacat == "high":
-            self.passprofiledict = {"10.15": baseconfigpath + "stonix4macPasscodeConfigurationProfile-high.mobileconfig"}
-            #uncomment line below when catalina has a security profile
-            #self.secprofiledict = {"10.15": baseconfigpath + "stonix4macSecurity"}
+            self.passprofile = baseconfigpath + "stonix4macPasscodeConfigurationProfile-high.mobileconfig"
+            self.secprofile = baseconfigpath + "stonix4macSecurity&PrivacyConfigurationProfile.mobileconfig"
         else:
-            self.passprofiledict = {"10.15": baseconfigpath + "stonix4macPasscodeConfigurationProfile.mobileconfig"}
-            #uncomment line below when catalina has a security profile
-            self.secprofiledict = {"10.15": baseconfigpath + "stonix4macSecurity"}
+            self.passprofile = baseconfigpath + "stonix4macPasscodeConfigurationProfile.mobileconfig"
+            self.secprofile = baseconfigpath + "stonix4macSecuritySecurity&PrivacyConfigurationProfile.mobileconfig"
 
         # the following path and dictionaries are for testing on local vm's
         # without installing stonix package each time.  DO NOT DELETE
         # basetestpath = "/Users/username/stonix/src/stonix_resources/files/"
         # if self.fismacat == "high":
-        #     self.passprofiledict = {
-        #         "10.15": basetestpath + "stonix4macPasscodeConfigurationProfile-high.mobileconfig"}
-        #     self.secprofiledict = {
-        #         "10.15": basetestpath + "nameOfSecurityProfileWhenAvailable"}
+        #     self.passprofile = basetestpath + "stonix4macPasscodeConfigurationProfile-high.mobileconfig"
+        #     self.secprofile = basetestpath + "stonix4macSecurity&PrivacyConfigurationProfile.mobileconfig"
         # else:
-        #     self.passprofiledict = {
-        #         "10.15": basetestpath + "stonix4macPasscodeConfigurationProfile.mobileconfig"}
-        #     self.secprofiledict = {
-        #         "10.15": basetestpath + "nameOfSecurityProfileWhenAvailable"}
-        try:
-            self.pwprofile = self.passprofiledict[str(self.os_major_ver) + "." + str(self.os_minor_ver)]
-        except KeyError:
-            self.logger.log(LogPriority.DEBUG,
-                            "Could not locate appropriate password policy profile for macOS X version: " + str(
-                                self.os_major_ver) + "." + str(self.os_minor_ver))
-            self.pwprofile = ""
-        # uncomment if/when we have a security and privacy profile for catalina
-        # try:
-        #     self.secprofile = self.secprofiledict[str(self.os_major_ver) + "." + str(self.os_minor_ver)]
-        # except KeyError:
-        #     self.logger.log(LogPriority.DEBUG,
-        #         "Could not locate appropriate privacy and security policy profile for macOS X version: " + str(
-        #          self.os_major_ver) + "." + str(self.os_minor_ver))
-        #     self.secprofile = ""
+        #     self.passprofile = basetestpath + "stonix4macPasscodeConfigurationProfile.mobileconfig"
+        #     self.secprofile = basetestpath + "stonix4macSecurity&PrivacyConfigurationProfile.mobileconfig"
+        if not os.path.exists(self.passprofile):
+            self.logger.log(LogPriority.DEBUG, "Could not locate appropriate password policy profile\n")
+            self.passprofile = ""
+        if not os.path.exists(self.secprofile):
+            self.logger.log(LogPriority.DEBUG, "Could not locate appropriate privacy and security policy profile\n")
+            self.secprofile = ""
+
+    ################################################################################################
 
     def report(self):
-        '''report compliance to password policy and
-        security and privacy policy
-        :returns: self.compliant
-        :rtype: bool
+        '''first item in dictionary - identifier (multiple can exist)
+        first item in second nested dictionary - key identifier within
+            opening braces in output
+        first item in nested list is the expected value after the = in
+            output (usually a number, in quotes "1"
+        second item in nested list is accepted datatype of value after
+            the = ("bool", "int")
+        third item in nested list (if int) is whether the allowable value
+            is allowed to be more or less and still be ok
+            "more", "less"
         @author: Derek Walker
-        @change: Breen Malmberg - 10/25/2018 - added doc string; refactor
-        @change: Derek Walker - 2/7/2019 - updated method to search for a
-            different identifier for security profile on 10.13
         '''
         try:
             self.compliant = True
-            self.pwcompliant = False
-            self.secompliant = False
             self.detailedresults = ""
-            if not self.pwprofile:
-                self.detailedresults += "\nCould not determine the appropriate password policy profile for your system."
+            if not self.passprofile:
+                self.detailedresults += "Could not locate the appropriate password policy profile for your system.\n"
                 self.compliant = False
                 self.formatDetailedResults("report", self.compliant, self.detailedresults)
                 self.logdispatch.log(LogPriority.INFO, self.detailedresults)
                 return self.compliant
-            # uncomment if/when we have a security and privacy profile for catalina
-            # if not self.secprofile:
-            #     self.detailedresults += "\nCould not determine the appropriate privacy and security policy profile for your system."
-            #     self.compliant = False
-            #     self.formatDetailedResults("report", self.compliant, self.detailedresults)
-            #     self.logdispatch.log(LogPriority.INFO, self.detailedresults)
-            #     return self.compliant
+            if not self.secprofile:
+                self.detailedresults += "Could not determine the appropriate privacy and security policy profile for your system.\n"
+                self.compliant = False
+                self.formatDetailedResults("report", self.compliant, self.detailedresults)
+                self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+                return self.compliant
             if self.fismacat == "high":
-                self.pwprofiledict = {"com.apple.mobiledevice.passwordpolicy":
-                                          {"allowSimple": ["0", "bool"],
-                                           "forcePIN": ["1", "bool"],
-                                           "maxFailedAttempts": ["3", "int", "less"],
-                                           "maxGracePeriod": ["0", "string"],
-                                           "maxPINAgeInDays": ["60", "int", "less"],
-                                           "minComplexChars": ["1", "int", "more"],
-                                           "minLength": ["14", "int", "more"],
-                                           "minutesUntilFailedLoginReset":
-                                               ["15", "int", "more"],
-                                           "pinHistory": ["25", "int", "more"],
-                                           "requireAlphanumeric": ["1", "bool"]}}
+                self.pwprofiledict = {"com.apple.mobiledevice.passwordpolicy": {"allowSimple": {"val": "0",
+                                                                                                "type": "bool",
+                                                                                                "accept": "",
+                                                                                                "result": False},
+                                                                                "forcePIN": {"val": "1",
+                                                                                             "type": "bool",
+                                                                                             "accept": "",
+                                                                                             "result": False},
+                                                                                "maxFailedAttempts": {"val": "3",
+                                                                                                      "type": "int",
+                                                                                                      "accept": "less",
+                                                                                                      "result": False},
+                                                                                "maxGracePeriod": {"val": "0",
+                                                                                                   "type": "int",
+                                                                                                   "accept": "",
+                                                                                                   "result": False},
+                                                                                "maxPINAgeInDays": {"val": "60",
+                                                                                                    "type": "int",
+                                                                                                    "accept": "less",
+                                                                                                    "result": False},
+                                                                                "minComplexChars": {"val": "1",
+                                                                                                    "type": "int",
+                                                                                                    "accept": "more",
+                                                                                                    "result": False},
+                                                                                "minLength": {"val": "15",
+                                                                                              "type": "int",
+                                                                                              "accept": "more",
+                                                                                              "result": False},
+                                                                                "minutesUntilFailedLoginReset": {
+                                                                                    "val": "15",
+                                                                                    "type": "int",
+                                                                                    "accept": "more",
+                                                                                    "result": False},
+                                                                                "pinHistory": {"val": "25",
+                                                                                               "type": "int",
+                                                                                               "accept": "more",
+                                                                                               "result": False},
+                                                                                "requireAlphanumeric": {"val": "1",
+                                                                                                        "type": "bool",
+                                                                                                        "accept": "",
+                                                                                                        "result": False}}}
             else:
-                self.pwprofiledict = {"com.apple.mobiledevice.passwordpolicy":
-                                          {"allowSimple": ["1", "bool"],
-                                           "forcePIN": ["1", "bool"],
-                                           "maxFailedAttempts": ["5", "int", "less"],
-                                           "maxGracePeriod": ["15", "string"],
-                                           "maxPINAgeInDays": ["180", "int", "less"],
-                                           "minComplexChars": ["1", "int", "more"],
-                                           "minLength": ["8", "int", "more"],
-                                           "minutesUntilFailedLoginReset":
-                                               ["15", "int", "more"],
-                                           "pinHistory": ["5", "int", "more"],
-                                           "requireAlphanumeric": ["1", "bool"]}}
+                self.pwprofiledict = {"com.apple.mobiledevice.passwordpolicy": {"allowSimple": {"val": "1",
+                                                                                                "type": "bool",
+                                                                                                "accept": "0",
+                                                                                                "result": False},
+                                                                                "forcePIN": {"val": "1",
+                                                                                             "type": "bool",
+                                                                                             "accept": "",
+                                                                                             "result": False},
+                                                                                "maxFailedAttempts": {"val": "5",
+                                                                                                      "type": "int",
+                                                                                                      "accept": "less",
+                                                                                                      "result": False},
+                                                                                "maxGracePeriod": {"val": "15",
+                                                                                                   "type": "int",
+                                                                                                   "accept": "less",
+                                                                                                   "result": False},
+                                                                                "maxPINAgeInDays": {"val": "180",
+                                                                                                    "type": "int",
+                                                                                                    "accept": "less",
+                                                                                                    "result": False},
+                                                                                "minComplexChars": {"val": "1",
+                                                                                                    "type": "int",
+                                                                                                    "accept": "more",
+                                                                                                    "result": False},
+                                                                                "minLength": {"val": "8",
+                                                                                              "type": "int",
+                                                                                              "accept": "more",
+                                                                                              "result": False},
+                                                                                "minutesUntilFailedLoginReset": {
+                                                                                    "val": "15",
+                                                                                    "type": "int",
+                                                                                    "accept": "more",
+                                                                                    "result": False},
+                                                                                "pinHistory": {"val": "5",
+                                                                                               "type": "int",
+                                                                                               "accept": "more",
+                                                                                               "result": False},
+                                                                                "requireAlphanumeric": {"val": "1",
+                                                                                                        "type": "bool",
+                                                                                                        "accept": "",
+                                                                                                        "result": False}}}
+            self.secdict = {"com.apple.applicationaccess": {"allowAutoUnlock": {"val": "0",
+                                                                                "type": "bool",
+                                                                                "accept": "",
+                                                                                "result": False}},
+                            "com.apple.security.firewall": {"Applications": {"val": (),
+                                                                             "type": "",
+                                                                             "accept": "",
+                                                                             "result": False},
+                                                            "BlockAllIncoming": {"val": "0",
+                                                                                 "type": "bool",
+                                                                                 "accept": "",
+                                                                                 "result": False},
+                                                            "EnableFirewall": {"val": "0",
+                                                                               "type": "bool",
+                                                                               "accept": "",
+                                                                               "result": False},
+                                                            "EnableStealthMode": {"val": "0",
+                                                                                  "type": "bool",
+                                                                                  "accept": "",
+                                                                                  "result": False}},
+                            "com.apple.systempolicy.control": {"AllowIdentifiedDevelopers": {"val": "1",
+                                                                                             "type": "bool",
+                                                                                             "accept": "",
+                                                                                             "result": False},
+                                                               "EnableAssessment": {"val": "0",
+                                                                                    "type": "bool",
+                                                                                    "accept": "",
+                                                                                    "result": False}},
+                            "com.apple.screensaver": {"askForPassword": {"val": "1",
+                                                                         "type": "bool",
+                                                                         "accept": "",
+                                                                         "result": False},
+                                                      "askForPasswordDelay": {"val": "5",
+                                                                              "type": "int",
+                                                                              "accept": "less",
+                                                                              "result": False}},
+                            "com.apple.preference.security": {"dontAllowLockMessageUI": {"val": "1",
+                                                                                         "type": "bool",
+                                                                                         "accept": "",
+                                                                                         "result": False}},
+                            "com.apple.SubmitDiagInfo": {"AutoSubmit": {"val": "0",
+                                                                        "type": "bool",
+                                                                        "accept": "",
+                                                                        "result": False}},
+                            "com.apple.MCX": {"DestroyFVKeyOnStandby": {"val": "0",
+                                                                        "type": "bool",
+                                                                        "accept": "",
+                                                                        "result": False},
+                                              "dontAllowFDEDisable": {"val": "0",
+                                                                      "type": "bool",
+                                                                      "accept": "",
+                                                                      "result": False}}}
             self.pweditor = KVEditorStonix(self.statechglogger, self.logger,
-                                           "profiles", self.pwprofile, "",
-                                           self.pwprofiledict, "", "", self.environ)
+                                           "profiles", self.passprofile, "",
+                                           self.pwprofiledict, "", "")
             '''Run the system_proflier command'''
             if not self.pweditor.report():
+                if self.pweditor.badvalues:
+                    self.detailedresults += self.pweditor.badvalues + "\n"
+                self.detailedresults += "Password profile either not installed or values are incorrect\n"
                 self.compliant = False
-                # if self.pweditor.fixables:
-                self.detailedresults += "Password profile not installed\n"
-            else:
-                self.detailedresults += "All password profile configuration items are correct and profile is installed."
+
+            self.seceditor = KVEditorStonix(self.statechglogger, self.logger,
+                                            "profiles", self.secprofile, "",
+                                            self.secdict, "", "", self.environ)
+            '''Run the system_proflier command'''
+            if not self.seceditor.report():
+                if self.seceditor.badvalues:
+                    self.detailedresults += self.seceditor.badvalues + "\n"
+                self.compliant = False
+                self.detailedresults += "Security and privacy profile not installed or values are incorrect\n"
 
         except (KeyboardInterrupt, SystemExit):
             raise
-        except Exception:
+        except Exception as err:
             self.rulesuccess = False
-            self.detailedresults += "\n" + traceback.format_exc()
+            self.detailedresults = self.detailedresults + "\n" + str(err) + \
+                                   " - " + str(traceback.format_exc())
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("report", self.compliant, self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.compliant
 
-    def fix(self):
-        '''install the password policy and privacy and security policy profiles
-        :returns: self.rulesuccess
-        :rtype: bool
-        @author: Derek Walker
-        @change: Breen Malmberg - 10/25/2018 - added doc string; refactor
-        '''
+    ###############################################################################
 
+    def fix(self):
+        '''
+        Configure and install the password policy and security profiles for Mac OS X
+        @author: Derek Walker
+        @change: 04/19/2018 - Breen Malmberg - added doc string; cleaned up redundant code;
+            added more logging; added in-line comments; removed dead-end logic paths which
+            blocked correct code from running at all (ever); corrected the return variable;
+            added detailedresults formatting if exiting method early due to CI not being set
+        @change: 12/1/2019 - Derek Walker - cleaned up logic, updated rule to use updated version
+            of KVAprofiles class.
+        '''
         try:
+
             self.detailedresults = ""
-            if not self.pwci.getcurrvalue(): #and not self.sci.getcurravlue():
-                self.detailedresults += "Neither configuration item was enabled\n" + \
-                    "Rule fix will not run\n"
-                return
-            self.rulesuccess = True
-            if self.pwci.getcurrvalue(): #and self.sci.getcurrvalue():
-                self.iditerator = 0
-                eventlist = self.statechglogger.findrulechanges(self.rulenumber)
-                for event in eventlist:
-                    self.statechglogger.deleteentry(event)
-            # if password policy ci enabled
+            success = True
+            if not self.pwci and not self.sci.getcurrvalue():
+                self.detailedresults += "Neither configuration item was enabled\n"
+                self.rulesuccess = False
+                self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
+                self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+                return self.rulesuccess
+            self.iditerator = 0
+            eventlist = self.statechglogger.findrulechanges(self.rulenumber)
+            for event in eventlist:
+                self.statechglogger.deleteentry(event)
+            # if the primary rule CI is enabled, then run the fix actions for this rule
             if self.pwci.getcurrvalue():
                 if not self.pweditor.report():
                     if self.pweditor.fix():
@@ -228,50 +341,44 @@ class ConfigurePasswordPolicy(Rule):
                         myid = iterate(self.iditerator, self.rulenumber)
                         self.pweditor.setEventID(myid)
                         if not self.pweditor.commit():
-                            self.rulesuccess = False
+                            success = False
+                            self.detailedresults += "Unable to install " + self.passprofile + "profile\n"
                             self.logdispatch.log(LogPriority.DEBUG, "Kveditor commit failed")
                     else:
-                        self.rulesuccess = False
+                        success = False
+                        self.detailedresults += "Unable to install " + self.passprofile + "profile\n"
+                        self.logdispatch.log(LogPriority.DEBUG, "Kveditor fix failed")
+            else:
+                success = False
+                self.detailedresults += "Password CI was not enabled.\n"
+            # if the primary rule CI is enabled, then run the fix actions for this rule
+            if self.sci.getcurrvalue():
+                if not self.seceditor.report():
+                    if self.seceditor.fix():
+                        self.iditerator += 1
+                        myid = iterate(self.iditerator, self.rulenumber)
+                        self.seceditor.setEventID(myid)
+                        if not self.seceditor.commit():
+                            success = False
+                            self.detailedresults += "Unable to install " + self.secprofile + "profile\n"
+                            self.logdispatch.log(LogPriority.DEBUG, "Kveditor commit failed")
+                    else:
+                        success = False
+                        self.detailedresults += "Unable to install " + self.secprofile + "profile\n"
                         self.logdispatch.log(LogPriority.DEBUG, "Kveditor fix failed")
                 else:
-                    self.detailedresults += "\nPassword policy profile was already installed. Nothing to do."
-            # uncomment if/when catlina we have a security and privacy profile for catalina
-            # # if privacy and sec policy ci enabled
-            # if self.sci.getcurrvalue():
-            #     # install privacy and security profile
-            #     if not self.secompliant:
-            #         installsecp = pinstall + self.secprofile
-            #         self.ch.executeCommand(installsecp)
-            #         retcode = self.ch.getReturnCode()
-            #         # if successfull
-            #         if retcode == 0:
-            #             # configure undo action
-            #             self.iditerator += 1
-            #             myid = iterate(self.iditerator, self.rulenumber)
-            #             undosecp = premove + self.secprofile
-            #             event = {"eventtype": "comm",
-            #                      "command": undosecp}
-            #             self.statechglogger.recordchgevent(myid, event)
-            #             self.detailedresults += "\nSuccessfully installed Privacy and Security policy profile in:\n" + str(
-            #                 self.secprofile)
-            #         # if not successful
-            #         else:
-            #             self.rulesuccess = False
-            #             self.detailedresults += "\nFailed to install Privacy and Security policy profile!"
-            #             errmsg = self.ch.getErrorString()
-            #             self.logger.log(LogPriority.DEBUG, errmsg)
-            #     else:
-            #         self.detailedresults += "\nPrivacy and Security policy profile was already installed. Nothing to do."
-
-                # sync new profiles with users
-                #self.ch.executeCommand(profiles + " sync")
-
+                    self.detailedresults += "Password policy profile was already installed.\n"
+            else:
+                success = False
+                self.detailedresults += "Password CI was not enabled.\n"
+            self.rulesuccess = success
         except (KeyboardInterrupt, SystemExit):
             raise
-        except Exception:
+        except Exception as err:
             self.rulesuccess = False
-            self.detailedresults += "\n" + traceback.format_exc()
+            self.detailedresults = self.detailedresults + "\n" + str(err) + \
+                                   " - " + str(traceback.format_exc())
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
-        self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
+        self.formatDetailedResults("fix", success, self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.rulesuccess

@@ -90,6 +90,7 @@ class DisableNobodyAccess(Rule):
             else:
                 self.createFile(self.path)
                 self.created = True
+                tmpPath = self.path + ".tmp"
                 self.editor = KVEditorStonix(self.statechglogger, self.logger,
                        "conf", self.path, tmpPath, keys, "present", "closedeq")
                 self.editor.fixables = keys

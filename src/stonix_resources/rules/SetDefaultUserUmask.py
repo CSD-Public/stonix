@@ -16,7 +16,7 @@
 ###############################################################################
 
 
-'''
+"""
 Created on Dec 11, 2012
 The SetDefaultUserUmask class sets the default user umask to 077. Also accepts
 user input of alternate 027 umask.
@@ -37,9 +37,7 @@ user input of alternate 027 umask.
 @change: 2018/06/08 ekkehard - make eligible for macOS Mojave 10.14
 @change: 2019/03/12 ekkehard - make eligible for macOS Sierra 10.12+
 @change: 2019/08/07 ekkehard - enable for macOS Catalina 10.15 only
-'''
-
-
+"""
 
 import os
 import re
@@ -53,19 +51,17 @@ from CommandHelper import CommandHelper
 
 
 class SetDefaultUserUmask(Rule):
-    '''The SetDefaultUserUmask class sets the default user umask to 077. Also
+    """The SetDefaultUserUmask class sets the default user umask to 077. Also
     accepts user input of alternate 027 umask.
     
     For OS X documentation on this can be found at:
     http://support.apple.com/kb/HT2202
-
-
-    '''
+    """
 
     def __init__(self, config, environ, logdispatch, statechglogger):
-        '''
+        """
         Constructor
-        '''
+        """
 
         Rule.__init__(self, config, environ, logdispatch, statechglogger)
         self.config = config
@@ -84,7 +80,7 @@ class SetDefaultUserUmask(Rule):
 
         # set up which system types this rule will be applicable to
         self.applicable = {'type': 'white',
-                           'family': ['linux', 'solaris', 'freebsd'],
+                           'family': 'linux',
                            'os': {'Mac OS X': ['10.15', 'r', '10.15.10']}}
 
         # decide what the default umask value should be, based on osfamily
@@ -112,20 +108,17 @@ class SetDefaultUserUmask(Rule):
         root_ci_instructions = "Set the default root umask value. Correct format is a 3-digit, 0-padded integer. Setting this to a value more restrictive than 022 may cause issues on your system. This value will determine the default permissions for every file created by the root user."
         self.rootUmask = self.initCi(root_ci_type, root_ci_name, root_ci_instructions, self.rootumask)
 
-###############################################################################
-
     def report(self):
-        '''The report method examines the current configuration and determines
+        """
+        The report method examines the current configuration and determines
         whether or not it is correct. If the config is correct then the
         self.compliant, self.detailedresults and self.currstate properties are
         updated to reflect the system status. self.rulesuccess will be updated
         if the rule does not succeed.
 
-
-        :returns: bool
-        @author: Breen Malmberg
-
-        '''
+        :return: self.compliant
+        :rtype: bool
+        """
 
         # defaults
         self.detailedresults = ""
@@ -163,60 +156,16 @@ class SetDefaultUserUmask(Rule):
             self.logdispatch.log(LogPriority.ERROR, self.detailedresults)
         self.formatDetailedResults("report", self.compliant, self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+
         return self.compliant
 
-###############################################################################
-
-    def reportmac(self):
-        '''private method for reporting compliance status of darwin based systems
-
-
-        :returns: bool
-        @author: Breen Malmberg
-
-        '''
-
-        # defaults
-        configured = True
-
-        try:
-
-            # determine if the minor revision is greater than 9 (10.10+)
-            major_ver = self.environ.getosmajorver()
-            minor_ver = self.environ.getosminorver()
-            if int(major_ver) >= 10:
-                if int(minor_ver) > 9:
-                    # this is 10.10 or later, use the new method
-                    if not self.reportmac1010_plus():
-                        configured = False
-            else:
-
-                # needs better, mac-canonical implementation (possibly with launchd)
-                # waiting on response from apple as to how to do this properly, on 
-                # command line with mac.
-                umask = os.umask(0)
-                os.umask(umask)
-    
-                if umask != self.userumask:
-                    configured = False
-
-        except Exception:
-            raise
-
-        return configured
-
-###############################################################################
-
     def reportnix(self):
-        '''private method for reporting compliance status of *nix based systems
+        """
+        private method for reporting compliance status of *nix based systems
 
-
-        :returns: configured
-
+        :return: configured
         :rtype: bool
-@author: Breen Malmberg
-
-        '''
+        """
 
         # defaults
         configured = True
@@ -256,22 +205,21 @@ class SetDefaultUserUmask(Rule):
 
         return configured
 
-    def reportmac1010_plus(self):
-        '''the system's default user umask value (if set to something other than 022,
+    def reportmac(self):
+        """the system's default user umask value (if set to something other than 022,
         will be stored in the file /var/db/com.apple.xpc.launchd/config/user.plist
         on versions of mac os x equal to or greater than 10.10
 
 
-        :returns: retval
+        :return: retval
 
         :rtype: bool
 @author: Breen Malmberg
 
-        '''
+        """
 
         valid = False
         pathexists = True
-        retval = False
         plistpath = "/var/db/com.apple.xpc.launchd/config/user.plist"
         cmd = "/usr/bin/defaults read " + str(plistpath) + " Umask"
         # mac transforms the umask value to a different integer value
@@ -300,19 +248,17 @@ class SetDefaultUserUmask(Rule):
 
         return retval
 
-###############################################################################
-
     def fix(self):
-        '''The fix method will apply the required settings to the system.
+        """The fix method will apply the required settings to the system.
         self.rulesuccess will be updated if the rule does not succeed.
         Method to set the default users umask to 077 (or 027 if specified in
         the related config file.
 
 
-        :returns: bool
+        :return: bool
         @author: Breen Malmberg
 
-        '''
+        """
 
         # defaults
         self.detailedresults = ""
@@ -347,78 +293,18 @@ class SetDefaultUserUmask(Rule):
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.rulesuccess
 
-###############################################################################
-
     def fixmac(self):
-        '''private method to apply umask config changes to mac systems
-
-
-        :returns: bool
-        @author: Breen Malmberg
-        @change: Breen Malmberg 09/02/2014 - added calls to hotfix code provided by
-                method removeStonixUMASKCodeFromFile()
-        @change: 01/17/2018 - Breen Malmberg - added conditional call to new fixmac1010_plus()
-                method, for newer versions of mac os.
-
-        '''
-
-        # defaults
-        success = True
-        rootfiles = []
-        userfiles = []
-        for item in self.rootfiledict:
-            rootfiles.append(item)
-        for item in self.userfiledict:
-            userfiles.append(item)
-
-        try:
-
-            # determine if the minor revision is greater than 9 (10.10+)
-            major_ver = self.environ.getosmajorver()
-            minor_ver = self.environ.getosminorver()
-            if int(major_ver) >= 10:
-                if int(minor_ver) > 9:
-                    # this is 10.10 or later, use the new method
-                    if not self.fixmac1010_plus():
-                        success = False
-            elif int(major_ver) == 10 and int(minor_ver) <= 9:
-                # this is 10.9 or before
-
-                # hotfix to remove bad code / config entries from previous version
-                self.removeStonixUMASKCodeFromFile(rootfiles)
-                self.removeStonixUMASKCodeFromFile(userfiles)
-    
-                # append the umask config line to the mac config file
-                self.configFile('umask ' + str(self.userUmask.getcurrvalue()), self.macfile, 0o644, [0, 0])
-    
-                # if mac config file does not exist, create it and write the
-                # umask config line to it
-                if not os.path.exists(self.macfile):
-                    f = open(self.macfile, 'w')
-                    f.write('umask ' + str(self.userUmask.getcurrvalue()) + '\n')
-                    f.close()
-    
-                    # set correct permissions on newly created config file
-                    os.chmod(self.macfile, 0o644)
-                    os.chown(self.macfile, 0, 0)
-
-        except Exception:
-            success = False
-            raise
-        return success
-
-    def fixmac1010_plus(self):
-        '''Canonical way of setting user umask in mac os x 10.10 and later
+        """Canonical way of setting user umask in mac os x 10.10 and later
         reference: https://support.apple.com/en-us/HT201684
 
 
-        :returns: retval
+        :return: retval
 
         :rtype: bool
 @author: Breen Malmberg
 @change: 01/17/2018 - Breen Malmberg - added this method for newer mac os versions
 
-        '''
+        """
 
         retval = True
 
@@ -437,18 +323,13 @@ class SetDefaultUserUmask(Rule):
 
         return retval
 
-###############################################################################
-
     def fixnix(self):
-        '''private method to apply umask config changes to *nix systems
+        """
+        private method to apply umask config changes to *nix systems
 
-
-        :returns: success
-
+        :return: success
         :rtype: bool
-@author: Breen Malmberg
-
-        '''
+        """
 
         # defaults
         success = True
@@ -467,29 +348,23 @@ class SetDefaultUserUmask(Rule):
                     self.configFile('umask    ' + str(self.rootUmask.getcurrvalue()) + "\n", item, 0o644, [0, 0], True)
 
         except Exception:
-            success = False
             raise
         return success
 
-###############################################################################
-
     def searchString(self, searchRE, filepath):
-        '''private method for searching for a given string in a given file
+        """
+        private method for searching for a given string in a given file
 
         :param searchRE: 
         :param filepath: 
-        :returns: retval
+        :return: retval
         :rtype: bool
-@author: Breen Malmberg
-
-        '''
+        """
 
         # defaults
         stringfound = False
         noduplicates = True
         entries_found = 0
-        retval = True
-        duplicates = 0
 
         try:
 
@@ -526,10 +401,8 @@ class SetDefaultUserUmask(Rule):
 
         return retval
 
-###############################################################################
-
     def configFile(self, configString, filepath, perms, owner, create=False):
-        '''private method for adding a configString to a given filepath
+        """private method for adding a configString to a given filepath
 
         :param configString: 
         :param filepath: 
@@ -537,7 +410,7 @@ class SetDefaultUserUmask(Rule):
         :param owner: 
         :param create:  (Default value = False)
 
-        '''
+        """
 
         umask_entries = 0
 
@@ -601,31 +474,32 @@ class SetDefaultUserUmask(Rule):
         except Exception:
             raise
 
-###############################################################################
-
     def appendDetailedResults(self, message):
-        '''
+        """
+        append given message to self.detailedresults
 
-        :param message: 
-
-        '''
+        :param message: string; ?
+        """
 
         self.detailedresults += '\n' + str(message) + '\n'
 
-###############################################################################
-
     def removeStonixUMASKCodeFromFile(self, filelist=[]):
-        '''Removes the STONIX sets default umask block from list
+        """
+        Removes the STONIX sets default umask block from list
         of files presented
 
         :param filelist:  (Default value = [])
-        :returns: bool
-        @author: ekkehard
+        :return: success
+        :rtype: bool
+        """
 
-        '''
         success = True
+        bakFile = ""
+
         for myfile in filelist:
             if os.path.exists(myfile):
+                removedBlockSuccessfully = False
+
                 try:
                     rfh = open(myfile, "r")
                 except Exception:
@@ -638,14 +512,12 @@ class SetDefaultUserUmask(Rule):
                         os.path.basename(myfile) + ".bak"
                         wfh = open(bakFile, "w")
                     except Exception:
-                        self.appendDetailedResults("File: " + \
-                        str(bakFile) + " Open For Writing Failed - " + \
-                        str(traceback.format_exc()))
+                        self.logdispatch.log(LogPriority.ERROR, "Failed to create backup for umask file")
                     else:
                         startOfUMASKBlock = False
                         endOfUMASKBlock = False
                         for line in rfh:
-                            if ("# This block added by STONIX sets default umask" in line):
+                            if "# This block added by STONIX sets default umask" in line:
                                 startOfUMASKBlock = True
                             if startOfUMASKBlock and not endOfUMASKBlock:
                                 self.logdispatch.log(LogPriority.DEBUG,
@@ -659,8 +531,6 @@ class SetDefaultUserUmask(Rule):
 
                         if startOfUMASKBlock and endOfUMASKBlock:
                             removedBlockSuccessfully = True
-                        else:
-                            removedBlockSuccessfully = False
                         rfh.close()
                         wfh.close()
 #####

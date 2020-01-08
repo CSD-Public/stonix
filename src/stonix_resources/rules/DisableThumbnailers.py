@@ -39,6 +39,7 @@ from logdispatcher import LogPriority
 from CommandHelper import CommandHelper
 from pkghelper import Pkghelper
 from stonixutilityfunctions import iterate
+from KVEditorStonix import KVEditorStonix
 
 
 class DisableThumbnailers(Rule):
@@ -86,7 +87,7 @@ class DisableThumbnailers(Rule):
         self.updatecmd = ""
         packages = ["gnome", "gdm", "gdm3", "gnome3"]
         self.lockfile = "/etc/dconf/db/local.d/locks/stonix-thumbnailers"
-        self.locksetting = "/org/gnome/desktop/thumbnailers/disable-all"
+        self.lockthumbnails = {"/org/gnome/desktop/thumbnailers/disable-all":""}
 
         if os.path.exists(self.gsettings):
             self.getcmd = self.gsettings + " get org.gnome.desktop.thumbnailers disable-all"
@@ -155,18 +156,19 @@ class DisableThumbnailers(Rule):
 
         compliant = True
 
-        if not os.path.exists(self.lockfile):
-            compliant = False
-            self.detailedresults += "\nThe thumbnailers lock file doesn't exist"
-            return compliant
+        kvtype = "conf"
+        path = self.lockfile
+        tmppath = self.lockfile + ".stonixtmp"
+        intent = "present"
+        conftype = "space"
 
-        f = open(self.lockfile, "r")
-        contents = f.read()
-        f.close()
-
-        if not re.search(self.locksetting, contents):
+        self.lock_editor = KVEditorStonix(self.statechglogger, self.logdispatch, kvtype, path, tmppath, self.lockthumbnails, intent, conftype)
+        if not self.lock_editor.report():
             compliant = False
-            self.detailedresults += "\nThe thumbnailers lock file is not properly configured"
+            if self.lock_editor.fixables:
+                self.detailedresults += "\nThe following required configuration lines were not found in the gnome lock file:\n" + "\n".join(self.lock_editor.fixables)
+            else:
+                self.detailedresults += "\nOne or more required configuration lines were not found in the gnome lock file"
 
         return compliant
 
@@ -259,11 +261,12 @@ class DisableThumbnailers(Rule):
                 pass
         try:
 
-            f = open(self.lockfile, "w")
-            f.write(self.locksetting)
-            f.close()
-            os.chmod(self.lockfile, 0o644)
-            os.chown(self.lockfile, 0, 0)
+            if not self.lock_editor.fix():
+                self.detailedresults += "\nFailed to lock thumbnailers setting"
+                success = False
+            elif not self.lock_editor.commit():
+                self.detailedresults += "\nFailed to lock thumbnailers setting"
+                success = False
 
         except Exception:
             success = False
@@ -271,10 +274,8 @@ class DisableThumbnailers(Rule):
         if success:
             self.iditerator += 1
             myid = iterate(self.iditerator, self.rulenumber)
-            event = {"eventtype": "creation",
+            event = {"eventtype": "conf",
                      "filepath": self.lockfile}
             self.statechglogger.recordchgevent(myid, event)
-        else:
-            self.logger.log(LogPriority.DEBUG, "Failed to create thumbnailers lock file")
 
         return success
