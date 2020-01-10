@@ -45,7 +45,6 @@ that occurs when system sound card(s) is missing firmware
 import traceback
 import os
 import re
-import subprocess
 
 from rule import Rule
 from logdispatcher import LogPriority
@@ -709,9 +708,8 @@ added more debugging output
         indexlist = []
         index = ''
         listcmd = '/usr/bin/pacmd list-sources'
-        proc = subprocess.Popen(listcmd, stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE, shell=True)
-        pulsesourcelist = proc.stdout.readlines()
+        self.ch.executeCommand(listcmd)
+        pulsesourcelist = self.ch.getOutput()
         for line in pulsesourcelist:
             if re.search('index:', line):
                 self.logdispatch.log(LogPriority.DEBUG,

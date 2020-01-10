@@ -266,31 +266,37 @@ class LogDispatcher (Observable):
                 prefix = ''
                 msg = msg + '\n'
 
-            if priority == LogPriority.INFO:
-                logging.info('INFO:' + prefix + msg)
-                # self.write_xml_log(priority, entry)
-            elif priority == LogPriority.WARNING:
-                logging.warning('WARNING:' + msg)
-                if self.metadataopen:
-                    # self.writemetadataentry(entry)
-                    self.xmlreport.writeMetadata(entry)
+            try:
+
+                if priority == LogPriority.INFO:
+                    logging.info('INFO:' + prefix + msg)
+                    # self.write_xml_log(priority, entry)
+                elif priority == LogPriority.WARNING:
+                    logging.warning('WARNING:' + msg)
+                    if self.metadataopen:
+                        # self.writemetadataentry(entry)
+                        self.xmlreport.writeMetadata(entry)
+                    else:
+                        # self.write_xml_log(entry)
+                        self.xmlreport.writeFinding(entry)
+                elif priority == LogPriority.ERROR:
+                    logging.error('ERROR:' + prefix + msg)
+                    # self.write_xml_log(priority, entry)
+                    self.reporterr(msg, prefix)
+                elif priority == LogPriority.CRITICAL:
+                    logging.critical('CRITICAL:' + prefix + msg)
+                    # self.write_xml_log(priority, entry)
+                    self.reporterr(msg, prefix)
+                elif priority == LogPriority.DEBUG:
+                    logging.debug('DEBUG:' + prefix + msg)
+                    # self.write_xml_log(priority, entry)
                 else:
-                    # self.write_xml_log(entry)
-                    self.xmlreport.writeFinding(entry)
-            elif priority == LogPriority.ERROR:
-                logging.error('ERROR:' + prefix + msg)
-                # self.write_xml_log(priority, entry)
-                self.reporterr(msg, prefix)
-            elif priority == LogPriority.CRITICAL:
-                logging.critical('CRITICAL:' + prefix + msg)
-                # self.write_xml_log(priority, entry)
-                self.reporterr(msg, prefix)
-            elif priority == LogPriority.DEBUG:
-                logging.debug('DEBUG:' + prefix + msg)
-                # self.write_xml_log(priority, entry)
-            else:
-                # Invalid log priority
-                pass
+                    # Invalid log priority
+                    pass
+            except OSError as err:
+                if str(err.errno) == "101":
+                    # network unreachable
+                    print("Unable to log because the log server can't be reached from this network")
 
             self.set_dirty()
             self.notify_check()

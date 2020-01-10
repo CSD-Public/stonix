@@ -197,7 +197,10 @@ default.'
                     self.ch.executeCommand(fixpermscmd + pkg)
                     retcode = self.ch.getReturnCode()
                     if retcode != 0:
+                        errstr = self.ch.getErrorString()
                         self.rulesuccess = False
+                        self.detailedresults += "\nFailed to set correct permissions on package: " + str(pkg)
+                        self.logdispatch.log(LogPriority.DEBUG, errstr)
 
             self.detailedresults += "\n\nPlease note that we will not attempt to fix ownership, group ownership, or bad md5 checksums. For suggestions on what to do if files are found with these issues, please see the rule's help text."
             self.detailedresults += "\nIt is expected that this rule will still be non-compliant after fix if files are found with incorrect ownership or group ownership."
