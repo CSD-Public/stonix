@@ -133,7 +133,7 @@ Bluetooth is a wireless technology standard for exchanging data over short dista
 
 <150>        "***OPTIONAL RULE*** 
 
-This rule disables the built-in 'iSight' camera, by using the 'kextunload' command to unload the 'AppleCameraInterface' driver."
+This rule disables the built-in 'iSight' camera. This rule does not have any effect on peripheral usb cameras."
 
 <159>		"This rule disables 'iCloud' services on Mac OS X and 'Unity Webapps' and 'Lens Shopping' on Ubuntu."
 
