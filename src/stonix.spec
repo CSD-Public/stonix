@@ -121,6 +121,11 @@ installed at /usr/local/stonix/stonixdb.sql
 %attr(0750,root,apache) /var/www/html/stonix/results.php
 
 %changelog
+* Thu Jan 30 2020 Derek Walker <dwalker@lanl.gov> 0.9.39
+- Updated - DisableRemoveableStorage rule, fedora updated how they disable usb at boot
+- New - Bugs have been filed with apple about inconsistent profile behavior when multiple profiles with differing values are installed for the same configuration, so far DisableRemoveableStorage and DisableCamera are affected.
+- Updated - New packages are now on repo.lanl.gov for the lanlwinoltca package for .deb systems as well rule that handles this has been updated to be more efficient.
+
 * Tue Jan 7 2020 Derek Walker <dwalker@lanl.gov> 0.9.38
 - Updated - DisableRemovableStorage rule now uses profiles to disable usb for Mac
 - Updated - ConfigureAppleSoftwareUpdate rule now sets the update server to apple production
