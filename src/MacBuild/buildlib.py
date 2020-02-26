@@ -494,8 +494,7 @@ class MacBuildLib(object):
                 cmd += ['-' + verbose]
             if deep:
                 cmd += ['--deep']
-            # '--options=runtime' may be required for notarization, but currently breaks the build for MacOS 10.14 Mojave
-            cmd += ['--force', '--timestamp', '--sign', sig, '--keychain', signingKeychain, itemName]
+            cmd += ['--force', '--timestamp', '--options=runtime', '--sign', sig, '--keychain', signingKeychain, itemName]
             self.logger.log(lp.DEBUG, "================================================================================")
             self.logger.log(lp.DEBUG, "CWD: " + str(os.getcwd()))
             self.logger.log(lp.DEBUG, "Command: " + str(cmd))
