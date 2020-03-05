@@ -1270,10 +1270,6 @@ ABORTING EXECUTION!"""
         self.pcf = self.prog_args.getPrintConfigFull()
         self.pcs = self.prog_args.getPrintConfigSimple()
 
-        if self.prog_args.get_update():
-            # update(debug)
-            pass
-
         if self.prog_args.get_rollback():
             # rollback()
             pass

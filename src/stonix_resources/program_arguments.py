@@ -111,12 +111,12 @@ class ProgramArguments(object):
             self.parser.error("Fix and Rollback options are mutually exclusive.")
         if self.opts.report and self.opts.rollback:
             self.parser.error("Report and Rollback options are mutually exclusive.")
-        if self.opts.pcf and (self.opts.fix or self.opts.report or self.opts.rollback or self.opts.pcs or self.opts.update):
-            self.parser.error('The -P --printconfigfull option may not be used with the fix, report, rollback, update or GUI options')
-        if self.opts.pcs and (self.opts.fix or self.opts.report or self.opts.rollback or self.opts.pcf or self.opts.update):
-            self.parser.error('The -p --printconfigsimple option may not be used with the fix, report, rollback, update or GUI options')
-        if self.opts.list and (self.opts.fix or self.opts.report or self.opts.rollback or self.opts.pcf or self.opts.update):
-            self.parser.error('The -l --list option may not be used with the fix, report, rollback, update or GUI options')
+        if self.opts.pcf and (self.opts.fix or self.opts.report or self.opts.rollback or self.opts.pcs):
+            self.parser.error('The -P --printconfigfull option may not be used with the fix, report, rollback, or GUI options')
+        if self.opts.pcs and (self.opts.fix or self.opts.report or self.opts.rollback or self.opts.pcf):
+            self.parser.error('The -p --printconfigsimple option may not be used with the fix, report, rollback, or GUI options')
+        if self.opts.list and (self.opts.fix or self.opts.report or self.opts.rollback or self.opts.pcf):
+            self.parser.error('The -l --list option may not be used with the fix, report, rollback, or GUI options')
 
         if self.opts.debug:
             print("Selected options: ")
@@ -149,15 +149,6 @@ class ProgramArguments(object):
 
         '''
         return self.opts.install
-
-    def get_update(self):
-        '''
-
-
-        :returns: @author: Roy Nielsen
-
-        '''
-        return self.opts.update
 
     def get_fix(self):
         '''
