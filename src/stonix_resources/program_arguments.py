@@ -68,10 +68,6 @@ class ProgramArguments(object):
                           default=False,
                           help="Set the status of rules according to the config file, or if unavailable - to default settings.")
 
-        self.parser.add_option("-u", "--update", action="store_true", dest="update",
-                          default=False,
-                          help="Update this software package, if necessary.")
-
         self.parser.add_option("-i", "--install", action="store_true",
                           dest="install", default=False, help="Install")
 
