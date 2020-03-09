@@ -1375,11 +1375,16 @@ ABORTING EXECUTION!"""
                 self.runrule = runrule
 
         if self.prog_args.get_gui():
-            self.mode = 'gui'
+            if self.pcf or self.pcs:
+                self.mode = 'cli'
+            else:
+                self.mode = 'gui'
 
             # uiinstance = view.View(uimode)
 
         if self.prog_args.get_cli():
+            self.mode = 'cli'
+        if self.pcf or self.pcs:
             self.mode = 'cli'
 
     def setuptesting(self):
