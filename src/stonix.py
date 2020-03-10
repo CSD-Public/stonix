@@ -78,8 +78,6 @@ Apply security hardening settings according to LANL guidelines.
 The following options control the running of the script:
  -f  --fix  Apply system hardening.
  -r  --report  Print a configuration compliance report.
- -u  --update  Check and update the known SUID, GUID, World
-        Writable, unowned and/or AIDE databases.
  -G  Use the GUI interface (default option)
  -c  --cli  Use the Console interface.
  -X  --rollback  Will rollback file changes to pre-STONIX state.
@@ -1272,10 +1270,6 @@ ABORTING EXECUTION!"""
         self.pcf = self.prog_args.getPrintConfigFull()
         self.pcs = self.prog_args.getPrintConfigSimple()
 
-        if self.prog_args.get_update():
-            # update(debug)
-            pass
-
         if self.prog_args.get_rollback():
             # rollback()
             pass
@@ -1404,7 +1398,7 @@ ABORTING EXECUTION!"""
                     self.undorule(ruleid)
                     self.logger.closereports()
                 if True not in [self.fix, self.report, self.undo]:
-                    self.logger.log(LogPriority.INFO, 'No action specified. Please pass the -r, -f, or -u flag')
+                    self.logger.log(LogPriority.INFO, 'No action specified. Please pass the -r, -f, or -X flag')
                 self.logger.closereports()
         else:
             self.logger.log(LogPriority.DEBUG, 'Entering single rule run ' + self.runrule)
@@ -1423,7 +1417,7 @@ ABORTING EXECUTION!"""
                 self.undorule(ruleid)
                 self.logger.closereports()
             if True not in [self.fix, self.report, self.undo]:
-                self.logger.log(LogPriority.INFO, 'No action specified. Please pass the -r, -f, or -u flag')
+                self.logger.log(LogPriority.INFO, 'No action specified. Please pass the -r, -f, or -X flag')
                 self.logger.closereports()
         self.releaselock()
 

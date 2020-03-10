@@ -713,6 +713,7 @@ added more debugging output
                                 stderr=subprocess.PIPE, shell=True)
         pulsesourcelist = proc.stdout.readlines()
         for line in pulsesourcelist:
+            line = line.decode("utf-8")
             if re.search('index:', line):
                 self.logdispatch.log(LogPriority.DEBUG,
                                      ['MuteMic.findPulseMic',
