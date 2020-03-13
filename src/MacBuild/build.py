@@ -776,6 +776,7 @@ class SoftwareBuilder():
                     #self.signObject(self.tmphome + '/src/Macbuild/stonix4mac',
                     #                self.tmphome + '/src/Macbuild/stonix4mac',
                     #                'stonix.app')
+                    pass
 
             elif appName == 'stonix4mac':
                 self.logger.log(lp.DEBUG, "Starting stonix4mac postCompile.")
