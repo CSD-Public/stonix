@@ -126,6 +126,8 @@ class SoftwareBuilder():
         self.mk = ManageKeychain(self.logger)
         self.use_ramdisk = use_ramdisk
         self.ramdisk_size = ramdisk_size
+        self.ramdisk = None
+        self.luggage = None
         self.libc = getLibc()
 
         #####
@@ -771,9 +773,9 @@ class SoftwareBuilder():
                 self.libc.sync()
                 if self.doCodesign and self.signature:
                     # Sign stonix app
-                    self.signObject(self.tmphome + '/src/Macbuild/stonix4mac',
-                                    self.tmphome + '/src/Macbuild/stonix4mac',
-                                    'stonix.app')
+                    #self.signObject(self.tmphome + '/src/Macbuild/stonix4mac',
+                    #                self.tmphome + '/src/Macbuild/stonix4mac',
+                    #                'stonix.app')
 
             elif appName == 'stonix4mac':
                 self.logger.log(lp.DEBUG, "Starting stonix4mac postCompile.")
@@ -784,6 +786,11 @@ class SoftwareBuilder():
                 self.libc.sync()
                 self.libc.sync()
                 if self.doCodesign and self.signature:
+                    # Sign stonix app
+                    self.signObject(self.tmphome + '/src/Macbuild/stonix4mac',
+                                    self.tmphome + '/src/Macbuild/stonix4mac/build/Release/stonix4mac.app/Contents/Resources',
+                                    'stonix.app')
+
                     # Sign stonix4mac app
                     self.signObject(self.tmphome + '/src/Macbuild/stonix4mac',
                                     self.tmphome + '/src/Macbuild/stonix4mac/build/Release',
