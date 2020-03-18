@@ -72,7 +72,6 @@ class DisableCamera(Rule):
         instructions = "To disable the built-in iSight camera, set the value of DISABLECAMERA to True."
         default = False
         self.ci = self.initCi(datatype, key, instructions, default)
-        self.setvars()
 
     def setvars(self):
         self.camprofile = ""
@@ -100,6 +99,7 @@ class DisableCamera(Rule):
         try:
             self.detailedresults = ""
             self.compliant = True
+            self.setvars()
             if not self.camprofile:
                 self.detailedresults += "Could not locate the appropriate camera disablement profile for your system.\n"
                 self.compliant = False
