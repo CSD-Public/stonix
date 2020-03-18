@@ -153,10 +153,11 @@ class DisableCamera(Rule):
             success = True
             self.detailedresults = ""
             # only run the fix actions if the CI has been enabled
+            self.logger.log(LogPriority.DEBUG, "inside fix")
             if not self.ci.getcurrvalue():
                 self.detailedresults += "Configuration item was not enabled\n"
                 self.rulesuccess = False
-                self.formatDetailedResults("report", self.rulesuccess, self.detailedresults)
+                self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
                 self.logdispatch.log(LogPriority.INFO, self.detailedresults)
                 return self.rulesuccess
             self.iditerator = 0
