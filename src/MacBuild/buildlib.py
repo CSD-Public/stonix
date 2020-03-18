@@ -446,7 +446,7 @@ class MacBuildLib(object):
         print("checkBuildUser Finished...")
         return CURRENT_USER, RUNNING_ID
 
-    def codeSignTarget(self, parentDirOfItemToSign, username, password, sig='', verbose='', deep='', itemName='', keychain=''):
+    def codeSignTarget(self, parentDirOfItemToSign, username, password, sig='', verbose='', deep='', itemName='', keychain='', entitlements=''):
         '''For codesigning on the Mac.
 
         :param parentDirOfItemToSign: 
@@ -494,6 +494,8 @@ class MacBuildLib(object):
                 cmd += ['-' + verbose]
             if deep:
                 cmd += ['--deep']
+            if entitlements:
+                cmd += ['--entitlements=' + entitlements]
             cmd += ['--force', '--timestamp', '--options=runtime', '--sign', sig, '--keychain', signingKeychain, itemName]
             self.logger.log(lp.DEBUG, "================================================================================")
             self.logger.log(lp.DEBUG, "CWD: " + str(os.getcwd()))

@@ -831,7 +831,8 @@ class SoftwareBuilder():
                '-d',
                '-v', self.codesignVerbose,
                '-s', '"' + self.signature + '"',
-               '--keychain', self.keychain]
+               '--keychain', self.keychain,
+               '--entitlements', self.tmphome + '/src/MacBuild/stonix4mac/stonix4mac/stonix4mac.entitlements']
 
         self.logger.log(lp.DEBUG, '.')
         self.logger.log(lp.DEBUG, '.')
