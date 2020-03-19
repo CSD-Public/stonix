@@ -63,7 +63,7 @@ from ramdisk.lib.manage_keychain.manage_keychain import ManageKeychain
 class ConfusingConfigurationError(BaseException):
     '''Meant for being thrown when the MacBuilder can't determine configuration
     information.
-    
+
     @author: Roy Nielsen
 
 
@@ -78,13 +78,16 @@ class SoftwareBuilder():
 
 
     '''
-    def __init__(self,
-                 options=optparse.Values({"compileGui": False, "version": "0",
-                                          "clean": False, "test": False,
-                                          "debug":False, "sig":False,
-                                          "hiddenImports":False,
-                                          "keychain":''}),
-                 ramdisk_size=1600):
+    def __init__(self, options=optparse.Values({"compileGui": False,
+                                                "version": "0",
+                                                "clean": False,
+                                                "test": False,
+                                                "debug":False,
+                                                "sig":False,
+                                                "hiddenImports":False,
+                                                "keychain":''}),
+                       use_ramdisk=False,
+                       ramdisk_size=1600):
         '''
         Initialization routine.
         @param: compileGui - bool to determine if the gui should be compiled
@@ -121,7 +124,10 @@ class SoftwareBuilder():
         self.rw = RunWith(self.logger)
         self.mu = ManageUser(self.logger)
         self.mk = ManageKeychain(self.logger)
+        self.use_ramdisk = use_ramdisk
         self.ramdisk_size = ramdisk_size
+        self.ramdisk = None
+        self.luggage = None
         self.libc = getLibc()
 
         #####
@@ -225,17 +231,18 @@ class SoftwareBuilder():
 
     def _exit(self, ramdisk, luggage, exitcode=0):
         os.chdir(self.STONIX_ROOT)
-        self._detachRamdisk(ramdisk)
-        self._detachRamdisk(luggage)
+        if self.use_ramdisk:
+            self._detachRamdisk(ramdisk)
+            self._detachRamdisk(luggage)
         print((traceback.format_exc()))
         exit(exitcode)
 
     def _configSectionMap(self, section):
         '''Acquire values from the config file and store in a dictionary.
-        
+
         @author: rsn
 
-        :param section: 
+        :param section:
 
         '''
         dict1 = {}
@@ -331,11 +338,11 @@ class SoftwareBuilder():
 
     def getOrdPass(self, passwd=''):
         '''Get the password translated to a direct ascii pattern of:
-        
+
             "[\d+:]\d+"
-        
+
         for use when in the need of passing it via self.rw.liftDown()
-        
+
         #####
         # Prepare for transport of the password to the xcodebuild.py
         # builder.  This is not encryption, this is just encoding, using
@@ -422,11 +429,12 @@ class SoftwareBuilder():
             os.chmod(self.tmphome, 0o755)
 
             # Create a ramdisk and mount it to the tmphome
-            self.ramdisk = self._setupRamdisk(self.ramdisk_size, self.tmphome)
             os.mkdir("/tmp/the_luggage")
-            self.luggage = self._setupRamdisk(self.ramdisk_size,
-                                        "/tmp/the_luggage")
-            print(("Device for tmp ramdisk is: " + self.ramdisk))
+            if self.use_ramdisk:
+                self.ramdisk = self._setupRamdisk(self.ramdisk_size, self.tmphome)
+                self.luggage = self._setupRamdisk(self.ramdisk_size,
+                                                  "/tmp/the_luggage")
+                print(("Device for tmp ramdisk is: " + self.ramdisk))
 
             print(".")
             print(".")
@@ -459,8 +467,8 @@ class SoftwareBuilder():
     def preCompile(self, appName, prepPath):
         '''
 
-        :param appName: 
-        :param prepPath: 
+        :param appName:
+        :param prepPath:
 
         '''
         success = False
@@ -588,7 +596,7 @@ class SoftwareBuilder():
         :param appVersion: Version of app being built
         :param appIcon: File name of icon for OS X app
         :param appPath: Path to [stonixroot]/src/MacBuild/[appName]
-        
+
         @author: Eric Ball, Roy Nielsen
 
         '''
@@ -690,11 +698,11 @@ class SoftwareBuilder():
 
     def postCompile(self, appName, prepPath):
         '''Perform post-compile processing.
-        
+
         @author: Eric Ball, Roy Nielsen
 
-        :param appName: 
-        :param prepPath: 
+        :param appName:
+        :param prepPath:
 
         '''
         print("Started postCompile...")
@@ -765,9 +773,10 @@ class SoftwareBuilder():
                 self.libc.sync()
                 if self.doCodesign and self.signature:
                     # Sign stonix app
-                    self.signObject(self.tmphome + '/src/Macbuild/stonix4mac',
-                                    self.tmphome + '/src/Macbuild/stonix4mac',
-                                    'stonix.app')
+                    #self.signObject(self.tmphome + '/src/Macbuild/stonix4mac',
+                    #                self.tmphome + '/src/Macbuild/stonix4mac',
+                    #                'stonix.app')
+                    pass
 
             elif appName == 'stonix4mac':
                 self.logger.log(lp.DEBUG, "Starting stonix4mac postCompile.")
@@ -778,6 +787,11 @@ class SoftwareBuilder():
                 self.libc.sync()
                 self.libc.sync()
                 if self.doCodesign and self.signature:
+                    # Sign stonix app
+                    self.signObject(self.tmphome + '/src/Macbuild/stonix4mac',
+                                    self.tmphome + '/src/Macbuild/stonix4mac/build/Release/stonix4mac.app/Contents/Resources',
+                                    'stonix.app')
+
                     # Sign stonix4mac app
                     self.signObject(self.tmphome + '/src/Macbuild/stonix4mac',
                                     self.tmphome + '/src/Macbuild/stonix4mac/build/Release',
@@ -795,7 +809,7 @@ class SoftwareBuilder():
         :param workingDir: The working directory that the process will take place
         :param objectParentDir: The directory that contains the object to be signed
         :param objectName: The name of the object to be signed
-        
+
         @author: Brandon R. Gonzales
 
         '''
@@ -817,7 +831,8 @@ class SoftwareBuilder():
                '-d',
                '-v', self.codesignVerbose,
                '-s', '"' + self.signature + '"',
-               '--keychain', self.keychain]
+               '--keychain', self.keychain,
+               '--entitlements', self.tmphome + '/src/MacBuild/stonix4mac/stonix4mac/stonix4mac.entitlements']
 
         self.logger.log(lp.DEBUG, '.')
         self.logger.log(lp.DEBUG, '.')
@@ -848,7 +863,7 @@ class SoftwareBuilder():
         :param appName: Name of application as it should appear on OS X systems
         :param appVersion: Version of app being built
         :param appPath: Path to [stonixroot]/src/MacBuild
-        
+
         @authors: Eric Ball, Roy Nielsen
 
         '''
@@ -1075,4 +1090,3 @@ if __name__ == '__main__':
     options, __ = parser.parse_args()
 
     stonix4mac = SoftwareBuilder(options)
-

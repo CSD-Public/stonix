@@ -34,6 +34,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		5B7858A72422E2CF0070E14F /* stonix4mac.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = stonix4mac.entitlements; sourceTree = "<group>"; };
 		CF0EA83C1DCD10F90079D707 /* stonix4mac.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = stonix4mac.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		CF0EA83F1DCD10F90079D707 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		CF0EA8411DCD10F90079D707 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
@@ -98,6 +99,7 @@
 		CF0EA83E1DCD10F90079D707 /* stonix4mac */ = {
 			isa = PBXGroup;
 			children = (
+				5B7858A72422E2CF0070E14F /* stonix4mac.entitlements */,
 				CF0EA83F1DCD10F90079D707 /* AppDelegate.swift */,
 				CF0EA8411DCD10F90079D707 /* ViewController.swift */,
 				CF0EA8431DCD10F90079D707 /* Assets.xcassets */,
@@ -421,6 +423,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = stonix4mac/stonix4mac.entitlements;
 				CODE_SIGN_IDENTITY = "Mac Developer";
 				COMBINE_HIDPI_IMAGES = YES;
 				DEVELOPMENT_TEAM = SBN3637X9W;
@@ -442,6 +445,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = stonix4mac/stonix4mac.entitlements;
 				CODE_SIGN_IDENTITY = "Mac Developer";
 				COMBINE_HIDPI_IMAGES = YES;
 				DEVELOPMENT_TEAM = SBN3637X9W;
