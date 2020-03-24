@@ -27,8 +27,8 @@ Created on Apr 20, 2017
 import traceback
 import os
 from rule import Rule
-from re import search, escape
 from logdispatcher import LogPriority
+from KVEditorStonix import KVEditorStonix
 from stonixutilityfunctions import iterate
 from CommandHelper import CommandHelper
 
@@ -46,117 +46,55 @@ class DisableSIRIandContinuityFeatures(Rule):
         self.applicable = {'type': 'white',
                            'os': {'Mac OS X': ['10.15', 'r', '10.15.10']},
                            'fisma': 'low'}
+        self.sethelptext()
         datatype = "bool"
         key = "SIRICONTINUITY"
         instructions = "To disable this rule set the value of " + \
             "SIRICONTINUITY to False"
         default = True
         self.ci = self.initCi(datatype, key, instructions, default)
-        
-        datatype = "string"
-        key = "MACHOMEDIR"
-        instructions = "Enter the current user's home directory here " + \
-            " which is usually in the location of: /Users/username\n" + \
-            "If left blank, we will try to retrieve the home directory " + \
-            "inside the rule\n"
-        default = ""
-        self.homeci = self.initCi(datatype, key, instructions, default)
-        '''Directory location for testing only'''
-#         self.profile = "/Users/username/stonix/src/" + \
-#                        "stonix_resources/files/" + \
-#                        "stonix4macRestrictionsiCloudDictationSpeech.mobileconfig"
-        self.profile = "/Applications/stonix4mac.app/Contents/" + \
-                       "Resources/stonix.app/Contents/MacOS/" + \
-                       "stonix_resources/files/" + \
-                       "stonix4macRestrictionsiCloudDictationSpeech.mobileconfig"
-        self.identifier = "097AD858-A863-4130-989F-D87CCE7E393A"
-        self.home = ""
-        self.ch = CommandHelper(self.logger)
-        self.siripath1 = "/Library/Containers/com.apple.SiriNCService" + \
-            "/Data/Library/Preferences/com.apple.Siri.plist" 
-        self.siriparams1 = "StatusMenuVisible"
-        self.siripath2 = "/Library/Preferences/com.apple.assistant.support" + \
-            ".plist"
-        self.siriparams2 = "Assistant\ Enabled"
-        self.sethelptext()
 
-    def setupHomeDir(self):
-        home = ""
-        cmd = "/bin/echo $HOME"
-        if self.ch.executeCommand(cmd):
-            output = self.ch.getOutputString()
-            if output:
-                home = output.strip()
-        return home
+    def setvars(self):
+        self.siriprofile = ""
+        baseconfigpath = "/Applications/stonix4mac.app/Contents/" + \
+                             "Resources/stonix.app/Contents/MacOS/" + \
+                             "stonix_resources/files/"
+        self.siriprofile = baseconfigpath + "stonix4macDisableSIRI.mobileconfig"
+        '''Directory location for testing only'''
+        # basetestpath = "/Users/username/stonix/src/" + \
+        #                "stonix_resources/files/"
+        # self.siriprofile = basetestpath + "stonix4macDisableSIRI.mobileconfig"
+        if not os.path.exists(self.siriprofile):
+            message = "Could not locate the appropriate siri disablement profile"
+            self.logger.log(LogPriority.DEBUG, message)
+            self.siriprofile = ""
                     
     def report(self):
         try:
             self.detailedresults = ""
-            self.defaults1 = True
-            self.defaults2 = True
-            self.profilecomp = True
-            compliant = True
-            if not self.homeci.getcurrvalue():
-                self.home = self.setupHomeDir()
-            if self.home:
-                if os.path.exists(self.home):
-                    if os.path.exists(self.home + self.siripath1):
-                        cmd = "/usr/bin/defaults read " + \
-                               self.home + self.siripath1 + " " + \
-                               self.siriparams1
-                        if self.ch.executeCommand(cmd):
-                            output = self.ch.getOutputString().strip()
-                            if output != "1":
-                                self.undo1 = output
-                                self.detailedresults += "Didn't get the " + \
-                                    "desired results for StatusMenuVisible\n"
-                                self.defaults1 = False
-                        else:
-                            self.detailedresults += "Unable to run defaults " + \
-                                "read command on " + self.siripath1 + "\n"
-                            self.defaults1 = False
-                    if os.path.exists(self.home + self.siripath2):
-                        cmd = "/usr/bin/defaults read " + \
-                               self.home + self.siripath2 + " " + \
-                               self.siriparams2
-                        if self.ch.executeCommand(cmd):
-                            output = self.ch.getOutputString().strip()
-                            if output != "0":
-                                self.undo2 = output
-                                self.detailedresults += "Didn't get the " + \
-                                    "desired results for " + \
-                                    "Assistant Enabled\n"
-                                self.defaults2 = False
-                        else:
-                            self.detailedresults += "Unable to run defaults " + \
-                                "read command on " + self.siripath2 + "\n"
-                            self.defaults2 = False
-                else:
-                    self.detailedresults += "Home directory entered does not exist\n"
-                    compliant = False
+            self.compliant = True
+            self.setvars()
+            if not self.siriprofile:
+                self.detailedresults += "Could not locate the appropriate SIRI disablement profile.\n"
+                self.compliant = False
+                self.formatDetailedResults("report", self.compliant, self.detailedresults)
+                self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+                return self.compliant
+            if os.path.exists(self.siriprofile):
+                siridict = {"com.apple.ironwood.support": {"Ironwood Allowed": {"val": "0",
+                                                                                "type": "bool",
+                                                                                "accept": "",
+                                                                                "result": False}}}
+                self.sirieditor = KVEditorStonix(self.statechglogger, self.logger,
+                                                "profiles", self.siriprofile, "",
+                                                siridict, "", "")
+                if not self.sirieditor.report():
+                    self.detailedresults += "Siri not disabled\n"
+                    self.compliant = False
             else:
-                self.detailedresults += "Unable to retrieve your home directory\n"
-                compliant = False
+                self.detailedresults += self.siriprofile + " doesn't exist\n"
+                self.compliant = False
 
-            found = False
-            cmd = ["/usr/bin/profiles", "-P"]
-            if not self.ch.executeCommand(cmd):
-                self.detailedresults += "Unable to run profiles command\n"
-            else:
-                output = self.ch.getOutput()
-                if output:
-                    for line in output:
-                        if search("^There are no configuration profiles installed", line.strip()):
-                            self.detailedresults += "There are no configuration profiles installed\n"
-                            break
-                        elif search(escape(self.identifier) + "$", line.strip()):
-                            found = True
-                            break
-            if not found:
-                self.detailedresults += "All desired profiles aren't isntalled\n"
-                self.profilecomp = False
-            self.compliant = self.defaults1 & self.defaults2 & \
-            self.profilecomp & compliant
         except (KeyboardInterrupt, SystemExit):
             # User initiated exit
             raise
@@ -171,57 +109,40 @@ class DisableSIRIandContinuityFeatures(Rule):
 
     def fix(self):
         try:
-            if not self.ci.getcurrvalue():
-                return
             success = True
             self.detailedresults = ""
+            # only run the fix actions if the CI has been enabled
+            if not self.ci.getcurrvalue():
+                self.detailedresults += "Configuration item was not enabled\n"
+                self.rulesuccess = False
+                self.formatDetailedResults("fix", self.rulesuccess, self.detailedresults)
+                self.logdispatch.log(LogPriority.INFO, self.detailedresults)
+                return self.rulesuccess
+            # for systems that may have had the other profile installed
+            # we check for previous profile and remove it
+            if not self.removePreviousProfile():
+                self.detailedresults += "Unable to remove previously installed profile " + \
+                    "before installing current one\n"
+                success = False
             self.iditerator = 0
             eventlist = self.statechglogger.findrulechanges(self.rulenumber)
             for event in eventlist:
                 self.statechglogger.deleteentry(event)
-            if not self.defaults1:
-                cmd = ["/usr/bin/defaults", "write", self.home + self.siripath1,
-                       self.siriparams1, "-bool", "yes"]
-                if self.ch.executeCommand(cmd):
-                    if self.ch.getReturnCode() != 0:
+            if not self.sirieditor.report():
+                if self.sirieditor.fix():
+                    self.iditerator += 1
+                    myid = iterate(self.iditerator, self.rulenumber)
+                    self.sirieditor.setEventID(myid)
+                    if not self.sirieditor.commit():
                         success = False
-                    else:
-                        undocmd = ["/usr/bin/defaults", "write", self.home + \
-                                   self.siripath1, self.siriparams1, self.undo1]
-                        self.iditerator += 1
-                        myid = iterate(self.iditerator, self.rulenumber)
-                        event = {"eventtype": "comm",
-                                 "command": undocmd}
-                        self.statechglogger.recordchgevent(myid, event)
-            if not self.defaults2:
-                cmd = "/usr/bin/defaults write " + self.home + \
-                self.siripath2 + " " + self.siriparams2 + " -bool no"
-                if self.ch.executeCommand(cmd):
-                    if self.ch.getReturnCode() != 0:
-                        success = False
-                    else:
-                        undocmd = "/usr/bin/defaults write " + self.home + \
-                            self.siripath2 + " " + self.siriparams2 + \
-                            " " + self.undo2
-                        self.iditerator += 1
-                        myid = iterate(self.iditerator, self.rulenumber)
-                        event = {"eventtype": "commandstring",
-                                 "command": undocmd}
-                        self.statechglogger.recordchgevent(myid, event)
-            if not self.profilecomp:
-                if os.path.exists(self.profile):
-                    cmd = ["/usr/bin/profiles", "-I", "-F", self.profile]
-                    if not self.ch.executeCommand(cmd):
-                        success = False
-                    else:
-                        self.iditerator += 1
-                        myid = iterate(self.iditerator, self.rulenumber)
-                        cmd = ["/usr/bin/profiles", "-R", "-p", self.identifier]
-                        event = {"eventtype": "comm",
-                                 "command": cmd}
-                        self.statechglogger.recordchgevent(myid, event)
+                        self.detailedresults += "Unable to install profile\n"
+                        self.logdispatch.log(LogPriority.DEBUG, "Kveditor commit failed")
                 else:
                     success = False
+                    self.detailedresults += "Unable to install profile\n"
+                    self.logdispatch.log(LogPriority.DEBUG, "Kveditor fix failed")
+            else:
+                self.detailedresults += "SIRI disablement profile was already installed.\n"
             self.rulesuccess = success
         except (KeyboardInterrupt, SystemExit):
             raise
@@ -233,3 +154,16 @@ class DisableSIRIandContinuityFeatures(Rule):
                                    self.detailedresults)
         self.logdispatch.log(LogPriority.INFO, self.detailedresults)
         return self.rulesuccess
+
+    def removePreviousProfile(self):
+        '''This method removes any previous profiles that we may have renamed
+        that the user may still have installed.'''
+        success = True
+        identifier = "097AD858-A863-4130-989F-D87CCE7E393A"
+        cmd = "/usr/bin/profiles remove -identifier " + identifier
+        ch = CommandHelper(self.logger)
+        if not ch.executeCommand(cmd):
+            success = False
+            debug = "Unable to remove profiles with identifier: " + identifier + "\n"
+            self.logger.log(LogPriority.DEBUG, debug)
+        return success
