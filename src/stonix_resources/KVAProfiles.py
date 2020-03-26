@@ -96,7 +96,7 @@ class KVAProfiles(object):
                         section stopping before the next identifier'''
                         for line in keyoutput:
                             if not re.search(".*:", line):
-                                line = re.sub("\s+", "", line)
+                                #line = re.sub("\s+", "", line)
                                 payloadblocktemp.append(line)
                             else:
                                 break
@@ -185,7 +185,7 @@ class KVAProfiles(object):
         unsecure = False
         debug = ""
         for line in payloadblock:
-            if re.search("^\"{0,1}" + k + "\"{0,1}=", line.strip()):
+            if re.search("^\"{0,1}" + k + "\"{0,1} =", line.strip()):
                 founditem = True
                 temp = line.strip().split("=")
                 try:
@@ -284,7 +284,7 @@ class KVAProfiles(object):
         iterator = 0
         temp, temp2 = [], []
         for line in payloadblock:
-            if re.search("^\"{0,1}" + k + "\"{0,1}=", line.strip()):
+            if re.search("^\"{0,1}" + k + "\"{0,1} =", line.strip()):
                 if re.search("\(\)$", line):
                     if str(v["val"]) == "[]":
                         return True
@@ -304,12 +304,16 @@ class KVAProfiles(object):
         if temp2:
             temp = temp2
         if temp:
+            '''Remove any commas at the end of each line and store in new list
+            called replaceables. We then set temp back equal to replaceables'''
             replaceables = []
             for line in temp:
                 if re.search("\,$", line):
                     line = re.sub("\,$", "", line)
+                line = line.strip()
                 replaceables.append(line)
             temp = replaceables
+
             removeables = []
             for line in temp:
                 if line in v["val"]:

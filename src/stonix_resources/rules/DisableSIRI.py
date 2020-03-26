@@ -33,14 +33,14 @@ from stonixutilityfunctions import iterate
 from CommandHelper import CommandHelper
 
 
-class DisableSIRIandContinuityFeatures(Rule):
+class DisableSIRI(Rule):
     def __init__(self, config, environ, logdispatch, statechglogger):
         '''Constructor'''
         Rule.__init__(self, config, environ, logdispatch, statechglogger)
 
         self.logger = logdispatch
         self.rulenumber = 310
-        self.rulename = "DisableSIRIandContinuityFeatures"
+        self.rulename = "DisableSIRI"
         self.formatDetailedResults("initialize")
         self.rootrequired = True
         self.applicable = {'type': 'white',
@@ -48,9 +48,9 @@ class DisableSIRIandContinuityFeatures(Rule):
                            'fisma': 'low'}
         self.sethelptext()
         datatype = "bool"
-        key = "SIRICONTINUITY"
+        key = "DISABLESIRI"
         instructions = "To disable this rule set the value of " + \
-            "SIRICONTINUITY to False"
+            "DISABLESIRI to False"
         default = True
         self.ci = self.initCi(datatype, key, instructions, default)
 
@@ -61,9 +61,9 @@ class DisableSIRIandContinuityFeatures(Rule):
                              "stonix_resources/files/"
         self.siriprofile = baseconfigpath + "stonix4macDisableSIRI.mobileconfig"
         '''Directory location for testing only'''
-        # basetestpath = "/Users/username/stonix/src/" + \
-        #                "stonix_resources/files/"
-        # self.siriprofile = basetestpath + "stonix4macDisableSIRI.mobileconfig"
+        #basetestpath = "/Users/username/stonix/src/" + \
+        #               "stonix_resources/files/"
+        #self.siriprofile = basetestpath + "stonix4macDisableSIRI.mobileconfig"
         if not os.path.exists(self.siriprofile):
             message = "Could not locate the appropriate siri disablement profile"
             self.logger.log(LogPriority.DEBUG, message)
