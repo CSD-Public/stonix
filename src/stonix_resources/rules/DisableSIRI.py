@@ -84,7 +84,15 @@ class DisableSIRI(Rule):
                 siridict = {"com.apple.ironwood.support": {"Ironwood Allowed": {"val": "0",
                                                                                 "type": "bool",
                                                                                 "accept": "",
-                                                                                "result": False}}}
+                                                                                "result": False}},
+                            "com.apple.Siri": {"StatusMenuVisible": {"val": "0",
+                                                                     "type": "bool",
+                                                                     "accept": "",
+                                                                     "result": False},
+                                               "UserHasDeclinedEnable": {"val": "1",
+                                                                         "type": "bool",
+                                                                         "accept": "",
+                                                                         "result": False}}}
                 self.sirieditor = KVEditorStonix(self.statechglogger, self.logger,
                                                 "profiles", self.siriprofile, "",
                                                 siridict, "", "")
