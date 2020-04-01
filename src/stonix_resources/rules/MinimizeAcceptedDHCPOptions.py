@@ -33,7 +33,7 @@ import re
 import traceback
 
 from rule import Rule
-from localize import DHCPDict, DHCPSup
+from localize import DHCPDict, DHCPSup, DNS
 from logdispatcher import LogPriority
 from stonixutilityfunctions import iterate
 
@@ -235,6 +235,15 @@ class MinimizeAcceptedDHCPOptions(Rule):
         self.detailedresults = ""
 
         try:
+
+            dns_list = DNS.split()
+            try:
+                dns1 = dns_list[0]
+                dns2 = dns_list[1]
+                DHCPSup['domain-name-servers'] = str(dns1) + ", " + str(dns2)
+            except (KeyError, IndexError):
+                dns1 = DNS
+                DHCPSup['domain-name-servers'] = str(dns1)
 
             # build the check dictionary and list
             for item in DHCPDict:
