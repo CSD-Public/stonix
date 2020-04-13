@@ -45,38 +45,41 @@ def parseoutput(outputfile):
     output = filehandle.readlines()
     filehandle.close()
     failedrules = {}
-    print("inside parseoutput\n")
+    iterator = 0
     for line in output:
-        print("line: \n")
-        print(line, "\n")
-        if re.search("^DEBUG:\*{18}RULE START:\ ", line):
-            print("Found a new rule\n")
+        if re.search("^DEBUG:\*{18} RULE START: ", line):
             print(line, "\n")
-            iterator = 0
             templist = output[iterator + 1:]
-            print("templist: \n")
-            print(str(templist), "\n")
             reportCount = 0
             singleruleoutput = []
             for line2 in templist:
                 singleruleoutput.append(line2)
-                if re.search("^DEBUG:={19}START REPORT: ", line2):
+                if re.search("^DEBUG:\={19} START REPORT ", line2):
                     reportCount += 1
-                if re.search("report results: Rule is not Compliant"):
+                if re.search("report results: Rule is not Compliant\.", line2):
                     if reportCount == 2:
+                        print("Found a non compliant rule\n")
                         failedrules[line] = singleruleoutput
                         break
-                elif re.search("report results: Rule is Compliant"):
+                elif re.search("report results: Rule is Compliant", line2):
                     break
+        iterator += 1
 
     if failedrules:
         print("The following rules failed: \n")
         print(str(failedrules))
-        newoutputfile = "~/ncafstonix.out"
-        filehandle = open(newoutputfile, "w")
-        for rule in faiedrules:
-            filehandle.write(rule)
-            filehandle.write(failedrules[rule])
-        filehandle.close()
+        newoutputfile = "/home/dwalker/ncafstonix.out"
+        with open(newoutputfile, "w") as f:
+            for rule in failedrules:
+                f.write(rule + ": " + "\n")
+                for line in failedrules[rule]:
+                    f.write(line)
+        # filehandle = open(newoutputfile, "w")
+        # for rule in failedrules:
+        #     filehandle.write(rule)
+        #     filehandle.write(failedrules[rule])
+        # filehandle.close()
+
+
 if __name__ == "__main__":
     main()
