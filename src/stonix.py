@@ -1266,7 +1266,6 @@ ABORTING EXECUTION!"""
         self.fix = self.prog_args.get_fix()
         self.report = self.prog_args.get_report()
         self.undo = self.prog_args.get_rollback()
-        self.environ.setinstallmode(self.prog_args.get_install())
         self.pcf = self.prog_args.getPrintConfigFull()
         self.pcs = self.prog_args.getPrintConfigSimple()
 
@@ -1317,7 +1316,6 @@ ABORTING EXECUTION!"""
         self.fix = False
         self.report = False
         self.undo = False
-        self.environ.setinstallmode(False)
         self.runrule = ""
         self.mode = 'test'
 
