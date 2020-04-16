@@ -79,7 +79,7 @@ class AuditFirefoxUsage(Rule):
         instructions = """This is a list of domains which the root user is \
 approved to browse."""
         default = LOCALDOMAINS
-        if default == None:
+        if default is None:
             default = ["localhost"]
         elif not default:
             default = ["localhost"]
@@ -138,6 +138,12 @@ DISABLEPROXY to True."""
                     # Instead, we will examine the file manually, looking for
                     # entries beginning with %\x08.
                     sqlBin = open(placesPath, "rb").read()
+                    if isinstance(sqlBin, bytes):
+                        try:
+                            sqlBin = sqlBin.decode("utf-8")
+                        except:
+                            pass
+                    sqlBin = str(sqlBin)
                     urlList = re.findall("%\x08https?://.*?/", sqlBin)
                     for url in urlList:
                         urls.append(url[2:])

@@ -840,7 +840,7 @@ class InstallBanners(RuleKVEditor):
 
         compliant = True
         if not os.path.exists(self.sshdfile):
-            self.detailedresults += "Required configuration file " + self.ssdhfile + \
+            self.detailedresults += "Required configuration file " + self.sshdfile + \
                                     " does not exist.\n"
             return False
         contents = readFile(self.sshdfile, self.logger)

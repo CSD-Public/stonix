@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>PayloadContent</key>
+	<array>
+		<dict>
+			<key>Ironwood Allowed</key>
+			<false/>
+			<key>PayloadDisplayName</key>
+			<string>Parental Controls: Dictation and Profanity</string>
+			<key>PayloadIdentifier</key>
+			<string>gov.lanl.stonix4mac.profilecreator.5BA4F133-7C93-4795-B615-987F3F3F156C.com.apple.ironwood.support.F2E9A89C-94AD-4EB1-B10C-E42B3CA195DE</string>
+			<key>PayloadOrganization</key>
+			<string></string>
+			<key>PayloadType</key>
+			<string>com.apple.ironwood.support</string>
+			<key>PayloadUUID</key>
+			<string>F2E9A89C-94AD-4EB1-B10C-E42B3CA195DE</string>
+			<key>PayloadVersion</key>
+			<integer>1</integer>
+		</dict>
+		<dict>
+			<key>PayloadDisplayName</key>
+			<string>Siri</string>
+			<key>PayloadIdentifier</key>
+			<string>gov.lanl.stonix4mac.profilecreator.5BA4F133-7C93-4795-B615-987F3F3F156C.com.apple.Siri.C8B9C6C0-6275-4E40-9422-BAEEAC0C724B</string>
+			<key>PayloadOrganization</key>
+			<string></string>
+			<key>PayloadType</key>
+			<string>com.apple.Siri</string>
+			<key>PayloadUUID</key>
+			<string>C8B9C6C0-6275-4E40-9422-BAEEAC0C724B</string>
+			<key>PayloadVersion</key>
+			<integer>1</integer>
+			<key>StatusMenuVisible</key>
+			<false/>
+			<key>UserHasDeclinedEnable</key>
+			<true/>
+		</dict>
+	</array>
+	<key>PayloadDisplayName</key>
+	<string>stonix4macDisableSIRI</string>
+	<key>PayloadIdentifier</key>
+	<string>gov.lanl.stonix4mac.profilecreator.5BA4F133-7C93-4795-B615-987F3F3F156C</string>
+	<key>PayloadOrganization</key>
+	<string>Los Alamos National Laboratory</string>
+	<key>PayloadScope</key>
+	<string>System</string>
+	<key>PayloadType</key>
+	<string>Configuration</string>
+	<key>PayloadUUID</key>
+	<string>5BA4F133-7C93-4795-B615-987F3F3F156C</string>
+	<key>PayloadVersion</key>
+	<integer>1</integer>
+</dict>
+</plist>

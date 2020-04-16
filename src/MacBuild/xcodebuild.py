@@ -33,9 +33,9 @@ class Xcodebuild(MacBuildLib):
             self.logger.log(lp.DEBUG, "setUpForSigning failed...")
             raise Exception(traceback.format_exc())
 
-    def codeSign(self, psd, itemName, username, password, signature, verbose, keychain):
+    def codeSign(self, psd, itemName, username, password, signature, verbose, keychain, entitlements):
         self.setUpForSigning(username, password, keychain)
-        self.codeSignTarget(psd, username, password, signature, verbose, deep=True, itemName=itemName, keychain=keychain)
+        self.codeSignTarget(psd, username, password, signature, verbose, deep=True, itemName=itemName, keychain=keychain, entitlements=entitlements)
 
     def productSign(self, psd, itemName, username, password, signature, newPkgName, keychain):
         self.setUpForSigning(username, password, keychain)
@@ -81,7 +81,10 @@ if __name__ == '__main__':
     parser.add_option("-v", "--verbose", dest="verbose",
                       default="",
                       help="Determine verbosity if performing a codesign.")
-    
+    parser.add_option("-e", "--entitlements", dest="entitlements",
+                      default="",
+                      help="Path to the entitlements file.")
+
     (opts, args) = parser.parse_args()
     
     log_level = ""
@@ -123,7 +126,7 @@ if __name__ == '__main__':
         
     xb = Xcodebuild(logger)
     if opts.codesign:
-        xb.codeSign(opts.parentOfItemToBeProcessed, opts.itemName, opts.userName, keychainPass, opts.signature, opts.verbose, opts.keychain)
+        xb.codeSign(opts.parentOfItemToBeProcessed, opts.itemName, opts.userName, keychainPass, opts.signature, opts.verbose, opts.keychain, opts.entitlements)
     elif opts.productSign:
         xb.productSign(opts.parentOfItemToBeProcessed, opts.itemName, opts.userName, keychainPass, opts.signature, opts.newPkgName, opts.keychain)
     else:

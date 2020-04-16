@@ -1304,6 +1304,9 @@ ABORTING EXECUTION!"""
         if self.prog_args.get_cli():
             self.mode = 'cli'
 
+        if self.pcf or self.pcs:
+            self.mode = 'cli'
+
     def setuptesting(self):
         """this method is called when the environment object determins that the
         controller is in test mode - e.g. running from a unittest.
