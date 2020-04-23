@@ -720,6 +720,7 @@ class Controller(Observable):
                                         "Controller caught rule death: "
                                         + trace])
                     if not rule.getrulesuccess():
+                        print("rule success is false!!!!!!\n\n")
                         self.logger.log(LogPriority.ERROR,
                                         [rule.getrulename(),
                                         rule.getdetailedresults()])
