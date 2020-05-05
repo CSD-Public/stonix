@@ -68,9 +68,6 @@ class ProgramArguments(object):
                           default=False,
                           help="Set the status of rules according to the config file, or if unavailable - to default settings.")
 
-        self.parser.add_option("-i", "--install", action="store_true",
-                          dest="install", default=False, help="Install")
-
         self.parser.add_option("-G", "--gui", action="store_true", dest="gui",
                           default=False, help="Start the GUI.")
 
@@ -140,15 +137,6 @@ class ProgramArguments(object):
 
         '''
         return self.opts.gui
-
-    def get_install(self):
-        '''
-
-
-        :returns: @author: Roy Nielsen
-
-        '''
-        return self.opts.install
 
     def get_fix(self):
         '''
